@@ -38,6 +38,7 @@ import { Route as DashboardSettingsApiKeysRouteImport } from "./routes/dashboard
 import { Route as DashboardSettingsAiRouteImport } from "./routes/dashboard/settings/ai";
 import { Route as ApiRpcSplatRouteImport } from "./routes/api/rpc.$";
 import { Route as ApiOpenapiSplatRouteImport } from "./routes/api/openapi.$";
+import { Route as ApiAuthSsoRouteImport } from "./routes/api/auth/sso";
 import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth.$";
 import { Route as DashboardSettingsAuthenticationIndexRouteImport } from "./routes/dashboard/settings/authentication/index";
 
@@ -189,6 +190,11 @@ const ApiOpenapiSplatRoute = ApiOpenapiSplatRouteImport.update({
   path: "/api/openapi/$",
   getParentRoute: () => rootRouteImport,
 } as any);
+const ApiAuthSsoRoute = ApiAuthSsoRouteImport.update({
+  id: "/api/auth/sso",
+  path: "/api/auth/sso",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: "/api/auth/$",
   path: "/api/auth/$",
@@ -221,6 +227,7 @@ export interface FileRoutesByFullPath {
   "/dashboard/": typeof DashboardIndexRoute;
   "/mcp/": typeof McpIndexRoute;
   "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/api/auth/sso": typeof ApiAuthSsoRoute;
   "/api/openapi/$": typeof ApiOpenapiSplatRoute;
   "/api/rpc/$": typeof ApiRpcSplatRoute;
   "/dashboard/settings/ai": typeof DashboardSettingsAiRoute;
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   "/dashboard": typeof DashboardIndexRoute;
   "/mcp": typeof McpIndexRoute;
   "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/api/auth/sso": typeof ApiAuthSsoRoute;
   "/api/openapi/$": typeof ApiOpenapiSplatRoute;
   "/api/rpc/$": typeof ApiRpcSplatRoute;
   "/dashboard/settings/ai": typeof DashboardSettingsAiRoute;
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   "/dashboard/": typeof DashboardIndexRoute;
   "/mcp/": typeof McpIndexRoute;
   "/api/auth/$": typeof ApiAuthSplatRoute;
+  "/api/auth/sso": typeof ApiAuthSsoRoute;
   "/api/openapi/$": typeof ApiOpenapiSplatRoute;
   "/api/rpc/$": typeof ApiRpcSplatRoute;
   "/dashboard/settings/ai": typeof DashboardSettingsAiRoute;
@@ -318,6 +327,7 @@ export interface FileRouteTypes {
     | "/dashboard/"
     | "/mcp/"
     | "/api/auth/$"
+    | "/api/auth/sso"
     | "/api/openapi/$"
     | "/api/rpc/$"
     | "/dashboard/settings/ai"
@@ -347,6 +357,7 @@ export interface FileRouteTypes {
     | "/dashboard"
     | "/mcp"
     | "/api/auth/$"
+    | "/api/auth/sso"
     | "/api/openapi/$"
     | "/api/rpc/$"
     | "/dashboard/settings/ai"
@@ -380,6 +391,7 @@ export interface FileRouteTypes {
     | "/dashboard/"
     | "/mcp/"
     | "/api/auth/$"
+    | "/api/auth/sso"
     | "/api/openapi/$"
     | "/api/rpc/$"
     | "/dashboard/settings/ai"
@@ -404,6 +416,7 @@ export interface RootRouteChildren {
   PrinterResumeIdRoute: typeof PrinterResumeIdRoute;
   McpIndexRoute: typeof McpIndexRoute;
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute;
+  ApiAuthSsoRoute: typeof ApiAuthSsoRoute;
   ApiOpenapiSplatRoute: typeof ApiOpenapiSplatRoute;
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute;
   UploadsUserIdSplatRoute: typeof UploadsUserIdSplatRoute;
@@ -614,6 +627,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof ApiOpenapiSplatRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/api/auth/sso": {
+      id: "/api/auth/sso";
+      path: "/api/auth/sso";
+      fullPath: "/api/auth/sso";
+      preLoaderRoute: typeof ApiAuthSsoRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/api/auth/$": {
       id: "/api/auth/$";
       path: "/api/auth/$";
@@ -718,6 +738,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrinterResumeIdRoute: PrinterResumeIdRoute,
   McpIndexRoute: McpIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiAuthSsoRoute: ApiAuthSsoRoute,
   ApiOpenapiSplatRoute: ApiOpenapiSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
   UploadsUserIdSplatRoute: UploadsUserIdSplatRoute,

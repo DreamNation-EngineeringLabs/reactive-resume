@@ -80,125 +80,19 @@ function RouteComponent() {
 	if (submitted) return <PostSignupScreen />;
 
 	return (
-		<>
-			<div className="space-y-1 text-center">
-				<h1 className="font-bold text-2xl tracking-tight">
-					<Trans>Create a new account</Trans>
-				</h1>
-
-				<div className="text-muted-foreground">
-					<Trans>
-						Already have an account?{" "}
-						<Button asChild variant="link" className="h-auto gap-1.5 px-1! py-0">
-							<Link to="/auth/login">
-								Sign in now <ArrowRightIcon />
-							</Link>
-						</Button>
-					</Trans>
-				</div>
-			</div>
-
-			{!flags.disableEmailAuth && (
-				<Form {...form}>
-					<form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-						<FormField
-							control={form.control}
-							name="name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>
-										<Trans>Name</Trans>
-									</FormLabel>
-									<FormControl>
-										<Input min={3} max={64} autoComplete="name" placeholder="John Doe" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<FormField
-							control={form.control}
-							name="username"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>
-										<Trans>Username</Trans>
-									</FormLabel>
-									<FormControl>
-										<Input
-											min={3}
-											max={64}
-											autoComplete="username"
-											placeholder="john.doe"
-											className="lowercase"
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<FormField
-							control={form.control}
-							name="email"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>
-										<Trans>Email Address</Trans>
-									</FormLabel>
-									<FormControl>
-										<Input
-											type="email"
-											autoComplete="email"
-											placeholder="john.doe@example.com"
-											className="lowercase"
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<FormField
-							control={form.control}
-							name="password"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>
-										<Trans>Password</Trans>
-									</FormLabel>
-									<div className="flex items-center gap-x-1.5">
-										<FormControl>
-											<Input
-												min={6}
-												max={64}
-												type={showPassword ? "text" : "password"}
-												autoComplete="new-password"
-												{...field}
-											/>
-										</FormControl>
-
-										<Button size="icon" variant="ghost" onClick={toggleShowPassword}>
-											{showPassword ? <EyeIcon /> : <EyeSlashIcon />}
-										</Button>
-									</div>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						<Button type="submit" className="w-full">
-							<Trans>Sign up</Trans>
-						</Button>
-					</form>
-				</Form>
-			)}
-
-			<SocialAuth />
-		</>
+		<div className="space-y-4 text-center">
+			<h1 className="font-bold text-2xl tracking-tight">
+				<Trans>Signup Restricted</Trans>
+			</h1>
+			<p className="text-muted-foreground">
+				<Trans>Please access via the main dashboard.</Trans>
+			</p>
+			<Button asChild className="w-full">
+				<a href="http://localhost:3000/placements">
+					<Trans>Go to Dashboard</Trans>
+				</a>
+			</Button>
+		</div>
 	);
 }
 

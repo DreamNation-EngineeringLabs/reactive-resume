@@ -104,11 +104,7 @@ export function UserDropdownMenu({ children }: Props) {
 
 				<DropdownMenuSeparator />
 
-				<DropdownMenuItem onSelect={handleLogout}>
-					<SignOutIcon />
-					<Trans>Logout</Trans>
-				</DropdownMenuItem>
-			</DropdownMenuContent>
+				{/* Logout removed */}			</DropdownMenuContent>
 		</DropdownMenu>
 	);
 }

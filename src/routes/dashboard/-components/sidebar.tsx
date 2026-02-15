@@ -12,10 +12,8 @@ import {
 	WarningIcon,
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "motion/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandIcon } from "@/components/ui/brand-icon";
-import { Copyright } from "@/components/ui/copyright";
 import {
 	Sidebar,
 	SidebarContent,
@@ -115,10 +113,10 @@ export function DashboardSidebar() {
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild className="h-auto justify-center">
-							<Link to="/">
+							<a href="http://localhost:3000/placements">
 								<BrandIcon variant="icon" className="size-6" />
-								<h1 className="sr-only">Reactive Resume</h1>
-							</Link>
+								<span className="font-medium ml-2 group-data-[collapsible=icon]:hidden">Back to App</span>
+							</a>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				</SidebarMenu>
@@ -133,15 +131,6 @@ export function DashboardSidebar() {
 					</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarItemList items={appSidebarItems} />
-					</SidebarGroupContent>
-				</SidebarGroup>
-
-				<SidebarGroup>
-					<SidebarGroupLabel>
-						<Trans>Settings</Trans>
-					</SidebarGroupLabel>
-					<SidebarGroupContent>
-						<SidebarItemList items={settingsSidebarItems} />
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>
@@ -171,19 +160,7 @@ export function DashboardSidebar() {
 					</SidebarMenuItem>
 				</SidebarMenu>
 
-				<AnimatePresence>
-					{state === "expanded" && (
-						<motion.div
-							key="copyright"
-							initial={{ y: 50, height: 0, opacity: 0 }}
-							animate={{ y: 0, height: "auto", opacity: 1 }}
-							exit={{ y: 50, height: 0, opacity: 0 }}
-						>
-							<Copyright className="wrap-break-word shrink-0 whitespace-normal p-2" />
-						</motion.div>
-					)}
-				</AnimatePresence>
-			</SidebarFooter>
+				{/* Copyright removed */}			</SidebarFooter>
 
 			<SidebarRail />
 		</Sidebar>
