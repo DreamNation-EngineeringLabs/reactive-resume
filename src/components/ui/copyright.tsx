@@ -35,7 +35,7 @@ export function Copyright({ className, ...props }: Props) {
 				</Trans>
 			</p>
 
-			<p className="mt-4">Reactive Resume v{__APP_VERSION__}</p>
+			<p className="mt-4">Resume Builder v{__APP_VERSION__}</p>
 		</div>
 	);
 }

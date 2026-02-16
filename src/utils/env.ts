@@ -6,7 +6,9 @@ export const env = createEnv({
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,
 
-	client: {},
+	client: {
+		VITE_MAIN_APP_URL: z.string().url().optional(),
+	},
 
 	server: {
 		// Server

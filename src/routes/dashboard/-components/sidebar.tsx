@@ -3,13 +3,13 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import {
-	BrainIcon,
-	GearSixIcon,
-	KeyIcon,
 	ReadCvLogoIcon,
-	ShieldCheckIcon,
-	UserCircleIcon,
-	WarningIcon,
+	// BrainIcon,
+	// GearSixIcon,
+	// KeyIcon,
+	// ShieldCheckIcon,
+	// UserCircleIcon,
+	// WarningIcon,
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,9 +27,10 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 	SidebarSeparator,
-	useSidebarState,
+	// useSidebarState,
 } from "@/components/ui/sidebar";
 import { UserDropdownMenu } from "@/components/user/dropdown-menu";
+import { env } from "@/utils/env";
 import { getInitials } from "@/utils/string";
 
 type SidebarItem = {
@@ -46,38 +47,38 @@ const appSidebarItems = [
 	},
 ] as const satisfies SidebarItem[];
 
-const settingsSidebarItems = [
-	{
-		icon: <UserCircleIcon />,
-		label: msg`Profile`,
-		href: "/dashboard/settings/profile",
-	},
-	{
-		icon: <GearSixIcon />,
-		label: msg`Preferences`,
-		href: "/dashboard/settings/preferences",
-	},
-	{
-		icon: <ShieldCheckIcon />,
-		label: msg`Authentication`,
-		href: "/dashboard/settings/authentication",
-	},
-	{
-		icon: <KeyIcon />,
-		label: msg`API Keys`,
-		href: "/dashboard/settings/api-keys",
-	},
-	{
-		icon: <BrainIcon />,
-		label: msg`Artificial Intelligence`,
-		href: "/dashboard/settings/ai",
-	},
-	{
-		icon: <WarningIcon />,
-		label: msg`Danger Zone`,
-		href: "/dashboard/settings/danger-zone",
-	},
-] as const satisfies SidebarItem[];
+// const settingsSidebarItems = [
+// 	{
+// 		icon: <UserCircleIcon />,
+// 		label: msg`Profile`,
+// 		href: "/dashboard/settings/profile",
+// 	},
+// 	{
+// 		icon: <GearSixIcon />,
+// 		label: msg`Preferences`,
+// 		href: "/dashboard/settings/preferences",
+// 	},
+// 	{
+// 		icon: <ShieldCheckIcon />,
+// 		label: msg`Authentication`,
+// 		href: "/dashboard/settings/authentication",
+// 	},
+// 	{
+// 		icon: <KeyIcon />,
+// 		label: msg`API Keys`,
+// 		href: "/dashboard/settings/api-keys",
+// 	},
+// 	{
+// 		icon: <BrainIcon />,
+// 		label: msg`Artificial Intelligence`,
+// 		href: "/dashboard/settings/ai",
+// 	},
+// 	{
+// 		icon: <WarningIcon />,
+// 		label: msg`Danger Zone`,
+// 		href: "/dashboard/settings/danger-zone",
+// 	},
+// ] as const satisfies SidebarItem[];
 
 type SidebarItemListProps = {
 	items: readonly SidebarItem[];
@@ -105,16 +106,17 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 }
 
 export function DashboardSidebar() {
-	const { state } = useSidebarState();
+	// const { state } = useSidebarState();
+	const mainAppUrl = env.VITE_MAIN_APP_URL ?? "http://localhost:3000";
 
 	return (
-		<Sidebar variant="floating" collapsible="icon">
+		<Sidebar variant="sidebar" collapsible="icon">
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton asChild className="h-auto justify-center">
-							<a href="http://localhost:3000/placements">
-								<BrandIcon variant="icon" className="size-6" />
+							<a href={`${mainAppUrl}/placements`}>
+								{/* <BrandIcon variant="icon" className="size-6" /> */}
 								<span className="font-medium ml-2 group-data-[collapsible=icon]:hidden">Back to App</span>
 							</a>
 						</SidebarMenuButton>

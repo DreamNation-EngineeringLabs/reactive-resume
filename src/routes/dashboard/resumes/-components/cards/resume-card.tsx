@@ -32,15 +32,15 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 				<BaseCard title={resume.name} description={t`Last updated on ${updatedAt}`} tags={resume.tags}>
 					{match({ isLoading, imageSrc: screenshotData?.url })
 						.with({ isLoading: true }, () => (
-							<div className="flex size-full items-center justify-center">
-								<CircleNotchIcon weight="thin" className="size-12 animate-spin" />
+							<div className="flex size-full items-center justify-center bg-slate-50">
+								<CircleNotchIcon weight="thin" className="size-12 animate-spin text-slate-400" />
 							</div>
 						))
 						.with({ imageSrc: P.string }, ({ imageSrc }) => (
 							<img
 								src={imageSrc}
 								alt={resume.name}
-								className={cn("size-full object-cover transition-all", resume.isLocked && "blur-xs")}
+								className={cn("size-full object-cover transition-all", resume.isLocked && "blur-sm")}
 							/>
 						))
 						.otherwise(() => null)}
@@ -59,12 +59,12 @@ function ResumeLockOverlay({ isLocked }: { isLocked: boolean }) {
 				<motion.div
 					key="resume-lock-overlay"
 					initial={{ opacity: 0 }}
-					animate={{ opacity: 0.6 }}
+					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
-					className="absolute inset-0 flex items-center justify-center"
+					className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
 				>
-					<div className="flex items-center justify-center rounded-full bg-popover p-6">
-						<LockSimpleIcon weight="thin" className="size-12 opacity-60" />
+					<div className="flex items-center justify-center rounded-full bg-white p-6 shadow-lg">
+						<LockSimpleIcon weight="thin" className="size-12 text-slate-600" />
 					</div>
 				</motion.div>
 			)}
