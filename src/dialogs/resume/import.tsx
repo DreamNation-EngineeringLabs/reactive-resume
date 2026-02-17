@@ -7,7 +7,6 @@ import { useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +14,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useFormBlocker } from "@/hooks/use-form-blocker";
-import { useAIStore } from "@/integrations/ai/store";
 import { JSONResumeImporter } from "@/integrations/import/json-resume";
 import { ReactiveResumeJSONImporter } from "@/integrations/import/reactive-resume-json";
 import { ReactiveResumeV4JSONImporter } from "@/integrations/import/reactive-resume-v4-json";
@@ -64,7 +62,6 @@ const formSchema = z.discriminatedUnion("type", [
 type FormValues = z.infer<typeof formSchema>;
 
 export function ImportResumeDialog(_: DialogProps<"resume.import">) {
-	const { enabled: isAIEnabled, provider, model, apiKey, baseURL } = useAIStore();
 	const closeDialog = useDialogStore((state) => state.closeDialog);
 
 	const prevTypeRef = useRef<string>("");
@@ -101,6 +98,20 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 
 	const { blockEvents } = useFormBlocker(form);
 
+	// Helper function to convert ArrayBuffer to base64 for large files
+	const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+		const bytes = new Uint8Array(buffer);
+		let binary = '';
+		const chunkSize = 8192; // Process in chunks to avoid stack overflow
+		
+		for (let i = 0; i < bytes.length; i += chunkSize) {
+			const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+			binary += String.fromCharCode(...chunk);
+		}
+		
+		return btoa(binary);
+	};
+
 	const onSubmit = async (values: FormValues) => {
 		if (values.type === "") return;
 
@@ -132,37 +143,34 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 			}
 
 			if (values.type === "pdf") {
-				if (!isAIEnabled)
-					throw new Error(t`This feature requires AI Integration to be enabled. Please enable it in the settings.`);
-
+			console.log("[Import] Step 1: Converting PDF to base64");
+			try {
 				const arrayBuffer = await values.file.arrayBuffer();
-				const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-
+				console.log("[Import] Step 1.5: Got arrayBuffer, length:", arrayBuffer.byteLength);
+				const base64 = arrayBufferToBase64(arrayBuffer);
+				console.log("[Import] Step 3: About to call client.ai.parsePdf");
+				console.log("[Import] Step 3.1: client object:", client);
+				console.log("[Import] Step 3.2: client.ai object:", client.ai);
+				console.log("[Import] Step 3.3: client.ai.parsePdf function:", typeof client.ai.parsePdf);
+				
 				data = await client.ai.parsePdf({
-					provider,
-					model,
-					apiKey,
-					baseURL,
 					file: { name: values.file.name, data: base64 },
 				});
+				console.log("[Import] Step 4: Received data from API");
+			} catch (pdfError) {
+				console.error("[Import] Error in PDF processing:", pdfError);
+				throw pdfError;
 			}
-
+		}
 			if (values.type === "docx") {
-				if (!isAIEnabled)
-					throw new Error(t`This feature requires AI Integration to be enabled. Please enable it in the settings.`);
-
 				const arrayBuffer = await values.file.arrayBuffer();
-				const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+			const base64 = arrayBufferToBase64(arrayBuffer);
 				const mediaType =
 					values.file.type === "application/msword"
 						? ("application/msword" as const)
 						: ("application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const);
 
 				data = await client.ai.parseDocx({
-					provider,
-					model,
-					apiKey,
-					baseURL,
 					mediaType,
 					file: { name: values.file.name, data: base64 },
 				});
@@ -193,8 +201,7 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 				</DialogTitle>
 				<DialogDescription>
 					<Trans>
-						Continue where you left off by importing an existing resume you created with another
-						resume builder. Supported formats include PDF, Microsoft Word, and JSON files.
+						Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word, and JSON files. PDF and Word documents are automatically parsed using AI.
 					</Trans>
 				</DialogDescription>
 			</DialogHeader>
@@ -218,22 +225,8 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 									{ value: "reactive-resume-json", label: "JSON Format" },
 									{ value: "reactive-resume-v4-json", label: "JSON Format (Legacy)" },
 											{ value: "json-resume-json", label: "JSON Resume" },
-											{
-												value: "pdf",
-												label: (
-													<div className="flex items-center gap-x-2">
-														PDF <Badge>{t`AI`}</Badge>
-													</div>
-												),
-											},
-											{
-												value: "docx",
-												label: (
-													<div className="flex items-center gap-x-2">
-														Microsoft Word <Badge>{t`AI`}</Badge>
-													</div>
-												),
-											},
+											{ value: "pdf", label: "PDF" },
+											{ value: "docx", label: "Microsoft Word" },
 										]}
 									/>
 								</FormControl>

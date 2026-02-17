@@ -4,8 +4,25 @@ import { AISDKError, type UIMessage } from "ai";
 import { OllamaError } from "ai-sdk-ollama";
 import z, { ZodError } from "zod";
 import type { ResumeData } from "@/schema/resume/data";
+import { env } from "@/utils/env";
 import { protectedProcedure } from "../context";
-import { aiCredentialsSchema, aiProviderSchema, aiService, fileInputSchema, formatZodError } from "../services/ai";
+import { aiCredentialsOptionalSchema, aiCredentialsSchema, aiProviderSchema, aiService, fileInputSchema, formatZodError } from "../services/ai";
+
+// Helper to merge optional credentials with environment defaults
+function getAICredentialsWithDefaults(
+	input?: Partial<z.infer<typeof aiCredentialsSchema>>,
+): z.infer<typeof aiCredentialsSchema> {
+	const provider = (input?.provider || "openai") as z.infer<typeof aiProviderSchema>;
+	const model = input?.model || env.OPENAI_MODEL;
+	const apiKey = input?.apiKey || env.OPENAI_API_KEY || "";
+	const baseURL = input?.baseURL || env.OPENAI_BASE_URL;
+
+	if (!apiKey) {
+		throw new Error("OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.");
+	}
+
+	return { provider, model, apiKey, baseURL };
+}
 
 type AIProvider = z.infer<typeof aiProviderSchema>;
 
@@ -55,12 +72,12 @@ export const aiRouter = {
 			operationId: "parseResumePdf",
 			summary: "Parse a PDF file into resume data",
 			description:
-				"Extracts structured resume data from a PDF file using the specified AI provider. The file should be sent as a base64-encoded string along with AI provider credentials. Returns a complete ResumeData object. Requires authentication.",
+				"Extracts structured resume data from a PDF file using the configured AI provider (OpenAI). The file should be sent as a base64-encoded string. AI credentials are configured server-side. Returns a complete ResumeData object. Requires authentication.",
 			successDescription: "The PDF was successfully parsed into structured resume data.",
 		})
 		.input(
 			z.object({
-				...aiCredentialsSchema.shape,
+				...aiCredentialsOptionalSchema.shape,
 				file: fileInputSchema,
 			}),
 		)
@@ -72,7 +89,20 @@ export const aiRouter = {
 		})
 		.handler(async ({ input }): Promise<ResumeData> => {
 			try {
-				return await aiService.parsePdf(input);
+				console.log("[AI Router] Step 5: parsePdf handler called");
+				console.log("[AI Router] Step 6: Input file name:", input.file.name);
+				
+				const credentials = getAICredentialsWithDefaults(input);
+				console.log("[AI Router] Step 7: Credentials loaded, provider:", credentials.provider, "model:", credentials.model);
+
+				console.log("[AI Router] Step 8: Calling aiService.parsePdf");
+				const result = await aiService.parsePdf({
+					...credentials,
+					file: input.file,
+				});
+				console.log("[AI Router] Step 9: Received result from aiService");
+				
+				return result;
 			} catch (error) {
 				if (error instanceof AISDKError) {
 					throw new ORPCError("BAD_GATEWAY", { message: error.message });
@@ -93,12 +123,12 @@ export const aiRouter = {
 			operationId: "parseResumeDocx",
 			summary: "Parse a DOCX file into resume data",
 			description:
-				"Extracts structured resume data from a DOCX or DOC file using the specified AI provider. The file should be sent as a base64-encoded string along with AI provider credentials and the document's media type. Returns a complete ResumeData object. Requires authentication.",
+				"Extracts structured resume data from a DOCX or DOC file using the configured AI provider (OpenAI). The file should be sent as a base64-encoded string. AI credentials are configured server-side. Returns a complete ResumeData object. Requires authentication.",
 			successDescription: "The DOCX was successfully parsed into structured resume data.",
 		})
 		.input(
 			z.object({
-				...aiCredentialsSchema.shape,
+				...aiCredentialsOptionalSchema.shape,
 				file: fileInputSchema,
 				mediaType: z.enum([
 					"application/msword",
@@ -114,7 +144,13 @@ export const aiRouter = {
 		})
 		.handler(async ({ input }) => {
 			try {
-				return await aiService.parseDocx(input);
+				const credentials = getAICredentialsWithDefaults(input);
+
+				return await aiService.parseDocx({
+					...credentials,
+					file: input.file,
+					mediaType: input.mediaType,
+				});
 			} catch (error) {
 				if (error instanceof AISDKError) {
 					throw new ORPCError("BAD_GATEWAY", { message: error.message });

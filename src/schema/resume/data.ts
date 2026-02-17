@@ -95,7 +95,7 @@ export const summarySchema = z.object({
 export const baseItemSchema = z.object({
 	id: z.string().describe("The unique identifier for the item. Usually generated as a UUID."),
 	hidden: z.boolean().describe("Whether to hide the item from the resume."),
-	options: itemOptionsSchema.optional().describe("Display options for this item."),
+	options: itemOptionsSchema.describe("Display options for this item."),
 });
 
 export const summaryItemSchema = baseItemSchema.extend({

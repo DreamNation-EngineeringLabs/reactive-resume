@@ -15,13 +15,19 @@ const rpcHandler = new RPCHandler(router, {
 });
 
 async function handler({ request }: { request: Request }) {
+	console.log("[RPC Handler] Step 4: Request received", request.method, request.url);
+	
 	const { response } = await rpcHandler.handle(request, {
 		prefix: "/api/rpc",
 		context: { locale: await getLocale() },
 	});
 
-	if (!response) return new Response("NOT_FOUND", { status: 404 });
+	if (!response) {
+		console.log("[RPC Handler] No response, returning 404");
+		return new Response("NOT_FOUND", { status: 404 });
+	}
 
+	console.log("[RPC Handler] Response ready, status:", response.status);
 	return response;
 }
 

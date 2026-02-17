@@ -60,6 +60,14 @@ export const aiCredentialsSchema = z.object({
 	baseURL: z.string(),
 });
 
+// Optional credentials schema - allows server-side defaults
+export const aiCredentialsOptionalSchema = z.object({
+	provider: aiProviderSchema.optional(),
+	model: z.string().optional(),
+	apiKey: z.string().optional(),
+	baseURL: z.string().optional(),
+});
+
 export const fileInputSchema = z.object({
 	name: z.string(),
 	data: z.string(), // base64 encoded
@@ -84,7 +92,11 @@ type ParsePdfInput = z.infer<typeof aiCredentialsSchema> & {
 };
 
 async function parsePdf(input: ParsePdfInput): Promise<ResumeData> {
+	console.log("[AI Service] Step 10: parsePdf called");
+	console.log("[AI Service] Step 11: Getting model with provider:", input.provider);
+	
 	const model = getModel(input);
+	console.log("[AI Service] Step 12: Model created, calling generateText");
 
 	const result = await generateText({
 		model,
@@ -108,6 +120,8 @@ async function parsePdf(input: ParsePdfInput): Promise<ResumeData> {
 			},
 		],
 	});
+
+	console.log("[AI Service] Step 13: OpenAI responded successfully");
 
 	return resumeDataSchema.parse({
 		...result.output,
