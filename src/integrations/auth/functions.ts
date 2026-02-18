@@ -11,6 +11,10 @@ export const getSession = createIsomorphicFn()
 		return data;
 	})
 	.server(async (): Promise<AuthSession | null> => {
-		const result = await auth.api.getSession({ headers: getRequestHeaders() });
-		return result as AuthSession | null;
+		try {
+			const result = await auth.api.getSession({ headers: getRequestHeaders() });
+			return result as AuthSession | null;
+		} catch {
+			return null;
+		}
 	});

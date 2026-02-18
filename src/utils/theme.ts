@@ -28,9 +28,13 @@ export const getTheme = createIsomorphicFn()
 		return theme;
 	})
 	.server(async () => {
-		const cookieTheme = getCookie(storageKey);
-		if (!cookieTheme || !isTheme(cookieTheme)) return defaultTheme;
-		return cookieTheme;
+		try {
+			const cookieTheme = getCookie(storageKey);
+			if (!cookieTheme || !isTheme(cookieTheme)) return defaultTheme;
+			return cookieTheme;
+		} catch {
+			return defaultTheme;
+		}
 	});
 
 export const setThemeServerFn = createServerFn({ method: "POST" })

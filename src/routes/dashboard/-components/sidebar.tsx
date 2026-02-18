@@ -1,19 +1,12 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import { Trans } from "@lingui/react/macro";
 import {
+	ArrowLeftIcon,
 	ReadCvLogoIcon,
-	// BrainIcon,
-	// GearSixIcon,
-	// KeyIcon,
-	// ShieldCheckIcon,
-	// UserCircleIcon,
-	// WarningIcon,
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BrandIcon } from "@/components/ui/brand-icon";
 import {
 	Sidebar,
 	SidebarContent,
@@ -27,7 +20,7 @@ import {
 	SidebarMenuItem,
 	SidebarRail,
 	SidebarSeparator,
-	// useSidebarState,
+	useSidebarState,
 } from "@/components/ui/sidebar";
 import { UserDropdownMenu } from "@/components/user/dropdown-menu";
 import { env } from "@/utils/env";
@@ -47,39 +40,6 @@ const appSidebarItems = [
 	},
 ] as const satisfies SidebarItem[];
 
-// const settingsSidebarItems = [
-// 	{
-// 		icon: <UserCircleIcon />,
-// 		label: msg`Profile`,
-// 		href: "/dashboard/settings/profile",
-// 	},
-// 	{
-// 		icon: <GearSixIcon />,
-// 		label: msg`Preferences`,
-// 		href: "/dashboard/settings/preferences",
-// 	},
-// 	{
-// 		icon: <ShieldCheckIcon />,
-// 		label: msg`Authentication`,
-// 		href: "/dashboard/settings/authentication",
-// 	},
-// 	{
-// 		icon: <KeyIcon />,
-// 		label: msg`API Keys`,
-// 		href: "/dashboard/settings/api-keys",
-// 	},
-// 	{
-// 		icon: <BrainIcon />,
-// 		label: msg`Artificial Intelligence`,
-// 		href: "/dashboard/settings/ai",
-// 	},
-// 	{
-// 		icon: <WarningIcon />,
-// 		label: msg`Danger Zone`,
-// 		href: "/dashboard/settings/danger-zone",
-// 	},
-// ] as const satisfies SidebarItem[];
-
 type SidebarItemListProps = {
 	items: readonly SidebarItem[];
 };
@@ -92,9 +52,9 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 			{items.map((item) => (
 				<SidebarMenuItem key={item.href}>
 					<SidebarMenuButton asChild title={i18n.t(item.label)}>
-						<Link to={item.href} activeProps={{ className: "bg-sidebar-accent" }}>
+						<Link to={item.href} activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground" }}>
 							{item.icon}
-							<span className="shrink-0 transition-[margin,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:-ms-8 group-data-[collapsible=icon]:opacity-0">
+							<span className="shrink-0 font-medium text-sm transition-[margin,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:-ms-8 group-data-[collapsible=icon]:opacity-0">
 								{i18n.t(item.label)}
 							</span>
 						</Link>
@@ -106,33 +66,52 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 }
 
 export function DashboardSidebar() {
-	// const { state } = useSidebarState();
+	const { state } = useSidebarState();
 	const mainAppUrl = env.VITE_MAIN_APP_URL ?? "http://localhost:3000";
+	const isCollapsed = state === "collapsed";
 
 	return (
 		<Sidebar variant="sidebar" collapsible="icon">
-			<SidebarHeader>
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton asChild className="h-auto justify-center">
-							<a href={`${mainAppUrl}/placements`}>
-								{/* <BrandIcon variant="icon" className="size-6" /> */}
-								<span className="font-medium ml-2 group-data-[collapsible=icon]:hidden">Back to App</span>
-							</a>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
+			<SidebarHeader className="pb-0">
+				<div className="flex justify-between items-center px-1 gap-2 pt-1">
+					<a href={`${mainAppUrl}/placements`} className={isCollapsed ? "hidden" : ""}>
+						<img
+							className="w-48 my-4"
+							alt="Brand Logo"
+							src="/images/polymath_with_logo.png"
+							style={{ objectFit: "contain" }}
+						/>
+					</a>
+				</div>
+				{!isCollapsed && (
+					<p className="text-sm font-semibold text-sidebar-foreground/70 tracking-wide ml-3 mt-1">Menu</p>
+				)}
 			</SidebarHeader>
-
-			<SidebarSeparator />
 
 			<SidebarContent>
 				<SidebarGroup>
-					<SidebarGroupLabel>
-						<Trans>App</Trans>
+					<SidebarGroupLabel className={isCollapsed ? "" : "sr-only"}>
+						App
 					</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarItemList items={appSidebarItems} />
+					</SidebarGroupContent>
+				</SidebarGroup>
+
+				<SidebarGroup>
+					<SidebarGroupContent>
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild title="Back to App">
+									<a href={`${mainAppUrl}/placements`}>
+										<ArrowLeftIcon />
+										<span className="shrink-0 font-medium text-sm transition-[margin,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:-ms-8 group-data-[collapsible=icon]:opacity-0">
+											Back to App
+										</span>
+									</a>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
 			</SidebarContent>
@@ -144,16 +123,16 @@ export function DashboardSidebar() {
 					<SidebarMenuItem>
 						<UserDropdownMenu>
 							{({ session }) => (
-								<SidebarMenuButton className="h-auto gap-x-3 group-data-[collapsible=icon]:p-1!">
+								<SidebarMenuButton className="h-auto gap-x-3 bg-background rounded-lg group-data-[collapsible=icon]:p-1!">
 									<Avatar className="size-8 shrink-0 transition-all group-data-[collapsible=icon]:size-6">
 										<AvatarImage src={session.user.image ?? undefined} />
-										<AvatarFallback className="group-data-[collapsible=icon]:text-[0.5rem]">
+										<AvatarFallback className="bg-sidebar-primary/10 text-sidebar-primary font-semibold group-data-[collapsible=icon]:text-[0.5rem]">
 											{getInitials(session.user.name)}
 										</AvatarFallback>
 									</Avatar>
 
 									<div className="transition-[margin,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:-ms-8 group-data-[collapsible=icon]:opacity-0">
-										<p className="font-medium">{session.user.name}</p>
+										<p className="font-medium text-sm">{session.user.name}</p>
 										<p className="text-muted-foreground text-xs">{session.user.email}</p>
 									</div>
 								</SidebarMenuButton>
@@ -161,8 +140,7 @@ export function DashboardSidebar() {
 						</UserDropdownMenu>
 					</SidebarMenuItem>
 				</SidebarMenu>
-
-				{/* Copyright removed */}			</SidebarFooter>
+			</SidebarFooter>
 
 			<SidebarRail />
 		</Sidebar>

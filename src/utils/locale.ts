@@ -151,9 +151,13 @@ export const getLocale = createIsomorphicFn()
 		return locale;
 	})
 	.server(async () => {
-		const cookieLocale = getCookie(storageKey);
-		if (!cookieLocale || !isLocale(cookieLocale)) return defaultLocale;
-		return cookieLocale;
+		try {
+			const cookieLocale = getCookie(storageKey);
+			if (!cookieLocale || !isLocale(cookieLocale)) return defaultLocale;
+			return cookieLocale;
+		} catch {
+			return defaultLocale;
+		}
 	});
 
 export const setLocaleServerFn = createServerFn({ method: "POST" })
