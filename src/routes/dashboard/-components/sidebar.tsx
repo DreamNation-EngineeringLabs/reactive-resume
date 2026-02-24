@@ -4,6 +4,7 @@ import { useLingui } from "@lingui/react";
 import {
 	ArrowLeftIcon,
 	ReadCvLogoIcon,
+	UserIcon,
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,6 +38,11 @@ const appSidebarItems = [
 		icon: <ReadCvLogoIcon />,
 		label: msg`Resumes`,
 		href: "/dashboard/resumes",
+	},
+	{
+		icon: <UserIcon />,
+		label: msg`My Info`,
+		href: "/dashboard/info",
 	},
 ] as const satisfies SidebarItem[];
 

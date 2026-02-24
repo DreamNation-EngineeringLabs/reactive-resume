@@ -4,6 +4,8 @@ import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
 import { resumeDto } from "../dto/resume";
 import { resumeService } from "../services/resume";
+import { userInfoService } from "../services/user-info";
+import { aiService as resumeAiService } from "../services/resume-ai";
 
 const tagsRouter = {
 	list: protectedProcedure
@@ -143,13 +145,27 @@ export const resumeRouter = {
 			},
 		})
 		.handler(async ({ context, input }) => {
+			let data = input.withSampleData ? sampleResumeData : undefined;
+
+			// If the user wants to use their saved info, fetch it and optionally generate via AI
+			if (input.useUserInfo) {
+				const userInfo = await userInfoService.get({ userId: context.user.id });
+
+				if (userInfo) {
+					data = await resumeAiService.generateFromUserInfo({
+						userInfo,
+						jobDescription: input.jobDescription || "",
+					});
+				}
+			}
+
 			return await resumeService.create({
 				name: input.name,
 				slug: input.slug,
 				tags: input.tags,
 				locale: context.locale,
 				userId: context.user.id,
-				data: input.withSampleData ? sampleResumeData : undefined,
+				data,
 			});
 		}),
 

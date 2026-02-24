@@ -1,10 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { CaretDownIcon, MagicWandIcon, PencilSimpleLineIcon, PlusIcon, TestTubeIcon } from "@phosphor-icons/react";
-import { useMutation } from "@tanstack/react-query";
+import { CaretDownIcon, MagicWandIcon, PencilSimpleLineIcon, PlusIcon, TestTubeIcon, SparkleIcon } from "@phosphor-icons/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -21,6 +21,8 @@ import {
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useFormBlocker } from "@/hooks/use-form-blocker";
 import { authClient } from "@/integrations/auth/client";
 import { orpc, type RouterInput } from "@/integrations/orpc/client";
@@ -38,6 +40,11 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function CreateResumeDialog(_: DialogProps<"resume.create">) {
 	const closeDialog = useDialogStore((state) => state.closeDialog);
+	const [useUserInfo, setUseUserInfo] = useState(false);
+	const [jobDescription, setJobDescription] = useState("");
+
+	const { data: userInfo } = useQuery(orpc.userInfo.get.queryOptions());
+	const hasUserInfo = !!userInfo;
 
 	const { mutate: createResume, isPending } = useMutation(orpc.resume.create.mutationOptions());
 
@@ -60,22 +67,33 @@ export function CreateResumeDialog(_: DialogProps<"resume.create">) {
 	const { blockEvents } = useFormBlocker(form);
 
 	const onSubmit = (data: FormValues) => {
-		const toastId = toast.loading(t`Creating your resume...`);
+		const toastId = toast.loading(
+			useUserInfo
+				? t`Generating your tailored resume...`
+				: t`Creating your resume...`,
+		);
 
-		createResume(data, {
-			onSuccess: () => {
-				toast.success(t`Your resume has been created successfully.`, { id: toastId });
-				closeDialog();
+		createResume(
+			{
+				...data,
+				useUserInfo,
+				jobDescription: useUserInfo ? jobDescription : "",
 			},
-			onError: (error) => {
-				if (error.message === "RESUME_SLUG_ALREADY_EXISTS") {
-					toast.error(t`A resume with this slug already exists.`, { id: toastId });
-					return;
-				}
+			{
+				onSuccess: () => {
+					toast.success(t`Your resume has been created successfully.`, { id: toastId });
+					closeDialog();
+				},
+				onError: (error) => {
+					if (error.message === "RESUME_SLUG_ALREADY_EXISTS") {
+						toast.error(t`A resume with this slug already exists.`, { id: toastId });
+						return;
+					}
 
-				toast.error(error.message, { id: toastId });
+					toast.error(error.message, { id: toastId });
+				},
 			},
-		});
+		);
 	};
 
 	const onCreateSampleResume = () => {
@@ -103,7 +121,7 @@ export function CreateResumeDialog(_: DialogProps<"resume.create">) {
 	};
 
 	return (
-		<DialogContent {...blockEvents}>
+		<DialogContent {...blockEvents} className="max-w-lg">
 			<DialogHeader>
 				<DialogTitle className="flex items-center gap-x-2">
 					<PlusIcon />
@@ -118,26 +136,72 @@ export function CreateResumeDialog(_: DialogProps<"resume.create">) {
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 					<ResumeForm />
 
+					{/* Use My Info Toggle */}
+					<div className="flex items-center justify-between rounded-lg border p-3">
+						<div className="space-y-0.5">
+							<div className="flex items-center gap-x-1.5 font-medium text-sm">
+								<SparkleIcon className="size-4" />
+								<Trans>Use My Info</Trans>
+							</div>
+							<p className="text-xs text-muted-foreground">
+								{hasUserInfo ? (
+									<Trans>Generate a tailored resume from your saved info.</Trans>
+								) : (
+									<Trans>
+										Save your info first in the "My Info" tab to use this feature.
+									</Trans>
+								)}
+							</p>
+						</div>
+						<Switch
+							checked={useUserInfo}
+							onCheckedChange={setUseUserInfo}
+							disabled={!hasUserInfo}
+						/>
+					</div>
+
+					{/* Job Description (shown when Use My Info is on) */}
+					{useUserInfo && (
+						<div className="space-y-2">
+							<FormLabel>
+								<Trans>Job Description</Trans>
+							</FormLabel>
+							<Textarea
+								value={jobDescription}
+								onChange={(e) => setJobDescription(e.target.value)}
+								placeholder={t`Paste the job description here to tailor your resume for this role...`}
+								className="min-h-30 resize-y"
+							/>
+							<p className="text-xs text-muted-foreground">
+								<Trans>
+									The AI will use your info and this job description to generate an ATS-optimized resume. Leave blank for a general-purpose resume.
+								</Trans>
+							</p>
+						</div>
+					)}
+
 					<DialogFooter>
 						<ButtonGroup aria-label="Create Resume with Options" className="gap-x-px rtl:flex-row-reverse">
 							<Button type="submit" disabled={isPending}>
-								<Trans>Create</Trans>
+								{useUserInfo ? <Trans>Generate Resume</Trans> : <Trans>Create</Trans>}
 							</Button>
 
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button size="icon" disabled={isPending}>
-										<CaretDownIcon />
-									</Button>
-								</DropdownMenuTrigger>
+							{!useUserInfo && (
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button size="icon" disabled={isPending}>
+											<CaretDownIcon />
+										</Button>
+									</DropdownMenuTrigger>
 
-								<DropdownMenuContent align="end" className="w-fit">
-									<DropdownMenuItem onSelect={onCreateSampleResume}>
-										<TestTubeIcon />
-										<Trans>Create a Sample Resume</Trans>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
+									<DropdownMenuContent align="end" className="w-fit">
+										<DropdownMenuItem onSelect={onCreateSampleResume}>
+											<TestTubeIcon />
+											<Trans>Create a Sample Resume</Trans>
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							)}
 						</ButtonGroup>
 					</DialogFooter>
 				</form>

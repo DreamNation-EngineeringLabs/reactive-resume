@@ -1,5 +1,6 @@
 import * as pg from "drizzle-orm/pg-core";
 import { defaultResumeData, type ResumeData } from "@/schema/resume/data";
+import type { UserInfoData } from "@/schema/resume/user-info";
 import { generateId } from "@/utils/string";
 
 export const user = pg.pgTable(
@@ -216,6 +217,33 @@ export const resumeStatistics = pg.pgTable("resume_statistics", {
 		.defaultNow()
 		.$onUpdate(() => /* @__PURE__ */ new Date()),
 });
+
+export const userInfo = pg.pgTable(
+	"user_info",
+	{
+		id: pg
+			.uuid("id")
+			.notNull()
+			.primaryKey()
+			.$defaultFn(() => generateId()),
+		data: pg
+			.jsonb("data")
+			.notNull()
+			.$type<UserInfoData>(),
+		userId: pg
+			.uuid("user_id")
+			.notNull()
+			.unique()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: pg
+			.timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date()),
+	},
+	(t) => [pg.index().on(t.userId)],
+);
 
 export const apikey = pg.pgTable(
 	"apikey",

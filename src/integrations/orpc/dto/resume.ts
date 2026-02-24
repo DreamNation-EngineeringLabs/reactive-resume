@@ -46,7 +46,11 @@ export const resumeDto = {
 	create: {
 		input: resumeSchema
 			.pick({ name: true, slug: true, tags: true })
-			.extend({ withSampleData: z.boolean().default(false) }),
+			.extend({
+				withSampleData: z.boolean().default(false),
+				jobDescription: z.string().default("").describe("Optional job description to tailor the resume for."),
+				useUserInfo: z.boolean().default(false).describe("If true, use the user's saved info to generate the resume."),
+			}),
 		output: z.string().describe("The ID of the created resume."),
 	},
 

@@ -5,6 +5,7 @@ import { printerRouter } from "./printer";
 import { resumeRouter } from "./resume";
 import { statisticsRouter } from "./statistics";
 import { storageRouter } from "./storage";
+import { userInfoRouter } from "./user-info";
 
 export default {
 	ai: aiRouter,
@@ -14,4 +15,5 @@ export default {
 	storage: storageRouter,
 	printer: printerRouter,
 	statistics: statisticsRouter,
+	userInfo: userInfoRouter,
 };
