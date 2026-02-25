@@ -47,6 +47,10 @@ ${atsRules}
    - "Languages" for languages
    - etc.
 
+7. IMPORTANT: For EVERY item in EVERY section, always set options.showLinkInTitle to true.
+   This renders the website URL as a hyperlink on the title instead of a separate line, saving valuable space.
+   Example: { "id": "...", "hidden": false, "options": { "showLinkInTitle": true }, ... }
+
 ## OUTPUT
 Output ONLY valid JSON conforming to the resume data schema. No markdown, no explanations.
 `;
@@ -86,12 +90,23 @@ async function generateFromUserInfo(input: GenerateInput): Promise<ResumeData> {
 		});
 
 		// Merge AI output with defaults for metadata/picture/custom sections
-		return resumeDataSchema.parse({
+		const parsed = resumeDataSchema.parse({
 			...result.output,
 			customSections: [],
 			picture: userInfo.picture,
 			metadata: defaultResumeData.metadata,
 		});
+
+		// Ensure showLinkInTitle is true on all items
+		for (const section of Object.values(parsed.sections)) {
+			if ("items" in section && Array.isArray(section.items)) {
+				for (const item of section.items) {
+					item.options = { ...item.options, showLinkInTitle: true };
+				}
+			}
+		}
+
+		return parsed;
 	} catch (error) {
 		console.error("[Resume AI] Failed to generate resume via AI, falling back to simple mapping:", error);
 		return mapUserInfoToResumeData(userInfo);
@@ -108,6 +123,14 @@ function buildUserPrompt(userInfo: UserInfoData, jobDescription: string): string
 	}
 
 	return prompt;
+}
+
+/** Sets showLinkInTitle: true on every item in an array */
+function withLinkInTitle<T extends { options?: { showLinkInTitle?: boolean } }>(items: T[]): T[] {
+	return items.map((item) => ({
+		...item,
+		options: { ...item.options, showLinkInTitle: true },
+	}));
 }
 
 /**
@@ -130,73 +153,73 @@ function mapUserInfoToResumeData(userInfo: UserInfoData): ResumeData {
 				title: "Profiles",
 				columns: 1,
 				hidden: userInfo.profiles.length === 0,
-				items: userInfo.profiles,
+				items: withLinkInTitle(userInfo.profiles),
 			},
 			experience: {
 				title: "Experience",
 				columns: 1,
 				hidden: userInfo.experience.length === 0,
-				items: userInfo.experience,
+				items: withLinkInTitle(userInfo.experience),
 			},
 			education: {
 				title: "Education",
 				columns: 1,
 				hidden: userInfo.education.length === 0,
-				items: userInfo.education,
+				items: withLinkInTitle(userInfo.education),
 			},
 			projects: {
 				title: "Projects",
 				columns: 1,
 				hidden: userInfo.projects.length === 0,
-				items: userInfo.projects,
+				items: withLinkInTitle(userInfo.projects),
 			},
 			skills: {
 				title: "Skills",
 				columns: 1,
 				hidden: userInfo.skills.length === 0,
-				items: userInfo.skills,
+				items: withLinkInTitle(userInfo.skills),
 			},
 			languages: {
 				title: "Languages",
 				columns: 1,
 				hidden: userInfo.languages.length === 0,
-				items: userInfo.languages,
+				items: withLinkInTitle(userInfo.languages),
 			},
 			interests: {
 				title: "Interests",
 				columns: 1,
 				hidden: userInfo.interests.length === 0,
-				items: userInfo.interests,
+				items: withLinkInTitle(userInfo.interests),
 			},
 			awards: {
 				title: "Achievements",
 				columns: 1,
 				hidden: userInfo.awards.length === 0,
-				items: userInfo.awards,
+				items: withLinkInTitle(userInfo.awards),
 			},
 			certifications: {
 				title: "Certifications",
 				columns: 1,
 				hidden: userInfo.certifications.length === 0,
-				items: userInfo.certifications,
+				items: withLinkInTitle(userInfo.certifications),
 			},
 			publications: {
 				title: "Publications",
 				columns: 1,
 				hidden: userInfo.publications.length === 0,
-				items: userInfo.publications,
+				items: withLinkInTitle(userInfo.publications),
 			},
 			volunteer: {
 				title: "Volunteer Experience",
 				columns: 1,
 				hidden: userInfo.volunteer.length === 0,
-				items: userInfo.volunteer,
+				items: withLinkInTitle(userInfo.volunteer),
 			},
 			references: {
 				title: "References",
 				columns: 1,
 				hidden: userInfo.references.length === 0,
-				items: userInfo.references,
+				items: withLinkInTitle(userInfo.references),
 			},
 		},
 	};
