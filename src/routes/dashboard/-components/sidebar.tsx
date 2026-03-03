@@ -24,7 +24,7 @@ import {
 	useSidebarState,
 } from "@/components/ui/sidebar";
 import { UserDropdownMenu } from "@/components/user/dropdown-menu";
-import { env } from "@/utils/env";
+import { getSourceUrl } from "@/utils/source-url";
 import { getInitials } from "@/utils/string";
 
 type SidebarItem = {
@@ -73,7 +73,7 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 
 export function DashboardSidebar() {
 	const { state } = useSidebarState();
-	const mainAppUrl = env.VITE_MAIN_APP_URL ?? "http://localhost:3000";
+	const mainAppUrl = getSourceUrl();
 	const isCollapsed = state === "collapsed";
 
 	return (

@@ -240,7 +240,6 @@ class S3StorageService implements StorageService {
 			Bucket: this.bucket,
 			Key: key,
 			Body: data,
-			ACL: "public-read",
 			ContentType: contentType,
 		});
 

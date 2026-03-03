@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { env } from "@/utils/env";
 import { getDashboardSidebarServerFn, setDashboardSidebarServerFn } from "./-components/functions";
 import { DashboardSidebar } from "./-components/sidebar";
+import { getSourceUrl } from "@/utils/source-url";
 
 export const Route = createFileRoute("/dashboard")({
 	component: RouteComponent,
@@ -29,7 +29,7 @@ function RouteComponent() {
 
 	// Handle browser back button to redirect to main app
 	useEffect(() => {
-		const mainAppUrl = env.VITE_MAIN_APP_URL ?? "http://localhost:3000";
+		const mainAppUrl = getSourceUrl();
 		
 		// Push a state to enable back button detection
 		window.history.pushState({ resumeApp: true }, "");

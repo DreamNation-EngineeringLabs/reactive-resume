@@ -23,7 +23,7 @@ async function handler({ request }: { request: Request }) {
     }
 
     try {
-        const secret = env.MAIN_APP_SECRET || env.AUTH_SECRET;
+        const secret = env.AUTH_SECRET;
         if (!secret) {
             console.error("Missing MAIN_APP_SECRET or AUTH_SECRET");
             return errorRedirect("server_configuration");
@@ -34,6 +34,7 @@ async function handler({ request }: { request: Request }) {
             name: string;
             username: string;
             userId: string;
+            source_url?: string;
         };
 
         if (!decoded.email) {
@@ -77,6 +78,14 @@ async function handler({ request }: { request: Request }) {
                 headers.append(key, value);
             }
         });
+
+        // Set source_url cookie so frontend can redirect back to correct tenant dashboard
+        if (decoded.source_url) {
+            headers.append(
+                "Set-Cookie",
+                `source_url=${encodeURIComponent(decoded.source_url)}; Path=/; SameSite=Lax; Max-Age=86400`
+            );
+        }
 
         // Redirect to dashboard
         headers.set("Location", "/dashboard");
