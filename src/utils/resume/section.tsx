@@ -16,7 +16,6 @@ import {
 	HandHeartIcon,
 	type IconProps,
 	ImageIcon,
-	InfoIcon,
 	LayoutIcon,
 	MessengerLogoIcon,
 	NotepadIcon,
@@ -49,8 +48,7 @@ export type RightSidebarSection =
 	| "notes"
 	| "sharing"
 	| "statistics"
-	| "export"
-	| "information";
+	| "export";
 
 export type SidebarSection = LeftSidebarSection | RightSidebarSection;
 
@@ -84,7 +82,6 @@ export const rightSidebarSections: RightSidebarSection[] = [
 	"sharing",
 	"statistics",
 	"export",
-	"information",
 ] as const;
 
 export const getSectionTitle = (type: SidebarSection | CustomOnlyType): string => {
@@ -122,7 +119,6 @@ export const getSectionTitle = (type: SidebarSection | CustomOnlyType): string =
 			.with("sharing", () => t`Sharing`)
 			.with("statistics", () => t`Statistics`)
 			.with("export", () => t`Export`)
-			.with("information", () => t`Information`)
 
 			.exhaustive()
 	);
@@ -165,7 +161,6 @@ export const getSectionIcon = (type: SidebarSection | CustomOnlyType, props?: Ic
 			.with("sharing", () => <ShareFatIcon {...iconProps} />)
 			.with("statistics", () => <ChartLineIcon {...iconProps} />)
 			.with("export", () => <DownloadIcon {...iconProps} />)
-			.with("information", () => <InfoIcon {...iconProps} />)
 
 			.exhaustive()
 	);

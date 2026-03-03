@@ -68,43 +68,11 @@ export function UserDropdownMenu({ children }: Props) {
 
 			<DropdownMenuContent align="start" side="top">
 				<DropdownMenuGroup>
-					<DropdownMenuSub>
-						<DropdownMenuSubTrigger>
-							<TranslateIcon />
-							<Trans>Language</Trans>
-						</DropdownMenuSubTrigger>
-						<DropdownMenuSubContent className="max-h-[400px] overflow-y-auto">
-							<DropdownMenuRadioGroup value={i18n.locale} onValueChange={handleLocaleChange}>
-								{Object.entries(localeMap).map(([value, label]) => (
-									<DropdownMenuRadioItem key={value} value={value}>
-										{i18n.t(label)}
-									</DropdownMenuRadioItem>
-								))}
-							</DropdownMenuRadioGroup>
-						</DropdownMenuSubContent>
-					</DropdownMenuSub>
-
-					<DropdownMenuSub>
-						<DropdownMenuSubTrigger>
-							<PaletteIcon />
-							<Trans>Theme</Trans>
-						</DropdownMenuSubTrigger>
-						<DropdownMenuSubContent>
-							<DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
-								<DropdownMenuRadioItem value="light">
-									<Trans>Light</Trans>
-								</DropdownMenuRadioItem>
-								<DropdownMenuRadioItem value="dark">
-									<Trans>Dark</Trans>
-								</DropdownMenuRadioItem>
-							</DropdownMenuRadioGroup>
-						</DropdownMenuSubContent>
-					</DropdownMenuSub>
+					<DropdownMenuItem disabled>
+						<Trans>Signed in as {session.user.name}</Trans>
+					</DropdownMenuItem>
 				</DropdownMenuGroup>
-
-				<DropdownMenuSeparator />
-
-				{/* Logout removed */}			</DropdownMenuContent>
+			</DropdownMenuContent>
 		</DropdownMenu>
 	);
 }
