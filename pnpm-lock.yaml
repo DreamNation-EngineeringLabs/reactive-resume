@@ -170,6 +170,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.3
       monaco-editor:
         specifier: ^0.55.1
         version: 0.55.1
