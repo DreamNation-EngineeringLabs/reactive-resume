@@ -1,7 +1,9 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import type { BetterFetchOption } from "better-auth/client";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useToggle } from "usehooks-ts";
 import z from "zod";
