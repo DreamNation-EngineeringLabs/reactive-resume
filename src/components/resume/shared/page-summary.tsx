@@ -13,6 +13,7 @@ export function PageSummary({ className }: PageSummaryProps) {
 
 	return (
 		<section
+			data-section-type="summary"
 			className={cn(
 				"page-section page-section-summary",
 				section.hidden && "hidden",

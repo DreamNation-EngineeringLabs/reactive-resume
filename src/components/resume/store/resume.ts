@@ -35,6 +35,11 @@ const _syncResume = (resume: Resume) => {
 
 const syncResume = debounce(_syncResume, 500, { signal });
 
+/** Flush any pending debounced save to DB immediately */
+export function flushResumeSync() {
+	syncResume.flush();
+}
+
 let errorToastId: string | number | undefined;
 
 type PartializedState = { resume: Resume | null };

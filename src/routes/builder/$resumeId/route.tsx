@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, stripSearchParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie, setCookie } from "@tanstack/react-start/server";
 import type React from "react";
@@ -13,13 +13,22 @@ import { useResumeStore } from "@/components/resume/store/resume";
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { orpc } from "@/integrations/orpc/client";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { BuilderHeader } from "./-components/header";
 import { BuilderSidebarLeft } from "./-sidebar/left";
 import { BuilderSidebarRight } from "./-sidebar/right";
 import { useBuilderSidebar, useBuilderSidebarStore } from "./-store/sidebar";
 
+const builderSearchSchema = z.object({
+	openAts: z.boolean().optional().default(false),
+});
+
 export const Route = createFileRoute("/builder/$resumeId")({
 	component: RouteComponent,
+	validateSearch: zodValidator(builderSearchSchema),
+	search: {
+		middlewares: [stripSearchParams({ openAts: false })],
+	},
 	beforeLoad: async ({ context }) => {
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });
 		return { session: context.session };

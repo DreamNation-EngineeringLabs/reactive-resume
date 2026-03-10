@@ -1,4 +1,5 @@
 import { aiRouter } from "./ai";
+import { atsRouter } from "./ats";
 import { authRouter } from "./auth";
 import { flagsRouter } from "./flags";
 import { printerRouter } from "./printer";
@@ -9,6 +10,7 @@ import { userInfoRouter } from "./user-info";
 
 export default {
 	ai: aiRouter,
+	ats: atsRouter,
 	auth: authRouter,
 	flags: flagsRouter,
 	resume: resumeRouter,

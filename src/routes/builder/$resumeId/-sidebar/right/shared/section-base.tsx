@@ -7,9 +7,10 @@ import { useSectionStore } from "../../../-store/section";
 
 type Props = React.ComponentProps<typeof AccordionContent> & {
 	type: RightSidebarSection;
+	extra?: React.ReactNode;
 };
 
-export function SectionBase({ type, className, ...props }: Props) {
+export function SectionBase({ type, className, extra, ...props }: Props) {
 	const collapsed = useSectionStore((state) => state.sections[type]?.collapsed ?? false);
 	const toggleCollapsed = useSectionStore((state) => state.toggleCollapsed);
 
@@ -34,6 +35,8 @@ export function SectionBase({ type, className, ...props }: Props) {
 						{getSectionIcon(type)}
 						<h2 className="line-clamp-1 font-bold text-2xl tracking-tight">{getSectionTitle(type)}</h2>
 					</div>
+
+					{extra}
 				</div>
 
 				<AccordionContent

@@ -10,7 +10,7 @@ const themeSchema = z.union([z.literal("light"), z.literal("dark")]);
 export type Theme = z.infer<typeof themeSchema>;
 
 const storageKey = "theme";
-const defaultTheme: Theme = "dark";
+const defaultTheme: Theme = "light";
 
 export const themeMap = {
 	light: msg`Light`,
@@ -23,18 +23,10 @@ export function isTheme(theme: string): theme is Theme {
 
 export const getTheme = createIsomorphicFn()
 	.client(() => {
-		const theme = Cookies.get(storageKey);
-		if (!theme || !isTheme(theme)) return defaultTheme;
-		return theme;
+		return "light" as Theme;
 	})
 	.server(async () => {
-		try {
-			const cookieTheme = getCookie(storageKey);
-			if (!cookieTheme || !isTheme(cookieTheme)) return defaultTheme;
-			return cookieTheme;
-		} catch {
-			return defaultTheme;
-		}
+		return "light" as Theme;
 	});
 
 export const setThemeServerFn = createServerFn({ method: "POST" })

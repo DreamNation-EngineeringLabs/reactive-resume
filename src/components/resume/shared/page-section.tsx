@@ -18,7 +18,7 @@ export function PageSection<T extends SectionType>({ type, className, children }
 	if (items.length === 0) return null;
 
 	return (
-		<section className={cn(`page-section page-section-${type}`, className)}>
+		<section data-section-type={type} className={cn(`page-section page-section-${type}`, className)}>
 			<h6 className="mb-1.5 text-(--page-primary-color)">{section.title || getSectionTitle(type)}</h6>
 
 			<div
@@ -26,7 +26,12 @@ export function PageSection<T extends SectionType>({ type, className, children }
 				style={{ gridTemplateColumns: `repeat(${section.columns}, 1fr)` }}
 			>
 				{items.map((item) => (
-					<div key={item.id} className={cn(`section-item section-item-${type} print:break-inside-avoid`)}>
+					<div
+						key={item.id}
+						data-section-item-id={item.id}
+						data-section-item-type={type}
+						className={cn(`section-item section-item-${type} print:break-inside-avoid`)}
+					>
 						{children(item)}
 					</div>
 				))}

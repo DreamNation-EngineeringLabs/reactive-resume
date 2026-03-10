@@ -24,6 +24,7 @@ import {
 	ReadCvLogoIcon,
 	ShareFatIcon,
 	StarIcon,
+	TargetIcon,
 	TextTIcon,
 	TranslateIcon,
 	TrophyIcon,
@@ -33,7 +34,7 @@ import { match } from "ts-pattern";
 import type { SectionType } from "@/schema/resume/data";
 import { cn } from "../style";
 
-export type LeftSidebarSection = "picture" | "basics" | "summary" | SectionType | "custom";
+export type LeftSidebarSection = "basics" | "summary" | SectionType | "custom";
 
 // CustomSectionType values that are not in SectionType (used in custom sections only)
 type CustomOnlyType = "cover-letter";
@@ -48,12 +49,12 @@ export type RightSidebarSection =
 	| "notes"
 	| "sharing"
 	| "statistics"
+	| "ats-score"
 	| "export";
 
 export type SidebarSection = LeftSidebarSection | RightSidebarSection;
 
 export const leftSidebarSections: LeftSidebarSection[] = [
-	"picture",
 	"basics",
 	"summary",
 	"profiles",
@@ -81,6 +82,7 @@ export const rightSidebarSections: RightSidebarSection[] = [
 	"notes",
 	"sharing",
 	"statistics",
+	"ats-score",
 	"export",
 ] as const;
 
@@ -118,6 +120,7 @@ export const getSectionTitle = (type: SidebarSection | CustomOnlyType): string =
 			.with("notes", () => t`Notes`)
 			.with("sharing", () => t`Sharing`)
 			.with("statistics", () => t`Statistics`)
+			.with("ats-score", () => t`ATS Score`)
 			.with("export", () => t`Export`)
 
 			.exhaustive()
@@ -160,6 +163,7 @@ export const getSectionIcon = (type: SidebarSection | CustomOnlyType, props?: Ic
 			.with("notes", () => <NotepadIcon {...iconProps} />)
 			.with("sharing", () => <ShareFatIcon {...iconProps} />)
 			.with("statistics", () => <ChartLineIcon {...iconProps} />)
+			.with("ats-score", () => <TargetIcon {...iconProps} />)
 			.with("export", () => <DownloadIcon {...iconProps} />)
 
 			.exhaustive()

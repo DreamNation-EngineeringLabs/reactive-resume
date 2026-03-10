@@ -4,6 +4,7 @@ import { useLingui } from "@lingui/react";
 import {
 	ArrowLeftIcon,
 	ReadCvLogoIcon,
+	TargetIcon,
 	UserIcon,
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
@@ -43,6 +44,11 @@ const appSidebarItems = [
 		icon: <UserIcon />,
 		label: msg`My Info`,
 		href: "/dashboard/info",
+	},
+	{
+		icon: <TargetIcon />,
+		label: msg`ATS Score`,
+		href: "/dashboard/ats-score",
 	},
 ] as const satisfies SidebarItem[];
 
