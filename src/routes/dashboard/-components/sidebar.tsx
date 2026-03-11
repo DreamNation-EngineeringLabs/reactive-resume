@@ -79,21 +79,33 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 
 export function DashboardSidebar() {
 	const { state } = useSidebarState();
-	const mainAppUrl = getSourceUrl();
 	const isCollapsed = state === "collapsed";
+
+	const handleBackClick = () => {
+		const url = getSourceUrl();
+		console.log("[Sidebar] Back to App clicked, source URL:", url);
+		window.location.href = `${url}/placements`;
+	};
+
+	const handleLogoClick = () => {
+		const url = getSourceUrl();
+		console.log("[Sidebar] Logo clicked, source URL:", url);
+		window.location.href = `${url}/placements`;
+	};
 
 	return (
 		<Sidebar variant="sidebar" collapsible="icon">
 			<SidebarHeader className="pb-0">
 				<div className="flex justify-between items-center px-1 gap-2 pt-1">
-					<a href={`${mainAppUrl}/placements`} className={isCollapsed ? "hidden" : ""}>
+					{/* biome-ignore lint: onClick handles navigation */}
+					<button type="button" onClick={handleLogoClick} className={isCollapsed ? "hidden" : ""}>
 						<img
 							className="w-48 my-4"
 							alt="Brand Logo"
 							src="/images/polymath_with_logo.png"
 							style={{ objectFit: "contain" }}
 						/>
-					</a>
+					</button>
 				</div>
 				{!isCollapsed && (
 					<p className="text-sm font-semibold text-sidebar-foreground/70 tracking-wide ml-3 mt-1">Menu</p>
@@ -115,12 +127,13 @@ export function DashboardSidebar() {
 						<SidebarMenu>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild title="Back to App">
-									<a href={`${mainAppUrl}/placements`}>
+									{/* biome-ignore lint: onClick handles navigation */}
+									<button type="button" onClick={handleBackClick}>
 										<ArrowLeftIcon />
 										<span className="shrink-0 font-medium text-sm transition-[margin,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:-ms-8 group-data-[collapsible=icon]:opacity-0">
 											Back to App
 										</span>
-									</a>
+									</button>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 						</SidebarMenu>

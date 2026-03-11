@@ -47,6 +47,11 @@ msgstr "{0, plural, other {# 项}}"
 msgid "{column, plural, one {# Column} other {# Columns}}"
 msgstr "{column, plural, other {# 栏}}"
 
+#. placeholder {0}: keywords.length - 8
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "+{0} more"
+msgstr ""
+
 #: src/routes/_home/-sections/hero.tsx
 msgid "<0>Finally,</0><1>A free and open-source resume builder</1>"
 msgstr "<0>终于，</0><1>一款免费、开源的简历生成器</1>"
@@ -57,8 +62,12 @@ msgid "<0>Frequently</0><1>Asked</1><2>Questions</2>"
 msgstr "<0>常见</0><1>问题</1><2>解答</2>"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-msgid "<0>Thank you for using Reactive Resume! This app is a labor of love, created mostly in my spare time, with wonderful support from open-source contributors around the world.</0><1>If Reactive Resume has been helpful to you, and you'd like to help keep it free and open for everyone, please consider making a donation. Every little bit is appreciated!</1>"
-msgstr "<0>感谢你使用 Reactive Resume！这个应用是我在业余时间倾心打造的作品，并得到了全球开源贡献者的鼎力支持。</0><1>如果 Reactive Resume 对你有所帮助，并且你希望它能继续为所有人免费开放，请考虑捐赠支持。每一份心意我们都万分感激！</1>"
+msgid "<0>Thank you for using our resume builder! If you have any questions or feedback, please don't hesitate to reach out.</0><1>Check out the documentation below to learn more about all the features available to help you create the perfect resume.</1>"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
+#~ msgid "<0>Thank you for using Reactive Resume! This app is a labor of love, created mostly in my spare time, with wonderful support from open-source contributors around the world.</0><1>If Reactive Resume has been helpful to you, and you'd like to help keep it free and open for everyone, please consider making a donation. Every little bit is appreciated!</1>"
+#~ msgstr "<0>感谢你使用 Reactive Resume！这个应用是我在业余时间倾心打造的作品，并得到了全球开源贡献者的鼎力支持。</0><1>如果 Reactive Resume 对你有所帮助，并且你希望它能继续为所有人免费开放，请考虑捐赠支持。每一份心意我们都万分感激！</1>"
 
 #: src/dialogs/api-key/create.tsx
 msgid "1 month"
@@ -71,6 +80,10 @@ msgstr "1 年"
 #: src/routes/_home/-sections/features.tsx
 msgid "12+ Templates"
 msgstr "12+ 个模板"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "2018 – 2022"
+msgstr ""
 
 #: src/dialogs/api-key/create.tsx
 msgid "3 months"
@@ -121,6 +134,10 @@ msgstr "当然可以！你只需点击一下即可将简历导出为 PDF。导�
 #: src/routes/_home/-sections/features.tsx
 msgid "Access your resumes and data programmatically using the API."
 msgstr "使用 API 以编程方式访问你的简历和数据。"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Achievements"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom-fields.tsx
 msgid "Add a custom field"
@@ -187,6 +204,14 @@ msgstr "添加新技能"
 msgid "Add a new volunteer experience"
 msgstr "添加新的志愿者经历"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Achievement"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Certification"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Add Column After"
 msgstr "在后面添加列"
@@ -195,9 +220,41 @@ msgstr "在后面添加列"
 msgid "Add Column Before"
 msgstr "在前面添加列"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Education"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Experience"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Interest"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Language"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/layout/pages.tsx
 msgid "Add Page"
 msgstr "添加页面"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Profile"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Project"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Publication"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Reference"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Add Row After"
@@ -207,8 +264,24 @@ msgstr "在后面添加行"
 msgid "Add Row Before"
 msgstr "在前面添加行"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Skill"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Volunteer Experience"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add your details here once. When you create a new resume, this information will be used to generate a tailored, ATS-friendly resume. Changes here won't affect existing resumes."
+msgstr ""
+
 #: src/components/ai/chat.tsx
 msgid "Added"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Advanced"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -217,8 +290,8 @@ msgstr "南非语"
 
 #: src/dialogs/resume/import.tsx
 #: src/dialogs/resume/import.tsx
-msgid "AI"
-msgstr "AI（人工智能）"
+#~ msgid "AI"
+#~ msgstr "AI（人工智能）"
 
 #: src/components/ai/chat.tsx
 msgid "AI Chat"
@@ -228,13 +301,17 @@ msgstr ""
 msgid "Albanian"
 msgstr "阿尔巴尼亚语"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "All suggestions have been handled. Re-score to see updated results."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Allow Public Access"
 msgstr "允许公开访问"
 
 #: src/routes/auth/register.tsx
-msgid "Already have an account? <0><1>Sign in now <2/></1></0>"
-msgstr "已经有账号？<0><1>立即登录 <2/></1></0>"
+#~ msgid "Already have an account? <0><1>Sign in now <2/></1></0>"
+#~ msgstr "已经有账号？<0><1>立即登录 <2/></1></0>"
 
 #: src/utils/locale.ts
 msgid "Amharic"
@@ -275,7 +352,6 @@ msgstr "API Key"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "API Keys"
 msgstr "API Keys"
@@ -285,12 +361,29 @@ msgid "API Reference"
 msgstr "API 参考"
 
 #: src/routes/dashboard/-components/sidebar.tsx
-msgid "App"
-msgstr "应用"
+#~ msgid "App"
+#~ msgstr "应用"
 
 #: src/routes/_home/-sections/statistics.tsx
 msgid "Application Statistics"
 msgstr "应用统计数据"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Applied"
+msgstr ""
+
+#. placeholder {0}: toApply.length
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Applied {0} suggestions"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply All"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Arabic"
@@ -325,12 +418,12 @@ msgid "Are you sure you want to remove password protection?"
 msgstr "你确定要移除密码保护吗？"
 
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Area of Study"
 msgstr "学习领域"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Artificial Intelligence"
 msgstr "人工智能"
@@ -343,9 +436,15 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "宽高比"
 
-#: src/components/command-palette/pages/navigation.tsx
-#: src/components/command-palette/pages/navigation.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/ats-score/index.tsx
+#: src/utils/resume/section.tsx
+msgid "ATS Score"
+msgstr ""
+
+#: src/components/command-palette/pages/navigation.tsx
+#: src/components/command-palette/pages/navigation.tsx
 #: src/routes/dashboard/settings/authentication/index.tsx
 msgid "Authentication"
 msgstr "身份验证"
@@ -353,6 +452,10 @@ msgstr "身份验证"
 #: src/routes/_home/-sections/features.tsx
 msgid "Available in multiple languages. If you would like to contribute, check out Crowdin."
 msgstr "支持多种语言。如果你愿意贡献翻译，请访问 Crowdin。"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Awarder"
+msgstr ""
 
 #: src/dialogs/resume/sections/award.tsx
 msgctxt "(noun) person, organization, or entity that gives an award"
@@ -383,6 +486,7 @@ msgstr "备份码已复制到剪贴板。"
 msgid "Base URL (Optional)"
 msgstr "基础 URL（可选）"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Basics"
 msgstr "基础"
@@ -411,6 +515,10 @@ msgstr "边框半径"
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Border Width"
 msgstr "边框宽度"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Brevity"
+msgstr ""
 
 #: src/components/command-palette/index.tsx
 msgid "Builder Command Palette"
@@ -481,6 +589,10 @@ msgstr "取消"
 msgid "Catalan"
 msgstr "加泰罗尼亚语"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Category Breakdown"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Center Align"
 msgstr "居中对齐"
@@ -489,6 +601,7 @@ msgstr "居中对齐"
 msgid "Center view"
 msgstr "视图居中"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Certifications"
 msgstr "证书"
@@ -559,6 +672,7 @@ msgid "Community"
 msgstr "社区"
 
 #: src/dialogs/resume/sections/experience.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Company"
 msgstr "公司"
 
@@ -595,8 +709,12 @@ msgid "Continue where you left off"
 msgstr "从上次中断的地方继续"
 
 #: src/dialogs/resume/import.tsx
-msgid "Continue where you left off by importing an existing resume you created using Reactive Resume or any another resume builder. Supported formats include PDF, Microsoft Word, as well as JSON files from Reactive Resume."
-msgstr "通过导入你使用 Reactive Resume 或其他简历生成器创建的现有简历，从上次中断的地方继续。支持的格式包括 PDF、Microsoft Word 以及来自 Reactive Resume 的 JSON 文件。"
+#~ msgid "Continue where you left off by importing an existing resume you created using Reactive Resume or any another resume builder. Supported formats include PDF, Microsoft Word, as well as JSON files from Reactive Resume."
+#~ msgstr "通过导入你使用 Reactive Resume 或其他简历生成器创建的现有简历，从上次中断的地方继续。支持的格式包括 PDF、Microsoft Word 以及来自 Reactive Resume 的 JSON 文件。"
+
+#: src/dialogs/resume/import.tsx
+msgid "Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word, and JSON files. PDF and Word documents are automatically parsed using AI."
+msgstr ""
 
 #: src/routes/_home/-sections/donate.tsx
 msgid "Contributions fund bug fixes, security updates, and continuous improvements to keep the app running smoothly."
@@ -647,8 +765,8 @@ msgid "Create"
 msgstr "创建"
 
 #: src/routes/auth/register.tsx
-msgid "Create a new account"
-msgstr "创建新账号"
+#~ msgid "Create a new account"
+#~ msgstr "创建新账号"
 
 #: src/dialogs/api-key/create.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
@@ -758,7 +876,6 @@ msgstr "捷克语"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/danger-zone.tsx
 msgid "Danger Zone"
 msgstr "危险操作区"
@@ -767,7 +884,6 @@ msgstr "危险操作区"
 msgid "Danish"
 msgstr "丹麦语"
 
-#: src/components/user/dropdown-menu.tsx
 #: src/utils/theme.ts
 msgid "Dark"
 msgstr "深色"
@@ -783,10 +899,14 @@ msgstr "数据安全"
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/publication.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Date"
 msgstr "日期"
 
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Degree"
 msgstr "学位"
 
@@ -841,6 +961,14 @@ msgstr "正在删除你的简历…"
 #: src/dialogs/resume/sections/publication.tsx
 #: src/dialogs/resume/sections/reference.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Description"
 msgstr "描述"
 
@@ -873,18 +1001,22 @@ msgstr "断开连接"
 msgid "Discord"
 msgstr "Discord 频道"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Dismiss"
+msgstr ""
+
 #: src/routes/_home/-sections/footer.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Documentation"
 msgstr "文档"
 
 #: src/routes/auth/login.tsx
-msgid "Don't have an account? <0><1>Create one now <2/></1></0>"
-msgstr "没有账号？<0><1>立即创建 <2/></1></0>"
+#~ msgid "Don't have an account? <0><1>Create one now <2/></1></0>"
+#~ msgstr "没有账号？<0><1>立即创建 <2/></1></0>"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-msgid "Donate to Reactive Resume"
-msgstr "为 Reactive Resume 捐款"
+#~ msgid "Donate to Reactive Resume"
+#~ msgstr "为 Reactive Resume 捐款"
 
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/routes/$username/$slug.tsx
@@ -948,17 +1080,17 @@ msgstr "荷兰语"
 msgid "e.g. Change my name to..."
 msgstr ""
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Education"
 msgstr "教育经历"
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Email"
 msgstr "电子邮件"
 
 #: src/routes/auth/forgot-password.tsx
-#: src/routes/auth/login.tsx
-#: src/routes/auth/register.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Email Address"
 msgstr "电子邮箱地址"
@@ -1024,6 +1156,10 @@ msgstr "请输入你的密码以确认设置双重身份验证。启用后，你
 msgid "Enter your password to disable two-factor authentication. Your account will be less secure without 2FA enabled."
 msgstr "请输入你的密码以禁用双重身份验证。关闭 2FA 后，你的账号将不再那么安全。"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Estimated score improvement"
+msgstr ""
+
 #: src/routes/_home/-sections/donate.tsx
 msgid "Every contribution, big or small, makes a huge difference to the project.<0/>Thank you for your support!"
 msgstr "每一笔捐助，无论多少，都会对项目产生巨大的积极影响。<0/>感谢你的支持！"
@@ -1036,10 +1172,19 @@ msgstr "你在此处输入的所有内容都会本地存储在浏览器中。只
 msgid "Everything you need to create, customize, and share professional resumes. Built with privacy in mind, powered by open source, and completely free forever."
 msgstr "你创建、定制和分享专业简历所需的一切。以隐私为核心设计，由开源驱动，并且永久免费。"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Excellent"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Exit Fullscreen"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Expand"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Experience"
 msgstr "工作经历"
@@ -1058,12 +1203,20 @@ msgid "Explore our diverse selection of templates, each designed to fit differen
 msgstr "探索我们丰富多样的模板，每款模板都针对不同的风格、职业和个性精心设计。Reactive Resume 目前提供 12 款模板，并将持续增加。"
 
 #: src/routes/dashboard/settings/api-keys.tsx
-msgid "Explore the API documentation to learn how to integrate Reactive Resume with your applications. Find detailed endpoints, request examples, and authentication methods."
-msgstr "查看 API 文档，了解如何在你的应用程序中集成 Reactive Resume。你将在其中找到详细的端点说明、请求示例以及身份验证方式。"
+#~ msgid "Explore the API documentation to learn how to integrate Reactive Resume with your applications. Find detailed endpoints, request examples, and authentication methods."
+#~ msgstr "查看 API 文档，了解如何在你的应用程序中集成 Reactive Resume。你将在其中找到详细的端点说明、请求示例以及身份验证方式。"
+
+#: src/routes/dashboard/settings/api-keys.tsx
+msgid "Explore the API documentation to learn how to integrate with your applications. Find"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Export"
 msgstr "导出"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Failed to score resume. Please try again."
+msgstr ""
 
 #: src/dialogs/auth/enable-two-factor.tsx
 msgid "Failed to setup two-factor authentication."
@@ -1086,6 +1239,7 @@ msgid "Flexibility"
 msgstr "灵活性"
 
 #: src/dialogs/resume/sections/language.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Fluency"
 msgstr "流利程度"
 
@@ -1120,8 +1274,8 @@ msgid "For security reasons, this key will only be displayed once."
 msgstr "出于安全原因，此密钥只会显示一次。"
 
 #: src/routes/auth/login.tsx
-msgid "Forgot Password?"
-msgstr "忘记密码？"
+#~ msgid "Forgot Password?"
+#~ msgstr "忘记密码？"
 
 #: src/routes/auth/forgot-password.tsx
 msgid "Forgot your password?"
@@ -1131,6 +1285,10 @@ msgstr "你忘记密码了吗？"
 msgctxt "Page Format (A4, Letter or Free-Form)"
 msgid "Format"
 msgstr "格式"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Formatting"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Free"
@@ -1144,6 +1302,10 @@ msgstr "自由格式"
 msgid "French"
 msgstr "法语"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Full Name"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/layout/pages.tsx
 msgid "Full Width"
 msgstr "全宽"
@@ -1152,9 +1314,25 @@ msgstr "全宽"
 msgid "Fullscreen"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "General ATS compatibility score"
+msgstr ""
+
 #: src/dialogs/resume/index.tsx
 msgid "Generate a random name"
 msgstr "生成一个随机名称"
+
+#: src/dialogs/resume/index.tsx
+msgid "Generate a tailored resume from your saved info."
+msgstr ""
+
+#: src/dialogs/resume/index.tsx
+msgid "Generate Resume"
+msgstr ""
+
+#: src/dialogs/resume/index.tsx
+msgid "Generating your tailored resume..."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "German"
@@ -1173,11 +1351,21 @@ msgstr "返回"
 msgid "Go to dashboard"
 msgstr "转到控制面板"
 
+#: src/routes/auth/login.tsx
+#: src/routes/auth/register.tsx
+msgid "Go to Dashboard"
+msgstr ""
+
 #: src/components/command-palette/pages/navigation.tsx
 msgid "Go to..."
 msgstr "前往…"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Good"
+msgstr ""
+
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Grade"
 msgstr "成绩"
 
@@ -1223,6 +1411,7 @@ msgid "Heading 6"
 msgstr "标题 6"
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Headline"
 msgstr "标题"
 
@@ -1262,6 +1451,10 @@ msgstr "隐藏"
 msgid "Hide all icons on the resume"
 msgstr "在简历中隐藏所有图标"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Hide diff"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Highlight"
 msgstr "高亮"
@@ -1296,6 +1489,10 @@ msgstr "匈牙利语"
 msgid "Icon"
 msgstr "图标"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Impact & Metrics"
+msgstr ""
+
 #: src/dialogs/resume/import.tsx
 msgid "Import"
 msgstr "导入"
@@ -1319,8 +1516,8 @@ msgid "Indonesian"
 msgstr "印尼语"
 
 #: src/utils/resume/section.tsx
-msgid "Information"
-msgstr "信息"
+#~ msgid "Information"
+#~ msgstr "信息"
 
 #: src/components/input/rich-input.tsx
 msgid "Inline Code"
@@ -1330,6 +1527,11 @@ msgstr "行内代码"
 msgid "Insert Table"
 msgstr "插入表格"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Interest"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Interests"
 msgstr "兴趣爱好"
@@ -1343,6 +1545,7 @@ msgid "Is Reactive Resume really free?"
 msgstr "Reactive Resume 真的完全免费吗？"
 
 #: src/dialogs/resume/sections/certification.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Issuer"
 msgstr "签发机构"
 
@@ -1354,9 +1557,25 @@ msgstr "意大利语"
 msgid "Italic"
 msgstr "斜体"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Jan 2020 – Present"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Japanese"
 msgstr "日语"
+
+#: src/dialogs/resume/index.tsx
+msgid "Job Description"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "John Doe"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "johndoe"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Justify Align"
@@ -1365,6 +1584,10 @@ msgstr "两端对齐"
 #: src/utils/locale.ts
 msgid "Kannada"
 msgstr "卡纳达语"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Keyword Match"
+msgstr ""
 
 #: src/dialogs/resume/sections/interest.tsx
 #: src/dialogs/resume/sections/skill.tsx
@@ -1388,13 +1611,14 @@ msgid "Landscape"
 msgstr "横向"
 
 #: src/components/command-palette/pages/preferences/language.tsx
-#: src/components/user/dropdown-menu.tsx
 #: src/dialogs/resume/sections/language.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/page.tsx
+#: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/settings/preferences.tsx
 msgid "Language"
 msgstr "语言"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Languages"
 msgstr "语言"
@@ -1460,7 +1684,6 @@ msgstr "5 级中的第 {level} 级"
 msgid "Licensed under <0>MIT</0>."
 msgstr "已获得 <0>MIT 许可</0>。"
 
-#: src/components/user/dropdown-menu.tsx
 #: src/utils/theme.ts
 msgid "Light"
 msgstr "浅色"
@@ -1473,6 +1696,10 @@ msgstr "浅色主题"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/typography.tsx
 msgid "Line Height"
 msgstr "行高"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "LinkedIn"
+msgstr ""
 
 #: src/routes/dashboard/settings/authentication/-components/hooks.tsx
 msgid "Linking your {providerName} account..."
@@ -1498,6 +1725,10 @@ msgstr "正在加载…"
 #: src/dialogs/resume/sections/experience.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Location"
 msgstr "位置"
 
@@ -1507,9 +1738,13 @@ msgstr "位置"
 msgid "Lock"
 msgstr "锁定"
 
+#: src/routes/auth/login.tsx
+msgid "Login Restricted"
+msgstr ""
+
 #: src/components/user/dropdown-menu.tsx
-msgid "Logout"
-msgstr "退出登录"
+#~ msgid "Logout"
+#~ msgstr "退出登录"
 
 #: src/routes/_home/-sections/donate.tsx
 msgid "Long-term Sustainability"
@@ -1547,6 +1782,10 @@ msgstr "页边距（水平）"
 msgid "Margin (Vertical)"
 msgstr "页边距（垂直）"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Missing Keywords"
+msgstr ""
+
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Model"
 msgstr "模型"
@@ -1559,23 +1798,43 @@ msgstr "移动到"
 msgid "Multilingual"
 msgstr "多语言"
 
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+msgid "My Info"
+msgstr ""
+
 #: src/dialogs/api-key/create.tsx
 #: src/dialogs/resume/index.tsx
 #: src/dialogs/resume/sections/interest.tsx
 #: src/dialogs/resume/sections/project.tsx
 #: src/dialogs/resume/sections/reference.tsx
 #: src/dialogs/resume/sections/skill.tsx
-#: src/routes/auth/register.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Name"
 msgstr "姓名"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Native, Fluent, etc."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
+msgid "Need Help?"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Needs Work"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Nepali"
 msgstr "尼泊尔语"
 
 #: src/dialogs/resume/sections/profile.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Network"
 msgstr "网络"
 
@@ -1608,6 +1867,10 @@ msgstr "无广告，无跟踪"
 #: src/components/ui/multiple-combobox.tsx
 msgid "No results found."
 msgstr "没找到结果。"
+
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "No resumes found. Create a resume first to use ATS scoring."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Norwegian"
@@ -1663,6 +1926,7 @@ msgid "Ordered List"
 msgstr "有序列表"
 
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Organization"
 msgstr "组织"
 
@@ -1690,8 +1954,6 @@ msgstr "通行密钥与 2FA"
 
 #: src/dialogs/auth/disable-two-factor.tsx
 #: src/dialogs/auth/enable-two-factor.tsx
-#: src/routes/auth/login.tsx
-#: src/routes/auth/register.tsx
 #: src/routes/auth/resume-password.tsx
 #: src/routes/dashboard/settings/authentication/-components/password.tsx
 msgid "Password"
@@ -1713,10 +1975,26 @@ msgstr "密码保护已被禁用。"
 msgid "Password protection has been enabled."
 msgstr "密码保护已启用。"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Paste job description here (optional)..."
+msgstr ""
+
+#: src/dialogs/resume/index.tsx
+msgid "Paste the job description here to tailor your resume for this role..."
+msgstr ""
+
 #: src/dialogs/resume/sections/education.tsx
 #: src/dialogs/resume/sections/experience.tsx
 #: src/dialogs/resume/sections/project.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Period"
 msgstr "起止时间"
 
@@ -1730,12 +2008,18 @@ msgstr "使用任意颜色、字体或设计来个性化你的简历，让它真
 
 #: src/dialogs/resume/sections/reference.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Phone"
 msgstr "电话"
 
 #: src/utils/resume/section.tsx
 msgid "Picture"
 msgstr "图片"
+
+#: src/routes/auth/register.tsx
+msgid "Please access via the main dashboard."
+msgstr ""
 
 #: src/routes/auth/reset-password.tsx
 msgid "Please enter a new password for your account"
@@ -1749,6 +2033,10 @@ msgstr "请输入简历所有者与你共享的密码以继续。"
 msgid "Please enter the URL you want to link to:"
 msgstr "请输入你想要链接到的 URL："
 
+#: src/routes/auth/login.tsx
+msgid "Please login via the main dashboard."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-components/dock.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "Please wait while your PDF is being generated..."
@@ -1757,6 +2045,10 @@ msgstr "正在生成 PDF，请稍候…"
 #: src/utils/locale.ts
 msgid "Polish"
 msgstr "波兰语"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Poor"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Portrait"
@@ -1772,13 +2064,14 @@ msgstr "葡萄牙语（葡萄牙）"
 
 #: src/dialogs/resume/sections/experience.tsx
 #: src/dialogs/resume/sections/reference.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Position"
 msgstr "职位"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/preferences/index.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/preferences.tsx
 msgid "Preferences"
 msgstr "偏好设置"
@@ -1791,17 +2084,22 @@ msgstr "按下<0>{RETURN_KEY}</0>或<1>{COMMA_KEY}</1>以添加或保存当前�
 msgid "Primary Color"
 msgstr "主颜色"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Professional Summary"
+msgstr ""
+
 #: src/dialogs/resume/sections/skill.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Proficiency"
 msgstr "熟练度"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Profile"
 msgstr "个人资料"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Profiles"
 msgstr "个人资料"
@@ -1810,6 +2108,7 @@ msgstr "个人资料"
 msgid "Progress Bar"
 msgstr "进度条"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Projects"
 msgstr "项目"
@@ -1826,17 +2125,23 @@ msgstr "用密码保护你的简历，只允许拥有密码的人查看。"
 msgid "Provider"
 msgstr "服务提供商"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Publications"
 msgstr "出版物"
 
 #: src/dialogs/resume/sections/publication.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Publisher"
 msgstr "发布者"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Re-score Resume"
+msgstr ""
+
 #: src/routes/_home/-sections/header.tsx
-msgid "Reactive Resume - Go to homepage"
-msgstr "Reactive Resume - 返回首页"
+#~ msgid "Reactive Resume - Go to homepage"
+#~ msgstr "Reactive Resume - 返回首页"
 
 #: src/routes/_home/-sections/prefooter.tsx
 msgid "Reactive Resume continues to grow thanks to its vibrant community. This project owes its progress to numerous individuals who've dedicated their time and skills to make it better. We celebrate the coders who've enhanced its features on GitHub, the linguists whose translations on Crowdin have made it accessible to a broader audience, and the people who've donated to support its continued development."
@@ -1875,6 +2180,7 @@ msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg'
 msgid "Redo (Ctrl+Y)"
 msgstr "重做（Ctrl+Y）"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "References"
 msgstr "推荐人"
@@ -1939,6 +2245,10 @@ msgstr "正在重置你的密码…"
 msgid "Resources"
 msgstr "资源"
 
+#: src/routes/_home/-sections/header.tsx
+msgid "Resume Builder - Go to homepage"
+msgstr ""
+
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/resumes.tsx
@@ -1966,6 +2276,14 @@ msgstr "旋转"
 msgid "Russian"
 msgstr "俄语"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "San Francisco, CA"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Save"
+msgstr ""
+
 #: src/dialogs/resume/index.tsx
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
@@ -1986,13 +2304,34 @@ msgstr "俄语"
 msgid "Save Changes"
 msgstr "保存更改"
 
+#: src/dialogs/resume/index.tsx
+msgid "Save your info first in the \"My Info\" tab to use this feature."
+msgstr ""
+
 #: src/dialogs/auth/enable-two-factor.tsx
 msgid "Scan the QR code below with your preferred authenticator app. You can also copy the secret below and paste it into your app."
 msgstr "使用你偏好的验证器应用扫描下方二维码。你也可以复制下面的密钥并粘贴到应用中。"
 
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "School"
 msgstr "学校"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Score My Resume"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Score your resume for ATS compatibility and get suggestions to improve it."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Scored against your job description"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Scoring..."
+msgstr ""
 
 #: src/components/input/icon-picker.tsx
 #: src/components/input/icon-picker.tsx
@@ -2015,6 +2354,10 @@ msgstr "密钥已复制到剪贴板。"
 #: src/dialogs/resume/sections/custom.tsx
 msgid "Section Type"
 msgstr "章节类型"
+
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "Select a resume to score"
+msgstr ""
 
 #: src/components/ui/combobox.tsx
 #: src/components/ui/multiple-combobox.tsx
@@ -2050,7 +2393,6 @@ msgstr "设置密码"
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 msgid "Settings"
 msgstr "设置"
 
@@ -2080,6 +2422,14 @@ msgstr "发布与分享"
 msgid "Show"
 msgstr "显示"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Show diff"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Show less"
+msgstr ""
+
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/education.tsx
@@ -2101,20 +2451,25 @@ msgid "Sidebar Width"
 msgstr "侧边栏宽度"
 
 #: src/routes/auth/login.tsx
-msgid "Sign in"
-msgstr "登录"
+#~ msgid "Sign in"
+#~ msgstr "登录"
 
 #: src/routes/auth/login.tsx
-msgid "Sign in to your account"
-msgstr "登录你的账号"
+#~ msgid "Sign in to your account"
+#~ msgstr "登录你的账号"
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Sign in with GitHub, Google or a custom OAuth provider."
 msgstr "使用 GitHub、Google 或自定义 OAuth 服务提供商登录。"
 
 #: src/routes/auth/register.tsx
-msgid "Sign up"
-msgstr "注册"
+#~ msgid "Sign up"
+#~ msgstr "注册"
+
+#. placeholder {0}: session.user.name
+#: src/components/user/dropdown-menu.tsx
+msgid "Signed in as {0}"
+msgstr ""
 
 #: src/routes/auth/-components/social-auth.tsx
 #: src/routes/auth/-components/social-auth.tsx
@@ -2129,6 +2484,10 @@ msgstr "正在退出…"
 #: src/routes/auth/register.tsx
 msgid "Signing up..."
 msgstr "正在注册…"
+
+#: src/routes/auth/register.tsx
+msgid "Signup Restricted"
+msgstr ""
 
 #: src/dialogs/resume/template/data.ts
 msgid "Single-column with a magenta left border accent; compact and efficient for entry-level or internship applications."
@@ -2150,6 +2509,11 @@ msgstr "单栏布局；风格精致严肃，适合高级或企业级职位。"
 msgid "Size"
 msgstr "大小"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Skill Name"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Skills"
 msgstr "Skills"
@@ -2165,6 +2529,10 @@ msgstr "斯洛伐克语"
 #: src/dialogs/resume/index.tsx
 msgid "Slug"
 msgstr "短链接"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Software Engineer"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
@@ -2236,10 +2604,23 @@ msgstr ""
 msgid "Strike"
 msgstr "删除线"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Structure"
+msgstr ""
+
 #: src/routes/_home/-sections/footer.tsx
 msgid "Subreddit"
 msgstr "Subreddit 论坛"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Suggestion applied"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Suggestions"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Summary"
 msgstr "总结"
@@ -2249,8 +2630,8 @@ msgid "Support Reactive Resume"
 msgstr "支持 Reactive Resume"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-msgid "Support the app by doing what you can!"
-msgstr "尽你所能支持这个应用！"
+#~ msgid "Support the app by doing what you can!"
+#~ msgstr "尽你所能支持这个应用！"
 
 #: src/utils/locale.ts
 msgid "Swedish"
@@ -2275,6 +2656,10 @@ msgstr "标签"
 #: src/dialogs/resume/index.tsx
 msgid "Tags can be used to categorize your resume by keywords."
 msgstr "标签可用于通过关键词对简历进行分类。"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Tailoring"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Tamil"
@@ -2312,6 +2697,10 @@ msgstr "文本颜色"
 msgid "Thai"
 msgstr "泰语"
 
+#: src/dialogs/resume/index.tsx
+msgid "The AI will use your info and this job description to generate an ATS-optimized resume. Leave blank for a general-purpose resume."
+msgstr ""
+
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "The API key has been deleted successfully."
 msgstr "API key 已成功删除。"
@@ -2341,7 +2730,6 @@ msgid "The URL you entered is not valid."
 msgstr "你输入的 URL 无效。"
 
 #: src/components/command-palette/pages/preferences/theme.tsx
-#: src/components/user/dropdown-menu.tsx
 #: src/routes/dashboard/settings/preferences.tsx
 msgid "Theme"
 msgstr "主题"
@@ -2371,8 +2759,8 @@ msgstr "此操作不可撤销。你的所有数据都将被永久删除。"
 
 #: src/dialogs/resume/import.tsx
 #: src/dialogs/resume/import.tsx
-msgid "This feature requires AI Integration to be enabled. Please enable it in the settings."
-msgstr "此功能需要启用 AI 集成。请在设置中启用后再试。"
+#~ msgid "This feature requires AI Integration to be enabled. Please enable it in the settings."
+#~ msgstr "此功能需要启用 AI 集成。请在设置中启用后再试。"
 
 #: src/dialogs/resume/index.tsx
 msgid "This is a URL-friendly name for your resume."
@@ -2400,8 +2788,12 @@ msgid "This step is optional, but recommended."
 msgstr "此步骤可选，但推荐完成。"
 
 #: src/dialogs/api-key/create.tsx
-msgid "This will generate a new API key to access the Reactive Resume API to allow machines to interact with your resume data."
-msgstr "这将生成一个新的 API key，以访问 Reactive Resume 的 API，让程序可以与你的简历数据进行交互。"
+msgid "This will generate a new API key to access the API and allow machines to interact with your resume data."
+msgstr ""
+
+#: src/dialogs/api-key/create.tsx
+#~ msgid "This will generate a new API key to access the Reactive Resume API to allow machines to interact with your resume data."
+#~ msgstr "这将生成一个新的 API key，以访问 Reactive Resume 的 API，让程序可以与你的简历数据进行交互。"
 
 #: src/routes/_home/-sections/hero.tsx
 msgid "Timelapse demonstration of building a resume with Reactive Resume"
@@ -2419,6 +2811,9 @@ msgstr "提示：你可以根据你要申请的职位来命名简历。"
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/custom.tsx
 #: src/dialogs/resume/sections/publication.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Title"
 msgstr "标题"
 
@@ -2639,11 +3034,16 @@ msgid "Uploading picture..."
 msgstr "正在上传图片…"
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "URL"
 msgstr "URL"
 
+#: src/dialogs/resume/index.tsx
+msgid "Use My Info"
+msgstr ""
+
 #: src/dialogs/resume/sections/profile.tsx
-#: src/routes/auth/register.tsx
+#: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Username"
 msgstr "用户名"
@@ -2702,6 +3102,10 @@ msgstr "查看"
 msgid "Volunteer"
 msgstr "志愿者经历"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Volunteer Experience"
+msgstr ""
+
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/education.tsx
@@ -2712,6 +3116,15 @@ msgstr "志愿者经历"
 #: src/dialogs/resume/sections/reference.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Website"
 msgstr "网站"
 
@@ -2754,8 +3167,8 @@ msgid "You also have the option to deploy on your own servers using the Docker i
 msgstr "你也可以选择使用 Docker 镜像将其部署到你自己的服务器上。"
 
 #: src/routes/auth/login.tsx
-msgid "You can also use your username to login."
-msgstr "你也可以使用用户名登录。"
+#~ msgid "You can also use your username to login."
+#~ msgstr "你也可以使用用户名登录。"
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "You can share your resume via a unique public URL, protect it with a password, or download it as a PDF to share directly. The choice is yours!"
@@ -2793,6 +3206,10 @@ msgstr "你的数据将存储在本地"
 #: src/routes/_home/-sections/faq.tsx
 msgid "Your data is stored securely and is never shared with third parties. You can also self-host Reactive Resume on your own servers for complete control over your data."
 msgstr "你的数据会被安全存储，且绝不会与第三方共享。你也可以在自己的服务器上自托管 Reactive Resume，以完全掌控你的数据。"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Your info has been saved successfully."
+msgstr ""
 
 #: src/routes/auth/reset-password.tsx
 msgid "Your password has been reset successfully. You can now sign in with your new password."
@@ -2848,4 +3265,3 @@ msgstr "缩小"
 #: src/utils/locale.ts
 msgid "Zulu"
 msgstr "祖鲁语"
-

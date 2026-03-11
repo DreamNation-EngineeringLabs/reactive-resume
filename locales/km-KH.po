@@ -47,6 +47,11 @@ msgstr "{0, plural, other {# ធាតុ}}"
 msgid "{column, plural, one {# Column} other {# Columns}}"
 msgstr "{column, plural, other {# ជួរឈរ}}"
 
+#. placeholder {0}: keywords.length - 8
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "+{0} more"
+msgstr ""
+
 #: src/routes/_home/-sections/hero.tsx
 msgid "<0>Finally,</0><1>A free and open-source resume builder</1>"
 msgstr "<0>ចុងក្រោយនេះ</0><1>កម្មវិធីបង្កើតប្រវត្តិរូបឥតគិតថ្លៃ និងបើកប្រភព</1>"
@@ -57,8 +62,12 @@ msgid "<0>Frequently</0><1>Asked</1><2>Questions</2>"
 msgstr "<0>សំណួរ</0><1>ដែលសួរ</1><2>ញឹកញាប់</2>"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-msgid "<0>Thank you for using Reactive Resume! This app is a labor of love, created mostly in my spare time, with wonderful support from open-source contributors around the world.</0><1>If Reactive Resume has been helpful to you, and you'd like to help keep it free and open for everyone, please consider making a donation. Every little bit is appreciated!</1>"
-msgstr "<0>សូម​អរគុណ​ចំពោះ​ការ​ប្រើ Reactive Resume! កម្មវិធី​នេះ​ជា​ការងារចិត្តស្រឡាញ់មួយ ដែល​បានបង្កើត​ជា​ភាគច្រើន​ក្នុង​ពេល​ទំនេរ​របស់ខ្ញុំ ដោយមានការគាំទ្រដ៏អស្ចារ្យពីអ្នករួមចំណែកបើកប្រភពทั่วពិភពលោក។</0><1>បើ Reactive Resume បានជួយឱ្យអ្នក ហើយអ្នកចង់ជួយរក្សាឱ្យវាឥតគិតថ្លៃ និងបើកចំហសម្រាប់មនុស្សគ្រប់គ្នា សូមពិចារណាចូលរួមបរិច្ចាគ។ ការបរិច្ចាគតិចតួចទាំងអស់សុទ្ធតែមានតំលៃ!</1>"
+msgid "<0>Thank you for using our resume builder! If you have any questions or feedback, please don't hesitate to reach out.</0><1>Check out the documentation below to learn more about all the features available to help you create the perfect resume.</1>"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
+#~ msgid "<0>Thank you for using Reactive Resume! This app is a labor of love, created mostly in my spare time, with wonderful support from open-source contributors around the world.</0><1>If Reactive Resume has been helpful to you, and you'd like to help keep it free and open for everyone, please consider making a donation. Every little bit is appreciated!</1>"
+#~ msgstr "<0>សូម​អរគុណ​ចំពោះ​ការ​ប្រើ Reactive Resume! កម្មវិធី​នេះ​ជា​ការងារចិត្តស្រឡាញ់មួយ ដែល​បានបង្កើត​ជា​ភាគច្រើន​ក្នុង​ពេល​ទំនេរ​របស់ខ្ញុំ ដោយមានការគាំទ្រដ៏អស្ចារ្យពីអ្នករួមចំណែកបើកប្រភពทั่วពិភពលោក។</0><1>បើ Reactive Resume បានជួយឱ្យអ្នក ហើយអ្នកចង់ជួយរក្សាឱ្យវាឥតគិតថ្លៃ និងបើកចំហសម្រាប់មនុស្សគ្រប់គ្នា សូមពិចារណាចូលរួមបរិច្ចាគ។ ការបរិច្ចាគតិចតួចទាំងអស់សុទ្ធតែមានតំលៃ!</1>"
 
 #: src/dialogs/api-key/create.tsx
 msgid "1 month"
@@ -71,6 +80,10 @@ msgstr "១ ឆ្នាំ"
 #: src/routes/_home/-sections/features.tsx
 msgid "12+ Templates"
 msgstr "គំរូ ១២+"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "2018 – 2022"
+msgstr ""
 
 #: src/dialogs/api-key/create.tsx
 msgid "3 months"
@@ -121,6 +134,10 @@ msgstr "បាន​ប្រាកដ! អ្នក​អាច​នាំច�
 #: src/routes/_home/-sections/features.tsx
 msgid "Access your resumes and data programmatically using the API."
 msgstr "ចូលដំណើរការប្រវត្តិរូប និងទិន្នន័យរបស់អ្នកតាមកម្មវិធី ដោយប្រើ API។"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Achievements"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom-fields.tsx
 msgid "Add a custom field"
@@ -187,6 +204,14 @@ msgstr "បន្ថែម​ជំនាញ​ថ្មី"
 msgid "Add a new volunteer experience"
 msgstr "បន្ថែមបទពិសោធន៍ស្ម័គ្រចិត្ត​ថ្មី"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Achievement"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Certification"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Add Column After"
 msgstr "បន្ថែម​ជួរឈរ​នៅ​ក្រោយ"
@@ -195,9 +220,41 @@ msgstr "បន្ថែម​ជួរឈរ​នៅ​ក្រោយ"
 msgid "Add Column Before"
 msgstr "បន្ថែម​ជួរឈរ​នៅ​មុខ"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Education"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Experience"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Interest"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Language"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/layout/pages.tsx
 msgid "Add Page"
 msgstr "បន្ថែម​ទំព័រ"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Profile"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Project"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Publication"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Reference"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Add Row After"
@@ -207,8 +264,24 @@ msgstr "បន្ថែម​ជួរដេក​នៅ​ក្រោយ"
 msgid "Add Row Before"
 msgstr "បន្ថែម​ជួរដេក​នៅ​មុខ"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Skill"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add Volunteer Experience"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Add your details here once. When you create a new resume, this information will be used to generate a tailored, ATS-friendly resume. Changes here won't affect existing resumes."
+msgstr ""
+
 #: src/components/ai/chat.tsx
 msgid "Added"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Advanced"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -217,8 +290,8 @@ msgstr "Afrikaans"
 
 #: src/dialogs/resume/import.tsx
 #: src/dialogs/resume/import.tsx
-msgid "AI"
-msgstr "AI"
+#~ msgid "AI"
+#~ msgstr "AI"
 
 #: src/components/ai/chat.tsx
 msgid "AI Chat"
@@ -228,13 +301,17 @@ msgstr ""
 msgid "Albanian"
 msgstr "Albanian"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "All suggestions have been handled. Re-score to see updated results."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Allow Public Access"
 msgstr "អនុញ្ញាត​ឱ្យ​ចូល​ដំណើរការ​សាធារណៈ"
 
 #: src/routes/auth/register.tsx
-msgid "Already have an account? <0><1>Sign in now <2/></1></0>"
-msgstr "មានគណនីរួចហើយ​ឬ? <0><1>ចូល​ឥឡូវនេះ <2/></1></0>"
+#~ msgid "Already have an account? <0><1>Sign in now <2/></1></0>"
+#~ msgstr "មានគណនីរួចហើយ​ឬ? <0><1>ចូល​ឥឡូវនេះ <2/></1></0>"
 
 #: src/utils/locale.ts
 msgid "Amharic"
@@ -275,7 +352,6 @@ msgstr "កូនសោ API"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "API Keys"
 msgstr "កូនសោ API"
@@ -285,12 +361,29 @@ msgid "API Reference"
 msgstr "ឯកសារ​យោង API"
 
 #: src/routes/dashboard/-components/sidebar.tsx
-msgid "App"
-msgstr "កម្មវិធី"
+#~ msgid "App"
+#~ msgstr "កម្មវិធី"
 
 #: src/routes/_home/-sections/statistics.tsx
 msgid "Application Statistics"
 msgstr "ស្ថិតិ​កម្មវិធី"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Applied"
+msgstr ""
+
+#. placeholder {0}: toApply.length
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Applied {0} suggestions"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply All"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Arabic"
@@ -325,12 +418,12 @@ msgid "Are you sure you want to remove password protection?"
 msgstr "តើ​អ្នក​ប្រាកដ​ជា​ចង់​ដក​ការ​ការពារ​ដោយ​ពាក្យសម្ងាត់​ចេញ​ឬ?"
 
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Area of Study"
 msgstr "ជំនាញ​រៀន"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Artificial Intelligence"
 msgstr "បញ្ញាសិប្បនិម្មិត"
@@ -343,9 +436,15 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "សមាមាត្រទ្រង់ទ្រាយ"
 
-#: src/components/command-palette/pages/navigation.tsx
-#: src/components/command-palette/pages/navigation.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/ats-score/index.tsx
+#: src/utils/resume/section.tsx
+msgid "ATS Score"
+msgstr ""
+
+#: src/components/command-palette/pages/navigation.tsx
+#: src/components/command-palette/pages/navigation.tsx
 #: src/routes/dashboard/settings/authentication/index.tsx
 msgid "Authentication"
 msgstr "ការផ្ទៀងផ្ទាត់​ភាពត្រឹមត្រូវ"
@@ -353,6 +452,10 @@ msgstr "ការផ្ទៀងផ្ទាត់​ភាពត្រឹមត
 #: src/routes/_home/-sections/features.tsx
 msgid "Available in multiple languages. If you would like to contribute, check out Crowdin."
 msgstr "មាន​នៅ​ក្នុង​ភាសា​ច្រើន។ ប្រសិនបើ​អ្នក​ចង់​ចូលរួម សូម​មើល Crowdin។"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Awarder"
+msgstr ""
 
 #: src/dialogs/resume/sections/award.tsx
 msgctxt "(noun) person, organization, or entity that gives an award"
@@ -383,6 +486,7 @@ msgstr "លេខ​កូដ​បម្រុងទុក​ត្រូវ​
 msgid "Base URL (Optional)"
 msgstr "Base URL (ជា​ជម្រើស)"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Basics"
 msgstr "មូលដ្ឋាន"
@@ -411,6 +515,10 @@ msgstr "រ៉េឌីយ៉ូស​គែម"
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Border Width"
 msgstr "ទទឹង​គែម"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Brevity"
+msgstr ""
 
 #: src/components/command-palette/index.tsx
 msgid "Builder Command Palette"
@@ -481,6 +589,10 @@ msgstr "បោះបង់"
 msgid "Catalan"
 msgstr "Catalan"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Category Breakdown"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Center Align"
 msgstr "តម្រង់​កណ្ដាល"
@@ -489,6 +601,7 @@ msgstr "តម្រង់​កណ្ដាល"
 msgid "Center view"
 msgstr "ផ្ដោត​ទិដ្ឋភាព​ទៅ​កណ្ដាល"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Certifications"
 msgstr "វិញ្ញាបនបត្រ"
@@ -559,6 +672,7 @@ msgid "Community"
 msgstr "សហគមន៍"
 
 #: src/dialogs/resume/sections/experience.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Company"
 msgstr "ក្រុមហ៊ុន"
 
@@ -595,8 +709,12 @@ msgid "Continue where you left off"
 msgstr "បន្ត​ពី​កន្លែង​ដែល​អ្នក​បាន​ឈប់"
 
 #: src/dialogs/resume/import.tsx
-msgid "Continue where you left off by importing an existing resume you created using Reactive Resume or any another resume builder. Supported formats include PDF, Microsoft Word, as well as JSON files from Reactive Resume."
-msgstr "បន្ត​ពី​កន្លែង​ដែល​អ្នក​បាន​ឈប់ ដោយ​នាំចូល​ប្រវត្តិរូប​មាន​ស្រាប់​មួយ ដែល​អ្នក​បាន​បង្កើត​ដោយ​ប្រើ Reactive Resume ឬ​កម្មវិធី​បង្កើត​ប្រវត្តិរូប​ផ្សេង​ទៀត។ ទ្រង់ទ្រាយ​ដែល​គាំទ្រ​រួមមាន PDF, Microsoft Word និង​ឯកសារ JSON ពី Reactive Resume។"
+#~ msgid "Continue where you left off by importing an existing resume you created using Reactive Resume or any another resume builder. Supported formats include PDF, Microsoft Word, as well as JSON files from Reactive Resume."
+#~ msgstr "បន្ត​ពី​កន្លែង​ដែល​អ្នក​បាន​ឈប់ ដោយ​នាំចូល​ប្រវត្តិរូប​មាន​ស្រាប់​មួយ ដែល​អ្នក​បាន​បង្កើត​ដោយ​ប្រើ Reactive Resume ឬ​កម្មវិធី​បង្កើត​ប្រវត្តិរូប​ផ្សេង​ទៀត។ ទ្រង់ទ្រាយ​ដែល​គាំទ្រ​រួមមាន PDF, Microsoft Word និង​ឯកសារ JSON ពី Reactive Resume។"
+
+#: src/dialogs/resume/import.tsx
+msgid "Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word, and JSON files. PDF and Word documents are automatically parsed using AI."
+msgstr ""
 
 #: src/routes/_home/-sections/donate.tsx
 msgid "Contributions fund bug fixes, security updates, and continuous improvements to keep the app running smoothly."
@@ -647,8 +765,8 @@ msgid "Create"
 msgstr "បង្កើត"
 
 #: src/routes/auth/register.tsx
-msgid "Create a new account"
-msgstr "បង្កើត​គណនី​ថ្មី"
+#~ msgid "Create a new account"
+#~ msgstr "បង្កើត​គណនី​ថ្មី"
 
 #: src/dialogs/api-key/create.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
@@ -758,7 +876,6 @@ msgstr "Czech"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/danger-zone.tsx
 msgid "Danger Zone"
 msgstr "តំបន់​គ្រោះថ្នាក់"
@@ -767,7 +884,6 @@ msgstr "តំបន់​គ្រោះថ្នាក់"
 msgid "Danish"
 msgstr "Danish"
 
-#: src/components/user/dropdown-menu.tsx
 #: src/utils/theme.ts
 msgid "Dark"
 msgstr "ងងឹត"
@@ -783,10 +899,14 @@ msgstr "សុវត្ថិភាព​ទិន្នន័យ"
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/publication.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Date"
 msgstr "កាលបរិច្ឆេទ"
 
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Degree"
 msgstr "សញ្ញាប័ត្រ"
 
@@ -841,6 +961,14 @@ msgstr "កំពុង​លុប​ប្រវត្តិរូប​រប
 #: src/dialogs/resume/sections/publication.tsx
 #: src/dialogs/resume/sections/reference.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Description"
 msgstr "សេចក្ដី​ពិពណ៌នា"
 
@@ -873,18 +1001,22 @@ msgstr "ផ្ដាច់"
 msgid "Discord"
 msgstr "Discord"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Dismiss"
+msgstr ""
+
 #: src/routes/_home/-sections/footer.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Documentation"
 msgstr "ឯកសារ"
 
 #: src/routes/auth/login.tsx
-msgid "Don't have an account? <0><1>Create one now <2/></1></0>"
-msgstr "មិន​មាន​គណនី​ឬ? <0><1>បង្កើត​មួយ​ឥឡូវនេះ <2/></1></0>"
+#~ msgid "Don't have an account? <0><1>Create one now <2/></1></0>"
+#~ msgstr "មិន​មាន​គណនី​ឬ? <0><1>បង្កើត​មួយ​ឥឡូវនេះ <2/></1></0>"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-msgid "Donate to Reactive Resume"
-msgstr "បរិច្ចាគ​ឲ្យ Reactive Resume"
+#~ msgid "Donate to Reactive Resume"
+#~ msgstr "បរិច្ចាគ​ឲ្យ Reactive Resume"
 
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/routes/$username/$slug.tsx
@@ -948,17 +1080,17 @@ msgstr "Dutch"
 msgid "e.g. Change my name to..."
 msgstr ""
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Education"
 msgstr "ការ​សិក្សា"
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Email"
 msgstr "អ៊ីមែល"
 
 #: src/routes/auth/forgot-password.tsx
-#: src/routes/auth/login.tsx
-#: src/routes/auth/register.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Email Address"
 msgstr "អាសយដ្ឋាន​អ៊ីមែល"
@@ -1024,6 +1156,10 @@ msgstr "បញ្ចូល​ពាក្យសម្ងាត់​របស់
 msgid "Enter your password to disable two-factor authentication. Your account will be less secure without 2FA enabled."
 msgstr "បញ្ចូល​ពាក្យសម្ងាត់​របស់​អ្នក ដើម្បី​បិទ​ការ​ផ្ទៀងផ្ទាត់​ពីរ​ជាន់។ គណនី​របស់​អ្នក​នឹង​កាន់តែ​មាន​ហានិភ័យ​នៅពេល​មិន​បាន​បើក 2FA ទៀត។"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Estimated score improvement"
+msgstr ""
+
 #: src/routes/_home/-sections/donate.tsx
 msgid "Every contribution, big or small, makes a huge difference to the project.<0/>Thank you for your support!"
 msgstr "រាល់​ការរួមចំណែក មួយ​ធំនោ ឬ​តូច ក៏​មាន​ឥទ្ធិពល​យ៉ាង​ច្រើន​លើ​គម្រោង​នេះ។<0/>សូម​អរគុណ​ចំពោះ​ការគាំទ្រ​របស់​អ្នក!"
@@ -1036,10 +1172,19 @@ msgstr "អ្វី​ដែល​បាន​បញ្ចូល​នៅ​ទ
 msgid "Everything you need to create, customize, and share professional resumes. Built with privacy in mind, powered by open source, and completely free forever."
 msgstr "អ្វីៗ​ដែល​អ្នក​ត្រូវការ ដើម្បី​បង្កើត ប្ដូរ​តាមបំណង និង​ចែករំលែក​ប្រវត្តិរូប​វិជ្ជាជីវៈ។ ត្រូវ​បាន​បង្កើត​ឡើង​ដោយ​គិត​ពី​ភាព​ឯកជន ប្រើ​បច្ចេកវិទ្យា​បើក​ប្រភព ហើយ​ឥត​គិតថ្លៃ​ទាំងស្រុង ជារៀងរហូត។"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Excellent"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Exit Fullscreen"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Expand"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Experience"
 msgstr "បទពិសោធន៍"
@@ -1058,12 +1203,20 @@ msgid "Explore our diverse selection of templates, each designed to fit differen
 msgstr "ស្វែង​រក​គំរូ​ជ្រើសរើស​ចម្រុះ​របស់​យើង ដែល​ត្រូវ​បាន​រចនា​ឡើង​សម្រាប់​រចនាបថ មុខរបរ និង​លក្ខណៈ​ផ្ទាល់ខ្លួន​ផ្សេងៗ។ បច្ចុប្បន្ន Reactive Resume មាន​គំរូ ១២ និង​នឹង​មាន​បន្ថែម​ទៀត​នៅ​ពេល​ខាងមុខ។"
 
 #: src/routes/dashboard/settings/api-keys.tsx
-msgid "Explore the API documentation to learn how to integrate Reactive Resume with your applications. Find detailed endpoints, request examples, and authentication methods."
-msgstr "ស្វែងរក​ឯកសារ​អំពី API ដើម្បី​ស្វែងយល់​ពី​របៀប​ផ្សាភ្ជាប់ Reactive Resume ជាមួយ​កម្មវិធី​របស់​អ្នក។ អ្នក​អាច​រកឃើញ​ចំណុច​ចូល​ច្រើន ប្រភេទ​សំណើរ​ឧទាហរណ៍ និង​វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​ផ្សេងៗ។"
+#~ msgid "Explore the API documentation to learn how to integrate Reactive Resume with your applications. Find detailed endpoints, request examples, and authentication methods."
+#~ msgstr "ស្វែងរក​ឯកសារ​អំពី API ដើម្បី​ស្វែងយល់​ពី​របៀប​ផ្សាភ្ជាប់ Reactive Resume ជាមួយ​កម្មវិធី​របស់​អ្នក។ អ្នក​អាច​រកឃើញ​ចំណុច​ចូល​ច្រើន ប្រភេទ​សំណើរ​ឧទាហរណ៍ និង​វិធីសាស្ត្រ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​ផ្សេងៗ។"
+
+#: src/routes/dashboard/settings/api-keys.tsx
+msgid "Explore the API documentation to learn how to integrate with your applications. Find"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Export"
 msgstr "នាំចេញ"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Failed to score resume. Please try again."
+msgstr ""
 
 #: src/dialogs/auth/enable-two-factor.tsx
 msgid "Failed to setup two-factor authentication."
@@ -1086,6 +1239,7 @@ msgid "Flexibility"
 msgstr "ភាព​បត់បែន"
 
 #: src/dialogs/resume/sections/language.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Fluency"
 msgstr "កម្រិត​ភាសា"
 
@@ -1120,8 +1274,8 @@ msgid "For security reasons, this key will only be displayed once."
 msgstr "សម្រាប់ហេតុផល​សុវត្ថិភាព កូនសោ​នេះ​នឹង​ត្រូវ​បង្ហាញ​តែ​ម្ដង​តែប៉ុណ្ណោះ។"
 
 #: src/routes/auth/login.tsx
-msgid "Forgot Password?"
-msgstr "ភ្លេច​ពាក្យសម្ងាត់​ឬ?"
+#~ msgid "Forgot Password?"
+#~ msgstr "ភ្លេច​ពាក្យសម្ងាត់​ឬ?"
 
 #: src/routes/auth/forgot-password.tsx
 msgid "Forgot your password?"
@@ -1131,6 +1285,10 @@ msgstr "ភ្លេច​ពាក្យសម្ងាត់​របស់​
 msgctxt "Page Format (A4, Letter or Free-Form)"
 msgid "Format"
 msgstr "ទ្រង់ទ្រាយ"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Formatting"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Free"
@@ -1144,6 +1302,10 @@ msgstr "ទ្រង់ទ្រាយសេរី"
 msgid "French"
 msgstr "French"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Full Name"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/layout/pages.tsx
 msgid "Full Width"
 msgstr "ទទឹង​ពេញ"
@@ -1152,9 +1314,25 @@ msgstr "ទទឹង​ពេញ"
 msgid "Fullscreen"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "General ATS compatibility score"
+msgstr ""
+
 #: src/dialogs/resume/index.tsx
 msgid "Generate a random name"
 msgstr "បង្កើត​ឈ្មោះចៃដន្យ"
+
+#: src/dialogs/resume/index.tsx
+msgid "Generate a tailored resume from your saved info."
+msgstr ""
+
+#: src/dialogs/resume/index.tsx
+msgid "Generate Resume"
+msgstr ""
+
+#: src/dialogs/resume/index.tsx
+msgid "Generating your tailored resume..."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "German"
@@ -1173,11 +1351,21 @@ msgstr "ត្រឡប់​ក្រោយ"
 msgid "Go to dashboard"
 msgstr "ទៅ​កាន់​ផ្ទាំង​គ្រប់គ្រង"
 
+#: src/routes/auth/login.tsx
+#: src/routes/auth/register.tsx
+msgid "Go to Dashboard"
+msgstr ""
+
 #: src/components/command-palette/pages/navigation.tsx
 msgid "Go to..."
 msgstr "ទៅកាន់..."
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Good"
+msgstr ""
+
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Grade"
 msgstr "ចំណាត់ថ្នាក់"
 
@@ -1223,6 +1411,7 @@ msgid "Heading 6"
 msgstr "ចំណងជើង ៦"
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Headline"
 msgstr "ក្បាលសារពណ៌នាខ្លី"
 
@@ -1262,6 +1451,10 @@ msgstr "លាក់"
 msgid "Hide all icons on the resume"
 msgstr "លាក់​រូបតំណាង​ទាំងអស់​លើ​ប្រវត្តិរូប"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Hide diff"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Highlight"
 msgstr "រំលេច"
@@ -1296,6 +1489,10 @@ msgstr "Hungarian"
 msgid "Icon"
 msgstr "រូបតំណាង"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Impact & Metrics"
+msgstr ""
+
 #: src/dialogs/resume/import.tsx
 msgid "Import"
 msgstr "នាំចូល"
@@ -1319,8 +1516,8 @@ msgid "Indonesian"
 msgstr "Indonesian"
 
 #: src/utils/resume/section.tsx
-msgid "Information"
-msgstr "ព័ត៌មាន"
+#~ msgid "Information"
+#~ msgstr "ព័ត៌មាន"
 
 #: src/components/input/rich-input.tsx
 msgid "Inline Code"
@@ -1330,6 +1527,11 @@ msgstr "កូដ​ក្នុង​បន្ទាត់"
 msgid "Insert Table"
 msgstr "បញ្ចូល​តារាង"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Interest"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Interests"
 msgstr "ចំណាប់អារម្មណ៍"
@@ -1343,6 +1545,7 @@ msgid "Is Reactive Resume really free?"
 msgstr "តើ Reactive Resume ពិត​ជា​ឥត​គិតថ្លៃ​មែន​ទេ?"
 
 #: src/dialogs/resume/sections/certification.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Issuer"
 msgstr "អ្នក​ផ្តល់​វិញ្ញាបនបត្រ"
 
@@ -1354,9 +1557,25 @@ msgstr "Italian"
 msgid "Italic"
 msgstr "អក្សរ​ទ្រេត"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Jan 2020 – Present"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Japanese"
 msgstr "Japanese"
+
+#: src/dialogs/resume/index.tsx
+msgid "Job Description"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "John Doe"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "johndoe"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Justify Align"
@@ -1365,6 +1584,10 @@ msgstr "តម្រង់​សមរម្យ​ទាំង​ផ្នែក
 #: src/utils/locale.ts
 msgid "Kannada"
 msgstr "Kannada"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Keyword Match"
+msgstr ""
 
 #: src/dialogs/resume/sections/interest.tsx
 #: src/dialogs/resume/sections/skill.tsx
@@ -1388,13 +1611,14 @@ msgid "Landscape"
 msgstr "ផ្ទៃ​ទេសភាព"
 
 #: src/components/command-palette/pages/preferences/language.tsx
-#: src/components/user/dropdown-menu.tsx
 #: src/dialogs/resume/sections/language.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/page.tsx
+#: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/settings/preferences.tsx
 msgid "Language"
 msgstr "ភាសា"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Languages"
 msgstr "ភាសា"
@@ -1460,7 +1684,6 @@ msgstr "កម្រិត {level} ក្នុងចំណោម ៥"
 msgid "Licensed under <0>MIT</0>."
 msgstr "មាន​អាជ្ញាប័ណ្ណ​ក្រោម <0>MIT</0>។"
 
-#: src/components/user/dropdown-menu.tsx
 #: src/utils/theme.ts
 msgid "Light"
 msgstr "ភ្លឺ"
@@ -1473,6 +1696,10 @@ msgstr "ស្បែកភ្លឺ"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/typography.tsx
 msgid "Line Height"
 msgstr "កម្ពស់​បន្ទាត់"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "LinkedIn"
+msgstr ""
 
 #: src/routes/dashboard/settings/authentication/-components/hooks.tsx
 msgid "Linking your {providerName} account..."
@@ -1498,6 +1725,10 @@ msgstr "កំពុង​ផ្ទុក..."
 #: src/dialogs/resume/sections/experience.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Location"
 msgstr "ទីតាំង"
 
@@ -1507,9 +1738,13 @@ msgstr "ទីតាំង"
 msgid "Lock"
 msgstr "ចាក់សោ"
 
+#: src/routes/auth/login.tsx
+msgid "Login Restricted"
+msgstr ""
+
 #: src/components/user/dropdown-menu.tsx
-msgid "Logout"
-msgstr "ចេញ​ពី​ប្រព័ន្ធ"
+#~ msgid "Logout"
+#~ msgstr "ចេញ​ពី​ប្រព័ន្ធ"
 
 #: src/routes/_home/-sections/donate.tsx
 msgid "Long-term Sustainability"
@@ -1547,6 +1782,10 @@ msgstr "រឹម (ផ្ដេក)"
 msgid "Margin (Vertical)"
 msgstr "រឹម (បញ្ឈរ)"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Missing Keywords"
+msgstr ""
+
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Model"
 msgstr "ម៉ូដែល"
@@ -1559,23 +1798,43 @@ msgstr "ផ្លាស់ទី​ទៅ"
 msgid "Multilingual"
 msgstr "ច្រើន​ភាសា"
 
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+msgid "My Info"
+msgstr ""
+
 #: src/dialogs/api-key/create.tsx
 #: src/dialogs/resume/index.tsx
 #: src/dialogs/resume/sections/interest.tsx
 #: src/dialogs/resume/sections/project.tsx
 #: src/dialogs/resume/sections/reference.tsx
 #: src/dialogs/resume/sections/skill.tsx
-#: src/routes/auth/register.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Name"
 msgstr "ឈ្មោះ"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Native, Fluent, etc."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
+msgid "Need Help?"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Needs Work"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Nepali"
 msgstr "Nepali"
 
 #: src/dialogs/resume/sections/profile.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Network"
 msgstr "បណ្ដាញ"
 
@@ -1608,6 +1867,10 @@ msgstr "គ្មាន​ការ​ផ្សពាណិជ្ជកម្ម
 #: src/components/ui/multiple-combobox.tsx
 msgid "No results found."
 msgstr "រក​មិន​ឃើញ​លទ្ធផល។"
+
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "No resumes found. Create a resume first to use ATS scoring."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Norwegian"
@@ -1663,6 +1926,7 @@ msgid "Ordered List"
 msgstr "បញ្ជី​មាន​លេខ"
 
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Organization"
 msgstr "អង្គការ"
 
@@ -1690,8 +1954,6 @@ msgstr "កូនសោ​កំណត់​អត្តសញ្ញាណ & 2FA
 
 #: src/dialogs/auth/disable-two-factor.tsx
 #: src/dialogs/auth/enable-two-factor.tsx
-#: src/routes/auth/login.tsx
-#: src/routes/auth/register.tsx
 #: src/routes/auth/resume-password.tsx
 #: src/routes/dashboard/settings/authentication/-components/password.tsx
 msgid "Password"
@@ -1713,10 +1975,26 @@ msgstr "ការ​ការពារ​ដោយ​ពាក្យសម្ង
 msgid "Password protection has been enabled."
 msgstr "ការ​ការពារ​ដោយ​ពាក្យសម្ងាត់​ត្រូវ​បាន​បើក។"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Paste job description here (optional)..."
+msgstr ""
+
+#: src/dialogs/resume/index.tsx
+msgid "Paste the job description here to tailor your resume for this role..."
+msgstr ""
+
 #: src/dialogs/resume/sections/education.tsx
 #: src/dialogs/resume/sections/experience.tsx
 #: src/dialogs/resume/sections/project.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Period"
 msgstr "កំឡុងពេល"
 
@@ -1730,12 +2008,18 @@ msgstr "ប្ដូរ​ប្រវត្តិរូប​របស់​អ
 
 #: src/dialogs/resume/sections/reference.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Phone"
 msgstr "ទូរស័ព្ទ"
 
 #: src/utils/resume/section.tsx
 msgid "Picture"
 msgstr "រូបភាព"
+
+#: src/routes/auth/register.tsx
+msgid "Please access via the main dashboard."
+msgstr ""
 
 #: src/routes/auth/reset-password.tsx
 msgid "Please enter a new password for your account"
@@ -1749,6 +2033,10 @@ msgstr "សូម​បញ្ចូល​ពាក្យសម្ងាត់ �
 msgid "Please enter the URL you want to link to:"
 msgstr "សូម​បញ្ចូល URL ដែល​អ្នក​ចង់​តភ្ជាប់​ទៅ៖"
 
+#: src/routes/auth/login.tsx
+msgid "Please login via the main dashboard."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-components/dock.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "Please wait while your PDF is being generated..."
@@ -1757,6 +2045,10 @@ msgstr "សូម​រង់ចាំ ខណៈពេល​កំពុង​�
 #: src/utils/locale.ts
 msgid "Polish"
 msgstr "Polish"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Poor"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Portrait"
@@ -1772,13 +2064,14 @@ msgstr "Portuguese (Portugal)"
 
 #: src/dialogs/resume/sections/experience.tsx
 #: src/dialogs/resume/sections/reference.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Position"
 msgstr "តួនាទី"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/preferences/index.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/preferences.tsx
 msgid "Preferences"
 msgstr "ចំណង់ចំណូលចិត្ត"
@@ -1791,17 +2084,22 @@ msgstr "ចុច <0>{RETURN_KEY}</0> ឬ <1>{COMMA_KEY}</1> ដើម្បី�
 msgid "Primary Color"
 msgstr "ពណ៌​មូលដ្ឋាន"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Professional Summary"
+msgstr ""
+
 #: src/dialogs/resume/sections/skill.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Proficiency"
 msgstr "កម្រិត​ជំនាញ"
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Profile"
 msgstr "ប្រវត្តិ​សង្ខេប"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Profiles"
 msgstr "ប្រវត្តិ​សង្ខេប​បណ្ដាញ​សង្គម"
@@ -1810,6 +2108,7 @@ msgstr "ប្រវត្តិ​សង្ខេប​បណ្ដាញ​ស
 msgid "Progress Bar"
 msgstr "របារ​វឌ្ឍនភាព"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Projects"
 msgstr "គម្រោង"
@@ -1826,17 +2125,23 @@ msgstr "ការពារ​ប្រវត្តិរូប​របស់​
 msgid "Provider"
 msgstr "អ្នកផ្តល់សេវា"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Publications"
 msgstr "អត្ថបទផ្សព្វផ្សាយ"
 
 #: src/dialogs/resume/sections/publication.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Publisher"
 msgstr "អ្នកបោះពុម្ពផ្សាយ"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Re-score Resume"
+msgstr ""
+
 #: src/routes/_home/-sections/header.tsx
-msgid "Reactive Resume - Go to homepage"
-msgstr "Reactive Resume - ទៅ​កាន់​ទំព័រ​ដើម"
+#~ msgid "Reactive Resume - Go to homepage"
+#~ msgstr "Reactive Resume - ទៅ​កាន់​ទំព័រ​ដើម"
 
 #: src/routes/_home/-sections/prefooter.tsx
 msgid "Reactive Resume continues to grow thanks to its vibrant community. This project owes its progress to numerous individuals who've dedicated their time and skills to make it better. We celebrate the coders who've enhanced its features on GitHub, the linguists whose translations on Crowdin have made it accessible to a broader audience, and the people who've donated to support its continued development."
@@ -1875,6 +2180,7 @@ msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg'
 msgid "Redo (Ctrl+Y)"
 msgstr "ធ្វើម្ដងទៀត (Ctrl+Y)"
 
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "References"
 msgstr "យោង"
@@ -1939,6 +2245,10 @@ msgstr "កំពុង​កំណត់​ពាក្យសម្ងាត់
 msgid "Resources"
 msgstr "ធនធាន"
 
+#: src/routes/_home/-sections/header.tsx
+msgid "Resume Builder - Go to homepage"
+msgstr ""
+
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/resumes.tsx
@@ -1966,6 +2276,14 @@ msgstr "មុំ​បង្វែរ"
 msgid "Russian"
 msgstr "Russian"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "San Francisco, CA"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Save"
+msgstr ""
+
 #: src/dialogs/resume/index.tsx
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
@@ -1986,13 +2304,34 @@ msgstr "Russian"
 msgid "Save Changes"
 msgstr "រក្សាទុក​ការ​ផ្លាស់ប្ដូរ"
 
+#: src/dialogs/resume/index.tsx
+msgid "Save your info first in the \"My Info\" tab to use this feature."
+msgstr ""
+
 #: src/dialogs/auth/enable-two-factor.tsx
 msgid "Scan the QR code below with your preferred authenticator app. You can also copy the secret below and paste it into your app."
 msgstr "ស្កេន​កូដ QR ខាងក្រោម​ដោយ​ប្រើ​កម្មវិធី​ផ្ទៀងផ្ទាត់​អត្តសញ្ញាណ​ដែល​អ្នក​ពេញចិត្ត។ អ្នក​ក៏​អាច​ចម្លង​កូនសោ​សម្ងាត់​ខាងក្រោម ហើយ​បិទភ្ជាប់​វា​ទៅ​ក្នុង​កម្មវិធី​របស់​អ្នក​ផង​ដែរ។"
 
 #: src/dialogs/resume/sections/education.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "School"
 msgstr "សាលា"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Score My Resume"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Score your resume for ATS compatibility and get suggestions to improve it."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Scored against your job description"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Scoring..."
+msgstr ""
 
 #: src/components/input/icon-picker.tsx
 #: src/components/input/icon-picker.tsx
@@ -2015,6 +2354,10 @@ msgstr "កូនសោ​សម្ងាត់​ត្រូវ​បាន​
 #: src/dialogs/resume/sections/custom.tsx
 msgid "Section Type"
 msgstr "ប្រភេទ​ផ្នែក"
+
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "Select a resume to score"
+msgstr ""
 
 #: src/components/ui/combobox.tsx
 #: src/components/ui/multiple-combobox.tsx
@@ -2050,7 +2393,6 @@ msgstr "កំណត់​ពាក្យសម្ងាត់"
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
-#: src/routes/dashboard/-components/sidebar.tsx
 msgid "Settings"
 msgstr "ការកំណត់"
 
@@ -2080,6 +2422,14 @@ msgstr "ការចែករំលែក"
 msgid "Show"
 msgstr "បង្ហាញ"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Show diff"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Show less"
+msgstr ""
+
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/education.tsx
@@ -2101,20 +2451,25 @@ msgid "Sidebar Width"
 msgstr "ទទឹង​របារ​បាត"
 
 #: src/routes/auth/login.tsx
-msgid "Sign in"
-msgstr "ចូល"
+#~ msgid "Sign in"
+#~ msgstr "ចូល"
 
 #: src/routes/auth/login.tsx
-msgid "Sign in to your account"
-msgstr "ចូល​ទៅ​គណនី​របស់​អ្នក"
+#~ msgid "Sign in to your account"
+#~ msgstr "ចូល​ទៅ​គណនី​របស់​អ្នក"
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Sign in with GitHub, Google or a custom OAuth provider."
 msgstr "ចូល​ដោយ​ប្រើ GitHub, Google ឬ​អ្នកផ្តល់ OAuth ផ្ទាល់ខ្លួន។"
 
 #: src/routes/auth/register.tsx
-msgid "Sign up"
-msgstr "ចុះឈ្មោះ"
+#~ msgid "Sign up"
+#~ msgstr "ចុះឈ្មោះ"
+
+#. placeholder {0}: session.user.name
+#: src/components/user/dropdown-menu.tsx
+msgid "Signed in as {0}"
+msgstr ""
 
 #: src/routes/auth/-components/social-auth.tsx
 #: src/routes/auth/-components/social-auth.tsx
@@ -2129,6 +2484,10 @@ msgstr "កំពុង​ចេញ..."
 #: src/routes/auth/register.tsx
 msgid "Signing up..."
 msgstr "កំពុង​ចុះឈ្មោះ..."
+
+#: src/routes/auth/register.tsx
+msgid "Signup Restricted"
+msgstr ""
 
 #: src/dialogs/resume/template/data.ts
 msgid "Single-column with a magenta left border accent; compact and efficient for entry-level or internship applications."
@@ -2150,6 +2509,11 @@ msgstr "ជួរឈរ​តែមួយ រូបរាង​រលោង ន�
 msgid "Size"
 msgstr "ទំហំ"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Skill Name"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Skills"
 msgstr "ជំនាញ"
@@ -2165,6 +2529,10 @@ msgstr "Slovak"
 #: src/dialogs/resume/index.tsx
 msgid "Slug"
 msgstr "Slug"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Software Engineer"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
@@ -2236,10 +2604,23 @@ msgstr ""
 msgid "Strike"
 msgstr "អក្សរ​ឆូត"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Structure"
+msgstr ""
+
 #: src/routes/_home/-sections/footer.tsx
 msgid "Subreddit"
 msgstr "Subreddit"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Suggestion applied"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Suggestions"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Summary"
 msgstr "សង្ខេប"
@@ -2249,8 +2630,8 @@ msgid "Support Reactive Resume"
 msgstr "គាំទ្រ Reactive Resume"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-msgid "Support the app by doing what you can!"
-msgstr "គាំទ្រ​កម្មវិធី ដោយ​ធ្វើ​អ្វី​ដែល​អ្នក​អាច​ធ្វើ​បាន!"
+#~ msgid "Support the app by doing what you can!"
+#~ msgstr "គាំទ្រ​កម្មវិធី ដោយ​ធ្វើ​អ្វី​ដែល​អ្នក​អាច​ធ្វើ​បាន!"
 
 #: src/utils/locale.ts
 msgid "Swedish"
@@ -2275,6 +2656,10 @@ msgstr "ស្លាក"
 #: src/dialogs/resume/index.tsx
 msgid "Tags can be used to categorize your resume by keywords."
 msgstr "ស្លាក​អាច​ត្រូវ​បាន​ប្រើ ដើម្បី​ចាត់ថ្នាក់​ប្រវត្តិរូប​របស់​អ្នក​តាម​ពាក្យ​គន្លឹះ។"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Tailoring"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Tamil"
@@ -2312,6 +2697,10 @@ msgstr "ពណ៌​អត្ថបទ"
 msgid "Thai"
 msgstr "Thai"
 
+#: src/dialogs/resume/index.tsx
+msgid "The AI will use your info and this job description to generate an ATS-optimized resume. Leave blank for a general-purpose resume."
+msgstr ""
+
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "The API key has been deleted successfully."
 msgstr "កូនសោ API ត្រូវ​បាន​លុប​ដោយ​ជោគជ័យ។"
@@ -2341,7 +2730,6 @@ msgid "The URL you entered is not valid."
 msgstr "URL ដែល​អ្នក​បាន​បញ្ចូល មិន​ត្រឹមត្រូវ​ទេ។"
 
 #: src/components/command-palette/pages/preferences/theme.tsx
-#: src/components/user/dropdown-menu.tsx
 #: src/routes/dashboard/settings/preferences.tsx
 msgid "Theme"
 msgstr "ស្បែក"
@@ -2371,8 +2759,8 @@ msgstr "សកម្មភាព​នេះ​មិន​អាច​មិន
 
 #: src/dialogs/resume/import.tsx
 #: src/dialogs/resume/import.tsx
-msgid "This feature requires AI Integration to be enabled. Please enable it in the settings."
-msgstr "មុខងារ​នេះ​ទាមទារ​ឱ្យ​បើក​ការ​រួមបញ្ចូល AI ជាមុនសិន។ សូម​បើក​វា​ក្នុង​ផ្នែក​ការកំណត់។"
+#~ msgid "This feature requires AI Integration to be enabled. Please enable it in the settings."
+#~ msgstr "មុខងារ​នេះ​ទាមទារ​ឱ្យ​បើក​ការ​រួមបញ្ចូល AI ជាមុនសិន។ សូម​បើក​វា​ក្នុង​ផ្នែក​ការកំណត់។"
 
 #: src/dialogs/resume/index.tsx
 msgid "This is a URL-friendly name for your resume."
@@ -2400,8 +2788,12 @@ msgid "This step is optional, but recommended."
 msgstr "ជំហាន​នេះ​ជា​ជម្រើស ប៉ុន្តែ​បាន​ផ្ដល់​អនុសាសន៍។"
 
 #: src/dialogs/api-key/create.tsx
-msgid "This will generate a new API key to access the Reactive Resume API to allow machines to interact with your resume data."
-msgstr "វា​នឹង​បង្កើត​កូនសោ API ថ្មី​មួយ ដើម្បី​ចូល​ដំណើរការ Reactive Resume API ហើយ​អនុញ្ញាត​ឱ្យ​យន្តចលនា​អន្តរកម្ម​ជាមួយ​ទិន្នន័យ​ប្រវត្តិរូប​របស់​អ្នក។"
+msgid "This will generate a new API key to access the API and allow machines to interact with your resume data."
+msgstr ""
+
+#: src/dialogs/api-key/create.tsx
+#~ msgid "This will generate a new API key to access the Reactive Resume API to allow machines to interact with your resume data."
+#~ msgstr "វា​នឹង​បង្កើត​កូនសោ API ថ្មី​មួយ ដើម្បី​ចូល​ដំណើរការ Reactive Resume API ហើយ​អនុញ្ញាត​ឱ្យ​យន្តចលនា​អន្តរកម្ម​ជាមួយ​ទិន្នន័យ​ប្រវត្តិរូប​របស់​អ្នក។"
 
 #: src/routes/_home/-sections/hero.tsx
 msgid "Timelapse demonstration of building a resume with Reactive Resume"
@@ -2419,6 +2811,9 @@ msgstr "គន្លឹះ៖ អ្នក​អាច​ដាក់​ឈ្�
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/custom.tsx
 #: src/dialogs/resume/sections/publication.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Title"
 msgstr "ចំណងជើង"
 
@@ -2639,11 +3034,16 @@ msgid "Uploading picture..."
 msgstr "កំពុង​អាប់ឡូដ​រូបភាព..."
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "URL"
 msgstr "URL"
 
+#: src/dialogs/resume/index.tsx
+msgid "Use My Info"
+msgstr ""
+
 #: src/dialogs/resume/sections/profile.tsx
-#: src/routes/auth/register.tsx
+#: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Username"
 msgstr "ឈ្មោះ​អ្នក​ប្រើ"
@@ -2702,6 +3102,10 @@ msgstr "ចំនួន​មើល"
 msgid "Volunteer"
 msgstr "ស្ម័គ្រចិត្ត"
 
+#: src/routes/dashboard/info/index.tsx
+msgid "Volunteer Experience"
+msgstr ""
+
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/education.tsx
@@ -2712,6 +3116,15 @@ msgstr "ស្ម័គ្រចិត្ត"
 #: src/dialogs/resume/sections/reference.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/sections/basics.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
+#: src/routes/dashboard/info/index.tsx
 msgid "Website"
 msgstr "គេហទំព័រ"
 
@@ -2754,8 +3167,8 @@ msgid "You also have the option to deploy on your own servers using the Docker i
 msgstr "អ្នក​ក៏​មាន​ជម្រើស​ដំឡើង​លើ​ម៉ាស៊ីន​បម្រើ​ផ្ទាល់​ខ្លួន​របស់​អ្នក ដោយ​ប្រើ​រូបភាព Docker ផង​ដែរ។"
 
 #: src/routes/auth/login.tsx
-msgid "You can also use your username to login."
-msgstr "អ្នក​ក៏​អាច​ប្រើ​ឈ្មោះ​អ្នកប្រើ​របស់​អ្នក ដើម្បី​ចូល​កាន់​ប្រព័ន្ធ​បាន​ផង​ដែរ។"
+#~ msgid "You can also use your username to login."
+#~ msgstr "អ្នក​ក៏​អាច​ប្រើ​ឈ្មោះ​អ្នកប្រើ​របស់​អ្នក ដើម្បី​ចូល​កាន់​ប្រព័ន្ធ​បាន​ផង​ដែរ។"
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "You can share your resume via a unique public URL, protect it with a password, or download it as a PDF to share directly. The choice is yours!"
@@ -2793,6 +3206,10 @@ msgstr "ទិន្នន័យ​របស់​អ្នក​ត្រូវ
 #: src/routes/_home/-sections/faq.tsx
 msgid "Your data is stored securely and is never shared with third parties. You can also self-host Reactive Resume on your own servers for complete control over your data."
 msgstr "ទិន្នន័យ​របស់​អ្នក​ត្រូវ​បាន​រក្សាទុក​ដោយ​សុវត្ថិភាព ហើយ​មិនដែល​ត្រូវ​បាន​ចែករំលែក​ជាមួយ​ភាគី​ទីបី​ទេ។ អ្នក​ក៏​អាច​ដំឡើង Reactive Resume លើ​ម៉ាស៊ីន​បម្រើ​ផ្ទាល់ខ្លួន​របស់​អ្នក ដើម្បី​មាន​សិទ្ធિ​ត្រួតត្រា​លើ​ទិន្នន័យ​របស់​អ្នក​ដល់​ខ្ពស់​បំផុត​ផង​ដែរ។"
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Your info has been saved successfully."
+msgstr ""
 
 #: src/routes/auth/reset-password.tsx
 msgid "Your password has been reset successfully. You can now sign in with your new password."
@@ -2848,4 +3265,3 @@ msgstr "បង្រួម"
 #: src/utils/locale.ts
 msgid "Zulu"
 msgstr "Zulu"
-

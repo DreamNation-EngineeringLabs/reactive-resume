@@ -9,12 +9,20 @@ import { env } from "./env";
  */
 export function getSourceUrl(): string {
   if (typeof document !== "undefined") {
+    console.log("[getSourceUrl] document.cookie:", document.cookie);
     const match = document.cookie
       .split("; ")
       .find((row) => row.startsWith("source_url="));
+    console.log("[getSourceUrl] cookie match:", match);
     if (match) {
-      return decodeURIComponent(match.split("=")[1]!);
+      const value = decodeURIComponent(match.split("=")[1]!);
+      console.log("[getSourceUrl] decoded value:", value);
+      return value;
     }
+  } else {
+    console.log("[getSourceUrl] document is undefined (SSR)");
   }
-  return env.VITE_MAIN_APP_URL ?? "http://localhost:3000";
+  const fallback = env.VITE_MAIN_APP_URL ?? "http://localhost:3000";
+  console.log("[getSourceUrl] using fallback:", fallback);
+  return fallback;
 }
