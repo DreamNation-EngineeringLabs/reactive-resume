@@ -47,7 +47,7 @@ msgstr "{0, plural, one {# అంశం} other {# అంశాలు}}"
 msgid "{column, plural, one {# Column} other {# Columns}}"
 msgstr "{column, plural, one {# కళమ్} other {# కళమ్స్}}"
 
-#. placeholder {0}: keywords.length - 8
+#. placeholder {0}: keywords.length - 10
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "+{0} more"
 msgstr ""
@@ -64,10 +64,6 @@ msgstr "<0>ప్రశ్నలు</0><1>వేడి</1><2>అడిగిన�
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "<0>Thank you for using our resume builder! If you have any questions or feedback, please don't hesitate to reach out.</0><1>Check out the documentation below to learn more about all the features available to help you create the perfect resume.</1>"
 msgstr ""
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "<0>Thank you for using Reactive Resume! This app is a labor of love, created mostly in my spare time, with wonderful support from open-source contributors around the world.</0><1>If Reactive Resume has been helpful to you, and you'd like to help keep it free and open for everyone, please consider making a donation. Every little bit is appreciated!</1>"
-#~ msgstr "<0>Reactive Resume వాడినందుకు ధన్యవాదాలు! ఈ యాప్ నాకు ఖాళీ సమయంలో, ప్రపంచవ్యాప్తంగా ఉన్న ఓపెన్-సోర్స్ సహాయదారుల అద్భుతమైన మద్దతుతో, ప్రేమతో సృజించబడింది.</0><1>Reactive Resume మీకు సహాయపడిందనుకుంటే, దీనిని అందరికీ ఉచితంగా మరియు ఓపెన్‌గా ఉంచేందుకు మీరు సహాయం చేయాలనుకుంటే, దయచేసి విరాళం ఇవ్వాలని పరిశీలించండి. ప్రతి చిన్న సహాయం అభినందించబడుతుంది!</1>"
 
 #: src/dialogs/api-key/create.tsx
 msgid "1 month"
@@ -288,11 +284,6 @@ msgstr ""
 msgid "Afrikaans"
 msgstr "ఆఫ్రికాన్స్"
 
-#: src/dialogs/resume/import.tsx
-#: src/dialogs/resume/import.tsx
-#~ msgid "AI"
-#~ msgstr "AI"
-
 #: src/components/ai/chat.tsx
 msgid "AI Chat"
 msgstr ""
@@ -301,17 +292,9 @@ msgstr ""
 msgid "Albanian"
 msgstr "అల్బేనియన్"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "All suggestions have been handled. Re-score to see updated results."
-msgstr ""
-
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Allow Public Access"
 msgstr "ప్రజా యాక్సెస్‌ని అనుమతించండి"
-
-#: src/routes/auth/register.tsx
-#~ msgid "Already have an account? <0><1>Sign in now <2/></1></0>"
-#~ msgstr "మీకు ఖాతా ఉందా? <0><1>ఇప్పుడే సైన్ ఇన్ చెయ్యండి <2/></1></0>"
 
 #: src/utils/locale.ts
 msgid "Amharic"
@@ -360,14 +343,11 @@ msgstr "API కీలు"
 msgid "API Reference"
 msgstr "API సూచన"
 
-#: src/routes/dashboard/-components/sidebar.tsx
-#~ msgid "App"
-#~ msgstr "యాప్"
-
 #: src/routes/_home/-sections/statistics.tsx
 msgid "Application Statistics"
 msgstr "యాప్ గణాంకాలు"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Applied"
 msgstr ""
@@ -382,7 +362,7 @@ msgid "Apply"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Apply All"
+msgid "Apply All Suggestions ({applicablePendingCount})"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -436,11 +416,14 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "కారక నిష్పత్తి"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/ats-score/index.tsx
 #: src/utils/resume/section.tsx
 msgid "ATS Score"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "ATS Score Analysis"
 msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
@@ -589,10 +572,6 @@ msgstr "రద్దు చేయండి"
 msgid "Catalan"
 msgstr "కాటలాన్"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Category Breakdown"
-msgstr ""
-
 #: src/components/input/rich-input.tsx
 msgid "Center Align"
 msgstr "మద్యAlign"
@@ -709,10 +688,6 @@ msgid "Continue where you left off"
 msgstr "మీరు నిలిపిన చోట continued చేయండి"
 
 #: src/dialogs/resume/import.tsx
-#~ msgid "Continue where you left off by importing an existing resume you created using Reactive Resume or any another resume builder. Supported formats include PDF, Microsoft Word, as well as JSON files from Reactive Resume."
-#~ msgstr "మీరు Reactive Resume లేదా ఇతర రిజ్యూమ్ బిల్డర్ ఉపయోగించి సృష్టించిన ఇప్పటికే ఉన్న రిజ్యూమ్‌ను ఇంపోర్ట్ చేయడం ద్వారా మీరు నిలిపిన చోట continued చేయండి. మద్దతిచేసే ఫార్మాట్లలో PDF, Microsoft Word, ఇంకా Reactive Resume నుండి JSON ఫైళ్లు ఉన్నాయి."
-
-#: src/dialogs/resume/import.tsx
 msgid "Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word, and JSON files. PDF and Word documents are automatically parsed using AI."
 msgstr ""
 
@@ -763,10 +738,6 @@ msgstr ""
 #: src/dialogs/resume/sections/volunteer.tsx
 msgid "Create"
 msgstr "సృష్టించండి"
-
-#: src/routes/auth/register.tsx
-#~ msgid "Create a new account"
-#~ msgstr "క్రొత్త ఖాతాను సృష్టించండి"
 
 #: src/dialogs/api-key/create.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
@@ -1010,14 +981,6 @@ msgstr ""
 msgid "Documentation"
 msgstr "డాక్యుమెంటేషన్"
 
-#: src/routes/auth/login.tsx
-#~ msgid "Don't have an account? <0><1>Create one now <2/></1></0>"
-#~ msgstr "ఖాతా లేదా? <0><1>ఇప్పుడు ఖాతా సృష్టించండి <2/></1></0>"
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "Donate to Reactive Resume"
-#~ msgstr "Reactive Resume కు దానం చేయండి"
-
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/routes/$username/$slug.tsx
 msgid "Download"
@@ -1156,10 +1119,6 @@ msgstr "రెండు దశల ధృవీకరణ ఏర్పాటున
 msgid "Enter your password to disable two-factor authentication. Your account will be less secure without 2FA enabled."
 msgstr "రెండు దశల ధృవీకరణను నిలిపివేయడానికి మీ పాస్‌వర్డ్‌ని నమోదు చేయండి. 2FA ప్రారంభించబడకుండా ఉంటే మీ ఖాతా తక్కువ భద్రతగా ఉంటుంది."
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Estimated score improvement"
-msgstr ""
-
 #: src/routes/_home/-sections/donate.tsx
 msgid "Every contribution, big or small, makes a huge difference to the project.<0/>Thank you for your support!"
 msgstr "ప్రతి సహకారం, చిన్నదైనా పెద్దదైనా, ప్రాజెక్టులో గొప్ప మార్పును తీసుకురాగలదు.<0/>మీ మద్దతుకు ధన్యవాదాలు!"
@@ -1201,10 +1160,6 @@ msgstr "{0}న గడువు ముగుస్తుంది"
 #: src/routes/_home/-sections/templates.tsx
 msgid "Explore our diverse selection of templates, each designed to fit different styles, professions, and personalities. Reactive Resume currently offers 12 templates, with more on the way."
 msgstr "మా విభిన్న టెంప్లేట్‌ల ఎంపికను అన్వేషించండి, ప్రతీదీ వేర్వేరు శైలులు, వృత్తులు, వ్యక్తిత్వాలను కన్నడేలా రూపొందించబడింది. Reactive Resume ప్రస్తుతం 12 టెంప్లేట్స్‌ను అందిస్తుంది, ఇంకా మరిన్ని త్వరలో అందుబాటులోకి రానున్నాయి."
-
-#: src/routes/dashboard/settings/api-keys.tsx
-#~ msgid "Explore the API documentation to learn how to integrate Reactive Resume with your applications. Find detailed endpoints, request examples, and authentication methods."
-#~ msgstr "మీ అప్లికేషన్లతో Reactive Resumeను సమ్మిళితం చేయడాన్ని నేర్చుకునేందుకు API డాక్యుమెంటేషన్‌ను అన్వేషించండి. డీటైల్డ్ ఎండ్‌పాయింట్లు, రిక్వెస్ట్ ఉదాహరణలు, మరియు ధృవీకరణ పద్ధతులను కనుగొనండి."
 
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "Explore the API documentation to learn how to integrate with your applications. Find"
@@ -1273,10 +1228,6 @@ msgstr "ఉదాహరణకు, మీరు ఈ రిజ్యూమ్ ప�
 msgid "For security reasons, this key will only be displayed once."
 msgstr "భద్రత కారణంగా, ఈ కీ ఒక్కసారి మాత్రమే ప్రదర్శించబడుతుంది."
 
-#: src/routes/auth/login.tsx
-#~ msgid "Forgot Password?"
-#~ msgstr "పాస్‌వర్డ్ మర్చిపోయారా?"
-
 #: src/routes/auth/forgot-password.tsx
 msgid "Forgot your password?"
 msgstr "మీ పాస్‌వర్డ్ మర్చిపోయారా?"
@@ -1314,6 +1265,7 @@ msgstr "పూర్తి వెడల్పు"
 msgid "Fullscreen"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "General ATS compatibility score"
 msgstr ""
@@ -1451,10 +1403,6 @@ msgstr "హైడ్"
 msgid "Hide all icons on the resume"
 msgstr "జీవన చరిత్రపై అన్ని చిహ్నాలను దాచండి"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Hide diff"
-msgstr ""
-
 #: src/components/input/rich-input.tsx
 msgid "Highlight"
 msgstr "హైలైట్"
@@ -1479,6 +1427,10 @@ msgstr "నేను APIని ఎలా ఉపయోగిస్తాను?"
 #: src/routes/_home/-sections/faq.tsx
 msgid "How is my data protected?"
 msgstr "నా డేటా ఎలా రక్షించబడుతుంది?"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "How to Improve"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Hungarian"
@@ -1514,10 +1466,6 @@ msgstr "ఇంపోర్ట్ చేస్తోంది..."
 #: src/utils/locale.ts
 msgid "Indonesian"
 msgstr "ఇండోనేషియన్"
-
-#: src/utils/resume/section.tsx
-#~ msgid "Information"
-#~ msgstr "ఇన్ఫర్మేషన్"
 
 #: src/components/input/rich-input.tsx
 msgid "Inline Code"
@@ -1564,6 +1512,10 @@ msgstr ""
 #: src/utils/locale.ts
 msgid "Japanese"
 msgstr "జపానీస్"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "JD-matched"
+msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Job Description"
@@ -1742,10 +1694,6 @@ msgstr "తాళం"
 msgid "Login Restricted"
 msgstr ""
 
-#: src/components/user/dropdown-menu.tsx
-#~ msgid "Logout"
-#~ msgstr "లాగౌట్"
-
 #: src/routes/_home/-sections/donate.tsx
 msgid "Long-term Sustainability"
 msgstr "దీర్ఘకాలిక స్థిరత్వం"
@@ -1781,6 +1729,10 @@ msgstr "మార్జిన్ (అడామ్)"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/page.tsx
 msgid "Margin (Vertical)"
 msgstr "మార్జిన్ (ఉర్ధ్వాదహం)"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Matched Keywords"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Missing Keywords"
@@ -1823,6 +1775,10 @@ msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Need Help?"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Needs Improvement"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
@@ -1976,9 +1932,11 @@ msgid "Password protection has been enabled."
 msgstr "పాస్‌వర్డ్ రక్షణను ప్రారంభించారు."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Paste job description here (optional)..."
 msgstr ""
@@ -2138,10 +2096,6 @@ msgstr "పబ్లిషర్"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Re-score Resume"
 msgstr ""
-
-#: src/routes/_home/-sections/header.tsx
-#~ msgid "Reactive Resume - Go to homepage"
-#~ msgstr "Reactive Resume - హోమ్‌పేజీకి వెళ్ళండి"
 
 #: src/routes/_home/-sections/prefooter.tsx
 msgid "Reactive Resume continues to grow thanks to its vibrant community. This project owes its progress to numerous individuals who've dedicated their time and skills to make it better. We celebrate the coders who've enhanced its features on GitHub, the linguists whose translations on Crowdin have made it accessible to a broader audience, and the people who've donated to support its continued development."
@@ -2318,17 +2272,20 @@ msgid "School"
 msgstr "పాఠశాల"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Score My Resume"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Score your resume for ATS compatibility and get suggestions to improve it."
+msgid "Score your resume for ATS compatibility and get detailed feedback by category."
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Scored against your job description"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Scoring..."
 msgstr ""
@@ -2423,10 +2380,6 @@ msgid "Show"
 msgstr "చూపించండి"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Show diff"
-msgstr ""
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Show less"
 msgstr ""
 
@@ -2450,21 +2403,9 @@ msgstr "<<<<<<< HEAD"
 msgid "Sidebar Width"
 msgstr "సైడ్బార్ వెడల్పు"
 
-#: src/routes/auth/login.tsx
-#~ msgid "Sign in"
-#~ msgstr "సైన్ ఇన్ చేయండి"
-
-#: src/routes/auth/login.tsx
-#~ msgid "Sign in to your account"
-#~ msgstr "మీ ఖాతాలో సైన్ ఇన్ అవ్వండి"
-
 #: src/routes/_home/-sections/features.tsx
 msgid "Sign in with GitHub, Google or a custom OAuth provider."
 msgstr "GitHub, Google లేదా కస్టమ్ OAuth ప్రొవైడర్‌తో సైన్ ఇన్ అవ్వండి."
-
-#: src/routes/auth/register.tsx
-#~ msgid "Sign up"
-#~ msgstr "సైన్ అప్ చేయండి"
 
 #. placeholder {0}: session.user.name
 #: src/components/user/dropdown-menu.tsx
@@ -2616,10 +2557,6 @@ msgstr "సబ్రెడిట్"
 msgid "Suggestion applied"
 msgstr ""
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Suggestions"
-msgstr ""
-
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Summary"
@@ -2628,10 +2565,6 @@ msgstr "సమ్మరీ"
 #: src/routes/_home/-sections/donate.tsx
 msgid "Support Reactive Resume"
 msgstr "Reactive Resume కి సపోర్ట్ ఇవ్వండి"
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "Support the app by doing what you can!"
-#~ msgstr "మీకు వీలైనంత చేసి యాప్‌కు సపోర్ట్ ఇవ్వండి!"
 
 #: src/utils/locale.ts
 msgid "Swedish"
@@ -2757,10 +2690,9 @@ msgstr "ఈ చర్యను రద్దు చేయడం సాధ్య�
 msgid "This action cannot be undone. All your data will be permanently deleted."
 msgstr "ఈ చర్యను రద్దు చేయడం సాధ్యం కాదు. మీ డేటా మొత్తం శాశ్వతంగా తొలగించబడుతుంది."
 
-#: src/dialogs/resume/import.tsx
-#: src/dialogs/resume/import.tsx
-#~ msgid "This feature requires AI Integration to be enabled. Please enable it in the settings."
-#~ msgstr "ఈ ఫీచర్ పనికి రావడానికి AI ఇంటిగ్రేషన్ యాక్టివేట్ చేయాలి. దయచేసి సెట్టింగ్స్‌లో ఎనేబుల్ చేయండి."
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "This category looks great! No improvements needed."
+msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "This is a URL-friendly name for your resume."
@@ -2790,10 +2722,6 @@ msgstr "ఈ దశ ఐచ్ఛికం, కాని సిఫారసు చ
 #: src/dialogs/api-key/create.tsx
 msgid "This will generate a new API key to access the API and allow machines to interact with your resume data."
 msgstr ""
-
-#: src/dialogs/api-key/create.tsx
-#~ msgid "This will generate a new API key to access the Reactive Resume API to allow machines to interact with your resume data."
-#~ msgstr "ఈ చర్య ద్వారా Reactive Resume API ని యాక్సెస్ చేసేందుకు కొత్త API కీ రూపొందించబడుతుంది, దీని ద్వారా యంత్రాలు మీ రెజ్యూమ్ డేటాతో ఇంటరాక్ట్ చేయగలవు."
 
 #: src/routes/_home/-sections/hero.tsx
 msgid "Timelapse demonstration of building a resume with Reactive Resume"
@@ -3136,6 +3064,10 @@ msgstr "ఈ విభాగాన్ని మీరు కొత్తగా �
 msgid "What makes Reactive Resume different from other resume builders?"
 msgstr "ఇతర రిజ్యూమ్ బిల్డర్లతో పోల్చితే Reactive Resumeను ప్రత్యేకంగా నిలిపే విషయం ఏమిటి?"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "What's Good"
+msgstr ""
+
 #: src/routes/_home/-sections/hero.tsx
 msgid "What's new in the latest version?"
 msgstr "తాజా వెర్షన్‌లో ఏమి కొత్తగా ఉంది?"
@@ -3165,10 +3097,6 @@ msgstr "అవును! Reactive Resume ఉపయోగించడం పూ�
 #: src/routes/_home/-sections/features.tsx
 msgid "You also have the option to deploy on your own servers using the Docker image."
 msgstr "మీరు మీ సొంత సర్వర్లపై Docker చిత్రాన్ని ఉపయోగించి డిప్లాయ్ చేసుకునే ఎంపిక కూడా ఉంది."
-
-#: src/routes/auth/login.tsx
-#~ msgid "You can also use your username to login."
-#~ msgstr "మీరు మీ యూజర్‌నేమ్‌తో కూడా లాగిన్ చేయవచ్చు."
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "You can share your resume via a unique public URL, protect it with a password, or download it as a PDF to share directly. The choice is yours!"

@@ -47,7 +47,7 @@ msgstr "{0, plural, other {#개 항목}}"
 msgid "{column, plural, one {# Column} other {# Columns}}"
 msgstr "{column, plural, other {#개 열}}"
 
-#. placeholder {0}: keywords.length - 8
+#. placeholder {0}: keywords.length - 10
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "+{0} more"
 msgstr ""
@@ -64,10 +64,6 @@ msgstr "<0>자주</0><1>묻는</1><2>질문</2>"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "<0>Thank you for using our resume builder! If you have any questions or feedback, please don't hesitate to reach out.</0><1>Check out the documentation below to learn more about all the features available to help you create the perfect resume.</1>"
 msgstr ""
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "<0>Thank you for using Reactive Resume! This app is a labor of love, created mostly in my spare time, with wonderful support from open-source contributors around the world.</0><1>If Reactive Resume has been helpful to you, and you'd like to help keep it free and open for everyone, please consider making a donation. Every little bit is appreciated!</1>"
-#~ msgstr "<0>Reactive Resume를 사용해 주셔서 감사합니다! 이 앱은 전 세계 오픈 소스 기여자들의 훌륭한 지원을 받으며, 주로 제 개인 시간을 들여 애정을 담아 만든 프로젝트입니다.</0><1>Reactive Resume가 도움이 되었다면, 모두가 자유롭게 사용할 수 있도록 유지하는 데 힘을 보태 주세요. 크고 작은 모든 기부가 큰 도움이 됩니다!</1>"
 
 #: src/dialogs/api-key/create.tsx
 msgid "1 month"
@@ -288,11 +284,6 @@ msgstr ""
 msgid "Afrikaans"
 msgstr "아프리칸스어"
 
-#: src/dialogs/resume/import.tsx
-#: src/dialogs/resume/import.tsx
-#~ msgid "AI"
-#~ msgstr "AI"
-
 #: src/components/ai/chat.tsx
 msgid "AI Chat"
 msgstr ""
@@ -301,17 +292,9 @@ msgstr ""
 msgid "Albanian"
 msgstr "알바니아어"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "All suggestions have been handled. Re-score to see updated results."
-msgstr ""
-
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Allow Public Access"
 msgstr "공개 액세스 허용"
-
-#: src/routes/auth/register.tsx
-#~ msgid "Already have an account? <0><1>Sign in now <2/></1></0>"
-#~ msgstr "이미 계정이 있으신가요? <0><1>지금 로그인하기 <2/></1></0>"
 
 #: src/utils/locale.ts
 msgid "Amharic"
@@ -360,14 +343,11 @@ msgstr "API Key"
 msgid "API Reference"
 msgstr "API 레퍼런스"
 
-#: src/routes/dashboard/-components/sidebar.tsx
-#~ msgid "App"
-#~ msgstr "앱"
-
 #: src/routes/_home/-sections/statistics.tsx
 msgid "Application Statistics"
 msgstr "애플리케이션 통계"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Applied"
 msgstr ""
@@ -382,7 +362,7 @@ msgid "Apply"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Apply All"
+msgid "Apply All Suggestions ({applicablePendingCount})"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -436,11 +416,14 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "가로세로 비율"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/ats-score/index.tsx
 #: src/utils/resume/section.tsx
 msgid "ATS Score"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "ATS Score Analysis"
 msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
@@ -589,10 +572,6 @@ msgstr "취소"
 msgid "Catalan"
 msgstr "카탈루냐어"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Category Breakdown"
-msgstr ""
-
 #: src/components/input/rich-input.tsx
 msgid "Center Align"
 msgstr "가운데 정렬"
@@ -709,10 +688,6 @@ msgid "Continue where you left off"
 msgstr "중단한 곳부터 계속하기"
 
 #: src/dialogs/resume/import.tsx
-#~ msgid "Continue where you left off by importing an existing resume you created using Reactive Resume or any another resume builder. Supported formats include PDF, Microsoft Word, as well as JSON files from Reactive Resume."
-#~ msgstr "Reactive Resume나 다른 이력서 작성 도구로 이미 만든 이력서를 가져와 중단한 곳부터 계속 진행하세요. PDF, Microsoft Word, Reactive Resume의 JSON 파일 형식을 지원합니다."
-
-#: src/dialogs/resume/import.tsx
 msgid "Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word, and JSON files. PDF and Word documents are automatically parsed using AI."
 msgstr ""
 
@@ -763,10 +738,6 @@ msgstr ""
 #: src/dialogs/resume/sections/volunteer.tsx
 msgid "Create"
 msgstr "생성"
-
-#: src/routes/auth/register.tsx
-#~ msgid "Create a new account"
-#~ msgstr "새 계정 만들기"
 
 #: src/dialogs/api-key/create.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
@@ -1010,14 +981,6 @@ msgstr ""
 msgid "Documentation"
 msgstr "문서"
 
-#: src/routes/auth/login.tsx
-#~ msgid "Don't have an account? <0><1>Create one now <2/></1></0>"
-#~ msgstr "계정이 없으신가요? <0><1>지금 가입하기 <2/></1></0>"
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "Donate to Reactive Resume"
-#~ msgstr "Reactive Resume에 기부하기"
-
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/routes/$username/$slug.tsx
 msgid "Download"
@@ -1156,10 +1119,6 @@ msgstr "2단계 인증을 설정하려면 비밀번호를 입력해 확인하세
 msgid "Enter your password to disable two-factor authentication. Your account will be less secure without 2FA enabled."
 msgstr "2단계 인증을 비활성화하려면 비밀번호를 입력하세요. 2단계 인증을 사용하지 않으면 계정 보안이 낮아집니다."
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Estimated score improvement"
-msgstr ""
-
 #: src/routes/_home/-sections/donate.tsx
 msgid "Every contribution, big or small, makes a huge difference to the project.<0/>Thank you for your support!"
 msgstr "크든 작든 모든 기여는 프로젝트에 큰 변화를 가져옵니다.<0/>후원해 주셔서 감사합니다!"
@@ -1201,10 +1160,6 @@ msgstr "만료일: {0}"
 #: src/routes/_home/-sections/templates.tsx
 msgid "Explore our diverse selection of templates, each designed to fit different styles, professions, and personalities. Reactive Resume currently offers 12 templates, with more on the way."
 msgstr "각기 다른 스타일, 직군, 개성을 반영하도록 설계된 다양한 템플릿을 살펴보세요. 현재 Reactive Resume에는 12개의 템플릿이 있으며, 앞으로 더 추가될 예정입니다."
-
-#: src/routes/dashboard/settings/api-keys.tsx
-#~ msgid "Explore the API documentation to learn how to integrate Reactive Resume with your applications. Find detailed endpoints, request examples, and authentication methods."
-#~ msgstr "Reactive Resume API를 애플리케이션과 통합하는 방법을 알아보려면 API 문서를 살펴보세요. 엔드포인트, 요청 예제, 인증 방법이 자세히 제공됩니다."
 
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "Explore the API documentation to learn how to integrate with your applications. Find"
@@ -1273,10 +1228,6 @@ msgstr "예를 들어, 이 이력서를 어떤 회사에 보냈는지, 해당 �
 msgid "For security reasons, this key will only be displayed once."
 msgstr "보안상의 이유로 이 키는 한 번만 표시됩니다."
 
-#: src/routes/auth/login.tsx
-#~ msgid "Forgot Password?"
-#~ msgstr "비밀번호를 잊으셨나요?"
-
 #: src/routes/auth/forgot-password.tsx
 msgid "Forgot your password?"
 msgstr "비밀번호를 잊으셨나요?"
@@ -1314,6 +1265,7 @@ msgstr "전체 너비"
 msgid "Fullscreen"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "General ATS compatibility score"
 msgstr ""
@@ -1451,10 +1403,6 @@ msgstr "숨기기"
 msgid "Hide all icons on the resume"
 msgstr "이력서의 모든 아이콘 숨기기"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Hide diff"
-msgstr ""
-
 #: src/components/input/rich-input.tsx
 msgid "Highlight"
 msgstr "형광펜"
@@ -1479,6 +1427,10 @@ msgstr "API는 어떻게 사용하나요?"
 #: src/routes/_home/-sections/faq.tsx
 msgid "How is my data protected?"
 msgstr "내 데이터는 어떻게 보호되나요?"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "How to Improve"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Hungarian"
@@ -1514,10 +1466,6 @@ msgstr "가져오는 중..."
 #: src/utils/locale.ts
 msgid "Indonesian"
 msgstr "인도네시아어"
-
-#: src/utils/resume/section.tsx
-#~ msgid "Information"
-#~ msgstr "정보"
 
 #: src/components/input/rich-input.tsx
 msgid "Inline Code"
@@ -1564,6 +1512,10 @@ msgstr ""
 #: src/utils/locale.ts
 msgid "Japanese"
 msgstr "일본어"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "JD-matched"
+msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Job Description"
@@ -1742,10 +1694,6 @@ msgstr "잠금"
 msgid "Login Restricted"
 msgstr ""
 
-#: src/components/user/dropdown-menu.tsx
-#~ msgid "Logout"
-#~ msgstr "로그아웃"
-
 #: src/routes/_home/-sections/donate.tsx
 msgid "Long-term Sustainability"
 msgstr "장기적인 지속 가능성"
@@ -1781,6 +1729,10 @@ msgstr "여백(가로)"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/page.tsx
 msgid "Margin (Vertical)"
 msgstr "여백(세로)"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Matched Keywords"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Missing Keywords"
@@ -1823,6 +1775,10 @@ msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Need Help?"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Needs Improvement"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
@@ -1976,9 +1932,11 @@ msgid "Password protection has been enabled."
 msgstr "비밀번호 보호가 활성화되었습니다."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Paste job description here (optional)..."
 msgstr ""
@@ -2138,10 +2096,6 @@ msgstr "발행인"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Re-score Resume"
 msgstr ""
-
-#: src/routes/_home/-sections/header.tsx
-#~ msgid "Reactive Resume - Go to homepage"
-#~ msgstr "Reactive Resume - 홈페이지로 이동"
 
 #: src/routes/_home/-sections/prefooter.tsx
 msgid "Reactive Resume continues to grow thanks to its vibrant community. This project owes its progress to numerous individuals who've dedicated their time and skills to make it better. We celebrate the coders who've enhanced its features on GitHub, the linguists whose translations on Crowdin have made it accessible to a broader audience, and the people who've donated to support its continued development."
@@ -2318,17 +2272,20 @@ msgid "School"
 msgstr "학교"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Score My Resume"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Score your resume for ATS compatibility and get suggestions to improve it."
+msgid "Score your resume for ATS compatibility and get detailed feedback by category."
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Scored against your job description"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Scoring..."
 msgstr ""
@@ -2423,10 +2380,6 @@ msgid "Show"
 msgstr "표시"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Show diff"
-msgstr ""
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Show less"
 msgstr ""
 
@@ -2450,21 +2403,9 @@ msgstr "사이드바"
 msgid "Sidebar Width"
 msgstr "사이드바 너비"
 
-#: src/routes/auth/login.tsx
-#~ msgid "Sign in"
-#~ msgstr "로그인"
-
-#: src/routes/auth/login.tsx
-#~ msgid "Sign in to your account"
-#~ msgstr "계정에 로그인"
-
 #: src/routes/_home/-sections/features.tsx
 msgid "Sign in with GitHub, Google or a custom OAuth provider."
 msgstr "GitHub, Google 또는 사용자 지정 OAuth 제공자를 통해 로그인할 수 있습니다."
-
-#: src/routes/auth/register.tsx
-#~ msgid "Sign up"
-#~ msgstr "가입"
 
 #. placeholder {0}: session.user.name
 #: src/components/user/dropdown-menu.tsx
@@ -2616,10 +2557,6 @@ msgstr "서브레딧"
 msgid "Suggestion applied"
 msgstr ""
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Suggestions"
-msgstr ""
-
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Summary"
@@ -2628,10 +2565,6 @@ msgstr "요약"
 #: src/routes/_home/-sections/donate.tsx
 msgid "Support Reactive Resume"
 msgstr "Reactive Resume 후원하기"
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "Support the app by doing what you can!"
-#~ msgstr "가능한 방식으로 앱을 지원해 주세요!"
 
 #: src/utils/locale.ts
 msgid "Swedish"
@@ -2757,10 +2690,9 @@ msgstr "이 작업은 되돌릴 수 없습니다."
 msgid "This action cannot be undone. All your data will be permanently deleted."
 msgstr "이 작업은 되돌릴 수 없습니다. 모든 데이터가 영구적으로 삭제됩니다."
 
-#: src/dialogs/resume/import.tsx
-#: src/dialogs/resume/import.tsx
-#~ msgid "This feature requires AI Integration to be enabled. Please enable it in the settings."
-#~ msgstr "이 기능을 사용하려면 AI 통합을 활성화해야 합니다. 설정에서 활성화해 주세요."
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "This category looks great! No improvements needed."
+msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "This is a URL-friendly name for your resume."
@@ -2790,10 +2722,6 @@ msgstr "이 단계는 선택 사항이지만 권장됩니다."
 #: src/dialogs/api-key/create.tsx
 msgid "This will generate a new API key to access the API and allow machines to interact with your resume data."
 msgstr ""
-
-#: src/dialogs/api-key/create.tsx
-#~ msgid "This will generate a new API key to access the Reactive Resume API to allow machines to interact with your resume data."
-#~ msgstr "이 작업은 Reactive Resume API에 액세스할 수 있는 새 API 키를 생성하여, 기계가 이력서 데이터와 상호 작용할 수 있도록 합니다."
 
 #: src/routes/_home/-sections/hero.tsx
 msgid "Timelapse demonstration of building a resume with Reactive Resume"
@@ -3136,6 +3064,10 @@ msgstr "이 섹션의 이름을 무엇으로 바꾸고 싶으신가요?"
 msgid "What makes Reactive Resume different from other resume builders?"
 msgstr "Reactive Resume는 다른 이력서 작성 도구와 무엇이 다른가요?"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "What's Good"
+msgstr ""
+
 #: src/routes/_home/-sections/hero.tsx
 msgid "What's new in the latest version?"
 msgstr "최신 버전의 새로운 기능"
@@ -3165,10 +3097,6 @@ msgstr "네! Reactive Resume는 숨은 비용, 프리미엄 플랜, 구독료 �
 #: src/routes/_home/-sections/features.tsx
 msgid "You also have the option to deploy on your own servers using the Docker image."
 msgstr "또한 Docker 이미지를 사용해 직접 서버에 배포할 수도 있습니다."
-
-#: src/routes/auth/login.tsx
-#~ msgid "You can also use your username to login."
-#~ msgstr "사용자 이름으로도 로그인할 수 있습니다."
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "You can share your resume via a unique public URL, protect it with a password, or download it as a PDF to share directly. The choice is yours!"

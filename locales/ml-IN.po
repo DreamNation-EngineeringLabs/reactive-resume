@@ -47,7 +47,7 @@ msgstr "{0, plural, one {# ഇനം} other {# ഇനങ്ങൾ}}"
 msgid "{column, plural, one {# Column} other {# Columns}}"
 msgstr "{column, plural, one {# കോളം} other {# കോളങ്ങൾ}}"
 
-#. placeholder {0}: keywords.length - 8
+#. placeholder {0}: keywords.length - 10
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "+{0} more"
 msgstr ""
@@ -64,10 +64,6 @@ msgstr "<0>പതിവായി</0><1>ചോദിക്കപ്പെടു�
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "<0>Thank you for using our resume builder! If you have any questions or feedback, please don't hesitate to reach out.</0><1>Check out the documentation below to learn more about all the features available to help you create the perfect resume.</1>"
 msgstr ""
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "<0>Thank you for using Reactive Resume! This app is a labor of love, created mostly in my spare time, with wonderful support from open-source contributors around the world.</0><1>If Reactive Resume has been helpful to you, and you'd like to help keep it free and open for everyone, please consider making a donation. Every little bit is appreciated!</1>"
-#~ msgstr "<0>Reactive Resume ഉപയോഗിച്ചതിന് നന്ദി! ഈ ആപ്പ് എന്റെ ഒഴിവുസമയത്തിലൊക്കെയാണ്, ലോകമെമ്പാടുമുള്ള ഓപ്പൺ സോഴ്‌സ് സംഭാവകരുടെ അത്ഭുതകരമായ പിന്തുണയോടെയാണ്, സ്നേഹത്തോടെ നിർമ്മിക്കപ്പെട്ടിരിക്കുന്നത്.</0><1>Reactive Resume നിങ്ങളെ സഹായിച്ചതാണെങ്കിൽ, ഇത് എല്ലാവർക്കും സൗജന്യമായും തുറന്നതുമായ നിലയിൽ തുടർന്നുനിൽക്കാൻ നിങ്ങൾ സഹായിക്കാൻ ആഗ്രഹിക്കുന്നുവെങ്കിൽ, ദയവായി ഒരു സംഭാവന നൽകുന്നതായി പരിഗണിക്കുക. ഓരോ ചെറിയ സഹായവും വളരെയേറെ വിലപ്പെട്ടതാണ്!</1>"
 
 #: src/dialogs/api-key/create.tsx
 msgid "1 month"
@@ -288,11 +284,6 @@ msgstr ""
 msgid "Afrikaans"
 msgstr "ആഫ്രിക്കാൻസ്"
 
-#: src/dialogs/resume/import.tsx
-#: src/dialogs/resume/import.tsx
-#~ msgid "AI"
-#~ msgstr "AI"
-
 #: src/components/ai/chat.tsx
 msgid "AI Chat"
 msgstr ""
@@ -301,17 +292,9 @@ msgstr ""
 msgid "Albanian"
 msgstr "അൽബേനിയൻ"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "All suggestions have been handled. Re-score to see updated results."
-msgstr ""
-
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Allow Public Access"
 msgstr "പബ്ലിക് ആക്സസ് അനുവദിക്കുക"
-
-#: src/routes/auth/register.tsx
-#~ msgid "Already have an account? <0><1>Sign in now <2/></1></0>"
-#~ msgstr "ഇതിനകം ഒരു അക്കൗണ്ടുണ്ടോ? <0><1>ഇപ്പോൾ തന്നെ സൈൻ ഇൻ ചെയ്യൂ <2/></1></0>"
 
 #: src/utils/locale.ts
 msgid "Amharic"
@@ -360,14 +343,11 @@ msgstr "API കീകൾ"
 msgid "API Reference"
 msgstr "API റഫറൻസ്"
 
-#: src/routes/dashboard/-components/sidebar.tsx
-#~ msgid "App"
-#~ msgstr "ആപ്പ്"
-
 #: src/routes/_home/-sections/statistics.tsx
 msgid "Application Statistics"
 msgstr "ആപ്ലിക്കേഷൻ സ്റ്റാറ്റിസ്റ്റിക്സ്"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Applied"
 msgstr ""
@@ -382,7 +362,7 @@ msgid "Apply"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Apply All"
+msgid "Apply All Suggestions ({applicablePendingCount})"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -436,11 +416,14 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "ആസ്പെക്ട് റേഷ്യോ"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/ats-score/index.tsx
 #: src/utils/resume/section.tsx
 msgid "ATS Score"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "ATS Score Analysis"
 msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
@@ -589,10 +572,6 @@ msgstr "റദ്ദാക്കുക"
 msgid "Catalan"
 msgstr "കറ്റലാൻ"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Category Breakdown"
-msgstr ""
-
 #: src/components/input/rich-input.tsx
 msgid "Center Align"
 msgstr "സെന്റർ അലൈനിൽ ആക്കുക"
@@ -709,10 +688,6 @@ msgid "Continue where you left off"
 msgstr "നിങ്ങൾ അവസാനിപ്പിച്ചിടത്തു നിന്നു തുടരുക"
 
 #: src/dialogs/resume/import.tsx
-#~ msgid "Continue where you left off by importing an existing resume you created using Reactive Resume or any another resume builder. Supported formats include PDF, Microsoft Word, as well as JSON files from Reactive Resume."
-#~ msgstr "Reactive Resume അല്ലെങ്കിൽ മറ്റേതെങ്കിലും റിസ്യൂം ബിൽഡർ ഉപയോഗിച്ച് നിങ്ങൾ മുമ്പ് സൃഷ്‌ടിച്ച റിസ്യൂം ഇംപോർട്ട് ചെയ്ത്, നിങ്ങൾ അവസാനിപ്പിച്ചിടത്തു നിന്നു തുടരും. പിന്തുണയുള്ള ഫോർമാറ്റുകളിൽ PDF, Microsoft Word, കൂടാതെ Reactive Resume ലെ JSON ഫയലുകളും ഉൾപ്പെടുന്നു."
-
-#: src/dialogs/resume/import.tsx
 msgid "Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word, and JSON files. PDF and Word documents are automatically parsed using AI."
 msgstr ""
 
@@ -763,10 +738,6 @@ msgstr ""
 #: src/dialogs/resume/sections/volunteer.tsx
 msgid "Create"
 msgstr "സൃഷ്‌ടിക്കുക"
-
-#: src/routes/auth/register.tsx
-#~ msgid "Create a new account"
-#~ msgstr "ഒരു പുതിയ അക്കൗണ്ട് സൃഷ്‌ടിക്കുക"
 
 #: src/dialogs/api-key/create.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
@@ -1010,14 +981,6 @@ msgstr ""
 msgid "Documentation"
 msgstr "ഡോക്യുമെന്റേഷൻ"
 
-#: src/routes/auth/login.tsx
-#~ msgid "Don't have an account? <0><1>Create one now <2/></1></0>"
-#~ msgstr "അക്കൗണ്ടില്ലേയോ? <0><1>ഇപ്പോൾ തന്നെ ഒന്ന് സൃഷ്‌ടിക്കൂ <2/></1></0>"
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "Donate to Reactive Resume"
-#~ msgstr "Reactive Resume‑ന് സംഭാവന ചെയ്യുക"
-
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/routes/$username/$slug.tsx
 msgid "Download"
@@ -1156,10 +1119,6 @@ msgstr "ടു‑ഫാക്ടർ ഓത്‌ന്റിക്കേഷൻ �
 msgid "Enter your password to disable two-factor authentication. Your account will be less secure without 2FA enabled."
 msgstr "ടു‑ഫാക്ടർ ഓത്‌ന്റിക്കേഷൻ അപ്രാപ്തമാക്കാൻ നിങ്ങളുടെ പാസ്‌വേഡ് നൽകുക. 2FA പ്രാപ്തമാക്കിയിട്ടില്ലാത്തതിനാൽ നിങ്ങളുടെ അക്കൗണ്ട് കുറച്ച് കുറവായി സുരക്ഷിതമായിവരും."
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Estimated score improvement"
-msgstr ""
-
 #: src/routes/_home/-sections/donate.tsx
 msgid "Every contribution, big or small, makes a huge difference to the project.<0/>Thank you for your support!"
 msgstr "വലുതോ ചെറുതോ ആയ ഓരോ സംഭാവനയും പ്രോജക്റ്റിന് വലിയൊരു മാറ്റം സൃഷ്‌ടിക്കുന്നു.<0/>നിങ്ങളുടെ പിന്തുണയ്ക്ക് നന്ദി!"
@@ -1201,10 +1160,6 @@ msgstr "{0}-ന് കാലാവധി അവസാനിക്കും"
 #: src/routes/_home/-sections/templates.tsx
 msgid "Explore our diverse selection of templates, each designed to fit different styles, professions, and personalities. Reactive Resume currently offers 12 templates, with more on the way."
 msgstr "വ്യത്യസ്ത ശൈലികൾക്കും തൊഴിൽ മേഖലകൾക്കും വ്യക്തിത്വങ്ങൾക്കുമൊത്ത് പൊരുത്തപ്പെടുന്ന രീതിയിൽ രൂപകൽപ്പന ചെയ്ത ടെംപ്ലേറ്റുകളുടെ വൈവിധ്യമാർന്ന ഒരു നിര പരിചയപ്പെടൂ. ഇപ്പോൾ Reactive Resume‑ലുണ്ട് 12 ടെംപ്ലേറ്റുകൾ, കൂടാതെ ഇതിലേറെ അടുത്തിടപാടിൽ വരുന്നു."
-
-#: src/routes/dashboard/settings/api-keys.tsx
-#~ msgid "Explore the API documentation to learn how to integrate Reactive Resume with your applications. Find detailed endpoints, request examples, and authentication methods."
-#~ msgstr "Reactive Resume നിങ്ങളുടേതായ ആപ്പ്ലിക്കേഷനുകളുമായി എങ്ങനെ ഇന്റഗ്രേറ്റ് ചെയ്യാമെന്ന് പഠിക്കാൻ API ഡോക്യുമെന്റേഷൻ പരിശോധിക്കുക. വിശദമായ എൻഡ്പോയിന്റുകൾ, അഭ്യർത്ഥന ഉദാഹരണങ്ങൾ, ഓത്‌ന്റിക്കേഷൻ രീതികൾ എന്നിവ അവിടെ ലഭ്യമാണ്."
 
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "Explore the API documentation to learn how to integrate with your applications. Find"
@@ -1273,10 +1228,6 @@ msgstr "ഉദാഹരണത്തിന്, ഈ റിസ്യൂം നി�
 msgid "For security reasons, this key will only be displayed once."
 msgstr "സുരക്ഷാ കാരണങ്ങളാൽ, ഈ കീ ഒറ്റത്തവണ മാത്രം പ്രദർശിപ്പിക്കും."
 
-#: src/routes/auth/login.tsx
-#~ msgid "Forgot Password?"
-#~ msgstr "പാസ്‌വേഡ് മറന്നോ?"
-
 #: src/routes/auth/forgot-password.tsx
 msgid "Forgot your password?"
 msgstr "നിങ്ങളുടെ പാസ്‌വേഡ് മറന്നോ?"
@@ -1314,6 +1265,7 @@ msgstr "പൂർണ്ണ വീതി"
 msgid "Fullscreen"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "General ATS compatibility score"
 msgstr ""
@@ -1451,10 +1403,6 @@ msgstr "മറയ്ക്കുക"
 msgid "Hide all icons on the resume"
 msgstr "റിസ്യൂമിലെ എല്ലാ ഐക്കണുകളും മറയ്ക്കുക"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Hide diff"
-msgstr ""
-
 #: src/components/input/rich-input.tsx
 msgid "Highlight"
 msgstr "ഹൈലൈറ്റ്"
@@ -1479,6 +1427,10 @@ msgstr "API എങ്ങനെ ഉപയോഗിക്കാം?"
 #: src/routes/_home/-sections/faq.tsx
 msgid "How is my data protected?"
 msgstr "എന്റെ ഡാറ്റ എങ്ങനെ സംരക്ഷിക്കപ്പെടുന്നു?"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "How to Improve"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Hungarian"
@@ -1514,10 +1466,6 @@ msgstr "ഇംപോർട്ട് ചെയ്യുന്നു..."
 #: src/utils/locale.ts
 msgid "Indonesian"
 msgstr "ഇന്തോനേഷ്യൻ"
-
-#: src/utils/resume/section.tsx
-#~ msgid "Information"
-#~ msgstr "വിവരങ്ങൾ"
 
 #: src/components/input/rich-input.tsx
 msgid "Inline Code"
@@ -1564,6 +1512,10 @@ msgstr ""
 #: src/utils/locale.ts
 msgid "Japanese"
 msgstr "ജാപ്പനീസ്"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "JD-matched"
+msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Job Description"
@@ -1742,10 +1694,6 @@ msgstr "ലോക്ക് ചെയ്യുക"
 msgid "Login Restricted"
 msgstr ""
 
-#: src/components/user/dropdown-menu.tsx
-#~ msgid "Logout"
-#~ msgstr "ലോഗ്ഔട്ട് ചെയ്യുക"
-
 #: src/routes/_home/-sections/donate.tsx
 msgid "Long-term Sustainability"
 msgstr "ദീർഘകാല സുസ്ഥിരത"
@@ -1781,6 +1729,10 @@ msgstr "മാർജിൻ (തിരശ്ചീനം)"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/page.tsx
 msgid "Margin (Vertical)"
 msgstr "മാർജിൻ (ലംബം)"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Matched Keywords"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Missing Keywords"
@@ -1823,6 +1775,10 @@ msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Need Help?"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Needs Improvement"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
@@ -1976,9 +1932,11 @@ msgid "Password protection has been enabled."
 msgstr "പാസ്‌വേഡ് സംരക്ഷണം പ്രാപ്തമാക്കി."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Paste job description here (optional)..."
 msgstr ""
@@ -2138,10 +2096,6 @@ msgstr "പ്രസാധകൻ"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Re-score Resume"
 msgstr ""
-
-#: src/routes/_home/-sections/header.tsx
-#~ msgid "Reactive Resume - Go to homepage"
-#~ msgstr "Reactive Resume - ഹോംപേജിലേക്കു പോകുക"
 
 #: src/routes/_home/-sections/prefooter.tsx
 msgid "Reactive Resume continues to grow thanks to its vibrant community. This project owes its progress to numerous individuals who've dedicated their time and skills to make it better. We celebrate the coders who've enhanced its features on GitHub, the linguists whose translations on Crowdin have made it accessible to a broader audience, and the people who've donated to support its continued development."
@@ -2318,17 +2272,20 @@ msgid "School"
 msgstr "സ്കൂൾ"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Score My Resume"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Score your resume for ATS compatibility and get suggestions to improve it."
+msgid "Score your resume for ATS compatibility and get detailed feedback by category."
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Scored against your job description"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Scoring..."
 msgstr ""
@@ -2423,10 +2380,6 @@ msgid "Show"
 msgstr "കാണിക്കുക"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Show diff"
-msgstr ""
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Show less"
 msgstr ""
 
@@ -2450,21 +2403,9 @@ msgstr "സൈഡ്ബാർ"
 msgid "Sidebar Width"
 msgstr "സൈഡ്ബാർ വീതി"
 
-#: src/routes/auth/login.tsx
-#~ msgid "Sign in"
-#~ msgstr "സൈൻ ഇൻ"
-
-#: src/routes/auth/login.tsx
-#~ msgid "Sign in to your account"
-#~ msgstr "നിങ്ങളുടെ അക്കൗണ്ടിലേക്ക് സൈൻ ഇൻ ചെയ്യുക"
-
 #: src/routes/_home/-sections/features.tsx
 msgid "Sign in with GitHub, Google or a custom OAuth provider."
 msgstr "GitHub, Google അല്ലെങ്കിൽ ഒരു കസ്റ്റം OAuth പ്രൊവൈഡർ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക."
-
-#: src/routes/auth/register.tsx
-#~ msgid "Sign up"
-#~ msgstr "സൈൻ അപ്"
 
 #. placeholder {0}: session.user.name
 #: src/components/user/dropdown-menu.tsx
@@ -2616,10 +2557,6 @@ msgstr "സബ്‌റെഡിറ്റ്"
 msgid "Suggestion applied"
 msgstr ""
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Suggestions"
-msgstr ""
-
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Summary"
@@ -2628,10 +2565,6 @@ msgstr "സമ്മരി"
 #: src/routes/_home/-sections/donate.tsx
 msgid "Support Reactive Resume"
 msgstr "Reactive Resume‑നെ പിന്തുണയ്ക്കൂ"
-
-#: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
-#~ msgid "Support the app by doing what you can!"
-#~ msgstr "നിങ്ങൾക്ക് കഴിയുന്ന രീതിയിൽ ആപ്പിനെ പിന്തുണയ്ക്കൂ!"
 
 #: src/utils/locale.ts
 msgid "Swedish"
@@ -2757,10 +2690,9 @@ msgstr "ഈ പ്രവർത്തി തിരികെ ലഭ്യമാക
 msgid "This action cannot be undone. All your data will be permanently deleted."
 msgstr "ഈ പ്രവർത്തി തിരികെ ലഭ്യമാക്കാൻ സാധിക്കില്ല. നിങ്ങളുടെ എല്ലാ ഡാറ്റയും ശാശ്വതമായി ഡിലീറ്റ് ചെയ്യപ്പെടും."
 
-#: src/dialogs/resume/import.tsx
-#: src/dialogs/resume/import.tsx
-#~ msgid "This feature requires AI Integration to be enabled. Please enable it in the settings."
-#~ msgstr "ഈ സവിശേഷതയ്‌ക്ക് AI ഇന്റഗ്രേഷൻ പ്രാപ്തമാക്കിയിരിക്കണം. ദയവായി സെറ്റിംഗ്സിൽ ഇത് പ്രാപ്തമാക്കൂ."
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "This category looks great! No improvements needed."
+msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "This is a URL-friendly name for your resume."
@@ -2790,10 +2722,6 @@ msgstr "ഈ പടി ഐച്ചികമാണ്, പക്ഷേ നിർ�
 #: src/dialogs/api-key/create.tsx
 msgid "This will generate a new API key to access the API and allow machines to interact with your resume data."
 msgstr ""
-
-#: src/dialogs/api-key/create.tsx
-#~ msgid "This will generate a new API key to access the Reactive Resume API to allow machines to interact with your resume data."
-#~ msgstr "Reactive Resume API‑യിലേക്ക് ഒരു പുതിയ API കീ സൃഷ്‌ടിക്കുന്നതിന് ഇത് സഹായിക്കും, അതിലൂടെ മെഷീനുകൾക്ക് നിങ്ങളുടെ റിസ്യൂം ഡാറ്റയുമായി ഇടപെടാൻ കഴിയും."
 
 #: src/routes/_home/-sections/hero.tsx
 msgid "Timelapse demonstration of building a resume with Reactive Resume"
@@ -3136,6 +3064,10 @@ msgstr "ഈ സെക്ഷന് എന്ത് പേരാക്കി പ�
 msgid "What makes Reactive Resume different from other resume builders?"
 msgstr "മറ്റു റിസ്യൂം ബിൽഡറുകളോട് താരതമ്യപ്പെടുത്തുമ്പോൾ Reactive Resume‑യെ വ്യത്യസ്തമാക്കുന്നത് എന്താണ്?"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "What's Good"
+msgstr ""
+
 #: src/routes/_home/-sections/hero.tsx
 msgid "What's new in the latest version?"
 msgstr "പുതിയ വേർഷനിൽ എന്താണ് പുതിയത്?"
@@ -3165,10 +3097,6 @@ msgstr "അതെ! Reactive Resume പൂർണ്ണമായും സൗജ�
 #: src/routes/_home/-sections/features.tsx
 msgid "You also have the option to deploy on your own servers using the Docker image."
 msgstr "നിങ്ങൾക്ക് Docker ഇമേജ് ഉപയോഗിച്ച് നിങ്ങളുടെ സ്വന്തം സെർവറുകളിൽ ഡിപ്ലോയ് ചെയ്യാനുള്ള ഓപ്ഷനും ഉണ്ട്."
-
-#: src/routes/auth/login.tsx
-#~ msgid "You can also use your username to login."
-#~ msgstr "ലോഗിൻ ചെയ്യാൻ നിങ്ങൾക്ക് നിങ്ങളുടെ യൂസർനെയിംയും ഉപയോഗിക്കാം."
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "You can share your resume via a unique public URL, protect it with a password, or download it as a PDF to share directly. The choice is yours!"
