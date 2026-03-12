@@ -157,9 +157,10 @@ export function getResumeSkills(data: ResumeData): string[] {
 
 /** Estimate page count based on content volume */
 export function estimatePageCount(data: ResumeData): number {
-	let totalChars = 0;
-	totalChars += stripHtml(data.summary.content).length;
-	totalChars += data.basics.name.length + data.basics.headline.length;
+	// Count total words across all visible resume content
+	let text = "";
+	text += stripHtml(data.summary.content) + " ";
+	text += data.basics.name + " " + data.basics.headline + " ";
 
 	const sectionKeys = Object.keys(data.sections) as (keyof typeof data.sections)[];
 	for (const key of sectionKeys) {
@@ -167,17 +168,16 @@ export function estimatePageCount(data: ResumeData): number {
 		if (section.hidden) continue;
 		for (const item of section.items) {
 			if (item.hidden) continue;
-			const desc = "description" in item ? (item as { description: string }).description : "";
-			totalChars += stripHtml(desc).length;
-			// Add other fields
 			for (const [, val] of Object.entries(item)) {
-				if (typeof val === "string" && val !== desc) totalChars += val.length;
+				if (typeof val === "string") text += stripHtml(val) + " ";
+				if (Array.isArray(val)) text += val.filter((v) => typeof v === "string").join(" ") + " ";
 			}
 		}
 	}
 
-	// Roughly 3000 chars per page for a typical resume
-	return Math.max(1, Math.ceil(totalChars / 3000));
+	const wordCount = text.split(/\s+/).filter(Boolean).length;
+	// ~675 words fits on 1 page — aligns with RECOMMENDED_WORD_RANGE.max
+	return Math.max(1, Math.ceil(wordCount / 675));
 }
 
 export async function scoreResume(

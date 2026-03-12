@@ -3,9 +3,11 @@ import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import type { Suggestion, JDAnalysis } from "./index";
-import { getAllBullets, stripHtml, SCORING_LLM_CONFIG } from "./index";
+import { getAllBullets, stripHtml, estimatePageCount, SCORING_LLM_CONFIG } from "./index";
 import { startsWithActionVerb, hasQuantifiedMetric, containsWeakPhrase, isXYZCompliant } from "./rules/impact-metrics";
 import { isStandardDateFormat, findEmojis, ATS_SAFE_FONTS, ATS_SAFE_TEMPLATES } from "./rules/formatting";
+import { countResumeWords, RECOMMENDED_WORD_RANGE, RECOMMENDED_BULLET_RANGE } from "./rules/brevity";
+import { isReverseChronological, extractLatestYear } from "./rules/structure";
 import { env } from "@/utils/env";
 
 const comprehensiveSchema = z.object({
@@ -19,6 +21,12 @@ const comprehensiveSchema = z.object({
 		index: z.number(),
 		original: z.string(),
 		corrected: z.string(),
+	})),
+	brevityEdits: z.array(z.object({
+		index: z.number(),
+		action: z.enum(["shorten", "hide"]),
+		rewritten: z.string().nullable(),
+		reason: z.string(),
 	})),
 	summary: z.string().nullable(),
 });
@@ -100,44 +108,59 @@ export async function generateSuggestions(
 		});
 	}
 
-	// ── 2. Collect ALL problematic bullets (no limits) ──
-	const seen = new Set<number>();
+	// ── 2. Collect ALL problematic bullets — merge ALL issues per bullet into one entry ──
 	const bulletsToRewrite: Array<{
 		text: string; sectionKey: string; itemIndex: number; path: string;
-		bulletIndex: number; reason: string; weakness: string | null;
+		bulletIndex: number; reason: string; reasons: string[]; weakness: string | null;
 	}> = [];
 
-	// Weak phrase bullets
 	for (const [i, b] of bullets.entries()) {
+		const issues: string[] = [];
 		const weakness = containsWeakPhrase(b.text);
-		if (weakness) {
-			seen.add(i);
-			bulletsToRewrite.push({ ...b, bulletIndex: i, reason: `weak phrase: "${weakness}"`, weakness });
+
+		if (weakness) issues.push(`weak phrase: "${weakness}"`);
+		if (!startsWithActionVerb(b.text)) issues.push("no action verb");
+		if (!hasQuantifiedMetric(b.text)) issues.push("no quantified metric");
+		if (!isXYZCompliant(b.text) && issues.length === 0) {
+			// Only add XYZ if no other issues — otherwise the other fixes will likely make it XYZ compliant
+			issues.push("not XYZ compliant (add action verb + metric + method)");
+		} else if (!isXYZCompliant(b.text)) {
+			issues.push("not XYZ compliant");
+		}
+
+		if (issues.length > 0) {
+			bulletsToRewrite.push({
+				...b,
+				bulletIndex: i,
+				reason: issues.join(" + "),
+				reasons: issues,
+				weakness,
+			});
 		}
 	}
 
-	// No action verb bullets
-	for (const [i, b] of bullets.entries()) {
-		if (!seen.has(i) && !startsWithActionVerb(b.text)) {
-			seen.add(i);
-			bulletsToRewrite.push({ ...b, bulletIndex: i, reason: "no action verb", weakness: null });
-		}
-	}
+	// ── 2b. Collect brevity candidates (long bullets + hide candidates) ──
+	const wordCount = countResumeWords(data);
+	const totalBulletCount = bullets.length;
+	const pages = estimatePageCount(data);
+	const tooManyWords = pages > 1 || wordCount > RECOMMENDED_WORD_RANGE.max;
+	const tooManyBullets = totalBulletCount > RECOMMENDED_BULLET_RANGE.max;
 
-	// No quantified metric bullets
-	for (const [i, b] of bullets.entries()) {
-		if (!seen.has(i) && !hasQuantifiedMetric(b.text)) {
-			seen.add(i);
-			bulletsToRewrite.push({ ...b, bulletIndex: i, reason: "no quantified metric", weakness: null });
-		}
-	}
+	const brevityCandidates: Array<{
+		text: string; sectionKey: string; itemIndex: number; path: string;
+		bulletIndex: number; wordCount: number;
+	}> = [];
 
-	// XYZ non-compliant bullets (has verb + metric but missing method, or other combos)
-	for (const [i, b] of bullets.entries()) {
-		if (!seen.has(i) && !isXYZCompliant(b.text)) {
-			seen.add(i);
-			bulletsToRewrite.push({ ...b, bulletIndex: i, reason: "not XYZ compliant (add action verb + metric + method)", weakness: null });
+	if (tooManyWords || tooManyBullets) {
+		for (const [i, b] of bullets.entries()) {
+			brevityCandidates.push({
+				...b,
+				bulletIndex: i,
+				wordCount: b.text.split(/\s+/).length,
+			});
 		}
+		// Sort by word count descending — longest bullets are best candidates
+		brevityCandidates.sort((a, b) => b.wordCount - a.wordCount);
 	}
 
 	// ── 3. Collect ALL non-standard dates ──
@@ -162,8 +185,8 @@ export async function generateSuggestions(
 	const needsSummary = data.summary.hidden || !stripHtml(data.summary.content).trim();
 
 	// ── 5. Single LLM call for ALL actionable suggestions ──
-	if (bulletsToRewrite.length > 0 || datesToFix.length > 0 || needsSummary) {
-		const llmResult = await getComprehensiveSuggestions(data, bulletsToRewrite, datesToFix, needsSummary, jdAnalysis);
+	if (bulletsToRewrite.length > 0 || datesToFix.length > 0 || needsSummary || brevityCandidates.length > 0) {
+		const llmResult = await getComprehensiveSuggestions(data, bulletsToRewrite, datesToFix, needsSummary, jdAnalysis, brevityCandidates, { wordCount, totalBulletCount, pages, tooManyWords });
 
 		// Process bullet rewrites
 		if (llmResult) {
@@ -184,22 +207,26 @@ export async function generateSuggestions(
 				const item = section.items[bullet.itemIndex] as { company?: string; name?: string; position?: string };
 				const itemLabel = item.company || item.name || item.position || "";
 
-				const ruleId = bullet.weakness ? "IM-4" : !startsWithActionVerb(bullet.text) ? "IM-1"
-					: !hasQuantifiedMetric(bullet.text) ? "IM-2" : "IM-3";
+				// Pick the most severe rule for categorization
 				const severity: "critical" | "warning" = bullet.weakness ? "critical" : "warning";
+				const ruleId = bullet.reasons.length > 1 ? "IM-ALL" : bullet.weakness ? "IM-4" 
+					: !startsWithActionVerb(bullet.text) ? "IM-1"
+					: !hasQuantifiedMetric(bullet.text) ? "IM-2" : "IM-3";
+
+				// Build a combined title showing all issues
+				const issueLabels: string[] = [];
+				if (bullet.weakness) issueLabels.push(`weak phrase`);
+				if (!startsWithActionVerb(bullet.text)) issueLabels.push("no action verb");
+				if (!hasQuantifiedMetric(bullet.text)) issueLabels.push("no metric");
+				if (!isXYZCompliant(bullet.text)) issueLabels.push("not XYZ");
+				const title = `Rewrite bullet: ${issueLabels.join(", ")}`;
 
 				suggestions.push({
 					id: `IM-S-${bullet.sectionKey}-${bullet.itemIndex}-${rewrite.index}`,
 					ruleId,
 					category: "impactMetrics",
 					severity,
-					title: bullet.weakness
-						? `Weak phrase: "${bullet.weakness}"`
-						: !startsWithActionVerb(bullet.text)
-							? "Missing action verb"
-							: !hasQuantifiedMetric(bullet.text)
-								? "No quantified metric"
-								: "Not XYZ compliant",
+					title,
 					description: rewrite.reason,
 					autoApplicable: true,
 					patches: [{
@@ -211,7 +238,7 @@ export async function generateSuggestions(
 							rewrite.rewritten,
 						),
 					}],
-					estimatedScoreGain: severity === "critical" ? 3 : 2,
+					estimatedScoreGain: Math.min(5, bullet.reasons.length * 2),
 					diff: {
 						type: "text_replace",
 						location: `${sectionName} → ${itemLabel}`,
@@ -289,6 +316,84 @@ export async function generateSuggestions(
 						],
 					},
 				});
+			}
+
+			// Process brevity edits (shorten or hide bullets)
+			for (const edit of llmResult.brevityEdits) {
+				const candidate = brevityCandidates[edit.index];
+				if (!candidate) continue;
+
+				// Only allow "shorten" when words are over limit, not just for excess bullets
+				if (edit.action === "shorten" && !tooManyWords) continue;
+
+				const sectionName = candidate.sectionKey === "experience" ? "Experience" :
+					candidate.sectionKey === "projects" ? "Projects" : "Volunteer";
+				const section = data.sections[candidate.sectionKey as keyof typeof data.sections];
+				const item = section.items[candidate.itemIndex] as { company?: string; name?: string; position?: string };
+				const itemLabel = item.company || item.name || item.position || "";
+
+				if (edit.action === "hide") {
+					// Find the bullet's <li> index within the description HTML to hide it
+					suggestions.push({
+						id: `BR-S-hide-${candidate.sectionKey}-${candidate.itemIndex}-${edit.index}`,
+						ruleId: "BR-6",
+						category: "brevity",
+						severity: "warning",
+						title: `Hide bullet in ${sectionName} → ${itemLabel}`,
+						description: edit.reason,
+						autoApplicable: true,
+						patches: [{
+							op: "replace",
+							path: candidate.path,
+							value: removeBulletFromHtml(
+								(item as { description?: string }).description ?? "",
+								candidate.text,
+							),
+						}],
+						estimatedScoreGain: 1,
+						diff: {
+							type: "text_replace",
+							location: `${sectionName} → ${itemLabel}`,
+							fieldPath: candidate.path,
+							hunks: [
+								{ removed: candidate.text },
+							],
+						},
+					});
+				} else if (edit.action === "shorten" && edit.rewritten) {
+					if (edit.rewritten.trim() === candidate.text.trim()) continue;
+					const rewriteWords = edit.rewritten.split(/\s+/).length;
+					if (rewriteWords >= candidate.wordCount) continue; // Must actually be shorter
+
+					suggestions.push({
+						id: `BR-S-shorten-${candidate.sectionKey}-${candidate.itemIndex}-${edit.index}`,
+						ruleId: "BR-5",
+						category: "brevity",
+						severity: "warning",
+						title: `Shorten bullet in ${sectionName} → ${itemLabel}`,
+						description: edit.reason,
+						autoApplicable: true,
+						patches: [{
+							op: "replace",
+							path: candidate.path,
+							value: replaceBulletInHtml(
+								(item as { description?: string }).description ?? "",
+								candidate.text,
+								edit.rewritten,
+							),
+						}],
+						estimatedScoreGain: 1,
+						diff: {
+							type: "text_replace",
+							location: `${sectionName} → ${itemLabel}`,
+							fieldPath: candidate.path,
+							hunks: [
+								{ removed: candidate.text },
+								{ added: edit.rewritten },
+							],
+						},
+					});
+				}
 			}
 		}
 	}
@@ -487,6 +592,177 @@ export async function generateSuggestions(
 		}
 	}
 
+	// ── Hide irrelevant education entries (e.g. class 10th/12th when graduate) ──
+	const eduSection = data.sections.education;
+	if (!eduSection.hidden) {
+		const visibleEdu = eduSection.items
+			.map((item, idx) => ({ ...item, idx }))
+			.filter((item) => !item.hidden);
+
+		const highSchoolPatterns = /\b(class\s*(?:10|ten|x|xth|10th)|class\s*(?:12|twelve|xii|xiith|12th)|ssc|hsc|sslc|cbse|icse|isc|(?:10th|12th)\s*(?:grade|standard|std)|secondary|sr\.?\s*secondary|sr\.?\s*sec|higher\s*secondary|high\s*school|intermediate|matriculat|(?:std|standard)\s*(?:10|12|x|xii))\b/i;
+
+		const hasHigherDegree = visibleEdu.some((item) => {
+			const combined = `${item.degree} ${item.area} ${item.school}`.toLowerCase();
+			return /\b(b\.?tech|b\.?e|b\.?sc|b\.?a|b\.?com|bca|bba|m\.?tech|m\.?e|m\.?sc|m\.?a|mca|mba|m\.?com|ph\.?d|bachelor|master|doctor|diploma|associate|undergraduate|graduate|postgraduate|engineering|university|college)\b/i.test(combined);
+		});
+
+		if (hasHigherDegree) {
+			for (const item of visibleEdu) {
+				const combined = `${item.degree} ${item.area} ${item.school}`;
+				if (highSchoolPatterns.test(combined)) {
+					const label = item.school || item.degree || "entry";
+					suggestions.push({
+						id: `BR-S-edu-${item.idx}`,
+						ruleId: "BR-3",
+						category: "brevity",
+						severity: "warning",
+						title: `Hide "${label}" from Education`,
+						description: `You have a higher degree — class 10th/12th details are irrelevant for recruiters and waste resume space.`,
+						autoApplicable: true,
+						patches: [{ op: "replace", path: `/sections/education/items/${item.idx}/hidden`, value: true }],
+						estimatedScoreGain: 1,
+						diff: {
+							type: "field_replace",
+							location: `Education → ${label}`,
+							fieldPath: `/sections/education/items/${item.idx}/hidden`,
+							hunks: [
+								{ removed: `${item.degree}${item.area ? ` — ${item.area}` : ""} at ${item.school}` },
+							],
+						},
+					});
+				}
+			}
+		}
+	}
+
+	// ── 7. Reverse chronological order suggestions ──
+	const datedSections = [
+		{ key: "experience", label: "Experience" },
+		{ key: "education", label: "Education" },
+		{ key: "projects", label: "Projects" },
+		{ key: "volunteer", label: "Volunteer" },
+		{ key: "awards", label: "Awards" },
+		{ key: "certifications", label: "Certifications" },
+		{ key: "publications", label: "Publications" },
+	] as const;
+
+	for (const { key, label } of datedSections) {
+		const section = data.sections[key];
+		if (section.hidden) continue;
+		const items = section.items as Array<{ period?: string; date?: string; hidden?: boolean; [k: string]: unknown }>;
+		if (isReverseChronological(items)) continue;
+
+		// Build the correctly sorted items array (by latest year, descending)
+		const visibleWithIdx = items
+			.map((item, idx) => ({ item, idx, year: extractLatestYear(item.period || item.date) }))
+			.filter(({ item }) => !item.hidden);
+
+		const sorted = [...visibleWithIdx].sort((a, b) => b.year - a.year);
+
+		// Build a full reordered items array (preserving hidden items at their positions isn't worth the complexity — just sort all)
+		const sortedItems = [...items]
+			.map((item, idx) => ({ item, idx, year: extractLatestYear((item as { period?: string }).period || (item as { date?: string }).date) }))
+			.sort((a, b) => {
+				// Hidden items go to the end
+				if (a.item.hidden && !b.item.hidden) return 1;
+				if (!a.item.hidden && b.item.hidden) return -1;
+				if (a.item.hidden && b.item.hidden) return 0;
+				return b.year - a.year;
+			})
+			.map(({ item }) => item);
+
+		const currentOrder = visibleWithIdx.map((v) => {
+			const name = (v.item as Record<string, unknown>).company
+				|| (v.item as Record<string, unknown>).school
+				|| (v.item as Record<string, unknown>).name
+				|| (v.item as Record<string, unknown>).title
+				|| (v.item as Record<string, unknown>).organization
+				|| `Item ${v.idx + 1}`;
+			const dateStr = v.item.period || v.item.date || "";
+			return `${name} (${dateStr})`;
+		}).join(" → ");
+
+		const correctOrder = sorted.map((v) => {
+			const name = (v.item as Record<string, unknown>).company
+				|| (v.item as Record<string, unknown>).school
+				|| (v.item as Record<string, unknown>).name
+				|| (v.item as Record<string, unknown>).title
+				|| (v.item as Record<string, unknown>).organization
+				|| `Item ${v.idx + 1}`;
+			const dateStr = v.item.period || v.item.date || "";
+			return `${name} (${dateStr})`;
+		}).join(" → ");
+
+		suggestions.push({
+			id: `SC-S3-${key}`,
+			ruleId: "SC-3",
+			category: "structure",
+			severity: "warning",
+			title: `Reorder ${label} — latest first`,
+			description: `${label} items should be in reverse chronological order (most recent first). Current: ${currentOrder}`,
+			autoApplicable: true,
+			patches: [{ op: "replace", path: `/sections/${key}/items`, value: sortedItems }],
+			estimatedScoreGain: 1,
+			diff: {
+				type: "reorder",
+				location: label,
+				fieldPath: `/sections/${key}/items`,
+				hunks: [
+					{ removed: currentOrder },
+					{ added: correctOrder },
+				],
+			},
+		});
+	}
+
+	// ── 8. Column layout suggestions (save space for short-item sections) ──
+	const allSectionKeys = Object.keys(data.sections) as (keyof typeof data.sections)[];
+
+	for (const key of allSectionKeys) {
+		const section = data.sections[key];
+		if (section.hidden) continue;
+		const visibleItems = section.items.filter((item) => !item.hidden);
+		if (visibleItems.length < 3) continue;
+		if (section.columns >= 2) continue; // Already multi-column
+
+		// Calculate average visible text length per item
+		const avgWords = visibleItems.reduce((sum, item) => {
+			const texts: string[] = [];
+			for (const [, val] of Object.entries(item)) {
+				if (typeof val === "string") texts.push(stripHtml(val));
+				if (Array.isArray(val)) texts.push(...val.filter((v): v is string => typeof v === "string"));
+			}
+			return sum + texts.join(" ").split(/\s+/).filter(Boolean).length;
+		}, 0) / visibleItems.length;
+
+		// Only suggest multi-column for sections with short items (avg ≤ 8 words per item)
+		if (avgWords > 8) continue;
+
+		const recommended = visibleItems.length >= 6 ? 3 : 2;
+		const label = section.title || key.charAt(0).toUpperCase() + key.slice(1);
+
+		suggestions.push({
+			id: `BR-S-cols-${key}`,
+			ruleId: "BR-3",
+			category: "brevity",
+			severity: "info",
+			title: `Use ${recommended} columns for ${label}`,
+			description: `${label} has ${visibleItems.length} items averaging ~${Math.round(avgWords)} words each. Using ${recommended} columns saves vertical space.`,
+			autoApplicable: true,
+			patches: [{ op: "replace", path: `/sections/${key}/columns`, value: recommended }],
+			estimatedScoreGain: 1,
+			diff: {
+				type: "field_replace",
+				location: label,
+				fieldPath: `/sections/${key}/columns`,
+				hunks: [
+					{ removed: `${section.columns} column${section.columns > 1 ? "s" : ""}` },
+					{ added: `${recommended} columns` },
+				],
+			},
+		});
+	}
+
 	// Sort by estimated score gain (highest first), then by severity
 	const severityOrder = { critical: 0, warning: 1, info: 2 };
 	suggestions.sort((a, b) => {
@@ -503,6 +779,8 @@ async function getComprehensiveSuggestions(
 	datesToFix: Array<{ sectionKey: string; itemIndex: number; period: string }>,
 	needsSummary: boolean,
 	jdAnalysis: JDAnalysis | null,
+	brevityCandidates: Array<{ text: string; wordCount: number; sectionKey: string }>,
+	brevityStats: { wordCount: number; totalBulletCount: number; pages: number; tooManyWords: boolean },
 ): Promise<z.infer<typeof comprehensiveSchema> | null> {
 	try {
 		const apiKey = env.OPENAI_API_KEY;
@@ -518,10 +796,12 @@ async function getComprehensiveSuggestions(
 			promptParts.push(`## BULLET REWRITES
 Fix each bullet's specific tagged issue. Make MINIMAL edits — only fix what's tagged.
 Rules:
-- [weak phrase "..."]: replace only that phrase, keep everything else
-- [no action verb]: replace only the first word/phrase with a past-tense action verb
-- [no quantified metric]: add ONE brief metric naturally, don't restructure
-- [not XYZ compliant]: restructure to: "Action-verb + result/metric + by/using/via method"
+- Each bullet may have MULTIPLE tagged issues (e.g. [no action verb + no quantified metric + not XYZ compliant])
+- Fix ALL tagged issues in a single rewrite — the output must be the FINAL improved version
+- Start with a strong past-tense action verb
+- Add quantified metrics where tagged (numbers, percentages, dollar amounts)
+- Follow XYZ formula: "Action-verb + result/metric + by/using/via method"
+- If a weak phrase is tagged, replace it entirely
 - Keep within ±5 words of original length
 - Preserve all existing metrics, numbers, technologies, proper nouns exactly
 
@@ -559,6 +839,46 @@ ${jdAnalysis?.jobTitle ? `Target role: ${jdAnalysis.jobTitle}` : ""}
 Make it specific to their background. No generic filler.`);
 		}
 
+		if (brevityCandidates.length > 0) {
+			const excessWords = brevityStats.wordCount > RECOMMENDED_WORD_RANGE.max
+				? brevityStats.wordCount - RECOMMENDED_WORD_RANGE.max : 0;
+			const excessBullets = brevityStats.totalBulletCount > RECOMMENDED_BULLET_RANGE.max
+				? brevityStats.totalBulletCount - RECOMMENDED_BULLET_RANGE.max : 0;
+
+			const allowedActions = brevityStats.tooManyWords
+				? '"shorten" or "hide"'
+				: '"hide" only (do NOT use "shorten")';
+
+			promptParts.push(`## BREVITY EDITS
+The resume needs trimming. Current stats:
+- ${brevityStats.wordCount} words (recommended: ${RECOMMENDED_WORD_RANGE.min}-${RECOMMENDED_WORD_RANGE.max})${excessWords > 0 ? ` — ${excessWords} words over limit` : " — OK"}
+- ${brevityStats.totalBulletCount} bullet points (recommended: ${RECOMMENDED_BULLET_RANGE.min}-${RECOMMENDED_BULLET_RANGE.max})${excessBullets > 0 ? ` — ${excessBullets} bullets over limit` : " — OK"}
+- ${brevityStats.pages} page(s) (recommended: 1)
+
+Allowed actions: ${allowedActions}
+
+For each bullet below, decide:
+${brevityStats.tooManyWords ? '- "shorten": Rewrite it more concisely (reduce word count by 30-50%) while keeping the key achievement/impact. Provide the shortened version in "rewritten".' : ''}
+- "hide": If the bullet is low-impact, generic, or redundant with other bullets, suggest hiding it. Set "rewritten" to null.
+
+Prioritize hiding bullets that:
+1. Are generic duties without specific achievements (e.g. "Participated in team meetings")
+2. Repeat similar content as other bullets
+3. Have the least quantifiable impact
+4. Belong to older/less-relevant roles
+
+Prioritize shortening bullets that:
+1. Are wordy but contain valuable achievements
+2. Have >25 words
+3. Contain filler phrases that can be trimmed
+
+Pick enough edits to bring the resume within the recommended ranges.
+Each reason should explain WHY this specific bullet should be shortened/hidden.
+
+Input bullets (sorted longest first):
+${brevityCandidates.map((b, i) => `${i}. [${b.wordCount} words, ${b.sectionKey}] "${b.text}"`).join("\n")}`);
+		}
+
 		const result = await generateText({
 			model,
 			temperature: SCORING_LLM_CONFIG.temperature,
@@ -573,10 +893,12 @@ ${promptParts.join("\n\n")}`,
 				},
 				{
 					role: "user",
-					content: `Fix everything listed above. Return bulletRewrites array (with index, original, rewritten, reason), dateCorrections array (with index, original, corrected), and summary (string or null).${
+					content: `Fix everything listed above. Return bulletRewrites array (with index, original, rewritten, reason), dateCorrections array (with index, original, corrected), brevityEdits array (with index, action, rewritten, reason), and summary (string or null).${
 						bulletsToRewrite.length === 0 ? " bulletRewrites should be an empty array." : ""
 					}${
 						datesToFix.length === 0 ? " dateCorrections should be an empty array." : ""
+					}${
+						brevityCandidates.length === 0 ? " brevityEdits should be an empty array." : ""
 					}${
 						!needsSummary ? " summary should be null." : ""
 					}`,
@@ -610,6 +932,19 @@ function replaceBulletInHtml(html: string, oldText: string, newText: string): st
 
 	// Fallback: simple text replacement
 	return html.replace(oldText, newText);
+}
+
+/** Remove a specific bullet from an HTML description by matching its text */
+function removeBulletFromHtml(html: string, bulletText: string): string {
+	const liRegex = new RegExp(`<li[^>]*>[\\s\\S]*?</li>`, "gi");
+
+	return html.replace(liRegex, (match) => {
+		const stripped = stripHtml(match);
+		if (stripped === bulletText || stripped.includes(bulletText)) {
+			return ""; // Remove the entire <li> element
+		}
+		return match;
+	});
 }
 
 /** Remove all emoji characters from text, cleaning up extra spaces */

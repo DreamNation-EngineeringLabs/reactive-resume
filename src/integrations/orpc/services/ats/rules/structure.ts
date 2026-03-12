@@ -5,18 +5,24 @@ const MAX_SCORE = 20;
 
 const REQUIRED_SECTIONS = ["experience", "education", "skills"] as const;
 
-/** Check if items are in reverse-chronological order based on period strings */
-function isReverseChronological(items: Array<{ period?: string; hidden?: boolean }>): boolean {
-	const visibleItems = items.filter((item) => !item.hidden && item.period);
+/** Extract the most recent year from a date/period string */
+export function extractLatestYear(dateStr?: string): number {
+	if (!dateStr) return 0;
+	// "Present" / "Current" = treat as future so it sorts first
+	if (/\b(present|current|now|ongoing)\b/i.test(dateStr)) return 9999;
+	const match = dateStr.match(/(\d{4})/g);
+	if (!match) return 0;
+	return Math.max(...match.map(Number));
+}
+
+/** Check if items are in reverse-chronological order based on period/date strings */
+export function isReverseChronological(
+	items: Array<{ period?: string; date?: string; hidden?: boolean }>,
+): boolean {
+	const visibleItems = items.filter((item) => !item.hidden && (item.period || item.date));
 	if (visibleItems.length <= 1) return true;
 
-	// Extract years from period strings
-	const years = visibleItems.map((item) => {
-		const match = item.period?.match(/(\d{4})/g);
-		if (!match) return 0;
-		// Take the last (most recent) year in the period
-		return Math.max(...match.map(Number));
-	});
+	const years = visibleItems.map((item) => extractLatestYear(item.period || item.date));
 
 	// Check if years are in descending order
 	for (let i = 1; i < years.length; i++) {
@@ -71,24 +77,37 @@ export async function scoreStructure(data: ResumeData): Promise<CategoryScore> {
 	});
 
 	// SC-3: Reverse chronological order (4 pts)
-	const expChronological = isReverseChronological(
-		data.sections.experience.items as Array<{ period?: string; hidden?: boolean }>
-	);
-	const eduChronological = isReverseChronological(
-		data.sections.education.items as Array<{ period?: string; hidden?: boolean }>
-	);
+	// Check all sections that have date/period fields
+	const sectionsToCheck = [
+		{ key: "experience", label: "Experience" },
+		{ key: "education", label: "Education" },
+		{ key: "projects", label: "Projects" },
+		{ key: "volunteer", label: "Volunteer" },
+		{ key: "awards", label: "Awards" },
+		{ key: "certifications", label: "Certifications" },
+		{ key: "publications", label: "Publications" },
+	] as const;
 
-	const sc3Score = (expChronological ? 2 : 0) + (eduChronological ? 2 : 0);
+	const outOfOrder: string[] = [];
+	for (const { key, label } of sectionsToCheck) {
+		const section = data.sections[key];
+		if (section.hidden) continue;
+		const items = section.items as Array<{ period?: string; date?: string; hidden?: boolean }>;
+		if (!isReverseChronological(items)) {
+			outOfOrder.push(label);
+		}
+	}
+
+	const sc3Score = outOfOrder.length === 0 ? 4 : Math.max(0, 4 - outOfOrder.length);
 
 	details.push({
 		ruleId: "SC-3",
 		ruleName: "Reverse chronological order",
 		score: sc3Score,
 		maxScore: 4,
-		details: [
-			expChronological ? null : "Experience is not in reverse chronological order.",
-			eduChronological ? null : "Education is not in reverse chronological order.",
-		].filter(Boolean).join(" ") || "Both sections are in reverse chronological order.",
+		details: outOfOrder.length > 0
+			? `Not in reverse chronological order: ${outOfOrder.join(", ")}.`
+			: "All sections are in reverse chronological order.",
 	});
 
 	// SC-4: Contact information complete (4 pts)

@@ -3,7 +3,6 @@ import { Trans } from "@lingui/react/macro";
 import {
 	ArrowCounterClockwiseIcon,
 	ArrowsOutIcon,
-	CaretDownIcon,
 	CheckCircleIcon,
 	CircleNotchIcon,
 	LightningIcon,
@@ -20,8 +19,10 @@ import { toast } from "sonner";
 import { useResumeStore, flushResumeSync } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { orpc } from "@/integrations/orpc/client";
@@ -32,23 +33,19 @@ import { useSectionStore } from "../../../-store/section";
 import { SectionBase } from "../shared/section-base";
 
 export function ATSScoreSectionBuilder() {
-	const [modalOpen, setModalOpen] = useState(false);
+	const [sheetOpen, setSheetOpen] = useState(false);
 	const panelState = useATSPanelState();
 	const { openAts } = useSearch({ from: "/builder/$resumeId" });
 	const navigate = useNavigate();
 	const { toggleSidebar, isCollapsed } = useBuilderSidebar();
 	const setCollapsed = useSectionStore((s) => s.setCollapsed);
 
-	// Auto-open ATS modal when navigated with openAts=true (e.g. from dashboard)
+	// Auto-open ATS sheet when navigated with openAts=true (e.g. from dashboard)
 	useEffect(() => {
 		if (!openAts) return;
-		// Expand the right sidebar if collapsed
 		if (isCollapsed("right")) toggleSidebar("right", true);
-		// Uncollapse the ats-score section
 		setCollapsed("ats-score", false);
-		// Open the modal
-		setModalOpen(true);
-		// Clear the search param so it doesn't re-trigger
+		setSheetOpen(true);
 		navigate({ to: ".", search: { openAts: false }, replace: true });
 	}, [openAts, navigate, toggleSidebar, isCollapsed, setCollapsed]);
 
@@ -60,7 +57,7 @@ export function ATSScoreSectionBuilder() {
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<Button size="icon" variant="ghost" className="size-8" onClick={() => setModalOpen(true)}>
+								<Button size="icon" variant="ghost" className="size-8" onClick={() => setSheetOpen(true)}>
 									<ArrowsOutIcon className="size-4" />
 								</Button>
 							</TooltipTrigger>
@@ -72,20 +69,24 @@ export function ATSScoreSectionBuilder() {
 				<ATSScorePanel state={panelState} />
 			</SectionBase>
 
-			<Dialog open={modalOpen} onOpenChange={setModalOpen}>
-				<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-					<DialogHeader>
-						<DialogTitle className="flex items-center gap-2">
+			<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+				<SheetContent
+					side="right"
+					style={{ maxWidth: "none", width: "60vw" }}
+					className="sm:my-3 sm:me-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border p-0 flex flex-col gap-0 overflow-hidden max-sm:w-full"
+				>
+					<SheetHeader className="border-b px-6 py-4">
+						<SheetTitle className="flex items-center gap-2 text-lg">
 							<TargetIcon className="size-5" />
-							<Trans>ATS Score</Trans>
-						</DialogTitle>
-						<DialogDescription>
-							<Trans>Score your resume for ATS compatibility and get suggestions to improve it.</Trans>
-						</DialogDescription>
-					</DialogHeader>
-					<ATSScorePanel state={panelState} />
-				</DialogContent>
-			</Dialog>
+							<Trans>ATS Score Analysis</Trans>
+						</SheetTitle>
+						<SheetDescription>
+							<Trans>Score your resume for ATS compatibility and get detailed feedback by category.</Trans>
+						</SheetDescription>
+					</SheetHeader>
+					<ATSScoreSheetBody state={panelState} />
+				</SheetContent>
+			</Sheet>
 		</>
 	);
 }
@@ -247,10 +248,7 @@ function ATSScorePanel({ state }: { state: ATSPanelState }) {
 	const {
 		jobDescription, setJobDescription,
 		result,
-		appliedIds, dismissedIds,
 		isPending, handleScore,
-		handleApply, handleDismiss, handleApplyAll,
-		pendingSuggestions, applicablePendingCount,
 	} = state;
 
 	return (
@@ -286,66 +284,190 @@ function ATSScorePanel({ state }: { state: ATSPanelState }) {
 				<>
 					<Separator />
 					<ScoreOverview result={result} />
-					<Separator />
-					<CategoryBreakdown result={result} />
-
-					{result.metadata.jdProvided && result.metadata.keywordsMissing.length > 0 && (
-						<>
-							<Separator />
-							<MissingKeywords keywords={result.metadata.keywordsMissing} />
-						</>
-					)}
-
-					{result.suggestions.length > 0 && (
-						<>
-							<Separator />
-							<div className="flex items-center justify-between">
-								<h3 className="font-semibold text-sm">
-									<Trans>Suggestions</Trans>
-									{pendingSuggestions.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{pendingSuggestions.length}
-										</Badge>
-									)}
-								</h3>
-								{applicablePendingCount > 1 && (
-									<Button size="sm" variant="outline" onClick={handleApplyAll}>
-										<LightningIcon className="mr-1 size-3" />
-										<Trans>Apply All</Trans>
-									</Button>
-								)}
-							</div>
-
-							<div className="space-y-3">
-								{result.suggestions.map((suggestion) => (
-									<SuggestionCard
-										key={suggestion.id}
-										suggestion={suggestion}
-										applied={appliedIds.has(suggestion.id)}
-										dismissed={dismissedIds.has(suggestion.id)}
-										onApply={handleApply}
-										onDismiss={handleDismiss}
-									/>
-								))}
-							</div>
-
-							{pendingSuggestions.length === 0 && result.suggestions.length > 0 && (
-								<p className="text-center text-muted-foreground text-sm">
-									<Trans>All suggestions have been handled. Re-score to see updated results.</Trans>
-								</p>
-							)}
-
-							<Button variant="outline" onClick={handleScore} disabled={isPending} className="w-full">
-								<ArrowCounterClockwiseIcon className="mr-2 size-4" />
-								<Trans>Re-score Resume</Trans>
-							</Button>
-						</>
-					)}
 				</>
 			)}
 		</div>
 	);
 }
+
+// ---------------------------------------------------------------------------
+// Sheet body — the expanded ATS panel
+// ---------------------------------------------------------------------------
+
+function ATSScoreSheetBody({ state }: { state: ATSPanelState }) {
+	const {
+		jobDescription, setJobDescription,
+		result,
+		appliedIds, dismissedIds,
+		isPending, handleScore,
+		handleApply, handleDismiss, handleApplyAll,
+		applicablePendingCount,
+	} = state;
+
+	const categories = useMemo(() => getCategories(result), [result]);
+
+	return (
+		<ScrollArea className="flex-1 min-h-0">
+			<div className="p-6 space-y-6">
+				{/* Job description input */}
+				<div className="space-y-2">
+					<p className="text-muted-foreground text-sm">
+						<Trans>Paste a job description to score your resume against it, or score without one for general ATS checks.</Trans>
+					</p>
+					<Textarea
+						value={jobDescription}
+						onChange={(e) => setJobDescription(e.target.value)}
+						placeholder={t`Paste job description here (optional)...`}
+						rows={3}
+						className="resize-none text-sm"
+					/>
+				</div>
+
+				<Button onClick={handleScore} disabled={isPending} className="w-full">
+					{isPending ? (
+						<>
+							<CircleNotchIcon className="mr-2 size-4 animate-spin" />
+							<Trans>Scoring...</Trans>
+						</>
+					) : (
+						<>
+							<MagnifyingGlassIcon className="mr-2 size-4" />
+							<Trans>Score My Resume</Trans>
+						</>
+					)}
+				</Button>
+
+				{result && (
+					<>
+						{/* Overall score ring + summary bar */}
+						<div className="flex flex-col sm:flex-row items-center gap-6 rounded-xl border bg-muted/30 p-6">
+							<ScoreRing score={result.overall} />
+							<div className="flex-1 space-y-3 w-full">
+								<p className="text-center sm:text-left text-muted-foreground text-sm">
+									{result.metadata.jdProvided ? (
+										<Trans>Scored against your job description</Trans>
+									) : (
+										<Trans>General ATS compatibility score</Trans>
+									)}
+								</p>
+								{/* Mini category bars */}
+								<div className="grid grid-cols-2 gap-x-4 gap-y-2">
+									{categories.map((cat) => {
+										const pct = cat.score.max > 0 ? Math.round((cat.score.score / cat.score.max) * 100) : 0;
+										const color = getScoreColor(pct);
+										return (
+											<div key={cat.key} className="space-y-0.5">
+												<div className="flex items-center justify-between text-xs">
+													<span className="truncate">{cat.label}</span>
+													<span className={cn("font-medium tabular-nums", color.text)}>
+														{cat.score.score}/{cat.score.max}
+													</span>
+												</div>
+												<div className="h-1.5 w-full rounded-full bg-muted">
+													<div className={cn("h-full rounded-full transition-all", color.bg)} style={{ width: `${pct}%` }} />
+												</div>
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						</div>
+
+						{/* Missing keywords (JD) */}
+						{result.metadata.jdProvided && result.metadata.keywordsMissing.length > 0 && (
+							<MissingKeywords keywords={result.metadata.keywordsMissing} matched={result.metadata.keywordsMatched} />
+						)}
+
+						{/* Tabbed category sections */}
+						<Tabs defaultValue={categories[0]?.key ?? "keywordMatch"}>
+							<TabsList className="w-full flex-wrap lg:w-auto lg:flex-nowrap">
+								{categories.map((cat) => {
+									const pct = cat.score.max > 0 ? Math.round((cat.score.score / cat.score.max) * 100) : 0;
+									const color = getScoreColor(pct);
+									return (
+										<TabsTrigger key={cat.key} value={cat.key} className="gap-1.5">
+											<span>{cat.label}</span>
+											<Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", color.text)}>
+												{cat.score.score}/{cat.score.max}
+											</Badge>
+										</TabsTrigger>
+									);
+								})}
+							</TabsList>
+
+							{categories.map((cat) => {
+								const categorySuggestions = result.suggestions.filter((s) => s.category === cat.key);
+								return (
+									<TabsContent key={cat.key} value={cat.key}>
+										<CategoryDetailPanel
+											category={cat}
+											suggestions={categorySuggestions}
+											appliedIds={appliedIds}
+											dismissedIds={dismissedIds}
+											onApply={handleApply}
+											onDismiss={handleDismiss}
+											jdProvided={result.metadata.jdProvided}
+										/>
+									</TabsContent>
+								);
+							})}
+						</Tabs>
+
+						{/* Apply all + re-score */}
+						<div className="flex flex-col sm:flex-row items-center gap-2">
+							{applicablePendingCount > 1 && (
+								<Button variant="default" onClick={handleApplyAll} className="w-full sm:w-auto">
+									<LightningIcon className="mr-1.5 size-4" />
+									<Trans>Apply All Suggestions ({applicablePendingCount})</Trans>
+								</Button>
+							)}
+							<Button variant="outline" onClick={handleScore} disabled={isPending} className="w-full sm:w-auto">
+								<ArrowCounterClockwiseIcon className="mr-1.5 size-4" />
+								<Trans>Re-score Resume</Trans>
+							</Button>
+						</div>
+					</>
+				)}
+			</div>
+		</ScrollArea>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Score ring (large)
+// ---------------------------------------------------------------------------
+
+function ScoreRing({ score }: { score: number }) {
+	const color = getScoreColor(score);
+	const circumference = 2 * Math.PI * 54; // r=54
+	const offset = circumference - (score / 100) * circumference;
+
+	return (
+		<div className="relative flex size-28 shrink-0 items-center justify-center">
+			<svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120">
+				<circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" className="stroke-muted" />
+				<circle
+					cx="60" cy="60" r="54" fill="none" strokeWidth="8"
+					strokeDasharray={circumference}
+					strokeDashoffset={offset}
+					strokeLinecap="round"
+					className={cn(
+						"transition-all duration-700",
+						score >= 80 ? "stroke-green-500" : score >= 60 ? "stroke-amber-500" : "stroke-red-500",
+					)}
+				/>
+			</svg>
+			<div className="text-center">
+				<span className={cn("font-bold text-3xl tabular-nums", color.text)}>{score}</span>
+				<p className={cn("font-medium text-xs", color.text)}>{getScoreLabel(score)}</p>
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Score overview (sidebar compact)
+// ---------------------------------------------------------------------------
 
 function ScoreOverview({ result }: { result: ScoringResult }) {
 	const color = getScoreColor(result.overall);
@@ -373,106 +495,200 @@ function ScoreOverview({ result }: { result: ScoringResult }) {
 	);
 }
 
+// ---------------------------------------------------------------------------
+// Category detail panel — shown per tab
+// ---------------------------------------------------------------------------
+
 type CategoryInfo = {
 	key: string;
 	label: string;
 	score: CategoryScore;
 };
 
-function CategoryBreakdown({ result }: { result: ScoringResult }) {
-	const [expanded, setExpanded] = useState(false);
-
-	const categories: CategoryInfo[] = [
-		{ key: "keywordMatch", label: t`Keyword Match`, score: result.categories.keywordMatch },
-		{ key: "impactMetrics", label: t`Impact & Metrics`, score: result.categories.impactMetrics },
-		{ key: "structure", label: t`Structure`, score: result.categories.structure },
-		{ key: "formatting", label: t`Formatting`, score: result.categories.formatting },
-		{ key: "brevity", label: t`Brevity`, score: result.categories.brevity },
-		...(result.categories.tailoring
-			? [{ key: "tailoring", label: t`Tailoring`, score: result.categories.tailoring }]
-			: []),
-	];
+function CategoryDetailPanel({
+	category,
+	suggestions,
+	appliedIds,
+	dismissedIds,
+	onApply,
+	onDismiss,
+	jdProvided,
+}: {
+	category: CategoryInfo;
+	suggestions: Suggestion[];
+	appliedIds: Set<string>;
+	dismissedIds: Set<string>;
+	onApply: (s: Suggestion) => void;
+	onDismiss: (id: string) => void;
+	jdProvided: boolean;
+}) {
+	const passedRules = category.score.details.filter((r) => r.score >= r.maxScore);
+	const deductedRules = category.score.details.filter((r) => r.score < r.maxScore);
+	const pendingSuggestions = suggestions.filter((s) => !appliedIds.has(s.id) && !dismissedIds.has(s.id));
+	const appliedSuggestions = suggestions.filter((s) => appliedIds.has(s.id));
 
 	return (
-		<div className="space-y-2">
-			<button
-				type="button"
-				onClick={() => setExpanded(!expanded)}
-				className="flex w-full items-center justify-between text-sm font-semibold"
-			>
-				<Trans>Category Breakdown</Trans>
-				<CaretDownIcon className={cn("size-4 transition-transform", expanded && "rotate-180")} />
-			</button>
-
-			{expanded && (
-				<div className="space-y-3">
-					{categories.map((cat) => (
-						<CategoryBar key={cat.key} label={cat.label} score={cat.score} />
-					))}
+		<div className="space-y-5 pt-4">
+			{/* What's Good */}
+			{passedRules.length > 0 && (
+				<div className="space-y-2">
+					<h4 className="flex items-center gap-1.5 font-semibold text-sm text-green-600">
+						<CheckCircleIcon weight="fill" className="size-4" />
+						<Trans>What's Good</Trans>
+					</h4>
+					<div className="space-y-1.5">
+						{passedRules.map((rule) => (
+							<div key={rule.ruleId} className="flex items-start gap-2 rounded-lg bg-green-50 dark:bg-green-950/20 px-3 py-2">
+								<CheckCircleIcon weight="fill" className="mt-0.5 size-3.5 shrink-0 text-green-500" />
+								<span className="text-xs text-green-800 dark:text-green-300">
+									{rule.details || rule.ruleName}
+								</span>
+							</div>
+						))}
+					</div>
 				</div>
 			)}
-		</div>
-	);
-}
 
-function CategoryBar({ label, score }: { label: string; score: CategoryScore }) {
-	const pct = score.max > 0 ? Math.round((score.score / score.max) * 100) : 0;
-	const color = getScoreColor(pct);
-	const deductedRules = score.details.filter((r) => r.score < r.maxScore);
-
-	return (
-		<div className="space-y-1">
-			<div className="flex items-center justify-between text-xs">
-				<span>{label}</span>
-				<span className={cn("font-medium", color.text)}>
-					{score.score}/{score.max}
-				</span>
-			</div>
-			<div className="h-1.5 w-full rounded-full bg-muted">
-				<div className={cn("h-full rounded-full transition-all", color.bg)} style={{ width: `${pct}%` }} />
-			</div>
+			{/* What Needs Improvement */}
 			{deductedRules.length > 0 && (
-				<div className="mt-1 space-y-1">
-					{deductedRules.map((rule) => (
-						<p key={rule.ruleId} className="text-muted-foreground text-xs leading-snug">
-							<span className="font-medium text-amber-600">-{rule.maxScore - rule.score}</span>{" "}
-							{rule.details || rule.ruleName}
-						</p>
-					))}
+				<div className="space-y-2">
+					<h4 className="flex items-center gap-1.5 font-semibold text-sm text-amber-600">
+						<WarningCircleIcon weight="fill" className="size-4" />
+						<Trans>Needs Improvement</Trans>
+					</h4>
+					<div className="space-y-1.5">
+						{deductedRules.map((rule) => (
+							<div key={rule.ruleId} className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 px-3 py-2">
+								<WarningIcon weight="fill" className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+								<div className="text-xs">
+									<span className="font-medium text-amber-800 dark:text-amber-300">
+										-{rule.maxScore - rule.score} pts
+									</span>
+									<span className="text-amber-700 dark:text-amber-400 ml-1.5">
+										{rule.details || rule.ruleName}
+									</span>
+								</div>
+							</div>
+						))}
+					</div>
 				</div>
 			)}
-		</div>
-	);
-}
 
-function MissingKeywords({ keywords }: { keywords: string[] }) {
-	const [showAll, setShowAll] = useState(false);
-	const displayed = showAll ? keywords : keywords.slice(0, 8);
+			{/* Actionable Suggestions */}
+			{pendingSuggestions.length > 0 && (
+				<div className="space-y-2">
+					<h4 className="flex items-center gap-1.5 font-semibold text-sm text-blue-600">
+						<LightningIcon weight="fill" className="size-4" />
+						<Trans>How to Improve</Trans>
+						{jdProvided && (
+							<Badge variant="outline" className="text-[10px] ml-1">
+								<Trans>JD-matched</Trans>
+							</Badge>
+						)}
+					</h4>
+					<div className="space-y-2">
+						{pendingSuggestions.map((suggestion) => (
+							<SuggestionCard
+								key={suggestion.id}
+								suggestion={suggestion}
+								applied={false}
+								dismissed={false}
+								onApply={onApply}
+								onDismiss={onDismiss}
+							/>
+						))}
+					</div>
+				</div>
+			)}
 
-	return (
-		<div className="space-y-2">
-			<h3 className="font-semibold text-sm">
-				<Trans>Missing Keywords</Trans>
-			</h3>
-			<div className="flex flex-wrap gap-1.5">
-				{displayed.map((kw) => (
-					<Badge key={kw} variant="outline" className="text-xs">
-						{kw}
-					</Badge>
-				))}
-			</div>
-			{keywords.length > 8 && (
-				<button
-					type="button"
-					onClick={() => setShowAll(!showAll)}
-					className="text-xs text-primary hover:underline"
-				>
-					{showAll ? <Trans>Show less</Trans> : <Trans>+{keywords.length - 8} more</Trans>}
-				</button>
+			{/* Applied suggestions */}
+			{appliedSuggestions.length > 0 && (
+				<div className="space-y-2">
+					<h4 className="flex items-center gap-1.5 font-semibold text-sm text-muted-foreground">
+						<CheckCircleIcon className="size-4" />
+						<Trans>Applied</Trans>
+					</h4>
+					<div className="space-y-2">
+						{appliedSuggestions.map((suggestion) => (
+							<SuggestionCard
+								key={suggestion.id}
+								suggestion={suggestion}
+								applied
+								dismissed={false}
+								onApply={onApply}
+								onDismiss={onDismiss}
+							/>
+						))}
+					</div>
+				</div>
+			)}
+
+			{passedRules.length > 0 && deductedRules.length === 0 && pendingSuggestions.length === 0 && (
+				<p className="text-center text-green-600 text-sm py-4">
+					<Trans>This category looks great! No improvements needed.</Trans>
+				</p>
 			)}
 		</div>
 	);
 }
+
+// ---------------------------------------------------------------------------
+// Missing & Matched Keywords
+// ---------------------------------------------------------------------------
+
+function MissingKeywords({ keywords, matched }: { keywords: string[]; matched: string[] }) {
+	const [showAll, setShowAll] = useState(false);
+	const displayed = showAll ? keywords : keywords.slice(0, 10);
+
+	return (
+		<div className="space-y-3 rounded-xl border p-4">
+			{matched.length > 0 && (
+				<div className="space-y-2">
+					<h4 className="flex items-center gap-1.5 font-semibold text-sm text-green-600">
+						<CheckCircleIcon weight="fill" className="size-4" />
+						<Trans>Matched Keywords</Trans>
+						<Badge variant="secondary" className="text-[10px]">{matched.length}</Badge>
+					</h4>
+					<div className="flex flex-wrap gap-1.5">
+						{matched.map((kw) => (
+							<Badge key={kw} className="text-xs bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-300 border-green-200 dark:border-green-800">
+								{kw}
+							</Badge>
+						))}
+					</div>
+				</div>
+			)}
+
+			<div className="space-y-2">
+				<h4 className="flex items-center gap-1.5 font-semibold text-sm text-red-600">
+					<XCircleIcon weight="fill" className="size-4" />
+					<Trans>Missing Keywords</Trans>
+					<Badge variant="secondary" className="text-[10px]">{keywords.length}</Badge>
+				</h4>
+				<div className="flex flex-wrap gap-1.5">
+					{displayed.map((kw) => (
+						<Badge key={kw} variant="outline" className="text-xs border-red-200 text-red-700 dark:border-red-800 dark:text-red-400">
+							{kw}
+						</Badge>
+					))}
+				</div>
+				{keywords.length > 10 && (
+					<button
+						type="button"
+						onClick={() => setShowAll(!showAll)}
+						className="text-xs text-primary hover:underline"
+					>
+						{showAll ? <Trans>Show less</Trans> : <Trans>+{keywords.length - 10} more</Trans>}
+					</button>
+				)}
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Suggestion card
+// ---------------------------------------------------------------------------
 
 type SuggestionCardProps = {
 	suggestion: Suggestion;
@@ -483,8 +699,6 @@ type SuggestionCardProps = {
 };
 
 function SuggestionCard({ suggestion, applied, dismissed, onApply, onDismiss }: SuggestionCardProps) {
-	const [showDiff, setShowDiff] = useState(false);
-
 	if (dismissed) return null;
 
 	const severityConfig = {
@@ -501,36 +715,10 @@ function SuggestionCard({ suggestion, applied, dismissed, onApply, onDismiss }: 
 			<div className="flex items-start gap-2">
 				<SeverityIcon weight="fill" className={cn("mt-0.5 size-4 shrink-0", config.color)} />
 				<div className="min-w-0 flex-1">
-					<div className="flex items-start justify-between gap-2">
-						<h4 className="font-medium text-sm leading-tight">{suggestion.title}</h4>
-						{suggestion.estimatedScoreGain > 0 && (
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Badge variant="secondary" className="shrink-0 text-xs">
-											+{suggestion.estimatedScoreGain}
-										</Badge>
-									</TooltipTrigger>
-									<TooltipContent>
-										<Trans>Estimated score improvement</Trans>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						)}
-					</div>
+					<h4 className="font-medium text-sm leading-tight">{suggestion.title}</h4>
 					<p className="mt-1 text-muted-foreground text-xs">{suggestion.description}</p>
 
 					{suggestion.diff.hunks.length > 0 && (
-						<button
-							type="button"
-							onClick={() => setShowDiff(!showDiff)}
-							className="mt-1.5 text-xs text-primary hover:underline"
-						>
-							{showDiff ? <Trans>Hide diff</Trans> : <Trans>Show diff</Trans>}
-						</button>
-					)}
-
-					{showDiff && suggestion.diff.hunks.length > 0 && (
 						<DiffView hunks={suggestion.diff.hunks} />
 					)}
 
@@ -588,6 +776,20 @@ function DiffView({ hunks }: { hunks: { removed?: string; added?: string; contex
 }
 
 // --- Helpers ---
+
+function getCategories(result: ScoringResult | null): CategoryInfo[] {
+	if (!result) return [];
+	return [
+		{ key: "keywordMatch", label: t`Keyword Match`, score: result.categories.keywordMatch },
+		{ key: "impactMetrics", label: t`Impact & Metrics`, score: result.categories.impactMetrics },
+		{ key: "structure", label: t`Structure`, score: result.categories.structure },
+		{ key: "formatting", label: t`Formatting`, score: result.categories.formatting },
+		{ key: "brevity", label: t`Brevity`, score: result.categories.brevity },
+		...(result.categories.tailoring
+			? [{ key: "tailoring", label: t`Tailoring`, score: result.categories.tailoring }]
+			: []),
+	];
+}
 
 function applyJsonPatch(draft: Record<string, unknown>, patch: JsonPatchOp) {
 	const pathParts = patch.path.split("/").filter(Boolean);
