@@ -29,6 +29,7 @@ const comprehensiveSchema = z.object({
 		reason: z.string(),
 	})),
 	summary: z.string().nullable(),
+	tailoredSummary: z.string().nullable(),
 });
 
 export async function generateSuggestions(
@@ -184,9 +185,23 @@ export async function generateSuggestions(
 	// ── 4. Check if summary is needed ──
 	const needsSummary = data.summary.hidden || !stripHtml(data.summary.content).trim();
 
+	// Check if existing summary needs tailoring to JD
+	const needsTailoredSummary = (() => {
+		if (!jdAnalysis || !jdAnalysis.jobTitle) return false;
+		if (needsSummary) return false; // No summary at all — needsSummary handles that
+		const summaryText = stripHtml(data.summary.content).toLowerCase();
+		const jdTitle = jdAnalysis.jobTitle.toLowerCase();
+		const mentionsRole = summaryText.includes(jdTitle) ||
+			jdTitle.split(" ").filter((w) => w.length > 3).every((w) => summaryText.includes(w));
+		const jdKeyTerms = [...jdAnalysis.hardSkills, ...jdAnalysis.tools].map((s) => s.toLowerCase());
+		const matched = jdKeyTerms.filter((term) => summaryText.includes(term));
+		const matchRatio = jdKeyTerms.length > 0 ? matched.length / jdKeyTerms.length : 1;
+		return !mentionsRole || matchRatio < 0.3;
+	})();
+
 	// ── 5. Single LLM call for ALL actionable suggestions ──
-	if (bulletsToRewrite.length > 0 || datesToFix.length > 0 || needsSummary || brevityCandidates.length > 0) {
-		const llmResult = await getComprehensiveSuggestions(data, bulletsToRewrite, datesToFix, needsSummary, jdAnalysis, brevityCandidates, { wordCount, totalBulletCount, pages, tooManyWords });
+	if (bulletsToRewrite.length > 0 || datesToFix.length > 0 || needsSummary || needsTailoredSummary || brevityCandidates.length > 0) {
+		const llmResult = await getComprehensiveSuggestions(data, bulletsToRewrite, datesToFix, needsSummary, jdAnalysis, brevityCandidates, { wordCount, totalBulletCount, pages, tooManyWords }, needsTailoredSummary);
 
 		// Process bullet rewrites
 		if (llmResult) {
@@ -313,6 +328,31 @@ export async function generateSuggestions(
 						fieldPath: "/summary/content",
 						hunks: [
 							{ added: llmResult.summary },
+						],
+					},
+				});
+			}
+
+			// Process tailored summary (rewrite existing summary to match JD)
+			if (llmResult.tailoredSummary && needsTailoredSummary) {
+				const currentSummary = stripHtml(data.summary.content);
+				suggestions.push({
+					id: "TR-S2-summary",
+					ruleId: "TR-2",
+					category: "tailoring",
+					severity: "warning",
+					title: "Tailor summary to job description",
+					description: `Your summary doesn't mention the target role "${jdAnalysis!.jobTitle}" or key JD skills. Here's a tailored version based on your experience.`,
+					autoApplicable: true,
+					patches: [{ op: "replace", path: "/summary/content", value: `<p>${llmResult.tailoredSummary}</p>` }],
+					estimatedScoreGain: 3,
+					diff: {
+						type: "text_replace",
+						location: "Summary",
+						fieldPath: "/summary/content",
+						hunks: [
+							{ removed: currentSummary },
+							{ added: llmResult.tailoredSummary },
 						],
 					},
 				});
@@ -592,6 +632,40 @@ export async function generateSuggestions(
 		}
 	}
 
+	// ── Tailoring: Education match (TR-4) ──
+	if (jdAnalysis && jdAnalysis.educationRequirements.length > 0) {
+		const eduItems = data.sections.education.items.filter((item) => !item.hidden);
+		const allEduText = eduItems
+			.map((item) => `${item.degree} ${item.area} ${item.school}`.toLowerCase())
+			.join(" ");
+
+		const unmatchedReqs = jdAnalysis.educationRequirements.filter(
+			(req) => !allEduText.includes(req.toLowerCase()),
+		);
+
+		if (unmatchedReqs.length > 0) {
+			suggestions.push({
+				id: "TR-S4-education",
+				ruleId: "TR-4",
+				category: "tailoring",
+				severity: "info",
+				title: "Education doesn't match JD requirements",
+				description: `The job expects: ${jdAnalysis.educationRequirements.join(", ")}. ${unmatchedReqs.length === jdAnalysis.educationRequirements.length ? "None of these appear in your education section." : `Missing: ${unmatchedReqs.join(", ")}.`} If you have relevant coursework or certifications, add them.`,
+				autoApplicable: false,
+				estimatedScoreGain: 1,
+				diff: {
+					type: "text_replace",
+					location: "Education",
+					fieldPath: "/sections/education",
+					hunks: [
+						{ context: `JD requires: ${jdAnalysis.educationRequirements.join(", ")}` },
+						{ added: `Add relevant coursework or highlight: ${unmatchedReqs.join(", ")}` },
+					],
+				},
+			});
+		}
+	}
+
 	// ── Hide irrelevant education entries (e.g. class 10th/12th when graduate) ──
 	const eduSection = data.sections.education;
 	if (!eduSection.hidden) {
@@ -781,6 +855,7 @@ async function getComprehensiveSuggestions(
 	jdAnalysis: JDAnalysis | null,
 	brevityCandidates: Array<{ text: string; wordCount: number; sectionKey: string }>,
 	brevityStats: { wordCount: number; totalBulletCount: number; pages: number; tooManyWords: boolean },
+	needsTailoredSummary: boolean,
 ): Promise<z.infer<typeof comprehensiveSchema> | null> {
 	try {
 		const apiKey = env.OPENAI_API_KEY;
@@ -839,6 +914,43 @@ ${jdAnalysis?.jobTitle ? `Target role: ${jdAnalysis.jobTitle}` : ""}
 Make it specific to their background. No generic filler.`);
 		}
 
+		if (needsTailoredSummary && jdAnalysis) {
+			const currentSummary = stripHtml(data.summary.content);
+			const skills = data.sections.skills.items
+				.filter((s) => !s.hidden)
+				.map((s) => s.name)
+				.slice(0, 10);
+			const experiences = data.sections.experience.items
+				.filter((e) => !e.hidden)
+				.slice(0, 3)
+				.map((e) => `${e.position} at ${e.company}`);
+			const projects = data.sections.projects.items
+				.filter((p) => !p.hidden)
+				.slice(0, 3)
+				.map((p) => {
+					const desc = stripHtml(p.description).slice(0, 100);
+					return `${p.name}: ${desc}`;
+				});
+
+			promptParts.push(`## TAILORED SUMMARY
+The current summary is NOT tailored to the target job. Rewrite it (plain text, no HTML) to specifically target this role.
+
+Current summary: "${currentSummary}"
+Target role: ${jdAnalysis.jobTitle}
+Required hard skills: ${jdAnalysis.hardSkills.join(", ") || "none"}
+Required tools: ${jdAnalysis.tools.join(", ") || "none"}
+Resume skills: ${skills.join(", ") || "not listed"}
+Recent experience: ${experiences.join("; ") || "not listed"}
+Key projects: ${projects.join("; ") || "not listed"}
+
+Rules:
+- Keep it 2-3 sentences, concise
+- Mention the target role title ("${jdAnalysis.jobTitle}")
+- Incorporate JD hard skills and tools that are ACTUALLY in the resume (don't fabricate)
+- Reference real experience and projects from the resume
+- Return the tailored summary in the "tailoredSummary" field`);
+		}
+
 		if (brevityCandidates.length > 0) {
 			const excessWords = brevityStats.wordCount > RECOMMENDED_WORD_RANGE.max
 				? brevityStats.wordCount - RECOMMENDED_WORD_RANGE.max : 0;
@@ -893,7 +1005,7 @@ ${promptParts.join("\n\n")}`,
 				},
 				{
 					role: "user",
-					content: `Fix everything listed above. Return bulletRewrites array (with index, original, rewritten, reason), dateCorrections array (with index, original, corrected), brevityEdits array (with index, action, rewritten, reason), and summary (string or null).${
+					content: `Fix everything listed above. Return bulletRewrites array (with index, original, rewritten, reason), dateCorrections array (with index, original, corrected), brevityEdits array (with index, action, rewritten, reason), summary (string or null), and tailoredSummary (string or null).${
 						bulletsToRewrite.length === 0 ? " bulletRewrites should be an empty array." : ""
 					}${
 						datesToFix.length === 0 ? " dateCorrections should be an empty array." : ""
@@ -901,6 +1013,8 @@ ${promptParts.join("\n\n")}`,
 						brevityCandidates.length === 0 ? " brevityEdits should be an empty array." : ""
 					}${
 						!needsSummary ? " summary should be null." : ""
+					}${
+						!needsTailoredSummary ? " tailoredSummary should be null." : ""
 					}`,
 				},
 			],
