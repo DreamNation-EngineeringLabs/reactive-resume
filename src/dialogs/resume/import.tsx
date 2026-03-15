@@ -101,14 +101,14 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 	// Helper function to convert ArrayBuffer to base64 for large files
 	const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
 		const bytes = new Uint8Array(buffer);
-		let binary = '';
+		let binary = "";
 		const chunkSize = 8192; // Process in chunks to avoid stack overflow
-		
+
 		for (let i = 0; i < bytes.length; i += chunkSize) {
 			const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
 			binary += String.fromCharCode(...chunk);
 		}
-		
+
 		return btoa(binary);
 	};
 
@@ -143,28 +143,28 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 			}
 
 			if (values.type === "pdf") {
-			console.log("[Import] Step 1: Converting PDF to base64");
-			try {
-				const arrayBuffer = await values.file.arrayBuffer();
-				console.log("[Import] Step 1.5: Got arrayBuffer, length:", arrayBuffer.byteLength);
-				const base64 = arrayBufferToBase64(arrayBuffer);
-				console.log("[Import] Step 3: About to call client.ai.parsePdf");
-				console.log("[Import] Step 3.1: client object:", client);
-				console.log("[Import] Step 3.2: client.ai object:", client.ai);
-				console.log("[Import] Step 3.3: client.ai.parsePdf function:", typeof client.ai.parsePdf);
-				
-				data = await client.ai.parsePdf({
-					file: { name: values.file.name, data: base64 },
-				});
-				console.log("[Import] Step 4: Received data from API");
-			} catch (pdfError) {
-				console.error("[Import] Error in PDF processing:", pdfError);
-				throw pdfError;
+				console.log("[Import] Step 1: Converting PDF to base64");
+				try {
+					const arrayBuffer = await values.file.arrayBuffer();
+					console.log("[Import] Step 1.5: Got arrayBuffer, length:", arrayBuffer.byteLength);
+					const base64 = arrayBufferToBase64(arrayBuffer);
+					console.log("[Import] Step 3: About to call client.ai.parsePdf");
+					console.log("[Import] Step 3.1: client object:", client);
+					console.log("[Import] Step 3.2: client.ai object:", client.ai);
+					console.log("[Import] Step 3.3: client.ai.parsePdf function:", typeof client.ai.parsePdf);
+
+					data = await client.ai.parsePdf({
+						file: { name: values.file.name, data: base64 },
+					});
+					console.log("[Import] Step 4: Received data from API");
+				} catch (pdfError) {
+					console.error("[Import] Error in PDF processing:", pdfError);
+					throw pdfError;
+				}
 			}
-		}
 			if (values.type === "docx") {
 				const arrayBuffer = await values.file.arrayBuffer();
-			const base64 = arrayBufferToBase64(arrayBuffer);
+				const base64 = arrayBufferToBase64(arrayBuffer);
 				const mediaType =
 					values.file.type === "application/msword"
 						? ("application/msword" as const)
@@ -201,7 +201,8 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 				</DialogTitle>
 				<DialogDescription>
 					<Trans>
-						Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word, and JSON files. PDF and Word documents are automatically parsed using AI.
+						Continue where you left off by importing an existing resume. Supported formats include PDF, Microsoft Word,
+						and JSON files. PDF and Word documents are automatically parsed using AI.
 					</Trans>
 				</DialogDescription>
 			</DialogHeader>
@@ -222,8 +223,8 @@ export function ImportResumeDialog(_: DialogProps<"resume.import">) {
 										value={field.value}
 										onValueChange={field.onChange}
 										options={[
-									{ value: "reactive-resume-json", label: "JSON Format" },
-									{ value: "reactive-resume-v4-json", label: "JSON Format (Legacy)" },
+											{ value: "reactive-resume-json", label: "JSON Format" },
+											{ value: "reactive-resume-v4-json", label: "JSON Format (Legacy)" },
 											{ value: "json-resume-json", label: "JSON Resume" },
 											{ value: "pdf", label: "PDF" },
 											{ value: "docx", label: "Microsoft Word" },

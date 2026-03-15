@@ -1,19 +1,19 @@
 import z from "zod";
 import {
+	awardItemSchema,
 	basicsSchema,
+	certificationItemSchema,
+	educationItemSchema,
+	experienceItemSchema,
+	interestItemSchema,
+	languageItemSchema,
 	pictureSchema,
 	profileItemSchema,
-	experienceItemSchema,
-	educationItemSchema,
 	projectItemSchema,
-	skillItemSchema,
-	languageItemSchema,
-	interestItemSchema,
-	awardItemSchema,
-	certificationItemSchema,
 	publicationItemSchema,
-	volunteerItemSchema,
 	referenceItemSchema,
+	skillItemSchema,
+	volunteerItemSchema,
 } from "./data";
 
 /**

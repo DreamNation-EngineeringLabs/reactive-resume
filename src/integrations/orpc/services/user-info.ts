@@ -23,10 +23,7 @@ export const userInfoService = {
 			.limit(1);
 
 		if (existing) {
-			await db
-				.update(schema.userInfo)
-				.set({ data: input.data })
-				.where(eq(schema.userInfo.userId, input.userId));
+			await db.update(schema.userInfo).set({ data: input.data }).where(eq(schema.userInfo.userId, input.userId));
 		} else {
 			await db.insert(schema.userInfo).values({
 				id: generateId(),

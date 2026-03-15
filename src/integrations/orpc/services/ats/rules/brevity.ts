@@ -1,6 +1,6 @@
 import type { ResumeData } from "@/schema/resume/data";
 import type { CategoryScore, RuleResult } from "../index";
-import { getAllBullets, estimatePageCount, stripHtml } from "../index";
+import { estimatePageCount, getAllBullets, stripHtml } from "../index";
 import { countFillerWords } from "./impact-metrics";
 
 const MAX_SCORE = 10;
@@ -42,17 +42,17 @@ export async function scoreBrevity(data: ResumeData): Promise<CategoryScore> {
 
 	// BR-1: Bullet word count (2 pts)
 	const longBullets = bullets.filter((b) => b.text.split(/\s+/).length > MAX_WORDS_PER_BULLET);
-	const br1Score = bullets.length === 0 ? 2 :
-		Math.round((1 - longBullets.length / bullets.length) * 2);
+	const br1Score = bullets.length === 0 ? 2 : Math.round((1 - longBullets.length / bullets.length) * 2);
 
 	details.push({
 		ruleId: "BR-1",
 		ruleName: "Bullet word count",
 		score: br1Score,
 		maxScore: 2,
-		details: longBullets.length > 0
-			? `${longBullets.length} bullet(s) exceed ${MAX_WORDS_PER_BULLET} words. Aim for concise bullets.`
-			: `All bullets are within ${MAX_WORDS_PER_BULLET} words.`,
+		details:
+			longBullets.length > 0
+				? `${longBullets.length} bullet(s) exceed ${MAX_WORDS_PER_BULLET} words. Aim for concise bullets.`
+				: `All bullets are within ${MAX_WORDS_PER_BULLET} words.`,
 	});
 
 	// BR-2: Bullets per role (3 pts)
@@ -72,17 +72,17 @@ export async function scoreBrevity(data: ResumeData): Promise<CategoryScore> {
 		}
 	}
 
-	const br2Score = totalRoles === 0 ? 2 :
-		Math.round((1 - roleViolations / totalRoles) * 2);
+	const br2Score = totalRoles === 0 ? 2 : Math.round((1 - roleViolations / totalRoles) * 2);
 
 	details.push({
 		ruleId: "BR-2",
 		ruleName: "Bullets per role",
 		score: br2Score,
 		maxScore: 2,
-		details: roleViolations > 0
-			? `${roleViolations} role(s) have fewer than ${MIN_BULLETS_PER_ROLE} or more than ${MAX_BULLETS_PER_ROLE} bullets.`
-			: `All roles have ${MIN_BULLETS_PER_ROLE}-${MAX_BULLETS_PER_ROLE} bullets.`,
+		details:
+			roleViolations > 0
+				? `${roleViolations} role(s) have fewer than ${MIN_BULLETS_PER_ROLE} or more than ${MAX_BULLETS_PER_ROLE} bullets.`
+				: `All roles have ${MIN_BULLETS_PER_ROLE}-${MAX_BULLETS_PER_ROLE} bullets.`,
 	});
 
 	// BR-3: Page count (2 pts)
@@ -94,9 +94,10 @@ export async function scoreBrevity(data: ResumeData): Promise<CategoryScore> {
 		ruleName: "Page count",
 		score: br3Score,
 		maxScore: 2,
-		details: pages <= MAX_PAGES
-			? `Estimated ${pages} page — fits on 1 page.`
-			: `Estimated ${pages} pages — resume should fit on 1 page. Trim content to be more concise.`,
+		details:
+			pages <= MAX_PAGES
+				? `Estimated ${pages} page — fits on 1 page.`
+				: `Estimated ${pages} pages — resume should fit on 1 page. Trim content to be more concise.`,
 	});
 
 	// BR-4: Filler words (2 pts)
@@ -110,9 +111,10 @@ export async function scoreBrevity(data: ResumeData): Promise<CategoryScore> {
 		ruleName: "Filler words",
 		score: br4Score,
 		maxScore: 1,
-		details: allFillers > 0
-			? `${allFillers} filler word(s)/phrase(s) detected. Remove unnecessary words.`
-			: "No filler words or phrases detected.",
+		details:
+			allFillers > 0
+				? `${allFillers} filler word(s)/phrase(s) detected. Remove unnecessary words.`
+				: "No filler words or phrases detected.",
 	});
 
 	// BR-5: Word count (2 pts)
@@ -134,7 +136,8 @@ export async function scoreBrevity(data: ResumeData): Promise<CategoryScore> {
 
 	// BR-6: Total bullet count (2 pts — matches Resume Worded's 12-20 recommendation)
 	const totalBulletCount = bullets.length;
-	const bulletsInRange = totalBulletCount >= RECOMMENDED_BULLET_RANGE.min && totalBulletCount <= RECOMMENDED_BULLET_RANGE.max;
+	const bulletsInRange =
+		totalBulletCount >= RECOMMENDED_BULLET_RANGE.min && totalBulletCount <= RECOMMENDED_BULLET_RANGE.max;
 	const br6Score = bulletsInRange ? 1 : 0;
 
 	details.push({

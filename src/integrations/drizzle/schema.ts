@@ -226,10 +226,7 @@ export const userInfo = pg.pgTable(
 			.notNull()
 			.primaryKey()
 			.$defaultFn(() => generateId()),
-		data: pg
-			.jsonb("data")
-			.notNull()
-			.$type<UserInfoData>(),
+		data: pg.jsonb("data").notNull().$type<UserInfoData>(),
 		userId: pg
 			.uuid("user_id")
 			.notNull()

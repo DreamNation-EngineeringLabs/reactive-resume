@@ -78,9 +78,7 @@ function RouteComponent() {
 						</h3>
 
 						<p className="text-muted-foreground leading-relaxed">
-							<Trans>
-								Explore the API documentation to learn how to integrate with your applications. Find
-							</Trans>
+							<Trans>Explore the API documentation to learn how to integrate with your applications. Find</Trans>
 						</p>
 
 						<Button asChild variant="link">

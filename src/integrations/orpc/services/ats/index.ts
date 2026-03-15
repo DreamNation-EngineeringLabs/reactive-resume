@@ -1,11 +1,11 @@
 import type { ResumeData } from "@/schema/resume/data";
-import { scoreKeywordMatch } from "./rules/keyword-match";
-import { scoreImpactMetrics } from "./rules/impact-metrics";
-import { scoreStructure } from "./rules/structure";
-import { scoreFormatting } from "./rules/formatting";
-import { scoreBrevity } from "./rules/brevity";
-import { scoreTailoring } from "./rules/tailoring";
 import { extractKeywords } from "./keyword-extractor";
+import { scoreBrevity } from "./rules/brevity";
+import { scoreFormatting } from "./rules/formatting";
+import { scoreImpactMetrics } from "./rules/impact-metrics";
+import { scoreKeywordMatch } from "./rules/keyword-match";
+import { scoreStructure } from "./rules/structure";
+import { scoreTailoring } from "./rules/tailoring";
 import { generateSuggestions } from "./suggestion-generator";
 
 export interface RuleResult {
@@ -30,10 +30,12 @@ export interface SuggestionDiff {
 }
 
 export interface JsonPatchOp {
-	op: "add" | "remove" | "replace" | "move" | "copy" | "test";
+	op: "add" | "remove" | "replace" | "move" | "copy" | "test" | "replace-bullet" | "remove-bullet";
 	path: string;
 	value?: unknown;
 	from?: string;
+	oldText?: string;
+	newText?: string;
 }
 
 export interface Suggestion {
@@ -95,25 +97,32 @@ export const SCORING_LLM_CONFIG = {
 
 /** Extract visible text from HTML content */
 export function stripHtml(html: string): string {
-	return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+	return html
+		.replace(/<[^>]*>/g, "")
+		.replace(/&nbsp;/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
 }
 
 /** Extract bullet points from HTML description */
 export function extractBullets(html: string): string[] {
 	const liMatches = html.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
 	if (liMatches) {
-		return liMatches
-			.map((li) => stripHtml(li))
-			.filter((text) => text.length > 0);
+		return liMatches.map((li) => stripHtml(li)).filter((text) => text.length > 0);
 	}
 	// Fallback: split on line breaks or treat as single bullet
 	const text = stripHtml(html);
 	if (!text) return [];
-	return text.split(/\n|<br\s*\/?>/).map((s) => s.trim()).filter(Boolean);
+	return text
+		.split(/\n|<br\s*\/?>/)
+		.map((s) => s.trim())
+		.filter(Boolean);
 }
 
 /** Get all visible experience/project/volunteer bullets from resume */
-export function getAllBullets(data: ResumeData): { text: string; sectionKey: string; itemIndex: number; path: string }[] {
+export function getAllBullets(
+	data: ResumeData,
+): { text: string; sectionKey: string; itemIndex: number; path: string }[] {
 	const bullets: { text: string; sectionKey: string; itemIndex: number; path: string }[] = [];
 
 	const sectionsWithBullets = ["experience", "projects", "volunteer"] as const;
@@ -194,12 +203,8 @@ export async function scoreResume(
 	}
 
 	// Step 2: Split keywords into required (scored) and nice-to-have (not scored)
-	const requiredKeywords = jdAnalysis
-		? [...jdAnalysis.hardSkills, ...jdAnalysis.tools]
-		: [];
-	const niceToHaveKeywords = jdAnalysis
-		? [...jdAnalysis.softSkills, ...jdAnalysis.certifications]
-		: [];
+	const requiredKeywords = jdAnalysis ? [...jdAnalysis.hardSkills, ...jdAnalysis.tools] : [];
+	const niceToHaveKeywords = jdAnalysis ? [...jdAnalysis.softSkills, ...jdAnalysis.certifications] : [];
 	const allJdKeywords = [...requiredKeywords, ...niceToHaveKeywords];
 
 	const [keywordMatch, impactMetrics, structure, formatting, brevity, tailoring] = await Promise.all([
@@ -231,7 +236,9 @@ export async function scoreResume(
 		...bullets.map((b) => b.text),
 		stripHtml(resumeData.summary.content),
 		resumeData.basics.headline,
-	].join(" ").toLowerCase();
+	]
+		.join(" ")
+		.toLowerCase();
 
 	const keywordsMatched = allJdKeywords.filter((kw) => allResumeText.includes(kw.toLowerCase()));
 	const keywordsMissing = allJdKeywords.filter((kw) => !allResumeText.includes(kw.toLowerCase()));

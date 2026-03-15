@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
-import { defaultResumeData, resumeDataSchema, type ResumeData } from "@/schema/resume/data";
+import { defaultResumeData, type ResumeData, resumeDataSchema } from "@/schema/resume/data";
 import type { UserInfoData } from "@/schema/resume/user-info";
 import { env } from "@/utils/env";
 import atsRules from "../../../../ATS_RULES.md?raw";

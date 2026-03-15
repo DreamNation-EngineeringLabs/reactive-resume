@@ -45,11 +45,7 @@ export const atsRouter = {
 			});
 
 			try {
-				const result = await scoreResume(
-					resume.data as ResumeData,
-					input.jobDescription,
-					input.includeAiSuggestions,
-				);
+				const result = await scoreResume(resume.data as ResumeData, input.jobDescription, input.includeAiSuggestions);
 				return result;
 			} catch (error) {
 				if (error instanceof Error && error.message.includes("OPENAI_API_KEY")) {

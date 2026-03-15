@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { getSourceUrl } from "@/utils/source-url";
 import { getDashboardSidebarServerFn, setDashboardSidebarServerFn } from "./-components/functions";
 import { DashboardSidebar } from "./-components/sidebar";
-import { getSourceUrl } from "@/utils/source-url";
 
 export const Route = createFileRoute("/dashboard")({
 	component: RouteComponent,
@@ -30,7 +30,7 @@ function RouteComponent() {
 	// Handle browser back button to redirect to main app
 	useEffect(() => {
 		const mainAppUrl = getSourceUrl();
-		
+
 		// Push a state to enable back button detection
 		window.history.pushState({ resumeApp: true }, "");
 
@@ -47,17 +47,14 @@ function RouteComponent() {
 	}, []);
 
 	return (
-		<div className="bg-sidebar h-screen flex">
-			<SidebarProvider 
-				open={sidebarState} 
-				onOpenChange={handleSidebarOpenChange}
-			>
+		<div className="flex h-screen bg-sidebar">
+			<SidebarProvider open={sidebarState} onOpenChange={handleSidebarOpenChange}>
 				<DashboardSidebar />
 
-				<div className="flex-1 flex flex-col overflow-hidden p-2 ps-0">
-					<main className="@container flex-1 overflow-y-auto bg-white rounded-lg border border-slate-200 p-2 md:p-6">
-					<div className="h-full w-full mx-auto max-w-400">
-						<Outlet />
+				<div className="flex flex-1 flex-col overflow-hidden p-2 ps-0">
+					<main className="@container flex-1 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 md:p-6">
+						<div className="mx-auto h-full w-full max-w-400">
+							<Outlet />
 						</div>
 					</main>
 				</div>

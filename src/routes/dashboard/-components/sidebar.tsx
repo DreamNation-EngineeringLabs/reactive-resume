@@ -1,12 +1,7 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import {
-	ArrowLeftIcon,
-	ReadCvLogoIcon,
-	TargetIcon,
-	UserIcon,
-} from "@phosphor-icons/react";
+import { ArrowLeftIcon, ReadCvLogoIcon, TargetIcon, UserIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -96,11 +91,11 @@ export function DashboardSidebar() {
 	return (
 		<Sidebar variant="sidebar" collapsible="icon">
 			<SidebarHeader className="pb-0">
-				<div className="flex justify-between items-center px-1 gap-2 pt-1">
+				<div className="flex items-center justify-between gap-2 px-1 pt-1">
 					{/* biome-ignore lint: onClick handles navigation */}
 					<button type="button" onClick={handleLogoClick} className={isCollapsed ? "hidden" : ""}>
 						<img
-							className="w-48 my-4"
+							className="my-4 w-48"
 							alt="Brand Logo"
 							src="/images/polymath_with_logo.png"
 							style={{ objectFit: "contain" }}
@@ -108,15 +103,13 @@ export function DashboardSidebar() {
 					</button>
 				</div>
 				{!isCollapsed && (
-					<p className="text-sm font-semibold text-sidebar-foreground/70 tracking-wide ml-3 mt-1">Menu</p>
+					<p className="mt-1 ml-3 font-semibold text-sidebar-foreground/70 text-sm tracking-wide">Menu</p>
 				)}
 			</SidebarHeader>
 
 			<SidebarContent>
 				<SidebarGroup>
-					<SidebarGroupLabel className={isCollapsed ? "" : "sr-only"}>
-						App
-					</SidebarGroupLabel>
+					<SidebarGroupLabel className={isCollapsed ? "" : "sr-only"}>App</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarItemList items={appSidebarItems} />
 					</SidebarGroupContent>
@@ -148,10 +141,10 @@ export function DashboardSidebar() {
 					<SidebarMenuItem>
 						<UserDropdownMenu>
 							{({ session }) => (
-								<SidebarMenuButton className="h-auto gap-x-3 bg-background rounded-lg group-data-[collapsible=icon]:p-1!">
+								<SidebarMenuButton className="h-auto gap-x-3 rounded-lg bg-background group-data-[collapsible=icon]:p-1!">
 									<Avatar className="size-8 shrink-0 transition-all group-data-[collapsible=icon]:size-6">
 										<AvatarImage src={session.user.image ?? undefined} />
-										<AvatarFallback className="bg-sidebar-primary/10 text-sidebar-primary font-semibold group-data-[collapsible=icon]:text-[0.5rem]">
+										<AvatarFallback className="bg-sidebar-primary/10 font-semibold text-sidebar-primary group-data-[collapsible=icon]:text-[0.5rem]">
 											{getInitials(session.user.name)}
 										</AvatarFallback>
 									</Avatar>

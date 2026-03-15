@@ -3,8 +3,8 @@ import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, TargetIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { orpc, type RouterOutput } from "@/integrations/orpc/client";
 import { Separator } from "@/components/ui/separator";
+import { orpc, type RouterOutput } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
 import { DashboardHeader } from "../-components/header";
 
@@ -33,7 +33,9 @@ function RouteComponent() {
 							<ResumePickerCard
 								key={resume.id}
 								resume={resume}
-								onSelect={() => navigate({ to: "/builder/$resumeId", params: { resumeId: resume.id }, search: { openAts: true } })}
+								onSelect={() =>
+									navigate({ to: "/builder/$resumeId", params: { resumeId: resume.id }, search: { openAts: true } })
+								}
 							/>
 						))}
 					</div>
@@ -58,9 +60,7 @@ function ResumePickerCard({ resume, onSelect }: ResumePickerCardProps) {
 		<button
 			type="button"
 			onClick={onSelect}
-			className={cn(
-				"flex flex-col gap-1 rounded-lg border p-3 text-start transition-colors hover:bg-muted/50",
-			)}
+			className={cn("flex flex-col gap-1 rounded-lg border p-3 text-start transition-colors hover:bg-muted/50")}
 		>
 			<div className="flex items-center justify-between">
 				<h4 className="line-clamp-1 font-medium text-sm">{resume.name}</h4>

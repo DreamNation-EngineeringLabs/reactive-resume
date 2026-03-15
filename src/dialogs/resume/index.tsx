@@ -1,7 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { CaretDownIcon, MagicWandIcon, PencilSimpleLineIcon, PlusIcon, TestTubeIcon, SparkleIcon } from "@phosphor-icons/react";
+import {
+	CaretDownIcon,
+	MagicWandIcon,
+	PencilSimpleLineIcon,
+	PlusIcon,
+	SparkleIcon,
+	TestTubeIcon,
+} from "@phosphor-icons/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -67,11 +74,7 @@ export function CreateResumeDialog(_: DialogProps<"resume.create">) {
 	const { blockEvents } = useFormBlocker(form);
 
 	const onSubmit = (data: FormValues) => {
-		const toastId = toast.loading(
-			useUserInfo
-				? t`Generating your tailored resume...`
-				: t`Creating your resume...`,
-		);
+		const toastId = toast.loading(useUserInfo ? t`Generating your tailored resume...` : t`Creating your resume...`);
 
 		createResume(
 			{
@@ -143,21 +146,15 @@ export function CreateResumeDialog(_: DialogProps<"resume.create">) {
 								<SparkleIcon className="size-4" />
 								<Trans>Use My Info</Trans>
 							</div>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-muted-foreground text-xs">
 								{hasUserInfo ? (
 									<Trans>Generate a tailored resume from your saved info.</Trans>
 								) : (
-									<Trans>
-										Save your info first in the "My Info" tab to use this feature.
-									</Trans>
+									<Trans>Save your info first in the "My Info" tab to use this feature.</Trans>
 								)}
 							</p>
 						</div>
-						<Switch
-							checked={useUserInfo}
-							onCheckedChange={setUseUserInfo}
-							disabled={!hasUserInfo}
-						/>
+						<Switch checked={useUserInfo} onCheckedChange={setUseUserInfo} disabled={!hasUserInfo} />
 					</div>
 
 					{/* Job Description (shown when Use My Info is on) */}
@@ -172,9 +169,10 @@ export function CreateResumeDialog(_: DialogProps<"resume.create">) {
 								placeholder={t`Paste the job description here to tailor your resume for this role...`}
 								className="min-h-30 resize-y"
 							/>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-muted-foreground text-xs">
 								<Trans>
-									The AI will use your info and this job description to generate an ATS-optimized resume. Leave blank for a general-purpose resume.
+									The AI will use your info and this job description to generate an ATS-optimized resume. Leave blank
+									for a general-purpose resume.
 								</Trans>
 							</p>
 						</div>

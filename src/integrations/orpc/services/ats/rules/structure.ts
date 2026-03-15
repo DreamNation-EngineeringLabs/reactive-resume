@@ -16,9 +16,7 @@ export function extractLatestYear(dateStr?: string): number {
 }
 
 /** Check if items are in reverse-chronological order based on period/date strings */
-export function isReverseChronological(
-	items: Array<{ period?: string; date?: string; hidden?: boolean }>,
-): boolean {
+export function isReverseChronological(items: Array<{ period?: string; date?: string; hidden?: boolean }>): boolean {
 	const visibleItems = items.filter((item) => !item.hidden && (item.period || item.date));
 	if (visibleItems.length <= 1) return true;
 
@@ -51,9 +49,10 @@ export async function scoreStructure(data: ResumeData): Promise<CategoryScore> {
 		ruleName: "Required sections present",
 		score: sc1Score,
 		maxScore: 8,
-		details: missingRequired.length > 0
-			? `Missing required sections: ${missingRequired.join(", ")}.`
-			: "All required sections present.",
+		details:
+			missingRequired.length > 0
+				? `Missing required sections: ${missingRequired.join(", ")}.`
+				: "All required sections present.",
 	});
 
 	// SC-2: Recommended sections present (4 pts)
@@ -61,8 +60,7 @@ export async function scoreStructure(data: ResumeData): Promise<CategoryScore> {
 	const summaryPresent = !data.summary.hidden && data.summary.content.trim().length > 0;
 	if (summaryPresent) sc2Score += 2;
 
-	const profilesPresent = !data.sections.profiles.hidden &&
-		data.sections.profiles.items.some((item) => !item.hidden);
+	const profilesPresent = !data.sections.profiles.hidden && data.sections.profiles.items.some((item) => !item.hidden);
 	if (profilesPresent) sc2Score += 2;
 
 	details.push({
@@ -70,10 +68,10 @@ export async function scoreStructure(data: ResumeData): Promise<CategoryScore> {
 		ruleName: "Recommended sections present",
 		score: sc2Score,
 		maxScore: 4,
-		details: [
-			summaryPresent ? null : "Missing: Summary section",
-			profilesPresent ? null : "Missing: Profiles/Links section",
-		].filter(Boolean).join("; ") || "Summary and Profiles sections present.",
+		details:
+			[summaryPresent ? null : "Missing: Summary section", profilesPresent ? null : "Missing: Profiles/Links section"]
+				.filter(Boolean)
+				.join("; ") || "Summary and Profiles sections present.",
 	});
 
 	// SC-3: Reverse chronological order (4 pts)
@@ -105,9 +103,10 @@ export async function scoreStructure(data: ResumeData): Promise<CategoryScore> {
 		ruleName: "Reverse chronological order",
 		score: sc3Score,
 		maxScore: 4,
-		details: outOfOrder.length > 0
-			? `Not in reverse chronological order: ${outOfOrder.join(", ")}.`
-			: "All sections are in reverse chronological order.",
+		details:
+			outOfOrder.length > 0
+				? `Not in reverse chronological order: ${outOfOrder.join(", ")}.`
+				: "All sections are in reverse chronological order.",
 	});
 
 	// SC-4: Contact information complete (4 pts)
@@ -128,9 +127,10 @@ export async function scoreStructure(data: ResumeData): Promise<CategoryScore> {
 		ruleName: "Contact information complete",
 		score: sc4Score,
 		maxScore: 4,
-		details: missingContact.length > 0
-			? `Missing contact info: ${missingContact.join(", ")}.`
-			: "All contact information present.",
+		details:
+			missingContact.length > 0
+				? `Missing contact info: ${missingContact.join(", ")}.`
+				: "All contact information present.",
 	});
 
 	const totalScore = Math.min(MAX_SCORE, sc1Score + sc2Score + sc3Score + sc4Score);

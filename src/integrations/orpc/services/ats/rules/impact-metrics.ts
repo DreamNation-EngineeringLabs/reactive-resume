@@ -1,12 +1,14 @@
+import actionVerbs from "@/data/action-verbs.json";
+import fillerData from "@/data/filler-words.json";
 import type { ResumeData } from "@/schema/resume/data";
 import type { CategoryScore, RuleResult } from "../index";
 import { getAllBullets } from "../index";
-import actionVerbs from "@/data/action-verbs.json";
-import fillerData from "@/data/filler-words.json";
 
 const MAX_SCORE = 20;
 
-const allActionVerbs = Object.values(actionVerbs).flat().map((v) => v.toLowerCase());
+const allActionVerbs = Object.values(actionVerbs)
+	.flat()
+	.map((v) => v.toLowerCase());
 
 const weakPhrases = [
 	"responsible for",
@@ -32,7 +34,9 @@ function startsWithActionVerb(bullet: string): boolean {
 /** Check if a bullet contains a quantified metric (number + context) */
 function hasQuantifiedMetric(bullet: string): boolean {
 	// Match patterns like: 25%, $1.2M, 50+, 1000 users, 3x, reduced by 20
-	return /\d+[%xX]|\$[\d,.]+[KkMmBb]?|\d+\+|\d+\s*(users|customers|clients|employees|teams|projects|features|tickets|requests|servers|endpoints|transactions|orders|records|days|hours|minutes|months|years)/i.test(bullet);
+	return /\d+[%xX]|\$[\d,.]+[KkMmBb]?|\d+\+|\d+\s*(users|customers|clients|employees|teams|projects|features|tickets|requests|servers|endpoints|transactions|orders|records|days|hours|minutes|months|years)/i.test(
+		bullet,
+	);
 }
 
 /** Check if a bullet follows XYZ formula: "Accomplished X, as measured by Y, by doing Z" */
@@ -81,7 +85,8 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 		details.push({
 			ruleId: "IM-1",
 			ruleName: "Action verb usage",
-			score: 0, maxScore: 5,
+			score: 0,
+			maxScore: 5,
 			details: "No bullet points found in experience/projects sections.",
 		});
 		details.push({ ruleId: "IM-2", ruleName: "Quantified metrics", score: 0, maxScore: 5, details: "No bullets." });
@@ -139,9 +144,10 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 		ruleName: "No weak phrases",
 		score: im4Score,
 		maxScore: 5,
-		details: bulletsWithWeakPhrases.length > 0
-			? `${bulletsWithWeakPhrases.length} bullets contain weak phrases.`
-			: "No weak phrases found.",
+		details:
+			bulletsWithWeakPhrases.length > 0
+				? `${bulletsWithWeakPhrases.length} bullets contain weak phrases.`
+				: "No weak phrases found.",
 	});
 
 	const totalScore = Math.min(MAX_SCORE, im1Score + im2Score + im3Score + im4Score);

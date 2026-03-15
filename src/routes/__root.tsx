@@ -122,7 +122,6 @@ function RootDocument({ children }: Props) {
 										<DialogManager />
 										<CommandPalette />
 										<Toaster richColors position="bottom-right" />
-
 									</PromptDialogProvider>
 								</ConfirmDialogProvider>
 							</ThemeProvider>

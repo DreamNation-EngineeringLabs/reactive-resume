@@ -1,7 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
-import { PaletteIcon, SignOutIcon, TranslateIcon } from "@phosphor-icons/react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useTheme } from "@/components/theme/provider";
@@ -10,17 +9,11 @@ import {
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/integrations/auth/client";
 import type { AuthSession } from "@/integrations/auth/types";
-import { isLocale, loadLocale, localeMap, setLocaleServerFn } from "@/utils/locale";
+import { isLocale, loadLocale, setLocaleServerFn } from "@/utils/locale";
 import { isTheme } from "@/utils/theme";
 
 type Props = {

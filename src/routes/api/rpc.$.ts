@@ -16,7 +16,7 @@ const rpcHandler = new RPCHandler(router, {
 
 async function handler({ request }: { request: Request }) {
 	console.log("[RPC Handler] Step 4: Request received", request.method, request.url);
-	
+
 	const { response } = await rpcHandler.handle(request, {
 		prefix: "/api/rpc",
 		context: { locale: await getLocale() },

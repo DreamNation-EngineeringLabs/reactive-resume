@@ -2,10 +2,7 @@ import { Fragment } from "react";
 import { match } from "ts-pattern";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-	type RightSidebarSection,
-	rightSidebarSections,
-} from "@/utils/resume/section";
+import { type RightSidebarSection, rightSidebarSections } from "@/utils/resume/section";
 import { ATSScoreSectionBuilder } from "./sections/ats-score";
 import { CSSSectionBuilder } from "./sections/css";
 import { DesignSectionBuilder } from "./sections/design";

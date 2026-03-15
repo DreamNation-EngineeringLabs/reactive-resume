@@ -1,7 +1,7 @@
+import skillsTaxonomy from "@/data/skills-taxonomy.json";
 import type { ResumeData } from "@/schema/resume/data";
 import type { CategoryScore, RuleResult } from "../index";
-import { getResumeSkills, getAllBullets, stripHtml } from "../index";
-import skillsTaxonomy from "@/data/skills-taxonomy.json";
+import { getAllBullets, getResumeSkills, stripHtml } from "../index";
 
 const MAX_SCORE = 25;
 
@@ -12,7 +12,10 @@ function buildAliasMap(): Map<string, string[]> {
 		for (const [skill, aliases] of Object.entries(category)) {
 			const allForms = [skill, ...aliases];
 			for (const form of allForms) {
-				map.set(form.toLowerCase(), allForms.map((f) => f.toLowerCase()));
+				map.set(
+					form.toLowerCase(),
+					allForms.map((f) => f.toLowerCase()),
+				);
 			}
 		}
 	}
@@ -41,10 +44,7 @@ function keywordFoundInText(keyword: string, text: string): boolean {
 	return false;
 }
 
-export async function scoreKeywordMatch(
-	data: ResumeData,
-	jdKeywords: string[],
-): Promise<CategoryScore> {
+export async function scoreKeywordMatch(data: ResumeData, jdKeywords: string[]): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
 
 	if (jdKeywords.length === 0) {
@@ -71,12 +71,7 @@ export async function scoreKeywordMatch(
 	const bullets = getAllBullets(data);
 	const summaryText = stripHtml(data.summary.content);
 	const headlineText = data.basics.headline;
-	const allText = [
-		...resumeSkills,
-		...bullets.map((b) => b.text),
-		summaryText,
-		headlineText,
-	].join(" ");
+	const allText = [...resumeSkills, ...bullets.map((b) => b.text), summaryText, headlineText].join(" ");
 
 	// KW-1: Keyword coverage ratio (15 pts)
 	const matchedKeywords = jdKeywords.filter((kw) => keywordFoundInText(kw, allText));

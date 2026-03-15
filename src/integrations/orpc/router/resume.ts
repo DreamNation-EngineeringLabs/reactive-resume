@@ -4,8 +4,8 @@ import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
 import { resumeDto } from "../dto/resume";
 import { resumeService } from "../services/resume";
-import { userInfoService } from "../services/user-info";
 import { aiService as resumeAiService } from "../services/resume-ai";
+import { userInfoService } from "../services/user-info";
 
 const tagsRouter = {
 	list: protectedProcedure

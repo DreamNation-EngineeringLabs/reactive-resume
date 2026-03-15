@@ -1,8 +1,7 @@
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { createIsomorphicFn, createServerFn } from "@tanstack/react-start";
-import { getCookie, setCookie } from "@tanstack/react-start/server";
-import Cookies from "js-cookie";
+import { setCookie } from "@tanstack/react-start/server";
 import z from "zod";
 
 const themeSchema = z.union([z.literal("light"), z.literal("dark")]);

@@ -6,7 +6,14 @@ import z, { ZodError } from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
 import { protectedProcedure } from "../context";
-import { aiCredentialsOptionalSchema, aiCredentialsSchema, aiProviderSchema, aiService, fileInputSchema, formatZodError } from "../services/ai";
+import {
+	aiCredentialsOptionalSchema,
+	type aiCredentialsSchema,
+	aiProviderSchema,
+	aiService,
+	fileInputSchema,
+	formatZodError,
+} from "../services/ai";
 
 // Helper to merge optional credentials with environment defaults
 function getAICredentialsWithDefaults(
@@ -91,9 +98,14 @@ export const aiRouter = {
 			try {
 				console.log("[AI Router] Step 5: parsePdf handler called");
 				console.log("[AI Router] Step 6: Input file name:", input.file.name);
-				
+
 				const credentials = getAICredentialsWithDefaults(input);
-				console.log("[AI Router] Step 7: Credentials loaded, provider:", credentials.provider, "model:", credentials.model);
+				console.log(
+					"[AI Router] Step 7: Credentials loaded, provider:",
+					credentials.provider,
+					"model:",
+					credentials.model,
+				);
 
 				console.log("[AI Router] Step 8: Calling aiService.parsePdf");
 				const result = await aiService.parsePdf({
@@ -101,7 +113,7 @@ export const aiRouter = {
 					file: input.file,
 				});
 				console.log("[AI Router] Step 9: Received result from aiService");
-				
+
 				return result;
 			} catch (error) {
 				if (error instanceof AISDKError) {

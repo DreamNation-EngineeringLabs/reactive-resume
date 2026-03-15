@@ -18,13 +18,11 @@ export function BaseCard({ title, description, tags, className, children, ...pro
 				className,
 			)}
 		>
-			<div className="relative flex-1 overflow-hidden rounded-lg bg-slate-50">
-				{children}
-			</div>
+			<div className="relative flex-1 overflow-hidden rounded-lg bg-slate-50">{children}</div>
 
 			<div className="mt-3 flex w-full flex-col space-y-1">
 				<h3 className="truncate font-bold text-base text-slate-900">{title}</h3>
-				<p className="truncate text-xs text-slate-500">{description}</p>
+				<p className="truncate text-slate-500 text-xs">{description}</p>
 
 				<div className={cn("mt-2 hidden flex-wrap items-center gap-1", tags && tags.length > 0 && "flex")}>
 					{tags?.map((tag) => (

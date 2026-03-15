@@ -2,9 +2,9 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
-import type { CategoryScore, RuleResult, JDAnalysis } from "../index";
-import { stripHtml, SCORING_LLM_CONFIG } from "../index";
 import { env } from "@/utils/env";
+import type { CategoryScore, JDAnalysis, RuleResult } from "../index";
+import { SCORING_LLM_CONFIG, stripHtml } from "../index";
 
 const MAX_SCORE = 10;
 
@@ -17,18 +17,14 @@ const tailoringResultSchema = z.object({
 	suggestedSummary: z.string().optional(),
 });
 
-export async function scoreTailoring(
-	data: ResumeData,
-	jdAnalysis: JDAnalysis,
-): Promise<CategoryScore> {
+export async function scoreTailoring(data: ResumeData, jdAnalysis: JDAnalysis): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
 
 	try {
 		const apiKey = env.OPENAI_API_KEY;
 		if (!apiKey) throw new Error("OPENAI_API_KEY not configured");
 
-		const model = createOpenAI({ apiKey, baseURL: env.OPENAI_BASE_URL })
-			.languageModel(SCORING_LLM_CONFIG.model);
+		const model = createOpenAI({ apiKey, baseURL: env.OPENAI_BASE_URL }).languageModel(SCORING_LLM_CONFIG.model);
 
 		const headline = data.basics.headline;
 		const summary = stripHtml(data.summary.content);
@@ -71,27 +67,36 @@ Score:
 		const scoring = result.output;
 
 		details.push({
-			ruleId: "TR-1", ruleName: "Title alignment",
-			score: scoring.titleMatch, maxScore: 3,
+			ruleId: "TR-1",
+			ruleName: "Title alignment",
+			score: scoring.titleMatch,
+			maxScore: 3,
 			details: `Headline "${headline}" vs JD title "${jdAnalysis.jobTitle}" — match: ${scoring.titleMatch}/3.`,
 		});
 		details.push({
-			ruleId: "TR-2", ruleName: "Summary relevance",
-			score: scoring.summaryRelevance, maxScore: 3,
+			ruleId: "TR-2",
+			ruleName: "Summary relevance",
+			score: scoring.summaryRelevance,
+			maxScore: 3,
 			details: `Summary relevance to target role: ${scoring.summaryRelevance}/3.`,
 		});
 		details.push({
-			ruleId: "TR-3", ruleName: "Experience relevance",
-			score: scoring.experienceRelevance, maxScore: 2,
+			ruleId: "TR-3",
+			ruleName: "Experience relevance",
+			score: scoring.experienceRelevance,
+			maxScore: 2,
 			details: `Recent position relevance: ${scoring.experienceRelevance}/2.`,
 		});
 		details.push({
-			ruleId: "TR-4", ruleName: "Education match",
-			score: scoring.educationMatch, maxScore: 2,
+			ruleId: "TR-4",
+			ruleName: "Education match",
+			score: scoring.educationMatch,
+			maxScore: 2,
 			details: `Education match: ${scoring.educationMatch}/2.`,
 		});
 
-		const totalScore = Math.min(MAX_SCORE,
+		const totalScore = Math.min(
+			MAX_SCORE,
 			scoring.titleMatch + scoring.summaryRelevance + scoring.experienceRelevance + scoring.educationMatch,
 		);
 
@@ -103,36 +108,51 @@ Score:
 		const jdKeyTerms = [...jdAnalysis.hardSkills, ...jdAnalysis.tools].map((s) => s.toLowerCase());
 
 		// TR-1: title match
-		const titleMatch = headline.includes(jobTitle) ? 3 :
-			jobTitle.split(" ").some((w) => w.length > 3 && headline.includes(w)) ? 1 : 0;
+		const titleMatch = headline.includes(jobTitle)
+			? 3
+			: jobTitle.split(" ").some((w) => w.length > 3 && headline.includes(w))
+				? 1
+				: 0;
 
 		details.push({
-			ruleId: "TR-1", ruleName: "Title alignment",
-			score: titleMatch, maxScore: 3,
-			details: titleMatch === 3
-				? `Headline matches JD title "${jdAnalysis.jobTitle}".`
-				: `Headline "${data.basics.headline}" doesn't match JD title "${jdAnalysis.jobTitle}".`,
+			ruleId: "TR-1",
+			ruleName: "Title alignment",
+			score: titleMatch,
+			maxScore: 3,
+			details:
+				titleMatch === 3
+					? `Headline matches JD title "${jdAnalysis.jobTitle}".`
+					: `Headline "${data.basics.headline}" doesn't match JD title "${jdAnalysis.jobTitle}".`,
 		});
 
 		// TR-2: summary relevance — check actual summary content
 		const summaryText = stripHtml(data.summary.content).toLowerCase();
-		const summaryMentionsRole = summaryText.includes(jobTitle) ||
-			jobTitle.split(" ").filter((w) => w.length > 3).every((w) => summaryText.includes(w));
+		const summaryMentionsRole =
+			summaryText.includes(jobTitle) ||
+			jobTitle
+				.split(" ")
+				.filter((w) => w.length > 3)
+				.every((w) => summaryText.includes(w));
 		const summarySkillMatches = jdKeyTerms.filter((t) => summaryText.includes(t));
-		const summaryScore = !summaryText.trim() ? 0
-			: summaryMentionsRole && summarySkillMatches.length >= 2 ? 3
-			: summaryMentionsRole || summarySkillMatches.length >= 1 ? 2
-			: 1;
+		const summaryScore = !summaryText.trim()
+			? 0
+			: summaryMentionsRole && summarySkillMatches.length >= 2
+				? 3
+				: summaryMentionsRole || summarySkillMatches.length >= 1
+					? 2
+					: 1;
 		const missingSummarySkills = jdKeyTerms.filter((t) => !summaryText.includes(t)).slice(0, 4);
 
 		details.push({
-			ruleId: "TR-2", ruleName: "Summary relevance",
-			score: summaryScore, maxScore: 3,
+			ruleId: "TR-2",
+			ruleName: "Summary relevance",
+			score: summaryScore,
+			maxScore: 3,
 			details: !summaryText.trim()
 				? "Summary is empty — add a summary mentioning the target role and key JD skills."
 				: summaryScore === 3
-				? "Summary mentions the target role and key skills."
-				: `Summary ${!summaryMentionsRole ? `doesn't mention "${jdAnalysis.jobTitle}"` : "mentions the role"} and matches ${summarySkillMatches.length}/${jdKeyTerms.length} JD skills.${missingSummarySkills.length > 0 ? ` Add: ${missingSummarySkills.join(", ")}.` : ""}`,
+					? "Summary mentions the target role and key skills."
+					: `Summary ${!summaryMentionsRole ? `doesn't mention "${jdAnalysis.jobTitle}"` : "mentions the role"} and matches ${summarySkillMatches.length}/${jdKeyTerms.length} JD skills.${missingSummarySkills.length > 0 ? ` Add: ${missingSummarySkills.join(", ")}.` : ""}`,
 		});
 
 		// TR-3: experience relevance — check bullet content
@@ -146,11 +166,14 @@ Score:
 		const missingExpSkills = jdKeyTerms.filter((t) => !expText.includes(t)).slice(0, 4);
 
 		details.push({
-			ruleId: "TR-3", ruleName: "Experience relevance",
-			score: expScore, maxScore: 2,
-			details: expScore === 2
-				? "Experience bullets mention key JD skills."
-				: `Experience mentions ${expSkillMatches.length}/${jdKeyTerms.length} JD skills.${missingExpSkills.length > 0 ? ` Missing: ${missingExpSkills.join(", ")}.` : ""}`,
+			ruleId: "TR-3",
+			ruleName: "Experience relevance",
+			score: expScore,
+			maxScore: 2,
+			details:
+				expScore === 2
+					? "Experience bullets mention key JD skills."
+					: `Experience mentions ${expSkillMatches.length}/${jdKeyTerms.length} JD skills.${missingExpSkills.length > 0 ? ` Missing: ${missingExpSkills.join(", ")}.` : ""}`,
 		});
 
 		// TR-4: education match
@@ -164,13 +187,16 @@ Score:
 		const missingEdu = jdAnalysis.educationRequirements.filter((r) => !eduText.includes(r.toLowerCase()));
 
 		details.push({
-			ruleId: "TR-4", ruleName: "Education match",
-			score: eduScore, maxScore: 2,
-			details: eduReqs.length === 0
-				? "No specific education requirements in JD."
-				: eduScore === 2
-				? "Education matches JD requirements."
-				: `Education matches ${eduMatched.length}/${eduReqs.length} JD requirements.${missingEdu.length > 0 ? ` Missing: ${missingEdu.join(", ")}.` : ""}`,
+			ruleId: "TR-4",
+			ruleName: "Education match",
+			score: eduScore,
+			maxScore: 2,
+			details:
+				eduReqs.length === 0
+					? "No specific education requirements in JD."
+					: eduScore === 2
+						? "Education matches JD requirements."
+						: `Education matches ${eduMatched.length}/${eduReqs.length} JD requirements.${missingEdu.length > 0 ? ` Missing: ${missingEdu.join(", ")}.` : ""}`,
 		});
 
 		const totalScore = Math.min(MAX_SCORE, titleMatch + summaryScore + expScore + eduScore);

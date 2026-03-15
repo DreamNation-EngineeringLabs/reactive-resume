@@ -1,5 +1,4 @@
 import { Trans } from "@lingui/react/macro";
-import { HandHeartIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { SectionBase } from "../shared/section-base";
 
@@ -14,12 +13,12 @@ export function InformationSectionBuilder() {
 				<div className="space-y-2 text-xs leading-normal">
 					<Trans>
 						<p>
-							Thank you for using our resume builder! If you have any questions or feedback,
-							please don't hesitate to reach out.
+							Thank you for using our resume builder! If you have any questions or feedback, please don't hesitate to
+							reach out.
 						</p>
 						<p>
-							Check out the documentation below to learn more about all the features available to help you
-							create the perfect resume.
+							Check out the documentation below to learn more about all the features available to help you create the
+							perfect resume.
 						</p>
 					</Trans>
 				</div>

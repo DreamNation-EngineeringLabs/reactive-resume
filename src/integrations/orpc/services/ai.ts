@@ -94,7 +94,7 @@ type ParsePdfInput = z.infer<typeof aiCredentialsSchema> & {
 async function parsePdf(input: ParsePdfInput): Promise<ResumeData> {
 	console.log("[AI Service] Step 10: parsePdf called");
 	console.log("[AI Service] Step 11: Getting model with provider:", input.provider);
-	
+
 	const model = getModel(input);
 	console.log("[AI Service] Step 12: Model created, calling generateText");
 

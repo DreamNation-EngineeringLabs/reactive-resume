@@ -1,9 +1,9 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
 import z from "zod";
-import { env } from "@/utils/env";
-import { SCORING_LLM_CONFIG, type JDAnalysis } from "./index";
 import skillsTaxonomy from "@/data/skills-taxonomy.json";
+import { env } from "@/utils/env";
+import { type JDAnalysis, SCORING_LLM_CONFIG } from "./index";
 
 const jdAnalysisSchema = z.object({
 	hardSkills: z.array(z.string()),
@@ -64,11 +64,9 @@ export async function extractKeywords(jobDescription: string): Promise<JDAnalysi
 
 		// Supplement with taxonomy-based extraction for completeness
 		const taxonomyKeywords = extractFromTaxonomy(jobDescription);
-		const existingKeywords = new Set([
-			...analysis.hardSkills,
-			...analysis.tools,
-			...analysis.certifications,
-		].map((k) => k.toLowerCase()));
+		const existingKeywords = new Set(
+			[...analysis.hardSkills, ...analysis.tools, ...analysis.certifications].map((k) => k.toLowerCase()),
+		);
 
 		for (const kw of taxonomyKeywords) {
 			if (!existingKeywords.has(kw.toLowerCase())) {

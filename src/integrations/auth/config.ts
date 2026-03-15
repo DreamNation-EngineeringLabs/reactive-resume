@@ -108,7 +108,7 @@ const getAuthConfig = () => {
 		},
 
 		user: {
-				changeEmail: {
+			changeEmail: {
 				enabled: true,
 				sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
 					await sendEmail({

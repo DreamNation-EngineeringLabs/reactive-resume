@@ -2,44 +2,39 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
-	UserIcon,
+	BookOpenIcon,
+	BriefcaseIcon,
+	CertificateIcon,
+	ChatCircleIcon,
+	CodeIcon,
 	FloppyDiskIcon,
+	GlobeIcon,
+	GraduationCapIcon,
+	HandshakeIcon,
+	HeartIcon,
+	LightbulbIcon,
 	PlusIcon,
 	TrashIcon,
-	BriefcaseIcon,
-	GraduationCapIcon,
-	LightbulbIcon,
-	CodeIcon,
-	GlobeIcon,
-	HeartIcon,
 	TrophyIcon,
-	CertificateIcon,
-	BookOpenIcon,
-	HandshakeIcon,
-	UsersIcon,
 	UserCircleIcon,
-	ChatCircleIcon,
+	UserIcon,
+	UsersIcon,
 } from "@phosphor-icons/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useFieldArray, useForm, useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 import { RichInput } from "@/components/input/rich-input";
 import { URLInput } from "@/components/input/url-input";
-import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/integrations/orpc/client";
-import { userInfoDataSchema, defaultUserInfoData, type UserInfoData } from "@/schema/resume/user-info";
+import { defaultUserInfoData, type UserInfoData, userInfoDataSchema } from "@/schema/resume/user-info";
 import { generateId } from "@/utils/string";
 import { DashboardHeader } from "../-components/header";
 
@@ -51,15 +46,17 @@ function RouteComponent() {
 	const queryClient = useQueryClient();
 	const { data: userInfo, isLoading } = useQuery(orpc.userInfo.get.queryOptions());
 
-	const { mutate: saveInfo, isPending } = useMutation(orpc.userInfo.upsert.mutationOptions({
-		onSuccess: () => {
-			toast.success(t`Your info has been saved successfully.`);
-			queryClient.invalidateQueries({ queryKey: orpc.userInfo.get.queryOptions().queryKey });
-		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
-	}));
+	const { mutate: saveInfo, isPending } = useMutation(
+		orpc.userInfo.upsert.mutationOptions({
+			onSuccess: () => {
+				toast.success(t`Your info has been saved successfully.`);
+				queryClient.invalidateQueries({ queryKey: orpc.userInfo.get.queryOptions().queryKey });
+			},
+			onError: (error) => {
+				toast.error(error.message);
+			},
+		}),
+	);
 
 	const form = useForm<UserInfoData>({
 		resolver: zodResolver(userInfoDataSchema),
@@ -101,7 +98,7 @@ function RouteComponent() {
 
 			<Separator />
 
-			<p className="text-sm text-muted-foreground">
+			<p className="text-muted-foreground text-sm">
 				<Trans>
 					Add your details here once. When you create a new resume, this information will be used to generate a
 					tailored, ATS-friendly resume. Changes here won't affect existing resumes.
@@ -128,7 +125,7 @@ function RouteComponent() {
 					</Accordion>
 				</form>
 			</Form>
-            <div className="h-50"></div>
+			<div className="h-50"></div>
 		</div>
 	);
 }
@@ -145,7 +142,7 @@ type SectionWrapperProps = {
 
 function SectionWrapper({ value, icon, title, count, children }: SectionWrapperProps) {
 	return (
-		<AccordionItem value={value} className="border rounded-lg px-4">
+		<AccordionItem value={value} className="rounded-lg border px-4">
 			<AccordionTrigger className="hover:no-underline">
 				<div className="flex items-center gap-x-2">
 					{icon}
@@ -175,8 +172,12 @@ function BasicsSection() {
 					name="basics.name"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel><Trans>Full Name</Trans></FormLabel>
-							<FormControl><Input placeholder={t`John Doe`} {...field} /></FormControl>
+							<FormLabel>
+								<Trans>Full Name</Trans>
+							</FormLabel>
+							<FormControl>
+								<Input placeholder={t`John Doe`} {...field} />
+							</FormControl>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -186,8 +187,12 @@ function BasicsSection() {
 					name="basics.headline"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel><Trans>Headline</Trans></FormLabel>
-							<FormControl><Input placeholder={t`Software Engineer`} {...field} /></FormControl>
+							<FormLabel>
+								<Trans>Headline</Trans>
+							</FormLabel>
+							<FormControl>
+								<Input placeholder={t`Software Engineer`} {...field} />
+							</FormControl>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -197,8 +202,12 @@ function BasicsSection() {
 					name="basics.email"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel><Trans>Email</Trans></FormLabel>
-							<FormControl><Input type="email" placeholder="john@example.com" {...field} /></FormControl>
+							<FormLabel>
+								<Trans>Email</Trans>
+							</FormLabel>
+							<FormControl>
+								<Input type="email" placeholder="john@example.com" {...field} />
+							</FormControl>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -208,8 +217,12 @@ function BasicsSection() {
 					name="basics.phone"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel><Trans>Phone</Trans></FormLabel>
-							<FormControl><Input placeholder="+1 234 567 8900" {...field} /></FormControl>
+							<FormLabel>
+								<Trans>Phone</Trans>
+							</FormLabel>
+							<FormControl>
+								<Input placeholder="+1 234 567 8900" {...field} />
+							</FormControl>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -219,8 +232,12 @@ function BasicsSection() {
 					name="basics.location"
 					render={({ field }) => (
 						<FormItem className="sm:col-span-2">
-							<FormLabel><Trans>Location</Trans></FormLabel>
-							<FormControl><Input placeholder={t`San Francisco, CA`} {...field} /></FormControl>
+							<FormLabel>
+								<Trans>Location</Trans>
+							</FormLabel>
+							<FormControl>
+								<Input placeholder={t`San Francisco, CA`} {...field} />
+							</FormControl>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -230,7 +247,9 @@ function BasicsSection() {
 					name="basics.website"
 					render={({ field }) => (
 						<FormItem className="sm:col-span-2">
-							<FormLabel><Trans>Website</Trans></FormLabel>
+							<FormLabel>
+								<Trans>Website</Trans>
+							</FormLabel>
 							<FormControl>
 								<URLInput value={field.value} onChange={field.onChange} />
 							</FormControl>
@@ -255,7 +274,9 @@ function SummarySection() {
 				name="summary"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel><Trans>Professional Summary</Trans></FormLabel>
+						<FormLabel>
+							<Trans>Professional Summary</Trans>
+						</FormLabel>
 						<FormControl>
 							<RichInput value={field.value} onChange={field.onChange} />
 						</FormControl>
@@ -277,7 +298,7 @@ function ProfilesSection() {
 		<SectionWrapper value="profiles" icon={<GlobeIcon className="size-5" />} title={t`Profiles`} count={fields.length}>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
 						<Button
 							type="button"
 							variant="ghost"
@@ -293,8 +314,12 @@ function ProfilesSection() {
 								name={`profiles.${index}.network`}
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel><Trans>Network</Trans></FormLabel>
-										<FormControl><Input placeholder={t`LinkedIn`} {...field} /></FormControl>
+										<FormLabel>
+											<Trans>Network</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder={t`LinkedIn`} {...field} />
+										</FormControl>
 									</FormItem>
 								)}
 							/>
@@ -303,8 +328,12 @@ function ProfilesSection() {
 								name={`profiles.${index}.username`}
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel><Trans>Username</Trans></FormLabel>
-										<FormControl><Input placeholder={t`johndoe`} {...field} /></FormControl>
+										<FormLabel>
+											<Trans>Username</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder={t`johndoe`} {...field} />
+										</FormControl>
 									</FormItem>
 								)}
 							/>
@@ -313,7 +342,9 @@ function ProfilesSection() {
 								name={`profiles.${index}.website`}
 								render={({ field }) => (
 									<FormItem className="sm:col-span-2">
-										<FormLabel><Trans>URL</Trans></FormLabel>
+										<FormLabel>
+											<Trans>URL</Trans>
+										</FormLabel>
 										<FormControl>
 											<URLInput value={field.value} onChange={field.onChange} />
 										</FormControl>
@@ -327,7 +358,17 @@ function ProfilesSection() {
 					type="button"
 					variant="outline"
 					size="sm"
-					onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, icon: "", network: "", username: "", website: { url: "", label: "" } })}
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							icon: "",
+							network: "",
+							username: "",
+							website: { url: "", label: "" },
+						})
+					}
 				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Profile</Trans>
@@ -344,54 +385,130 @@ function ExperienceSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "experience" });
 
 	return (
-		<SectionWrapper value="experience" icon={<BriefcaseIcon className="size-5" />} title={t`Experience`} count={fields.length}>
+		<SectionWrapper
+			value="experience"
+			icon={<BriefcaseIcon className="size-5" />}
+			title={t`Experience`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`experience.${index}.company`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Company</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`experience.${index}.position`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Position</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`experience.${index}.location`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Location</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`experience.${index}.period`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Period</Trans></FormLabel>
-									<FormControl><Input placeholder={t`Jan 2020 – Present`} {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`experience.${index}.website`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`experience.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`experience.${index}.company`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Company</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`experience.${index}.position`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Position</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`experience.${index}.location`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Location</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`experience.${index}.period`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Period</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder={t`Jan 2020 – Present`} {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`experience.${index}.website`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`experience.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, company: "", position: "", location: "", period: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							company: "",
+							position: "",
+							location: "",
+							period: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Experience</Trans>
 				</Button>
@@ -407,66 +524,160 @@ function EducationSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "education" });
 
 	return (
-		<SectionWrapper value="education" icon={<GraduationCapIcon className="size-5" />} title={t`Education`} count={fields.length}>
+		<SectionWrapper
+			value="education"
+			icon={<GraduationCapIcon className="size-5" />}
+			title={t`Education`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`education.${index}.school`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>School</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`education.${index}.degree`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Degree</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`education.${index}.area`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Area of Study</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`education.${index}.grade`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Grade</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`education.${index}.location`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Location</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`education.${index}.period`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Period</Trans></FormLabel>
-									<FormControl><Input placeholder={t`2018 – 2022`} {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`education.${index}.website`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`education.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`education.${index}.school`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>School</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`education.${index}.degree`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Degree</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`education.${index}.area`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Area of Study</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`education.${index}.grade`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Grade</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`education.${index}.location`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Location</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`education.${index}.period`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Period</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder={t`2018 – 2022`} {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`education.${index}.website`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`education.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, school: "", degree: "", area: "", grade: "", location: "", period: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							school: "",
+							degree: "",
+							area: "",
+							grade: "",
+							location: "",
+							period: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Education</Trans>
 				</Button>
@@ -485,39 +696,92 @@ function ProjectsSection() {
 		<SectionWrapper value="projects" icon={<CodeIcon className="size-5" />} title={t`Projects`} count={fields.length}>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`projects.${index}.name`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Name</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`projects.${index}.period`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Period</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`projects.${index}.website`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`projects.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`projects.${index}.name`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Name</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`projects.${index}.period`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Period</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`projects.${index}.website`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`projects.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, name: "", period: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							name: "",
+							period: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Project</Trans>
 				</Button>
@@ -536,27 +800,65 @@ function SkillsSection() {
 		<SectionWrapper value="skills" icon={<LightbulbIcon className="size-5" />} title={t`Skills`} count={fields.length}>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`skills.${index}.name`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Skill Name</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`skills.${index}.proficiency`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Proficiency</Trans></FormLabel>
-									<FormControl><Input placeholder={t`Advanced`} {...field} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`skills.${index}.name`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Skill Name</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`skills.${index}.proficiency`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Proficiency</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder={t`Advanced`} {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, icon: "", name: "", proficiency: "", level: 0, keywords: [] })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							icon: "",
+							name: "",
+							proficiency: "",
+							level: 0,
+							keywords: [],
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Skill</Trans>
 				</Button>
@@ -572,30 +874,71 @@ function LanguagesSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "languages" });
 
 	return (
-		<SectionWrapper value="languages" icon={<GlobeIcon className="size-5" />} title={t`Languages`} count={fields.length}>
+		<SectionWrapper
+			value="languages"
+			icon={<GlobeIcon className="size-5" />}
+			title={t`Languages`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`languages.${index}.language`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Language</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`languages.${index}.fluency`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Fluency</Trans></FormLabel>
-									<FormControl><Input placeholder={t`Native, Fluent, etc.`} {...field} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`languages.${index}.language`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Language</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`languages.${index}.fluency`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Fluency</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input placeholder={t`Native, Fluent, etc.`} {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, language: "", fluency: "", level: 0 })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							language: "",
+							fluency: "",
+							level: 0,
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Language</Trans>
 				</Button>
@@ -611,22 +954,55 @@ function InterestsSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "interests" });
 
 	return (
-		<SectionWrapper value="interests" icon={<HeartIcon className="size-5" />} title={t`Interests`} count={fields.length}>
+		<SectionWrapper
+			value="interests"
+			icon={<HeartIcon className="size-5" />}
+			title={t`Interests`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
-						<FormField control={form.control} name={`interests.${index}.name`} render={({ field }) => (
-							<FormItem>
-								<FormLabel><Trans>Interest</Trans></FormLabel>
-								<FormControl><Input {...field} /></FormControl>
-							</FormItem>
-						)} />
+						<FormField
+							control={form.control}
+							name={`interests.${index}.name`}
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>
+										<Trans>Interest</Trans>
+									</FormLabel>
+									<FormControl>
+										<Input {...field} />
+									</FormControl>
+								</FormItem>
+							)}
+						/>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, icon: "", name: "", keywords: [] })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							icon: "",
+							name: "",
+							keywords: [],
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Interest</Trans>
 				</Button>
@@ -642,48 +1018,115 @@ function AwardsSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "awards" });
 
 	return (
-		<SectionWrapper value="awards" icon={<TrophyIcon className="size-5" />} title={t`Achievements`} count={fields.length}>
+		<SectionWrapper
+			value="awards"
+			icon={<TrophyIcon className="size-5" />}
+			title={t`Achievements`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`awards.${index}.title`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Title</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`awards.${index}.awarder`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Awarder</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`awards.${index}.date`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Date</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`awards.${index}.website`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`awards.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`awards.${index}.title`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Title</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`awards.${index}.awarder`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Awarder</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`awards.${index}.date`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Date</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`awards.${index}.website`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`awards.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, title: "", awarder: "", date: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							title: "",
+							awarder: "",
+							date: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Achievement</Trans>
 				</Button>
@@ -699,48 +1142,115 @@ function CertificationsSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "certifications" });
 
 	return (
-		<SectionWrapper value="certifications" icon={<CertificateIcon className="size-5" />} title={t`Certifications`} count={fields.length}>
+		<SectionWrapper
+			value="certifications"
+			icon={<CertificateIcon className="size-5" />}
+			title={t`Certifications`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`certifications.${index}.title`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Title</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`certifications.${index}.issuer`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Issuer</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`certifications.${index}.date`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Date</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`certifications.${index}.website`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`certifications.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`certifications.${index}.title`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Title</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`certifications.${index}.issuer`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Issuer</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`certifications.${index}.date`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Date</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`certifications.${index}.website`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`certifications.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, title: "", issuer: "", date: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							title: "",
+							issuer: "",
+							date: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Certification</Trans>
 				</Button>
@@ -756,48 +1266,115 @@ function PublicationsSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "publications" });
 
 	return (
-		<SectionWrapper value="publications" icon={<BookOpenIcon className="size-5" />} title={t`Publications`} count={fields.length}>
+		<SectionWrapper
+			value="publications"
+			icon={<BookOpenIcon className="size-5" />}
+			title={t`Publications`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`publications.${index}.title`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Title</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`publications.${index}.publisher`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Publisher</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`publications.${index}.date`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Date</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`publications.${index}.website`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`publications.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`publications.${index}.title`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Title</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`publications.${index}.publisher`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Publisher</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`publications.${index}.date`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Date</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`publications.${index}.website`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`publications.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, title: "", publisher: "", date: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							title: "",
+							publisher: "",
+							date: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Publication</Trans>
 				</Button>
@@ -813,48 +1390,115 @@ function VolunteerSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "volunteer" });
 
 	return (
-		<SectionWrapper value="volunteer" icon={<HandshakeIcon className="size-5" />} title={t`Volunteer Experience`} count={fields.length}>
+		<SectionWrapper
+			value="volunteer"
+			icon={<HandshakeIcon className="size-5" />}
+			title={t`Volunteer Experience`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`volunteer.${index}.organization`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Organization</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`volunteer.${index}.location`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Location</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`volunteer.${index}.period`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Period</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`volunteer.${index}.website`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`volunteer.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`volunteer.${index}.organization`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Organization</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`volunteer.${index}.location`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Location</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`volunteer.${index}.period`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Period</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`volunteer.${index}.website`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`volunteer.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, organization: "", location: "", period: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							organization: "",
+							location: "",
+							period: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Volunteer Experience</Trans>
 				</Button>
@@ -870,48 +1514,115 @@ function ReferencesSection() {
 	const { fields, append, remove } = useFieldArray({ control: form.control, name: "references" });
 
 	return (
-		<SectionWrapper value="references" icon={<UsersIcon className="size-5" />} title={t`References`} count={fields.length}>
+		<SectionWrapper
+			value="references"
+			icon={<UsersIcon className="size-5" />}
+			title={t`References`}
+			count={fields.length}
+		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative rounded-lg border p-4 space-y-3">
-						<Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 size-7" onClick={() => remove(index)}>
+					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="absolute top-2 right-2 size-7"
+							onClick={() => remove(index)}
+						>
 							<TrashIcon className="size-4" />
 						</Button>
 						<div className="grid gap-3 sm:grid-cols-2">
-							<FormField control={form.control} name={`references.${index}.name`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Name</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`references.${index}.position`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Position</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`references.${index}.phone`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Phone</Trans></FormLabel>
-									<FormControl><Input {...field} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`references.${index}.website`} render={({ field }) => (
-								<FormItem>
-									<FormLabel><Trans>Website</Trans></FormLabel>
-									<FormControl><URLInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
-							<FormField control={form.control} name={`references.${index}.description`} render={({ field }) => (
-								<FormItem className="sm:col-span-2">
-									<FormLabel><Trans>Description</Trans></FormLabel>
-									<FormControl><RichInput value={field.value} onChange={field.onChange} /></FormControl>
-								</FormItem>
-							)} />
+							<FormField
+								control={form.control}
+								name={`references.${index}.name`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Name</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`references.${index}.position`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Position</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`references.${index}.phone`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Phone</Trans>
+										</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`references.${index}.website`}
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>
+											<Trans>Website</Trans>
+										</FormLabel>
+										<FormControl>
+											<URLInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name={`references.${index}.description`}
+								render={({ field }) => (
+									<FormItem className="sm:col-span-2">
+										<FormLabel>
+											<Trans>Description</Trans>
+										</FormLabel>
+										<FormControl>
+											<RichInput value={field.value} onChange={field.onChange} />
+										</FormControl>
+									</FormItem>
+								)}
+							/>
 						</div>
 					</div>
 				))}
-				<Button type="button" variant="outline" size="sm" onClick={() => append({ id: generateId(), hidden: false, options: { showLinkInTitle: false }, name: "", position: "", phone: "", website: { url: "", label: "" }, description: "" })}>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() =>
+						append({
+							id: generateId(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							name: "",
+							position: "",
+							phone: "",
+							website: { url: "", label: "" },
+							description: "",
+						})
+					}
+				>
 					<PlusIcon className="mr-1" />
 					<Trans>Add Reference</Trans>
 				</Button>

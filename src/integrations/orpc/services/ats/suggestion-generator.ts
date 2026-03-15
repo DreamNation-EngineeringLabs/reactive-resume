@@ -2,32 +2,38 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
-import type { Suggestion, JDAnalysis } from "./index";
-import { getAllBullets, stripHtml, estimatePageCount, SCORING_LLM_CONFIG } from "./index";
-import { startsWithActionVerb, hasQuantifiedMetric, containsWeakPhrase, isXYZCompliant } from "./rules/impact-metrics";
-import { isStandardDateFormat, findEmojis, ATS_SAFE_FONTS, ATS_SAFE_TEMPLATES } from "./rules/formatting";
-import { countResumeWords, RECOMMENDED_WORD_RANGE, RECOMMENDED_BULLET_RANGE } from "./rules/brevity";
-import { isReverseChronological, extractLatestYear } from "./rules/structure";
 import { env } from "@/utils/env";
+import type { JDAnalysis, Suggestion } from "./index";
+import { estimatePageCount, getAllBullets, SCORING_LLM_CONFIG, stripHtml } from "./index";
+import { countResumeWords, RECOMMENDED_BULLET_RANGE, RECOMMENDED_WORD_RANGE } from "./rules/brevity";
+import { ATS_SAFE_FONTS, ATS_SAFE_TEMPLATES, findEmojis, isStandardDateFormat } from "./rules/formatting";
+import { containsWeakPhrase, hasQuantifiedMetric, isXYZCompliant, startsWithActionVerb } from "./rules/impact-metrics";
+import { extractLatestYear, isReverseChronological } from "./rules/structure";
 
 const comprehensiveSchema = z.object({
-	bulletRewrites: z.array(z.object({
-		index: z.number(),
-		original: z.string(),
-		rewritten: z.string(),
-		reason: z.string(),
-	})),
-	dateCorrections: z.array(z.object({
-		index: z.number(),
-		original: z.string(),
-		corrected: z.string(),
-	})),
-	brevityEdits: z.array(z.object({
-		index: z.number(),
-		action: z.enum(["shorten", "hide"]),
-		rewritten: z.string().nullable(),
-		reason: z.string(),
-	})),
+	bulletRewrites: z.array(
+		z.object({
+			index: z.number(),
+			original: z.string(),
+			rewritten: z.string(),
+			reason: z.string(),
+		}),
+	),
+	dateCorrections: z.array(
+		z.object({
+			index: z.number(),
+			original: z.string(),
+			corrected: z.string(),
+		}),
+	),
+	brevityEdits: z.array(
+		z.object({
+			index: z.number(),
+			action: z.enum(["shorten", "hide"]),
+			rewritten: z.string().nullable(),
+			reason: z.string(),
+		}),
+	),
 	summary: z.string().nullable(),
 	tailoredSummary: z.string().nullable(),
 });
@@ -51,20 +57,22 @@ export async function generateSuggestions(
 			title: `Add missing keyword: ${keyword}`,
 			description: `The job description requires "${keyword}" but it's not in your resume. Add it to your Skills section.`,
 			autoApplicable: true,
-			patches: [{
-				op: "add",
-				path: "/sections/skills/items/-",
-				value: {
-					id: crypto.randomUUID(),
-					hidden: false,
-					options: { showLinkInTitle: false },
-					icon: "",
-					name: keyword,
-					proficiency: "",
-					level: 0,
-					keywords: [],
+			patches: [
+				{
+					op: "add",
+					path: "/sections/skills/items/-",
+					value: {
+						id: crypto.randomUUID(),
+						hidden: false,
+						options: { showLinkInTitle: false },
+						icon: "",
+						name: keyword,
+						proficiency: "",
+						level: 0,
+						keywords: [],
+					},
 				},
-			}],
+			],
 			estimatedScoreGain: Math.ceil(25 / Math.max(1, missingRequired.length)),
 			diff: {
 				type: "add_item",
@@ -85,20 +93,22 @@ export async function generateSuggestions(
 			title: `Good to have: ${keyword}`,
 			description: `The job description mentions "${keyword}" — adding it could strengthen your application.`,
 			autoApplicable: true,
-			patches: [{
-				op: "add",
-				path: "/sections/skills/items/-",
-				value: {
-					id: crypto.randomUUID(),
-					hidden: false,
-					options: { showLinkInTitle: false },
-					icon: "",
-					name: keyword,
-					proficiency: "",
-					level: 0,
-					keywords: [],
+			patches: [
+				{
+					op: "add",
+					path: "/sections/skills/items/-",
+					value: {
+						id: crypto.randomUUID(),
+						hidden: false,
+						options: { showLinkInTitle: false },
+						icon: "",
+						name: keyword,
+						proficiency: "",
+						level: 0,
+						keywords: [],
+					},
 				},
-			}],
+			],
 			estimatedScoreGain: 0,
 			diff: {
 				type: "add_item",
@@ -111,8 +121,14 @@ export async function generateSuggestions(
 
 	// ── 2. Collect ALL problematic bullets — merge ALL issues per bullet into one entry ──
 	const bulletsToRewrite: Array<{
-		text: string; sectionKey: string; itemIndex: number; path: string;
-		bulletIndex: number; reason: string; reasons: string[]; weakness: string | null;
+		text: string;
+		sectionKey: string;
+		itemIndex: number;
+		path: string;
+		bulletIndex: number;
+		reason: string;
+		reasons: string[];
+		weakness: string | null;
 	}> = [];
 
 	for (const [i, b] of bullets.entries()) {
@@ -148,8 +164,12 @@ export async function generateSuggestions(
 	const tooManyBullets = totalBulletCount > RECOMMENDED_BULLET_RANGE.max;
 
 	const brevityCandidates: Array<{
-		text: string; sectionKey: string; itemIndex: number; path: string;
-		bulletIndex: number; wordCount: number;
+		text: string;
+		sectionKey: string;
+		itemIndex: number;
+		path: string;
+		bulletIndex: number;
+		wordCount: number;
 	}> = [];
 
 	if (tooManyWords || tooManyBullets) {
@@ -191,8 +211,12 @@ export async function generateSuggestions(
 		if (needsSummary) return false; // No summary at all — needsSummary handles that
 		const summaryText = stripHtml(data.summary.content).toLowerCase();
 		const jdTitle = jdAnalysis.jobTitle.toLowerCase();
-		const mentionsRole = summaryText.includes(jdTitle) ||
-			jdTitle.split(" ").filter((w) => w.length > 3).every((w) => summaryText.includes(w));
+		const mentionsRole =
+			summaryText.includes(jdTitle) ||
+			jdTitle
+				.split(" ")
+				.filter((w) => w.length > 3)
+				.every((w) => summaryText.includes(w));
 		const jdKeyTerms = [...jdAnalysis.hardSkills, ...jdAnalysis.tools].map((s) => s.toLowerCase());
 		const matched = jdKeyTerms.filter((term) => summaryText.includes(term));
 		const matchRatio = jdKeyTerms.length > 0 ? matched.length / jdKeyTerms.length : 1;
@@ -200,8 +224,23 @@ export async function generateSuggestions(
 	})();
 
 	// ── 5. Single LLM call for ALL actionable suggestions ──
-	if (bulletsToRewrite.length > 0 || datesToFix.length > 0 || needsSummary || needsTailoredSummary || brevityCandidates.length > 0) {
-		const llmResult = await getComprehensiveSuggestions(data, bulletsToRewrite, datesToFix, needsSummary, jdAnalysis, brevityCandidates, { wordCount, totalBulletCount, pages, tooManyWords }, needsTailoredSummary);
+	if (
+		bulletsToRewrite.length > 0 ||
+		datesToFix.length > 0 ||
+		needsSummary ||
+		needsTailoredSummary ||
+		brevityCandidates.length > 0
+	) {
+		const llmResult = await getComprehensiveSuggestions(
+			data,
+			bulletsToRewrite,
+			datesToFix,
+			needsSummary,
+			jdAnalysis,
+			brevityCandidates,
+			{ wordCount, totalBulletCount, pages, tooManyWords },
+			needsTailoredSummary,
+		);
 
 		// Process bullet rewrites
 		if (llmResult) {
@@ -215,8 +254,12 @@ export async function generateSuggestions(
 				if (rewriteWords > originalWords + 5) continue;
 				if (rewrite.rewritten.trim() === bullet.text.trim()) continue;
 
-				const sectionName = bullet.sectionKey === "experience" ? "Experience" :
-					bullet.sectionKey === "projects" ? "Projects" : "Volunteer";
+				const sectionName =
+					bullet.sectionKey === "experience"
+						? "Experience"
+						: bullet.sectionKey === "projects"
+							? "Projects"
+							: "Volunteer";
 
 				const section = data.sections[bullet.sectionKey as keyof typeof data.sections];
 				const item = section.items[bullet.itemIndex] as { company?: string; name?: string; position?: string };
@@ -224,9 +267,16 @@ export async function generateSuggestions(
 
 				// Pick the most severe rule for categorization
 				const severity: "critical" | "warning" = bullet.weakness ? "critical" : "warning";
-				const ruleId = bullet.reasons.length > 1 ? "IM-ALL" : bullet.weakness ? "IM-4" 
-					: !startsWithActionVerb(bullet.text) ? "IM-1"
-					: !hasQuantifiedMetric(bullet.text) ? "IM-2" : "IM-3";
+				const ruleId =
+					bullet.reasons.length > 1
+						? "IM-ALL"
+						: bullet.weakness
+							? "IM-4"
+							: !startsWithActionVerb(bullet.text)
+								? "IM-1"
+								: !hasQuantifiedMetric(bullet.text)
+									? "IM-2"
+									: "IM-3";
 
 				// Build a combined title showing all issues
 				const issueLabels: string[] = [];
@@ -244,24 +294,20 @@ export async function generateSuggestions(
 					title,
 					description: rewrite.reason,
 					autoApplicable: true,
-					patches: [{
-						op: "replace",
-						path: bullet.path,
-						value: replaceBulletInHtml(
-							(item as { description?: string }).description ?? "",
-							bullet.text,
-							rewrite.rewritten,
-						),
-					}],
+					patches: [
+						{
+							op: "replace-bullet",
+							path: bullet.path,
+							oldText: bullet.text,
+							newText: rewrite.rewritten,
+						},
+					],
 					estimatedScoreGain: Math.min(5, bullet.reasons.length * 2),
 					diff: {
 						type: "text_replace",
 						location: `${sectionName} → ${itemLabel}`,
 						fieldPath: bullet.path,
-						hunks: [
-							{ removed: bullet.text },
-							{ added: rewrite.rewritten },
-						],
+						hunks: [{ removed: bullet.text }, { added: rewrite.rewritten }],
 					},
 				});
 			}
@@ -274,7 +320,12 @@ export async function generateSuggestions(
 
 				const sectionLabel = dateItem.sectionKey.charAt(0).toUpperCase() + dateItem.sectionKey.slice(1);
 				const section = data.sections[dateItem.sectionKey as keyof typeof data.sections];
-				const item = section.items[dateItem.itemIndex] as { company?: string; name?: string; position?: string; institution?: string };
+				const item = section.items[dateItem.itemIndex] as {
+					company?: string;
+					name?: string;
+					position?: string;
+					institution?: string;
+				};
 				const itemLabel = item.company || item.institution || item.name || item.position || "";
 
 				suggestions.push({
@@ -285,20 +336,19 @@ export async function generateSuggestions(
 					title: `Fix date format: "${dateItem.period}"`,
 					description: `Change to ATS-standard format: "${dateFix.corrected}"`,
 					autoApplicable: true,
-					patches: [{
-						op: "replace",
-						path: `/sections/${dateItem.sectionKey}/items/${dateItem.itemIndex}/period`,
-						value: dateFix.corrected,
-					}],
+					patches: [
+						{
+							op: "replace",
+							path: `/sections/${dateItem.sectionKey}/items/${dateItem.itemIndex}/period`,
+							value: dateFix.corrected,
+						},
+					],
 					estimatedScoreGain: 1,
 					diff: {
 						type: "field_replace",
 						location: `${sectionLabel} → ${itemLabel}`,
 						fieldPath: `/sections/${dateItem.sectionKey}/items/${dateItem.itemIndex}/period`,
-						hunks: [
-							{ removed: dateItem.period },
-							{ added: dateFix.corrected },
-						],
+						hunks: [{ removed: dateItem.period }, { added: dateFix.corrected }],
 					},
 				});
 			}
@@ -326,9 +376,7 @@ export async function generateSuggestions(
 						type: "field_replace",
 						location: "Summary",
 						fieldPath: "/summary/content",
-						hunks: [
-							{ added: llmResult.summary },
-						],
+						hunks: [{ added: llmResult.summary }],
 					},
 				});
 			}
@@ -350,10 +398,7 @@ export async function generateSuggestions(
 						type: "text_replace",
 						location: "Summary",
 						fieldPath: "/summary/content",
-						hunks: [
-							{ removed: currentSummary },
-							{ added: llmResult.tailoredSummary },
-						],
+						hunks: [{ removed: currentSummary }, { added: llmResult.tailoredSummary }],
 					},
 				});
 			}
@@ -366,8 +411,12 @@ export async function generateSuggestions(
 				// Only allow "shorten" when words are over limit, not just for excess bullets
 				if (edit.action === "shorten" && !tooManyWords) continue;
 
-				const sectionName = candidate.sectionKey === "experience" ? "Experience" :
-					candidate.sectionKey === "projects" ? "Projects" : "Volunteer";
+				const sectionName =
+					candidate.sectionKey === "experience"
+						? "Experience"
+						: candidate.sectionKey === "projects"
+							? "Projects"
+							: "Volunteer";
 				const section = data.sections[candidate.sectionKey as keyof typeof data.sections];
 				const item = section.items[candidate.itemIndex] as { company?: string; name?: string; position?: string };
 				const itemLabel = item.company || item.name || item.position || "";
@@ -382,22 +431,19 @@ export async function generateSuggestions(
 						title: `Hide bullet in ${sectionName} → ${itemLabel}`,
 						description: edit.reason,
 						autoApplicable: true,
-						patches: [{
-							op: "replace",
-							path: candidate.path,
-							value: removeBulletFromHtml(
-								(item as { description?: string }).description ?? "",
-								candidate.text,
-							),
-						}],
+						patches: [
+							{
+								op: "remove-bullet",
+								path: candidate.path,
+								oldText: candidate.text,
+							},
+						],
 						estimatedScoreGain: 1,
 						diff: {
 							type: "text_replace",
 							location: `${sectionName} → ${itemLabel}`,
 							fieldPath: candidate.path,
-							hunks: [
-								{ removed: candidate.text },
-							],
+							hunks: [{ removed: candidate.text }],
 						},
 					});
 				} else if (edit.action === "shorten" && edit.rewritten) {
@@ -413,24 +459,20 @@ export async function generateSuggestions(
 						title: `Shorten bullet in ${sectionName} → ${itemLabel}`,
 						description: edit.reason,
 						autoApplicable: true,
-						patches: [{
-							op: "replace",
-							path: candidate.path,
-							value: replaceBulletInHtml(
-								(item as { description?: string }).description ?? "",
-								candidate.text,
-								edit.rewritten,
-							),
-						}],
+						patches: [
+							{
+								op: "replace-bullet",
+								path: candidate.path,
+								oldText: candidate.text,
+								newText: edit.rewritten,
+							},
+						],
 						estimatedScoreGain: 1,
 						diff: {
 							type: "text_replace",
 							location: `${sectionName} → ${itemLabel}`,
 							fieldPath: candidate.path,
-							hunks: [
-								{ removed: candidate.text },
-								{ added: edit.rewritten },
-							],
+							hunks: [{ removed: candidate.text }, { added: edit.rewritten }],
 						},
 					});
 				}
@@ -462,10 +504,7 @@ export async function generateSuggestions(
 				type: "field_replace",
 				location: "Typography",
 				fieldPath: "/metadata/typography/body/fontFamily",
-				hunks: [
-					{ removed: `Font: ${currentFont}` },
-					{ added: 'Font: Inter' },
-				],
+				hunks: [{ removed: `Font: ${currentFont}` }, { added: "Font: Inter" }],
 			},
 		});
 	}
@@ -487,10 +526,7 @@ export async function generateSuggestions(
 				type: "field_replace",
 				location: "Template",
 				fieldPath: "/metadata/template",
-				hunks: [
-					{ removed: `Template: ${template}` },
-					{ added: 'Template: onyx' },
-				],
+				hunks: [{ removed: `Template: ${template}` }, { added: "Template: onyx" }],
 			},
 		});
 	}
@@ -511,10 +547,7 @@ export async function generateSuggestions(
 				type: "field_replace",
 				location: "Picture",
 				fieldPath: "/picture/hidden",
-				hunks: [
-					{ removed: "Picture: visible" },
-					{ added: "Picture: hidden" },
-				],
+				hunks: [{ removed: "Picture: visible" }, { added: "Picture: hidden" }],
 			},
 		});
 	}
@@ -526,18 +559,36 @@ export async function generateSuggestions(
 	for (const field of ["name", "headline", "email", "phone", "location"] as const) {
 		const val = data.basics[field];
 		if (val && findEmojis(val).length > 0) {
-			emojiFields.push({ path: `/basics/${field}`, value: val, cleaned: removeEmojis(val), location: `Basics → ${field}` });
+			emojiFields.push({
+				path: `/basics/${field}`,
+				value: val,
+				cleaned: removeEmojis(val),
+				location: `Basics → ${field}`,
+			});
 		}
 	}
 
 	// Check summary
 	const summaryText = data.summary.content;
 	if (summaryText && findEmojis(stripHtml(summaryText)).length > 0) {
-		emojiFields.push({ path: "/summary/content", value: summaryText, cleaned: removeEmojis(summaryText), location: "Summary" });
+		emojiFields.push({
+			path: "/summary/content",
+			value: summaryText,
+			cleaned: removeEmojis(summaryText),
+			location: "Summary",
+		});
 	}
 
 	// Check section item fields
-	for (const key of ["experience", "projects", "volunteer", "education", "skills", "awards", "certifications"] as const) {
+	for (const key of [
+		"experience",
+		"projects",
+		"volunteer",
+		"education",
+		"skills",
+		"awards",
+		"certifications",
+	] as const) {
 		const section = data.sections[key];
 		if (section.hidden) continue;
 		for (const [idx, item] of section.items.entries()) {
@@ -571,10 +622,7 @@ export async function generateSuggestions(
 				type: "text_replace",
 				location: ef.location,
 				fieldPath: ef.path,
-				hunks: [
-					{ removed: ef.value },
-					{ added: ef.cleaned },
-				],
+				hunks: [{ removed: ef.value }, { added: ef.cleaned }],
 			},
 		});
 	}
@@ -623,10 +671,7 @@ export async function generateSuggestions(
 					type: "field_replace",
 					location: "Headline",
 					fieldPath: "/basics/headline",
-					hunks: [
-						{ removed: data.basics.headline },
-						{ added: jdAnalysis.jobTitle },
-					],
+					hunks: [{ removed: data.basics.headline }, { added: jdAnalysis.jobTitle }],
 				},
 			});
 		}
@@ -635,13 +680,9 @@ export async function generateSuggestions(
 	// ── Tailoring: Education match (TR-4) ──
 	if (jdAnalysis && jdAnalysis.educationRequirements.length > 0) {
 		const eduItems = data.sections.education.items.filter((item) => !item.hidden);
-		const allEduText = eduItems
-			.map((item) => `${item.degree} ${item.area} ${item.school}`.toLowerCase())
-			.join(" ");
+		const allEduText = eduItems.map((item) => `${item.degree} ${item.area} ${item.school}`.toLowerCase()).join(" ");
 
-		const unmatchedReqs = jdAnalysis.educationRequirements.filter(
-			(req) => !allEduText.includes(req.toLowerCase()),
-		);
+		const unmatchedReqs = jdAnalysis.educationRequirements.filter((req) => !allEduText.includes(req.toLowerCase()));
 
 		if (unmatchedReqs.length > 0) {
 			suggestions.push({
@@ -669,15 +710,16 @@ export async function generateSuggestions(
 	// ── Hide irrelevant education entries (e.g. class 10th/12th when graduate) ──
 	const eduSection = data.sections.education;
 	if (!eduSection.hidden) {
-		const visibleEdu = eduSection.items
-			.map((item, idx) => ({ ...item, idx }))
-			.filter((item) => !item.hidden);
+		const visibleEdu = eduSection.items.map((item, idx) => ({ ...item, idx })).filter((item) => !item.hidden);
 
-		const highSchoolPatterns = /\b(class\s*(?:10|ten|x|xth|10th)|class\s*(?:12|twelve|xii|xiith|12th)|ssc|hsc|sslc|cbse|icse|isc|(?:10th|12th)\s*(?:grade|standard|std)|secondary|sr\.?\s*secondary|sr\.?\s*sec|higher\s*secondary|high\s*school|intermediate|matriculat|(?:std|standard)\s*(?:10|12|x|xii))\b/i;
+		const highSchoolPatterns =
+			/\b(class\s*(?:10|ten|x|xth|10th)|class\s*(?:12|twelve|xii|xiith|12th)|ssc|hsc|sslc|cbse|icse|isc|(?:10th|12th)\s*(?:grade|standard|std)|secondary|sr\.?\s*secondary|sr\.?\s*sec|higher\s*secondary|high\s*school|intermediate|matriculat|(?:std|standard)\s*(?:10|12|x|xii))\b/i;
 
 		const hasHigherDegree = visibleEdu.some((item) => {
 			const combined = `${item.degree} ${item.area} ${item.school}`.toLowerCase();
-			return /\b(b\.?tech|b\.?e|b\.?sc|b\.?a|b\.?com|bca|bba|m\.?tech|m\.?e|m\.?sc|m\.?a|mca|mba|m\.?com|ph\.?d|bachelor|master|doctor|diploma|associate|undergraduate|graduate|postgraduate|engineering|university|college)\b/i.test(combined);
+			return /\b(b\.?tech|b\.?e|b\.?sc|b\.?a|b\.?com|bca|bba|m\.?tech|m\.?e|m\.?sc|m\.?a|mca|mba|m\.?com|ph\.?d|bachelor|master|doctor|diploma|associate|undergraduate|graduate|postgraduate|engineering|university|college)\b/i.test(
+				combined,
+			);
 		});
 
 		if (hasHigherDegree) {
@@ -699,9 +741,7 @@ export async function generateSuggestions(
 							type: "field_replace",
 							location: `Education → ${label}`,
 							fieldPath: `/sections/education/items/${item.idx}/hidden`,
-							hunks: [
-								{ removed: `${item.degree}${item.area ? ` — ${item.area}` : ""} at ${item.school}` },
-							],
+							hunks: [{ removed: `${item.degree}${item.area ? ` — ${item.area}` : ""} at ${item.school}` }],
 						},
 					});
 				}
@@ -735,7 +775,11 @@ export async function generateSuggestions(
 
 		// Build a full reordered items array (preserving hidden items at their positions isn't worth the complexity — just sort all)
 		const sortedItems = [...items]
-			.map((item, idx) => ({ item, idx, year: extractLatestYear((item as { period?: string }).period || (item as { date?: string }).date) }))
+			.map((item, idx) => ({
+				item,
+				idx,
+				year: extractLatestYear((item as { period?: string }).period || (item as { date?: string }).date),
+			}))
 			.sort((a, b) => {
 				// Hidden items go to the end
 				if (a.item.hidden && !b.item.hidden) return 1;
@@ -745,27 +789,33 @@ export async function generateSuggestions(
 			})
 			.map(({ item }) => item);
 
-		const currentOrder = visibleWithIdx.map((v) => {
-			const name = (v.item as Record<string, unknown>).company
-				|| (v.item as Record<string, unknown>).school
-				|| (v.item as Record<string, unknown>).name
-				|| (v.item as Record<string, unknown>).title
-				|| (v.item as Record<string, unknown>).organization
-				|| `Item ${v.idx + 1}`;
-			const dateStr = v.item.period || v.item.date || "";
-			return `${name} (${dateStr})`;
-		}).join(" → ");
+		const currentOrder = visibleWithIdx
+			.map((v) => {
+				const name =
+					(v.item as Record<string, unknown>).company ||
+					(v.item as Record<string, unknown>).school ||
+					(v.item as Record<string, unknown>).name ||
+					(v.item as Record<string, unknown>).title ||
+					(v.item as Record<string, unknown>).organization ||
+					`Item ${v.idx + 1}`;
+				const dateStr = v.item.period || v.item.date || "";
+				return `${name} (${dateStr})`;
+			})
+			.join(" → ");
 
-		const correctOrder = sorted.map((v) => {
-			const name = (v.item as Record<string, unknown>).company
-				|| (v.item as Record<string, unknown>).school
-				|| (v.item as Record<string, unknown>).name
-				|| (v.item as Record<string, unknown>).title
-				|| (v.item as Record<string, unknown>).organization
-				|| `Item ${v.idx + 1}`;
-			const dateStr = v.item.period || v.item.date || "";
-			return `${name} (${dateStr})`;
-		}).join(" → ");
+		const correctOrder = sorted
+			.map((v) => {
+				const name =
+					(v.item as Record<string, unknown>).company ||
+					(v.item as Record<string, unknown>).school ||
+					(v.item as Record<string, unknown>).name ||
+					(v.item as Record<string, unknown>).title ||
+					(v.item as Record<string, unknown>).organization ||
+					`Item ${v.idx + 1}`;
+				const dateStr = v.item.period || v.item.date || "";
+				return `${name} (${dateStr})`;
+			})
+			.join(" → ");
 
 		suggestions.push({
 			id: `SC-S3-${key}`,
@@ -781,10 +831,7 @@ export async function generateSuggestions(
 				type: "reorder",
 				location: label,
 				fieldPath: `/sections/${key}/items`,
-				hunks: [
-					{ removed: currentOrder },
-					{ added: correctOrder },
-				],
+				hunks: [{ removed: currentOrder }, { added: correctOrder }],
 			},
 		});
 	}
@@ -800,14 +847,15 @@ export async function generateSuggestions(
 		if (section.columns >= 2) continue; // Already multi-column
 
 		// Calculate average visible text length per item
-		const avgWords = visibleItems.reduce((sum, item) => {
-			const texts: string[] = [];
-			for (const [, val] of Object.entries(item)) {
-				if (typeof val === "string") texts.push(stripHtml(val));
-				if (Array.isArray(val)) texts.push(...val.filter((v): v is string => typeof v === "string"));
-			}
-			return sum + texts.join(" ").split(/\s+/).filter(Boolean).length;
-		}, 0) / visibleItems.length;
+		const avgWords =
+			visibleItems.reduce((sum, item) => {
+				const texts: string[] = [];
+				for (const [, val] of Object.entries(item)) {
+					if (typeof val === "string") texts.push(stripHtml(val));
+					if (Array.isArray(val)) texts.push(...val.filter((v): v is string => typeof v === "string"));
+				}
+				return sum + texts.join(" ").split(/\s+/).filter(Boolean).length;
+			}, 0) / visibleItems.length;
 
 		// Only suggest multi-column for sections with short items (avg ≤ 8 words per item)
 		if (avgWords > 8) continue;
@@ -861,8 +909,7 @@ async function getComprehensiveSuggestions(
 		const apiKey = env.OPENAI_API_KEY;
 		if (!apiKey) return null;
 
-		const model = createOpenAI({ apiKey, baseURL: env.OPENAI_BASE_URL })
-			.languageModel(SCORING_LLM_CONFIG.model);
+		const model = createOpenAI({ apiKey, baseURL: env.OPENAI_BASE_URL }).languageModel(SCORING_LLM_CONFIG.model);
 
 		// Build sections of the prompt dynamically
 		const promptParts: string[] = [];
@@ -952,14 +999,14 @@ Rules:
 		}
 
 		if (brevityCandidates.length > 0) {
-			const excessWords = brevityStats.wordCount > RECOMMENDED_WORD_RANGE.max
-				? brevityStats.wordCount - RECOMMENDED_WORD_RANGE.max : 0;
-			const excessBullets = brevityStats.totalBulletCount > RECOMMENDED_BULLET_RANGE.max
-				? brevityStats.totalBulletCount - RECOMMENDED_BULLET_RANGE.max : 0;
+			const excessWords =
+				brevityStats.wordCount > RECOMMENDED_WORD_RANGE.max ? brevityStats.wordCount - RECOMMENDED_WORD_RANGE.max : 0;
+			const excessBullets =
+				brevityStats.totalBulletCount > RECOMMENDED_BULLET_RANGE.max
+					? brevityStats.totalBulletCount - RECOMMENDED_BULLET_RANGE.max
+					: 0;
 
-			const allowedActions = brevityStats.tooManyWords
-				? '"shorten" or "hide"'
-				: '"hide" only (do NOT use "shorten")';
+			const allowedActions = brevityStats.tooManyWords ? '"shorten" or "hide"' : '"hide" only (do NOT use "shorten")';
 
 			promptParts.push(`## BREVITY EDITS
 The resume needs trimming. Current stats:
@@ -970,7 +1017,7 @@ The resume needs trimming. Current stats:
 Allowed actions: ${allowedActions}
 
 For each bullet below, decide:
-${brevityStats.tooManyWords ? '- "shorten": Rewrite it more concisely (reduce word count by 30-50%) while keeping the key achievement/impact. Provide the shortened version in "rewritten".' : ''}
+${brevityStats.tooManyWords ? '- "shorten": Rewrite it more concisely (reduce word count by 30-50%) while keeping the key achievement/impact. Provide the shortened version in "rewritten".' : ""}
 - "hide": If the bullet is low-impact, generic, or redundant with other bullets, suggest hiding it. Set "rewritten" to null.
 
 Prioritize hiding bullets that:
@@ -1007,13 +1054,9 @@ ${promptParts.join("\n\n")}`,
 					role: "user",
 					content: `Fix everything listed above. Return bulletRewrites array (with index, original, rewritten, reason), dateCorrections array (with index, original, corrected), brevityEdits array (with index, action, rewritten, reason), summary (string or null), and tailoredSummary (string or null).${
 						bulletsToRewrite.length === 0 ? " bulletRewrites should be an empty array." : ""
-					}${
-						datesToFix.length === 0 ? " dateCorrections should be an empty array." : ""
-					}${
+					}${datesToFix.length === 0 ? " dateCorrections should be an empty array." : ""}${
 						brevityCandidates.length === 0 ? " brevityEdits should be an empty array." : ""
-					}${
-						!needsSummary ? " summary should be null." : ""
-					}${
+					}${!needsSummary ? " summary should be null." : ""}${
 						!needsTailoredSummary ? " tailoredSummary should be null." : ""
 					}`,
 				},
@@ -1024,41 +1067,6 @@ ${promptParts.join("\n\n")}`,
 	} catch {
 		return null;
 	}
-}
-
-/** Replace a specific bullet text within an HTML description, preserving HTML structure */
-function replaceBulletInHtml(html: string, oldText: string, newText: string): string {
-	// Try to find and replace within <li> tags
-	const liRegex = new RegExp(`(<li[^>]*>)([\\s\\S]*?)(</li>)`, "gi");
-
-	let replaced = false;
-	const result = html.replace(liRegex, (match, openTag, content, closeTag) => {
-		if (replaced) return match;
-		const strippedContent = stripHtml(content);
-		if (strippedContent === oldText || strippedContent.includes(oldText)) {
-			replaced = true;
-			return `${openTag}${newText}${closeTag}`;
-		}
-		return match;
-	});
-
-	if (replaced) return result;
-
-	// Fallback: simple text replacement
-	return html.replace(oldText, newText);
-}
-
-/** Remove a specific bullet from an HTML description by matching its text */
-function removeBulletFromHtml(html: string, bulletText: string): string {
-	const liRegex = new RegExp(`<li[^>]*>[\\s\\S]*?</li>`, "gi");
-
-	return html.replace(liRegex, (match) => {
-		const stripped = stripHtml(match);
-		if (stripped === bulletText || stripped.includes(bulletText)) {
-			return ""; // Remove the entire <li> element
-		}
-		return match;
-	});
 }
 
 /** Remove all emoji characters from text, cleaning up extra spaces */
