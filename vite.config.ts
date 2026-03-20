@@ -34,7 +34,7 @@ const config = defineConfig({
 	plugins: [
 		lingui(),
 		tailwindcss(),
-		nitro({ plugins: ["plugins/1.migrate.ts"] }),
+		nitro(),
 		tanstackStart({ router: { semicolons: true, quoteStyle: "double" } }),
 		viteReact({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }),
 		VitePWA({
