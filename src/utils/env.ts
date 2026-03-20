@@ -25,6 +25,11 @@ export const env = createEnv({
 		// Authentication
 		AUTH_SECRET: z.string().min(1),
 		MAIN_APP_SECRET: z.string().min(1).optional(),
+		// Comma-separated list of additional trusted origins (e.g. custom domains)
+		TRUSTED_ORIGINS: z
+			.string()
+			.optional()
+			.transform((value) => (value ? value.split(",").map((s) => s.trim()) : [])),
 
 		// Social Auth (Google)
 		GOOGLE_CLIENT_ID: z.string().min(1).optional(),
