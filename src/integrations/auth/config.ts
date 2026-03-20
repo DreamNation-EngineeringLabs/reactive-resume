@@ -73,6 +73,7 @@ const getAuthConfig = () => {
 		advanced: {
 			database: { generateId },
 			useSecureCookies: env.APP_URL.startsWith("https://"),
+			trustProxy: true,
 		},
 
 		emailAndPassword: {
