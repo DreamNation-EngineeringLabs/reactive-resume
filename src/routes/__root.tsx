@@ -30,7 +30,7 @@ type RouterContext = {
 	flags: FeatureFlags;
 };
 
-const appName = "Resume Builder";
+const appName = "Polymath Resume Builder";
 const tagline = "Create professional resumes";
 const title = `${appName} — ${tagline}`;
 const description =
@@ -47,9 +47,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			links: [
 				{ rel: "stylesheet", href: appCss },
 				// Icons
-				{ rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "128x128" },
-				{ rel: "icon", href: "/favicon.svg", type: "image/svg+xml", sizes: "256x256 any" },
-				{ rel: "apple-touch-icon", href: "/apple-touch-icon-180x180.png", type: "image/png", sizes: "180x180 any" },
+				{ rel: "icon", href: "/favicon.png?v=polymath", type: "image/png", sizes: "60x60" },
+				{ rel: "shortcut icon", href: "/favicon.png?v=polymath", type: "image/png" },
+				{ rel: "apple-touch-icon", href: "/favicon.png?v=polymath", type: "image/png" },
 				// Manifest
 				{ rel: "manifest", href: "/manifest.webmanifest", crossOrigin: "use-credentials" },
 			],
