@@ -11,6 +11,7 @@ import z from "zod";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
 import { client } from "@/integrations/orpc/client";
+import { getSourceUrl } from "@/utils/source-url";
 
 export const Route = createFileRoute("/auth/login")({
 	component: RouteComponent,
@@ -39,6 +40,7 @@ function RouteComponent() {
 	const navigate = useNavigate();
 	const [showPassword, toggleShowPassword] = useToggle(false);
 	const { flags } = Route.useRouteContext();
+	const mainAppUrl = getSourceUrl();
 
 	useEffect(() => {
 		const trace =
@@ -61,11 +63,16 @@ function RouteComponent() {
 					found: Boolean(session),
 					userId: session?.user?.id ?? null,
 				});
+				if (session) {
+					console.log(`[SSOTrace:${trace}] login:redirecting_to_dashboard`);
+					router.invalidate();
+					navigate({ to: "/dashboard", replace: true });
+				}
 			} catch {
 				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
 			}
 		})();
-	}, []);
+	}, [navigate, router]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -121,7 +128,7 @@ function RouteComponent() {
 				<Trans>Please login via the main dashboard.</Trans>
 			</p>
 			<Button asChild className="w-full">
-				<a href="http://localhost:3000/placements">
+				<a href={`${mainAppUrl}/placements`}>
 					<Trans>Go to Dashboard</Trans>
 				</a>
 			</Button>
