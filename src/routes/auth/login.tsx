@@ -45,6 +45,7 @@ function RouteComponent() {
 	const [isSsoChecking, setIsSsoChecking] = useState(false);
 	const [ssoError, setSsoError] = useState<string | null>(null);
 	const [hasCheckedSession, setHasCheckedSession] = useState(false);
+	const [isSsoFlow, setIsSsoFlow] = useState(false);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -60,39 +61,52 @@ function RouteComponent() {
 				?.split("=")[1] ?? "none",
 		);
 		const trace = queryTrace ?? traceFromCookie;
-		const isSsoFlow = Boolean(queryTrace || traceFromCookie !== "none");
+		const ssoFlowActive = Boolean(queryTrace || traceFromCookie !== "none");
+		setIsSsoFlow(ssoFlowActive);
 
 		console.log(`[SSOTrace:${trace}] login:mounted`, {
 			href: window.location.href,
-			isSsoFlow,
+			isSsoFlow: ssoFlowActive,
 			errorParam,
 		});
 
-		if (isSsoFlow) {
+		if (ssoFlowActive) {
 			setIsSsoChecking(true);
 			setSsoError(null);
 		}
 
 		void (async () => {
+			// SSO cookie/session can be visible with slight delay behind proxy/CDN hops.
+			// Retry for a short window to avoid flashing the restricted screen.
+			const maxAttempts = ssoFlowActive ? 10 : 1;
+			const retryDelayMs = 250;
+
 			try {
-				const session = await client.auth.session.get();
-				console.log(`[SSOTrace:${trace}] login:sessionProbe`, {
-					found: Boolean(session),
-					userId: session?.user?.id ?? null,
-				});
-				if (session) {
-					console.log(`[SSOTrace:${trace}] login:redirecting_to_dashboard`);
-					router.invalidate();
-					navigate({ to: "/dashboard", replace: true });
-					return;
+				for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+					const session = await client.auth.session.get();
+					console.log(`[SSOTrace:${trace}] login:sessionProbe`, {
+						attempt,
+						maxAttempts,
+						found: Boolean(session),
+						userId: session?.user?.id ?? null,
+					});
+					if (session) {
+						console.log(`[SSOTrace:${trace}] login:redirecting_to_dashboard`);
+						router.invalidate();
+						navigate({ to: "/dashboard", replace: true });
+						return;
+					}
+					if (attempt < maxAttempts) {
+						await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+					}
 				}
-				if (isSsoFlow) setSsoError(errorParam);
+				if (ssoFlowActive) setSsoError(errorParam);
 			} catch {
 				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
-				if (isSsoFlow) setSsoError(errorParam ?? "session_probe_failed");
+				if (ssoFlowActive) setSsoError(errorParam ?? "session_probe_failed");
 			} finally {
 				setHasCheckedSession(true);
-				if (isSsoFlow) setIsSsoChecking(false);
+				if (ssoFlowActive) setIsSsoChecking(false);
 			}
 		})();
 	}, [navigate, router]);
@@ -146,7 +160,7 @@ function RouteComponent() {
 		return <LoadingScreen />;
 	}
 
-	if (!hasCheckedSession) {
+	if (!hasCheckedSession || isSsoChecking) {
 		return <LoadingScreen />;
 	}
 
