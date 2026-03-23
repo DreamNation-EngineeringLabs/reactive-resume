@@ -10,6 +10,13 @@ import type { auth } from "./config";
 
 const getAuthClient = () => {
 	return createAuthClient({
+		// Match ORPC client: always send cookies on auth API calls (get-session, sign-in, etc.).
+		// Without this, some environments (e.g. behind Firebase Hosting → Cloud Run) can send
+		// cookies on fetch calls that set credentials explicitly (flags/get) but omit them on
+		// Better Auth's internal get-session request → session stays null in router context.
+		fetchOptions: {
+			credentials: "include",
+		},
 		plugins: [
 			apiKeyClient(),
 			usernameClient(),
