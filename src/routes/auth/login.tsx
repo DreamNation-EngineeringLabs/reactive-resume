@@ -47,6 +47,7 @@ function RouteComponent() {
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
+		let shouldHideLoading = true;
 
 		const params = new URLSearchParams(window.location.search);
 		const queryTrace = params.get("trace");
@@ -82,6 +83,8 @@ function RouteComponent() {
 					});
 					if (session) {
 						console.log(`[SSOTrace:${trace}] login:redirecting_to_dashboard`);
+						// Keep loading visible while navigation to /dashboard is in-flight.
+						shouldHideLoading = false;
 						router.invalidate();
 						navigate({ to: "/dashboard", replace: true });
 						return;
@@ -95,7 +98,9 @@ function RouteComponent() {
 				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
 				if (ssoFlowActive) setSsoError(errorParam ?? "session_probe_failed");
 			} finally {
-				setIsChildLoading(false);
+				if (shouldHideLoading) {
+					setIsChildLoading(false);
+				}
 			}
 		})();
 	}, [navigate, router, setIsChildLoading]);
