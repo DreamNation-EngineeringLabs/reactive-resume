@@ -43,6 +43,7 @@ function RouteComponent() {
 	const mainAppUrl = getSourceUrl();
 	const [isSsoChecking, setIsSsoChecking] = useState(false);
 	const [ssoError, setSsoError] = useState<string | null>(null);
+	const [hasCheckedSession, setHasCheckedSession] = useState(false);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -89,6 +90,7 @@ function RouteComponent() {
 				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
 				if (isSsoFlow) setSsoError(errorParam ?? "session_probe_failed");
 			} finally {
+				setHasCheckedSession(true);
 				if (isSsoFlow) setIsSsoChecking(false);
 			}
 		})();
@@ -147,6 +149,19 @@ function RouteComponent() {
 				</h1>
 				<p className="text-muted-foreground">
 					<Trans>Please wait while we verify your secure session.</Trans>
+				</p>
+			</div>
+		);
+	}
+
+	if (!hasCheckedSession) {
+		return (
+			<div className="space-y-4 text-center">
+				<h1 className="font-bold text-2xl tracking-tight">
+					<Trans>Checking your sign-in status...</Trans>
+				</h1>
+				<p className="text-muted-foreground">
+					<Trans>Please wait a moment.</Trans>
 				</p>
 			</div>
 		);
