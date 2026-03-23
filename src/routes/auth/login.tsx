@@ -8,11 +8,11 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useToggle } from "usehooks-ts";
 import z from "zod";
-import { LoadingScreen } from "@/components/layout/loading-screen";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
 import { client } from "@/integrations/orpc/client";
 import { getSourceUrl } from "@/utils/source-url";
+import { useAuthLayout } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/login")({
 	component: RouteComponent,
@@ -42,10 +42,8 @@ function RouteComponent() {
 	const [showPassword, toggleShowPassword] = useToggle(false);
 	const { flags } = Route.useRouteContext();
 	const mainAppUrl = getSourceUrl();
-	const [isSsoChecking, setIsSsoChecking] = useState(false);
 	const [ssoError, setSsoError] = useState<string | null>(null);
-	const [hasCheckedSession, setHasCheckedSession] = useState(false);
-	const [isSsoFlow, setIsSsoFlow] = useState(false);
+	const { setIsChildLoading } = useAuthLayout();
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -62,7 +60,6 @@ function RouteComponent() {
 		);
 		const trace = queryTrace ?? traceFromCookie;
 		const ssoFlowActive = Boolean(queryTrace || traceFromCookie !== "none");
-		setIsSsoFlow(ssoFlowActive);
 
 		console.log(`[SSOTrace:${trace}] login:mounted`, {
 			href: window.location.href,
@@ -70,14 +67,7 @@ function RouteComponent() {
 			errorParam,
 		});
 
-		if (ssoFlowActive) {
-			setIsSsoChecking(true);
-			setSsoError(null);
-		}
-
 		void (async () => {
-			// SSO cookie/session can be visible with slight delay behind proxy/CDN hops.
-			// Retry for a short window to avoid flashing the restricted screen.
 			const maxAttempts = ssoFlowActive ? 10 : 1;
 			const retryDelayMs = 250;
 
@@ -105,11 +95,10 @@ function RouteComponent() {
 				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
 				if (ssoFlowActive) setSsoError(errorParam ?? "session_probe_failed");
 			} finally {
-				setHasCheckedSession(true);
-				if (ssoFlowActive) setIsSsoChecking(false);
+				setIsChildLoading(false);
 			}
 		})();
-	}, [navigate, router]);
+	}, [navigate, router, setIsChildLoading]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
@@ -155,14 +144,6 @@ function RouteComponent() {
 			});
 		}
 	};
-
-	if (isSsoChecking) {
-		return <LoadingScreen />;
-	}
-
-	if (!hasCheckedSession || isSsoChecking) {
-		return <LoadingScreen />;
-	}
 
 	return (
 		<div className="space-y-4 text-center">

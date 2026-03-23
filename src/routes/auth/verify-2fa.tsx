@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import { authClient } from "@/integrations/auth/client";
+import { useSignalAuthReady } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/verify-2fa")({
 	component: RouteComponent,
@@ -26,6 +27,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function RouteComponent() {
+	useSignalAuthReady();
 	const router = useRouter();
 	const navigate = useNavigate();
 

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/integrations/auth/client";
+import { useSignalAuthReady } from "./-components/auth-layout-context";
 
 const searchSchema = z.object({ token: z.string().min(1) });
 
@@ -35,6 +36,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function RouteComponent() {
+	useSignalAuthReady();
 	const navigate = useNavigate();
 	const { token } = Route.useSearch();
 	const [showPassword, toggleShowPassword] = useToggle(false);

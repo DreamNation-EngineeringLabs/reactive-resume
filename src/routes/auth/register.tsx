@@ -11,6 +11,7 @@ import z from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
+import { useSignalAuthReady } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/register")({
 	component: RouteComponent,
@@ -39,6 +40,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function RouteComponent() {
+	useSignalAuthReady();
 	const [submitted, setSubmitted] = useState(false);
 	const [showPassword, toggleShowPassword] = useToggle(false);
 	const { flags } = Route.useRouteContext();

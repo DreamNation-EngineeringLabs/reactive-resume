@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/integrations/auth/client";
+import { useSignalAuthReady } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/forgot-password")({
 	component: RouteComponent,
@@ -26,6 +27,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 function RouteComponent() {
+	useSignalAuthReady();
 	const [submitted, setSubmitted] = useState(false);
 
 	const form = useForm<FormValues>({
