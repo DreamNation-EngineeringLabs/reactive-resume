@@ -1,7 +1,28 @@
 import { protectedProcedure, publicProcedure } from "../context";
 import { authService, type ProviderList } from "../services/auth";
+import { auth } from "@/integrations/auth/config";
+import type { AuthSession } from "@/integrations/auth/types";
 
 export const authRouter = {
+	session: {
+		get: publicProcedure
+			.route({
+				method: "GET",
+				path: "/auth/session",
+				tags: ["Authentication"],
+				operationId: "getCurrentSession",
+				summary: "Get current session",
+				description:
+					"Returns the currently authenticated session when a valid session cookie is present, otherwise null.",
+				successDescription: "The current session or null.",
+			})
+			.handler(async ({ context }): Promise<AuthSession | null> => {
+				const headers = context.reqHeaders ?? new Headers();
+				const result = await auth.api.getSession({ headers });
+				return (result as AuthSession | null) ?? null;
+			}),
+	},
+
 	providers: {
 		list: publicProcedure
 			.route({

@@ -1,26 +1,17 @@
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
+import { client } from "@/integrations/orpc/client";
 import { env } from "@/utils/env";
-import { authClient } from "./client";
 import { auth } from "./config";
 import type { AuthSession } from "./types";
 
 export const getSession = createIsomorphicFn()
 	.client(async (): Promise<AuthSession | null> => {
 		try {
-			// Use explicit credentialed fetch so cookies are always attached even when
-			// authClient defaults behave differently behind Firebase Hosting proxies.
-			const response = await fetch("/api/auth/get-session", {
-				method: "GET",
-				credentials: "include",
-				headers: {
-					Accept: "application/json",
-				},
-			});
-
-			if (!response.ok) return null;
-			const data = (await response.json()) as AuthSession | null;
-			return data;
+			// In production behind Firebase Hosting, /api/auth/get-session requests can
+			// intermittently arrive without cookies, while /api/rpc requests remain stable.
+			// Fetch session through ORPC so it uses the same credentialed transport path.
+			return await client.auth.session.get();
 		} catch {
 			return null;
 		}
