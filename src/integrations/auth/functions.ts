@@ -7,9 +7,23 @@ import type { AuthSession } from "./types";
 
 export const getSession = createIsomorphicFn()
 	.client(async (): Promise<AuthSession | null> => {
-		const { data, error } = await authClient.getSession();
-		if (error) return null;
-		return data;
+		try {
+			// Use explicit credentialed fetch so cookies are always attached even when
+			// authClient defaults behave differently behind Firebase Hosting proxies.
+			const response = await fetch("/api/auth/get-session", {
+				method: "GET",
+				credentials: "include",
+				headers: {
+					Accept: "application/json",
+				},
+			});
+
+			if (!response.ok) return null;
+			const data = (await response.json()) as AuthSession | null;
+			return data;
+		} catch {
+			return null;
+		}
 	})
 	.server(async (): Promise<AuthSession | null> => {
 		const headers = await getRequestHeaders();
