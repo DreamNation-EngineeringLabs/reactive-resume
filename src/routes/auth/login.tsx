@@ -16,14 +16,7 @@ import { useAuthLayout } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/login")({
 	component: RouteComponent,
-	beforeLoad: async ({ context, location }) => {
-		const trace =
-			location.search && typeof location.search.trace === "string" ? location.search.trace : "none";
-		console.log(`[SSOTrace:${trace}] login:beforeLoad`, {
-			hasContextSession: Boolean(context.session),
-			errorParam:
-				location.search && typeof location.search.error === "string" ? location.search.error : null,
-		});
+	beforeLoad: async ({ context }) => {
 		if (context.session) throw redirect({ to: "/dashboard", replace: true });
 		return { session: null };
 	},
@@ -59,14 +52,7 @@ function RouteComponent() {
 				.find((row) => row.startsWith("sso_trace="))
 				?.split("=")[1] ?? "none",
 		);
-		const trace = queryTrace ?? traceFromCookie;
 		const ssoFlowActive = Boolean(queryTrace || traceFromCookie !== "none");
-
-		console.log(`[SSOTrace:${trace}] login:mounted`, {
-			href: window.location.href,
-			isSsoFlow: ssoFlowActive,
-			errorParam,
-		});
 
 		void (async () => {
 			const maxAttempts = ssoFlowActive ? 10 : 1;
@@ -75,14 +61,7 @@ function RouteComponent() {
 			try {
 				for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 					const session = await client.auth.session.get();
-					console.log(`[SSOTrace:${trace}] login:sessionProbe`, {
-						attempt,
-						maxAttempts,
-						found: Boolean(session),
-						userId: session?.user?.id ?? null,
-					});
 					if (session) {
-						console.log(`[SSOTrace:${trace}] login:redirecting_to_dashboard`);
 						// Keep loading visible while navigation to /dashboard is in-flight.
 						shouldHideLoading = false;
 						router.invalidate();
@@ -95,7 +74,6 @@ function RouteComponent() {
 				}
 				if (ssoFlowActive) setSsoError(errorParam);
 			} catch {
-				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
 				if (ssoFlowActive) setSsoError(errorParam ?? "session_probe_failed");
 			} finally {
 				if (shouldHideLoading) {

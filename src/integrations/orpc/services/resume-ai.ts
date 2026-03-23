@@ -108,7 +108,6 @@ async function generateFromUserInfo(input: GenerateInput): Promise<ResumeData> {
 
 		return parsed;
 	} catch (error) {
-		console.error("[Resume AI] Failed to generate resume via AI, falling back to simple mapping:", error);
 		return mapUserInfoToResumeData(userInfo);
 	}
 }

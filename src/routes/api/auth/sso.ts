@@ -8,12 +8,8 @@ async function handler({ request }: { request: Request }) {
 	const url = new URL(request.url);
 	const token = url.searchParams.get("token");
 	const traceId = url.searchParams.get("trace") ?? `sso-${Date.now().toString(36)}`;
-	const log = (step: string, extra?: Record<string, unknown>) => {
-		console.log(`[SSOTrace:${traceId}] ${step}`, extra ?? {});
-	};
 
 	const errorRedirect = (error: string) => {
-		log("redirect:error", { error });
 		return new Response(null, {
 			status: 302,
 			headers: {
@@ -21,14 +17,6 @@ async function handler({ request }: { request: Request }) {
 			},
 		});
 	};
-
-	log("entry", {
-		hasToken: Boolean(token),
-		host: request.headers.get("host"),
-		forwardedHost: request.headers.get("x-forwarded-host"),
-		forwardedProto: request.headers.get("x-forwarded-proto"),
-		referer: request.headers.get("referer"),
-	});
 
 	if (!token) {
 		return errorRedirect("missing_token");
@@ -48,10 +36,6 @@ async function handler({ request }: { request: Request }) {
 			userId: string;
 			source_url?: string;
 		};
-		log("token:verified", {
-			email: decoded.email,
-			hasSourceUrl: Boolean(decoded.source_url),
-		});
 
 		if (!decoded.email) {
 			return errorRedirect("invalid_token_payload");
@@ -68,7 +52,6 @@ async function handler({ request }: { request: Request }) {
 			},
 			asResponse: true,
 		});
-		log("signin:attempt", { ok: response.ok, status: response.status });
 
 		// If sign in fails, try to sign up
 		if (!response.ok) {
@@ -81,7 +64,6 @@ async function handler({ request }: { request: Request }) {
 				},
 				asResponse: true,
 			});
-			log("signup:fallback", { ok: response.ok, status: response.status });
 		}
 
 		if (!response.ok) {
@@ -108,7 +90,6 @@ async function handler({ request }: { request: Request }) {
 
 		// Redirect to dashboard
 		headers.set("Location", "/dashboard");
-		log("redirect:dashboard", { location: "/dashboard" });
 		return new Response(null, {
 			status: 302,
 			headers,

@@ -78,13 +78,11 @@ export function DashboardSidebar() {
 
 	const handleBackClick = () => {
 		const url = getSourceUrl();
-		console.log("[Sidebar] Back to App clicked, source URL:", url);
 		window.location.href = `${url}/placements`;
 	};
 
 	const handleLogoClick = () => {
 		const url = getSourceUrl();
-		console.log("[Sidebar] Logo clicked, source URL:", url);
 		window.location.href = `${url}/placements`;
 	};
 

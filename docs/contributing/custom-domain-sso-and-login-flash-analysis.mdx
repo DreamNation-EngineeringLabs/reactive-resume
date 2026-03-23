@@ -1,0 +1,197 @@
+---
+title: "Custom Domain SSO and Login Flash Analysis"
+description: "Detailed root cause analysis and fixes for custom-domain SSO and login-flash behavior."
+---
+
+This document captures the full debugging journey, fixes, and current status for two related issues:
+
+1. SSO authentication instability on custom domain (`dev-resume.polymathai.co`) behind Firebase Hosting.
+2. Brief flash of the "Login Restricted" page during redirect to dashboard, even when session is valid.
+
+---
+
+## Problem 1: Custom Domain SSO Not Working Reliably
+
+### Symptom
+
+- Redirect from dashboard to resume builder worked more reliably on direct Cloud Run URL.
+- Same flow on custom domain (`dev-resume.polymathai.co`) intermittently landed on login-restricted flow.
+- Backend logs showed mixed behavior:
+  - Some requests resolved session correctly.
+  - `GET /api/auth/get-session` frequently resolved to `null` in custom-domain path.
+
+### Why This Happened
+
+The custom-domain path introduces an extra proxy/CDN layer (Firebase Hosting -> Cloud Run) that changed request behavior in a subtle way:
+
+- Cookie propagation was not equally reliable across all auth endpoints.
+- The existing client-side session check path (`/api/auth/get-session` via Better Auth client path) was less reliable in this hosting topology.
+- ORPC calls (for example, `/api/rpc/*`) consistently arrived with expected cookie context.
+
+In short: the issue was not only token generation. The main reliability problem was session resolution path differences under proxying.
+
+### Fixes Applied
+
+#### 1) Force credentialed auth client fetches
+
+File: `src/integrations/auth/client.ts`
+
+- Added `fetchOptions: { credentials: "include" }` to ensure cookies are included by default in auth client calls.
+
+Why: reduces chance of cookie omission in browser fetch calls.
+
+#### 2) Route client-side session check through ORPC
+
+Files:
+- `src/integrations/orpc/router/auth.ts` (new `auth.session.get`)
+- `src/integrations/auth/functions.ts`
+
+- Added ORPC endpoint to resolve current session from request headers.
+- Updated client-side `getSession()` to use `client.auth.session.get()` instead of the old path.
+
+Why: ORPC transport was empirically more stable in this environment.
+
+#### 3) Added end-to-end trace logging
+
+Files:
+- `src/routes/api/auth/sso.ts`
+- `src/integrations/orpc/router/auth.ts`
+- `src/integrations/auth/functions.ts`
+- `src/routes/auth/login.tsx`
+- `src/routes/dashboard/route.tsx`
+
+- Added `[SSOTrace:<id>]` logs to follow one SSO flow across token verification, sign-in/up attempts, session probes, and redirects.
+
+Why: removed ambiguity and made proxy/timing behavior visible.
+
+### Does This Introduce New Issues?
+
+Potential tradeoffs and risks:
+
+- **Extra API calls on login route in SSO flow**: session probe retries can issue up to 10 ORPC requests.
+  - Mitigation: bounded attempts, short retry window.
+- **More logs in production**: SSO trace logs can increase noise and log volume.
+  - Mitigation: can later gate by environment or reduce verbosity.
+- **Temporary coupling to ORPC session route**: auth reliability now depends on ORPC path behavior.
+  - Mitigation: acceptable given current hosting behavior; keep monitored.
+
+No direct security regression was intentionally introduced by these changes. Session checks remain server-validated.
+
+---
+
+## Problem 2: Flash of Login Failure UI During Redirect
+
+### Symptom
+
+- Even when `POST /api/rpc/auth/session/get` returned `200` and session existed, user still briefly saw:
+  - "Login Restricted"
+  - Branded auth shell
+- Then it redirected to `/dashboard`.
+
+### Why This Happened
+
+Two timing windows were involved:
+
+1. **SSR/Hydration window**  
+   Parent auth layout rendered immediately before login route effect completed.
+
+2. **Navigation window after session found**  
+   Session was found, `navigate("/dashboard")` was triggered, but loading state was cleared in `finally` before navigation completed.  
+   That allowed one brief render of restricted UI.
+
+### Fixes Applied
+
+#### 1) Add parent auth layout loading gate
+
+Files:
+- `src/routes/auth/route.tsx`
+- `src/routes/auth/-components/auth-layout-context.ts` (new)
+
+- Parent `/auth` layout now starts in a loading state.
+- Children signal when they are ready to render.
+- Loading overlay is shown while child route is still deciding session behavior.
+
+Why: prevents initial SSR/hydration flash of auth shell and restricted copy.
+
+#### 2) Keep loading visible during successful redirect
+
+File: `src/routes/auth/login.tsx`
+
+- In login probe effect, when session is found:
+  - do not clear loading state before navigation.
+- Loading state is now only cleared when probe actually fails or completes without valid session.
+
+Why: removes the post-success, pre-navigation flash window.
+
+#### 3) Signal readiness for non-SSO auth pages
+
+Files:
+- `src/routes/auth/register.tsx`
+- `src/routes/auth/forgot-password.tsx`
+- `src/routes/auth/reset-password.tsx`
+- `src/routes/auth/verify-2fa.tsx`
+- `src/routes/auth/verify-2fa-backup.tsx`
+- `src/routes/auth/resume-password.tsx`
+
+- Added `useSignalAuthReady()` so these routes can release parent loading state immediately on mount.
+
+Why: keeps UX consistent and avoids accidental persistent loading on non-SSO auth pages.
+
+### Does This Introduce New Issues?
+
+Potential tradeoffs and risks:
+
+- **Perceived delay**: users may see loading for slightly longer instead of instant restricted UI.
+  - This is intentional for smoother UX and correct state transition.
+- **Context dependency**: child routes must signal readiness; new auth routes should follow this pattern.
+  - Mitigation: helper hook `useSignalAuthReady()` documented in code.
+
+No functional regression is expected for successful login/redirect flow.
+
+---
+
+## End-to-End Flow After Fixes
+
+1. Dashboard creates SSO token and redirects to `/api/auth/sso`.
+2. SSO endpoint validates token, sets cookies, redirects to `/dashboard`.
+3. If auth guard sends user to `/auth/login` transiently:
+   - parent auth layout shows full-screen loading immediately.
+   - login route probes session through ORPC with bounded retries.
+   - if session found: keep loading visible and navigate to `/dashboard`.
+   - if session not found: release loading and show restricted UI.
+
+Result: no intentional login-failure flash during successful session establishment.
+
+---
+
+## Verification Checklist
+
+Use this checklist when validating on custom domain:
+
+- [ ] Start from dashboard and click "Open Resume Builder".
+- [ ] Confirm SSO endpoint is called and returns redirect.
+- [ ] Confirm `POST /api/rpc/auth/session/get` returns `200`.
+- [ ] Confirm no visible "Login Restricted" flash on successful flow.
+- [ ] Confirm direct Cloud Run URL still works.
+- [ ] Confirm login-restricted screen appears only when session is actually unavailable after retries.
+
+Recommended trace validation:
+
+- Use the same `trace` value across SSO and login logs.
+- Confirm sequence:
+  - `login:mounted`
+  - one or more `login:sessionProbe`
+  - `login:redirecting_to_dashboard` (success case)
+  - no intermediate restricted UI render visible to user.
+
+---
+
+## Follow-Up Hardening (Optional)
+
+- Add environment-gated trace logging (`debug` only in non-prod).
+- Add lightweight metric counters:
+  - SSO success rate
+  - login probe retry counts
+  - restricted-page render count after SSO
+- Add automated Playwright flow for custom-domain SSO regression.
+

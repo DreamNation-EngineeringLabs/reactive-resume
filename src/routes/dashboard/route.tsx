@@ -7,12 +7,7 @@ import { DashboardSidebar } from "./-components/sidebar";
 
 export const Route = createFileRoute("/dashboard")({
 	component: RouteComponent,
-	beforeLoad: async ({ context, location }) => {
-		const trace =
-			location.search && typeof location.search.trace === "string" ? location.search.trace : "none";
-		console.log(`[SSOTrace:${trace}] dashboard:beforeLoad`, {
-			hasContextSession: Boolean(context.session),
-		});
+	beforeLoad: async ({ context }) => {
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });
 		return { session: context.session };
 	},
