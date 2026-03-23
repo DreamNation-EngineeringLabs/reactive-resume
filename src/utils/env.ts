@@ -26,6 +26,10 @@ export const env = createEnv({
 		AUTH_SECRET: z.string().min(1),
 		MAIN_APP_SECRET: z.string().min(1).optional(),
 
+		// Main App API (for placement access checks)
+		MAIN_APP_API_URL: z.url({ protocol: /https?/ }).optional(),
+		INTERNAL_API_SECRET: z.string().min(1).optional(),
+
 		// Social Auth (Google)
 		GOOGLE_CLIENT_ID: z.string().min(1).optional(),
 		GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),

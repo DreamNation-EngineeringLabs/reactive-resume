@@ -1,4 +1,5 @@
 import z from "zod";
+import { ORPCError } from "@orpc/client";
 import { sampleResumeData } from "@/schema/resume/sample";
 import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
@@ -6,6 +7,7 @@ import { resumeDto } from "../dto/resume";
 import { resumeService } from "../services/resume";
 import { aiService as resumeAiService } from "../services/resume-ai";
 import { userInfoService } from "../services/user-info";
+import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
 
 const tagsRouter = {
 	list: protectedProcedure
@@ -145,6 +147,14 @@ export const resumeRouter = {
 			},
 		})
 		.handler(async ({ context, input }) => {
+			// Check RESUME_CREATE credit before allowing creation
+			const creditCheck = await checkPlacementCredit(context.user.email, "RESUME_CREATE");
+			if (!creditCheck.allowed) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "No resume creation credits remaining. Purchase a placement package to continue.",
+				});
+			}
+
 			let data = input.withSampleData ? sampleResumeData : undefined;
 
 			// If the user wants to use their saved info, fetch it and optionally generate via AI
@@ -159,7 +169,7 @@ export const resumeRouter = {
 				}
 			}
 
-			return await resumeService.create({
+			const result = await resumeService.create({
 				name: input.name,
 				slug: input.slug,
 				tags: input.tags,
@@ -167,6 +177,11 @@ export const resumeRouter = {
 				userId: context.user.id,
 				data,
 			});
+
+			// Consume credit after successful creation
+			await consumePlacementCredit(context.user.email, "RESUME_CREATE");
+
+			return result;
 		}),
 
 	import: protectedProcedure
@@ -189,10 +204,18 @@ export const resumeRouter = {
 			},
 		})
 		.handler(async ({ context, input }) => {
+			// Check RESUME_CREATE credit before allowing import
+			const creditCheck = await checkPlacementCredit(context.user.email, "RESUME_CREATE");
+			if (!creditCheck.allowed) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "No resume creation credits remaining. Purchase a placement package to continue.",
+				});
+			}
+
 			const name = generateRandomName();
 			const slug = slugify(name);
 
-			return await resumeService.create({
+			const result = await resumeService.create({
 				name,
 				slug,
 				tags: [],
@@ -200,6 +223,11 @@ export const resumeRouter = {
 				locale: context.locale,
 				userId: context.user.id,
 			});
+
+			// Consume credit after successful import
+			await consumePlacementCredit(context.user.email, "RESUME_CREATE");
+
+			return result;
 		}),
 
 	update: protectedProcedure
@@ -363,9 +391,17 @@ export const resumeRouter = {
 		.input(resumeDto.duplicate.input)
 		.output(resumeDto.duplicate.output)
 		.handler(async ({ context, input }) => {
+			// Check RESUME_CREATE credit before allowing duplicate
+			const creditCheck = await checkPlacementCredit(context.user.email, "RESUME_CREATE");
+			if (!creditCheck.allowed) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "No resume creation credits remaining. Purchase a placement package to continue.",
+				});
+			}
+
 			const original = await resumeService.getById({ id: input.id, userId: context.user.id });
 
-			return await resumeService.create({
+			const result = await resumeService.create({
 				userId: context.user.id,
 				name: input.name ?? original.name,
 				slug: input.slug ?? original.slug,
@@ -373,6 +409,11 @@ export const resumeRouter = {
 				locale: context.locale,
 				data: original.data,
 			});
+
+			// Consume credit after successful duplicate
+			await consumePlacementCredit(context.user.email, "RESUME_CREATE");
+
+			return result;
 		}),
 
 	delete: protectedProcedure
