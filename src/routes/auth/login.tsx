@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import type { BetterFetchOption } from "better-auth/client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useToggle } from "usehooks-ts";
@@ -41,20 +41,35 @@ function RouteComponent() {
 	const [showPassword, toggleShowPassword] = useToggle(false);
 	const { flags } = Route.useRouteContext();
 	const mainAppUrl = getSourceUrl();
+	const [isSsoChecking, setIsSsoChecking] = useState(false);
+	const [ssoError, setSsoError] = useState<string | null>(null);
 
 	useEffect(() => {
-		const trace =
-			typeof document !== "undefined"
-				? decodeURIComponent(
-						document.cookie
-							.split("; ")
-							.find((row) => row.startsWith("sso_trace="))
-							?.split("=")[1] ?? "none",
-					)
-				: "none";
+		if (typeof window === "undefined") return;
+
+		const params = new URLSearchParams(window.location.search);
+		const queryTrace = params.get("trace");
+		const errorParam = params.get("error");
+
+		const traceFromCookie = decodeURIComponent(
+			document.cookie
+				.split("; ")
+				.find((row) => row.startsWith("sso_trace="))
+				?.split("=")[1] ?? "none",
+		);
+		const trace = queryTrace ?? traceFromCookie;
+		const isSsoFlow = Boolean(queryTrace || traceFromCookie !== "none");
+
 		console.log(`[SSOTrace:${trace}] login:mounted`, {
-			href: typeof window !== "undefined" ? window.location.href : "server",
+			href: window.location.href,
+			isSsoFlow,
+			errorParam,
 		});
+
+		if (isSsoFlow) {
+			setIsSsoChecking(true);
+			setSsoError(null);
+		}
 
 		void (async () => {
 			try {
@@ -67,9 +82,14 @@ function RouteComponent() {
 					console.log(`[SSOTrace:${trace}] login:redirecting_to_dashboard`);
 					router.invalidate();
 					navigate({ to: "/dashboard", replace: true });
+					return;
 				}
+				if (isSsoFlow) setSsoError(errorParam);
 			} catch {
 				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
+				if (isSsoFlow) setSsoError(errorParam ?? "session_probe_failed");
+			} finally {
+				if (isSsoFlow) setIsSsoChecking(false);
 			}
 		})();
 	}, [navigate, router]);
@@ -119,6 +139,19 @@ function RouteComponent() {
 		}
 	};
 
+	if (isSsoChecking) {
+		return (
+			<div className="space-y-4 text-center">
+				<h1 className="font-bold text-2xl tracking-tight">
+					<Trans>Connecting to Resume Builder...</Trans>
+				</h1>
+				<p className="text-muted-foreground">
+					<Trans>Please wait while we verify your secure session.</Trans>
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<div className="space-y-4 text-center">
 			<h1 className="font-bold text-2xl tracking-tight">
@@ -127,6 +160,11 @@ function RouteComponent() {
 			<p className="text-muted-foreground">
 				<Trans>Please login via the main dashboard.</Trans>
 			</p>
+			{ssoError ? (
+				<p className="text-muted-foreground text-sm">
+					<Trans>SSO failed ({ssoError}). Please return to dashboard and try again.</Trans>
+				</p>
+			) : null}
 			<Button asChild className="w-full">
 				<a href={`${mainAppUrl}/placements`}>
 					<Trans>Go to Dashboard</Trans>
