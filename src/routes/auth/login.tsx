@@ -3,16 +3,25 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router";
 import type { BetterFetchOption } from "better-auth/client";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useToggle } from "usehooks-ts";
 import z from "zod";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
+import { client } from "@/integrations/orpc/client";
 
 export const Route = createFileRoute("/auth/login")({
 	component: RouteComponent,
-	beforeLoad: async ({ context }) => {
+	beforeLoad: async ({ context, location }) => {
+		const trace =
+			location.search && typeof location.search.trace === "string" ? location.search.trace : "none";
+		console.log(`[SSOTrace:${trace}] login:beforeLoad`, {
+			hasContextSession: Boolean(context.session),
+			errorParam:
+				location.search && typeof location.search.error === "string" ? location.search.error : null,
+		});
 		if (context.session) throw redirect({ to: "/dashboard", replace: true });
 		return { session: null };
 	},
@@ -30,6 +39,33 @@ function RouteComponent() {
 	const navigate = useNavigate();
 	const [showPassword, toggleShowPassword] = useToggle(false);
 	const { flags } = Route.useRouteContext();
+
+	useEffect(() => {
+		const trace =
+			typeof document !== "undefined"
+				? decodeURIComponent(
+						document.cookie
+							.split("; ")
+							.find((row) => row.startsWith("sso_trace="))
+							?.split("=")[1] ?? "none",
+					)
+				: "none";
+		console.log(`[SSOTrace:${trace}] login:mounted`, {
+			href: typeof window !== "undefined" ? window.location.href : "server",
+		});
+
+		void (async () => {
+			try {
+				const session = await client.auth.session.get();
+				console.log(`[SSOTrace:${trace}] login:sessionProbe`, {
+					found: Boolean(session),
+					userId: session?.user?.id ?? null,
+				});
+			} catch {
+				console.log(`[SSOTrace:${trace}] login:sessionProbe:error`);
+			}
+		})();
+	}, []);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),

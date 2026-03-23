@@ -18,7 +18,25 @@ export const authRouter = {
 			})
 			.handler(async ({ context }): Promise<AuthSession | null> => {
 				const headers = context.reqHeaders ?? new Headers();
+				const cookieHeader = headers.get("cookie") ?? "";
+				const sessionMatch = cookieHeader.match(/__Secure-better-auth\.session_token=([^;]+)/);
+				const tokenPrefix = sessionMatch?.[1] ? decodeURIComponent(sessionMatch[1]).split(".")[0] : null;
+				const trace = cookieHeader.match(/sso_trace=([^;]+)/)?.[1]
+					? decodeURIComponent(cookieHeader.match(/sso_trace=([^;]+)/)?.[1] ?? "")
+					: "none";
+				console.log(`[SSOTrace:${trace}] orpc:auth/session:request`, {
+					hasCookie: Boolean(cookieHeader),
+					hasSessionCookie: Boolean(sessionMatch?.[1]),
+					tokenPrefix,
+					forwardedUrl: headers.get("x-forwarded-url"),
+					host: headers.get("host"),
+					forwardedHost: headers.get("x-forwarded-host"),
+				});
 				const result = await auth.api.getSession({ headers });
+				console.log(`[SSOTrace:${trace}] orpc:auth/session:result`, {
+					found: Boolean(result),
+					userId: result?.user?.id ?? null,
+				});
 				return (result as AuthSession | null) ?? null;
 			}),
 	},

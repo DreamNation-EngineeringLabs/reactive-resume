@@ -8,11 +8,36 @@ import type { AuthSession } from "./types";
 export const getSession = createIsomorphicFn()
 	.client(async (): Promise<AuthSession | null> => {
 		try {
+			const trace =
+				typeof document !== "undefined"
+					? decodeURIComponent(
+							document.cookie
+								.split("; ")
+								.find((row) => row.startsWith("sso_trace="))
+								?.split("=")[1] ?? "none",
+						)
+					: "none";
+			console.log(`[SSOTrace:${trace}] client:getSession:start`);
 			// In production behind Firebase Hosting, /api/auth/get-session requests can
 			// intermittently arrive without cookies, while /api/rpc requests remain stable.
 			// Fetch session through ORPC so it uses the same credentialed transport path.
-			return await client.auth.session.get();
+			const session = await client.auth.session.get();
+			console.log(`[SSOTrace:${trace}] client:getSession:result`, {
+				found: Boolean(session),
+				userId: session?.user?.id ?? null,
+			});
+			return session;
 		} catch {
+			const trace =
+				typeof document !== "undefined"
+					? decodeURIComponent(
+							document.cookie
+								.split("; ")
+								.find((row) => row.startsWith("sso_trace="))
+								?.split("=")[1] ?? "none",
+						)
+					: "none";
+			console.log(`[SSOTrace:${trace}] client:getSession:error`);
 			return null;
 		}
 	})
