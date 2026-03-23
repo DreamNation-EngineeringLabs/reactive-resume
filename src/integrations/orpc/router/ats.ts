@@ -4,6 +4,7 @@ import type { ResumeData } from "@/schema/resume/data";
 import { protectedProcedure } from "../context";
 import { scoreResume } from "../services/ats";
 import { editSection } from "../services/ats/section-editor";
+import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
 
 export const atsRouter = {
 	score: protectedProcedure
@@ -35,6 +36,14 @@ export const atsRouter = {
 			},
 		})
 		.handler(async ({ context, input }) => {
+			// Check ATS_SCORE credit before allowing scoring
+			const creditCheck = await checkPlacementCredit(context.user.email, "ATS_SCORE");
+			if (!creditCheck.allowed) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "No ATS scoring credits remaining. Purchase a placement package to continue.",
+				});
+			}
+
 			// Dynamically import resume service to avoid circular deps
 			const { resumeService } = await import("../services/resume");
 
@@ -46,6 +55,10 @@ export const atsRouter = {
 
 			try {
 				const result = await scoreResume(resume.data as ResumeData, input.jobDescription, input.includeAiSuggestions);
+
+				// Consume credit after successful scoring
+				await consumePlacementCredit(context.user.email, "ATS_SCORE");
+
 				return result;
 			} catch (error) {
 				if (error instanceof Error && error.message.includes("OPENAI_API_KEY")) {
