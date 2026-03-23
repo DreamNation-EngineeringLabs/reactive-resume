@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useToggle } from "usehooks-ts";
 import z from "zod";
+import { LoadingScreen } from "@/components/layout/loading-screen";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
 import { client } from "@/integrations/orpc/client";
@@ -142,29 +143,11 @@ function RouteComponent() {
 	};
 
 	if (isSsoChecking) {
-		return (
-			<div className="space-y-4 text-center">
-				<h1 className="font-bold text-2xl tracking-tight">
-					<Trans>Connecting to Resume Builder...</Trans>
-				</h1>
-				<p className="text-muted-foreground">
-					<Trans>Please wait while we verify your secure session.</Trans>
-				</p>
-			</div>
-		);
+		return <LoadingScreen />;
 	}
 
 	if (!hasCheckedSession) {
-		return (
-			<div className="space-y-4 text-center">
-				<h1 className="font-bold text-2xl tracking-tight">
-					<Trans>Checking your sign-in status...</Trans>
-				</h1>
-				<p className="text-muted-foreground">
-					<Trans>Please wait a moment.</Trans>
-				</p>
-			</div>
-		);
+		return <LoadingScreen />;
 	}
 
 	return (
