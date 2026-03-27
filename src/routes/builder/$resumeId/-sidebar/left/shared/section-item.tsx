@@ -272,7 +272,7 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 					</button>
 				</DropdownMenuTrigger>
 
-				<DropdownMenuContent align="end">
+				<DropdownMenuContent align="start" side="right">
 					<DropdownMenuGroup>
 						<DropdownMenuItem onSelect={onToggleVisibility}>
 							{item.hidden ? <EyeIcon /> : <EyeClosedIcon />}

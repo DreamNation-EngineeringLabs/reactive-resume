@@ -2,11 +2,10 @@ import { t } from "@lingui/core/macro";
 import { FloppyDiskIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useHotkeys } from "react-hotkeys-hook";
-import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { toast } from "sonner";
 import { ResumePreview } from "@/components/resume/preview";
 import { SectionEditOverlay } from "@/components/resume/section-edit-overlay";
-import { BuilderDock } from "./-components/dock";
+import { BuilderToolbar } from "./-components/toolbar";
 
 export const Route = createFileRoute("/builder/$resumeId/")({
 	component: RouteComponent,
@@ -25,27 +24,24 @@ function RouteComponent() {
 	);
 
 	return (
-		<div className="fixed inset-0">
-			<TransformWrapper
-				centerOnInit
-				limitToBounds={false}
-				minScale={0.3}
-				initialScale={0.6}
-				maxScale={6}
-				wheel={{ smoothStep: 0.01 }}
-			>
-				<TransformComponent wrapperClass="h-full! w-full!">
-					<SectionEditOverlay>
-						<ResumePreview
-							showPageNumbers
-							className="flex items-start space-x-10 space-y-10"
-							pageClassName="shadow-xl rounded-md overflow-hidden"
-						/>
-					</SectionEditOverlay>
-				</TransformComponent>
+		<div className="flex h-full flex-col overflow-hidden bg-muted/30">
+			<div className="flex-none flex items-center border-b bg-background/80 backdrop-blur-sm px-3 py-1.5 z-10">
+				<BuilderToolbar />
+			</div>
 
-				<BuilderDock />
-			</TransformWrapper>
+			<div className="flex-1 overflow-y-auto">
+				<div className="flex h-full w-full flex-col items-center justify-start px-6 py-10">
+					<div className="w-full max-w-3xl">
+						<SectionEditOverlay>
+							<ResumePreview
+								showPageNumbers
+								className="flex flex-col items-center space-y-6"
+								pageClassName="shadow-2xl rounded"
+							/>
+						</SectionEditOverlay>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }

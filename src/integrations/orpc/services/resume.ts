@@ -90,6 +90,7 @@ export const resumeService = {
 				name: schema.resume.name,
 				slug: schema.resume.slug,
 				tags: schema.resume.tags,
+				data: schema.resume.data,
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
 				createdAt: schema.resume.createdAt,

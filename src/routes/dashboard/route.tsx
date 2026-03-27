@@ -27,33 +27,26 @@ function RouteComponent() {
 		});
 	};
 
-	// Handle browser back button to redirect to main app
 	useEffect(() => {
 		const mainAppUrl = getSourceUrl();
-
-		// Push a state to enable back button detection
 		window.history.pushState({ resumeApp: true }, "");
-
 		const handlePopState = () => {
-			// If user presses back button, redirect to main app placements page
 			window.location.href = `${mainAppUrl}/placements`;
 		};
-
 		window.addEventListener("popstate", handlePopState);
-
 		return () => {
 			window.removeEventListener("popstate", handlePopState);
 		};
 	}, []);
 
 	return (
-		<div className="flex h-screen bg-sidebar">
+		<div className="flex h-screen bg-slate-100">
 			<SidebarProvider open={sidebarState} onOpenChange={handleSidebarOpenChange}>
 				<DashboardSidebar />
 
-				<div className="flex flex-1 flex-col overflow-hidden p-2 ps-0">
-					<main className="@container flex-1 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 md:p-6">
-						<div className="mx-auto h-full w-full max-w-400">
+				<div className="flex flex-1 flex-col overflow-hidden p-3 ps-0">
+					<main className="@container flex-1 overflow-y-auto rounded-2xl bg-white shadow-sm">
+						<div className="mx-auto h-full w-full max-w-screen-xl px-6 py-6 md:px-8 md:py-8">
 							<Outlet />
 						</div>
 					</main>

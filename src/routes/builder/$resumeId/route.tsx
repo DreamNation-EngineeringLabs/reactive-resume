@@ -79,13 +79,15 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 	const setLeftSidebar = useBuilderSidebarStore((state) => state.setLeftSidebar);
 	const setRightSidebar = useBuilderSidebarStore((state) => state.setRightSidebar);
 
-	const { maxSidebarSize, collapsedSidebarSize } = useBuilderSidebar((state) => ({
-		maxSidebarSize: state.maxSidebarSize,
-		collapsedSidebarSize: state.collapsedSidebarSize,
+	const { getSidebarMaxSize } = useBuilderSidebar((state) => ({
+		getSidebarMaxSize: state.getSidebarMaxSize,
 	}));
 
 	const onLayoutChange = useDebounceCallback((layout: Layout) => {
-		setBuilderLayoutServerFn({ data: layout });
+		const left = (layout as Record<string, number>).left;
+		const artboard = (layout as Record<string, number>).artboard;
+		const right = (layout as Record<string, number>).right;
+		setBuilderLayoutServerFn({ data: { left, artboard, right } });
 	}, 200);
 
 	useEffect(() => {
@@ -95,24 +97,24 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 		setRightSidebar(rightSidebarRef);
 	}, [leftSidebarRef, rightSidebarRef, setLeftSidebar, setRightSidebar]);
 
-	const leftSidebarSize = isMobile ? 0 : initialLayout.left;
-	const rightSidebarSize = isMobile ? 0 : initialLayout.right;
-	const artboardSize = isMobile ? 100 : initialLayout.artboard;
+	const leftSidebarSize = isMobile ? "0%" : `${initialLayout.left}%`;
+	const rightSidebarSize = isMobile ? "0%" : `${initialLayout.right}%`;
+	const artboardSize = isMobile ? "100%" : `${initialLayout.artboard}%`;
 
 	return (
 		<div className="flex h-svh flex-col" {...props}>
 			<BuilderHeader />
 
-			<ResizableGroup orientation="horizontal" className="mt-14 flex-1" onLayoutChange={onLayoutChange}>
+			<ResizableGroup orientation="horizontal" className="mt-14 flex-1 overflow-hidden" onLayoutChange={onLayoutChange}>
 				<ResizablePanel
-					collapsible
 					id="left"
+					collapsible
+					collapsedSize="0%"
 					panelRef={leftSidebarRef}
-					maxSize={maxSidebarSize}
-					minSize={collapsedSidebarSize * 2}
-					collapsedSize={collapsedSidebarSize}
+					maxSize={`${getSidebarMaxSize("left")}%`}
+					minSize="0%"
 					defaultSize={leftSidebarSize}
-					className="z-20 h-[calc(100svh-3.5rem)]"
+					className="h-[calc(100svh-3.5rem)] overflow-hidden"
 				>
 					<BuilderSidebarLeft />
 				</ResizablePanel>
@@ -122,14 +124,14 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 				</ResizablePanel>
 				<ResizableSeparator withHandle className="z-50 border-e" />
 				<ResizablePanel
-					collapsible
 					id="right"
+					collapsible
+					collapsedSize="0%"
 					panelRef={rightSidebarRef}
-					maxSize={maxSidebarSize}
-					minSize={collapsedSidebarSize * 2}
-					collapsedSize={collapsedSidebarSize}
+					maxSize={`${getSidebarMaxSize("right")}%`}
+					minSize="0%"
 					defaultSize={rightSidebarSize}
-					className="z-20 h-[calc(100svh-3.5rem)]"
+					className="h-[calc(100svh-3.5rem)] overflow-hidden"
 				>
 					<BuilderSidebarRight />
 				</ResizablePanel>
@@ -138,10 +140,12 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 	);
 }
 
-const defaultLayout = { left: 30, artboard: 40, right: 30 };
-const BUILDER_LAYOUT_COOKIE_NAME = "builder_layout";
+const defaultLayout = { left: 20, artboard: 60, right: 20 };
+const BUILDER_LAYOUT_COOKIE_NAME = "builder_layout_v4";
 
-const layoutSchema = z.record(z.string(), z.number()).catch(defaultLayout);
+const layoutSchema = z
+	.object({ left: z.number(), artboard: z.number(), right: z.number() })
+	.catch(defaultLayout);
 
 const setBuilderLayoutServerFn = createServerFn({ method: "POST" })
 	.inputValidator(layoutSchema)
@@ -150,7 +154,11 @@ const setBuilderLayoutServerFn = createServerFn({ method: "POST" })
 	});
 
 const getBuilderLayoutServerFn = createServerFn({ method: "GET" }).handler(async () => {
-	const layout = getCookie(BUILDER_LAYOUT_COOKIE_NAME);
-	if (!layout) return defaultLayout;
-	return layoutSchema.parse(JSON.parse(layout));
+	try {
+		const layout = getCookie(BUILDER_LAYOUT_COOKIE_NAME);
+		if (!layout) return defaultLayout;
+		return layoutSchema.parse(JSON.parse(layout));
+	} catch {
+		return defaultLayout;
+	}
 });

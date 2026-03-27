@@ -8,6 +8,7 @@ import { resumeService } from "../services/resume";
 import { aiService as resumeAiService } from "../services/resume-ai";
 import { userInfoService } from "../services/user-info";
 import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
+import { dashboardRouter } from "./dashboard";
 
 const tagsRouter = {
 	list: protectedProcedure
@@ -64,6 +65,7 @@ const statisticsRouter = {
 export const resumeRouter = {
 	tags: tagsRouter,
 	statistics: statisticsRouter,
+	dashboard: dashboardRouter,
 
 	list: protectedProcedure
 		.route({
@@ -432,4 +434,256 @@ export const resumeRouter = {
 		.handler(async ({ context, input }) => {
 			return await resumeService.delete({ id: input.id, userId: context.user.id });
 		}),
+
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Resume Feedback Endpoints (Comments, Checklists, Evaluations)
+	// ─────────────────────────────────────────────────────────────────────────────
+
+	comments: {
+		create: protectedProcedure
+			.route({
+				method: "POST",
+				path: "/resumes/{resumeId}/comments",
+				tags: ["Resume Feedback"],
+				operationId: "createResumeComment",
+				summary: "Add a comment to a resume",
+				description: "Faculty or PO adds feedback comment on a student's resume.",
+			})
+			.input(
+				z.object({
+					resumeId: z.string().describe("Resume ID"),
+					studentId: z.string().describe("eng-labs student ID"),
+					tenantId: z.string().describe("eng-labs tenant ID"),
+					content: z.string().min(1).max(5000).describe("Comment content"),
+					scope: z.enum(["INDIVIDUAL", "SECTION"]).default("INDIVIDUAL").describe("Comment visibility scope"),
+				})
+			)
+			.output(
+				z.object({
+					id: z.string(),
+					resumeId: z.string(),
+					content: z.string(),
+					scope: z.string(),
+					status: z.string(),
+					authorId: z.string(),
+					createdAt: z.date(),
+					updatedAt: z.date(),
+				})
+			)
+			.handler(async ({ context, input }) => {
+				const { createComment } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+				const comment = await createComment({
+					resumeId: input.resumeId,
+					studentId: input.studentId,
+					tenantId: input.tenantId,
+					authorId: context.user.id,
+					content: input.content,
+					scope: input.scope,
+				});
+
+				return comment;
+			}),
+
+		list: protectedProcedure
+			.route({
+				method: "GET",
+				path: "/resumes/{resumeId}/comments",
+				tags: ["Resume Feedback"],
+				operationId: "listResumeComments",
+				summary: "List comments on a resume",
+			})
+			.input(z.object({ resumeId: z.string() }))
+			.output(
+				z.array(
+					z.object({
+						id: z.string(),
+						resumeId: z.string(),
+						content: z.string(),
+						scope: z.string(),
+						status: z.string(),
+						authorId: z.string(),
+						createdAt: z.date(),
+						updatedAt: z.date(),
+					})
+				)
+			)
+			.handler(async ({ input }) => {
+				const { getCommentsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				return await getCommentsByResumeId(input.resumeId);
+			}),
+	},
+
+	checklists: {
+		create: protectedProcedure
+			.route({
+				method: "POST",
+				path: "/resumes/checklists",
+				tags: ["Resume Feedback"],
+				operationId: "createChecklist",
+				summary: "Create evaluation checklist",
+				description: "Faculty creates a checklist for evaluating student resumes.",
+			})
+			.input(
+				z.object({
+					title: z.string().min(1).max(200),
+					description: z.string().max(1000).optional(),
+					courseId: z.string().optional(),
+					tenantId: z.string().describe("eng-labs tenant ID"),
+					items: z
+						.array(
+							z.object({
+								title: z.string().min(1),
+								description: z.string().optional(),
+								weight: z.number().min(0).max(100).default(1.0),
+								order: z.number().int().min(0).default(0),
+							})
+						)
+						.min(1),
+				})
+			)
+			.output(
+				z.object({
+					id: z.string(),
+					title: z.string(),
+					description: z.string().nullable(),
+					facultyId: z.string(),
+					tenantId: z.string(),
+					courseId: z.string().nullable(),
+					isActive: z.boolean(),
+					createdAt: z.date(),
+					updatedAt: z.date(),
+				})
+			)
+			.handler(async ({ context, input }) => {
+				const { createChecklist } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+				const checklist = await createChecklist({
+					facultyId: context.user.id,
+					tenantId: input.tenantId,
+					courseId: input.courseId,
+					title: input.title,
+					description: input.description,
+					items: input.items,
+				});
+
+				return checklist;
+			}),
+
+		list: protectedProcedure
+			.route({
+				method: "GET",
+				path: "/resumes/checklists",
+				tags: ["Resume Feedback"],
+				operationId: "listChecklists",
+				summary: "List evaluation checklists",
+			})
+			.input(
+				z.object({
+					courseId: z.string().optional(),
+					tenantId: z.string().optional(),
+				})
+			)
+			.output(z.array(z.object({ id: z.string(), title: z.string() })))
+			.handler(async ({ input }) => {
+				const { listChecklists } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+				const checklists = await listChecklists({
+					courseId: input.courseId,
+					tenantId: input.tenantId || "",
+				});
+
+				return checklists;
+			}),
+	},
+
+	evaluations: {
+		create: protectedProcedure
+			.route({
+				method: "POST",
+				path: "/resumes/{resumeId}/evaluate",
+				tags: ["Resume Feedback"],
+				operationId: "createEvaluation",
+				summary: "Evaluate a resume",
+				description: "Faculty or system evaluates resume against a checklist.",
+			})
+			.input(
+				z.object({
+					resumeId: z.string(),
+					studentId: z.string(),
+					checklistId: z.string(),
+					tenantId: z.string(),
+					isAutoGenerated: z.boolean().default(false),
+					items: z
+						.array(
+							z.object({
+								checklistItemId: z.string(),
+								passed: z.boolean(),
+								notes: z.string().optional(),
+								score: z.number().optional(),
+							})
+						)
+						.min(1),
+				})
+			)
+			.output(
+				z.object({
+					id: z.string(),
+					resumeId: z.string(),
+					overallScore: z.number().nullable(),
+					isAutoGenerated: z.boolean(),
+					evaluatedAt: z.date(),
+				})
+			)
+			.handler(async ({ context, input }) => {
+				const { createEvaluation, addToHistory } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+				const evaluation = await createEvaluation({
+					resumeId: input.resumeId,
+					studentId: input.studentId,
+					tenantId: input.tenantId,
+					checklistId: input.checklistId,
+					evaluatedBy: context.user.id,
+					isAutoGenerated: input.isAutoGenerated,
+					items: input.items,
+				});
+
+				// Record in history
+				await addToHistory({
+					resumeId: input.resumeId,
+					studentId: input.studentId,
+					tenantId: input.tenantId,
+					action: "EVALUATED",
+					changedBy: context.user.id,
+					actorType: "FACULTY",
+					currentData: { evaluationId: evaluation.id, score: evaluation.overallScore },
+				});
+
+				return evaluation;
+			}),
+
+		list: protectedProcedure
+			.route({
+				method: "GET",
+				path: "/resumes/{resumeId}/evaluations",
+				tags: ["Resume Feedback"],
+				operationId: "listEvaluations",
+				summary: "List evaluations for a resume",
+			})
+			.input(z.object({ resumeId: z.string() }))
+			.output(
+				z.array(
+					z.object({
+						id: z.string(),
+						resumeId: z.string(),
+						overallScore: z.number().nullable(),
+						evaluatedAt: z.date(),
+					})
+				)
+			)
+			.handler(async ({ input }) => {
+				const { getEvaluationsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				return await getEvaluationsByResumeId(input.resumeId);
+			}),
+	},
 };

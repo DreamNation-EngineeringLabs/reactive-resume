@@ -241,7 +241,7 @@ function CustomSectionDropdownMenu({ section }: { section: CustomSection }) {
 				</button>
 			</DropdownMenuTrigger>
 
-			<DropdownMenuContent align="end">
+			<DropdownMenuContent align="start" side="right">
 				<DropdownMenuGroup>
 					<DropdownMenuItem onSelect={onToggleSectionVisibility}>
 						{section.hidden ? <EyeIcon /> : <EyeClosedIcon />}

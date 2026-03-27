@@ -1,8 +1,13 @@
 import { Fragment } from "react";
 import { match } from "ts-pattern";
+import { CaretRightIcon } from "@phosphor-icons/react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { type RightSidebarSection, rightSidebarSections } from "@/utils/resume/section";
+import { type RightSidebarSection } from "@/utils/resume/section";
+import { cn } from "@/utils/style";
+import { useSectionStore } from "../../-store/section";
 import { ATSScoreSectionBuilder } from "./sections/ats-score";
 import { CSSSectionBuilder } from "./sections/css";
 import { DesignSectionBuilder } from "./sections/design";
@@ -14,6 +19,9 @@ import { SharingSectionBuilder } from "./sections/sharing";
 import { StatisticsSectionBuilder } from "./sections/statistics";
 import { TemplateSectionBuilder } from "./sections/template";
 import { TypographySectionBuilder } from "./sections/typography";
+
+const primarySections: RightSidebarSection[] = ["template", "ats-score", "export"];
+const advancedSections: RightSidebarSection[] = ["layout", "typography", "design", "page", "css", "notes", "sharing", "statistics"];
 
 function getSectionComponent(type: RightSidebarSection) {
 	return match(type)
@@ -31,17 +39,61 @@ function getSectionComponent(type: RightSidebarSection) {
 		.exhaustive();
 }
 
-export function BuilderSidebarRight() {
+function AdvancedOptions() {
+	const collapsed = useSectionStore((state) => state.sections["advanced"]?.collapsed ?? true);
+	const toggleCollapsed = useSectionStore((state) => state.toggleCollapsed);
+
 	return (
-		<>
-			<ScrollArea className="@container h-[calc(100svh-3.5rem)] bg-background">
-				<div className="space-y-4 p-4">
-					{rightSidebarSections.map((section) => (
+		<Accordion
+			collapsible
+			type="single"
+			className="space-y-4"
+			id="sidebar-advanced"
+			value={collapsed ? "" : "advanced"}
+			onValueChange={() => toggleCollapsed("advanced" as any)}
+		>
+			<AccordionItem value="advanced" className="group/accordion space-y-4">
+				<div className="flex items-center">
+					<AccordionTrigger asChild className="me-2 items-center justify-center">
+						<Button size="icon" variant="ghost">
+							<CaretRightIcon />
+						</Button>
+					</AccordionTrigger>
+
+					<div className="flex flex-1 items-center gap-x-4">
+						<h2 className="line-clamp-1 font-bold text-2xl tracking-tight">Advanced Options</h2>
+					</div>
+				</div>
+
+				<AccordionContent
+					className={cn(
+						"overflow-hidden pb-0 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down space-y-4",
+					)}
+				>
+					{advancedSections.map((section) => (
 						<Fragment key={section}>
 							{getSectionComponent(section)}
 							<Separator />
 						</Fragment>
 					))}
+				</AccordionContent>
+			</AccordionItem>
+		</Accordion>
+	);
+}
+
+export function BuilderSidebarRight() {
+	return (
+		<>
+			<ScrollArea className="@container h-[calc(100svh-3.5rem)] bg-background">
+				<div className="space-y-4 p-4">
+					{primarySections.map((section) => (
+						<Fragment key={section}>
+							{getSectionComponent(section)}
+							<Separator />
+						</Fragment>
+					))}
+					<AdvancedOptions />
 				</div>
 			</ScrollArea>
 		</>

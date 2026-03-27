@@ -12,7 +12,6 @@ import z from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/ui/combobox";
 import { MultipleCombobox } from "@/components/ui/multiple-combobox";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { orpc } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
@@ -68,12 +67,10 @@ function RouteComponent() {
 	};
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-6">
 			<DashboardHeader icon={ReadCvLogoIcon} title={t`Resumes`} />
 
-			<Separator />
-
-			<div className="flex items-center gap-x-4">
+			<div className="flex items-center gap-x-2 rounded-2xl bg-white px-3 py-2 shadow-sm">
 				<Combobox
 					value={sort}
 					options={sortOptions}
@@ -84,6 +81,7 @@ function RouteComponent() {
 					buttonProps={{
 						title: t`Sort by`,
 						variant: "ghost",
+						className: "rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900",
 						children: (_, option) => (
 							<>
 								<SortAscendingIcon />
@@ -102,12 +100,12 @@ function RouteComponent() {
 					buttonProps={{
 						variant: "ghost",
 						title: t`Filter by`,
-						className: cn({ hidden: tagOptions.length === 0 }),
+						className: cn("rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900", { hidden: tagOptions.length === 0 }),
 						children: (_, options) => (
 							<>
 								<TagIcon />
 								{options.map((option) => (
-									<Badge key={option.value} variant="outline">
+									<Badge key={option.value} variant="outline" className="rounded-lg border-slate-200 text-slate-600">
 										{option.label}
 									</Badge>
 								))}
@@ -117,13 +115,13 @@ function RouteComponent() {
 				/>
 
 				<Tabs className="ltr:ms-auto rtl:me-auto" value={view} onValueChange={onViewChange}>
-					<TabsList>
-						<TabsTrigger value="grid" className="rounded-r-none">
+					<TabsList className="rounded-xl bg-slate-100">
+						<TabsTrigger value="grid" className="rounded-lg">
 							<GridFourIcon />
 							<Trans>Grid</Trans>
 						</TabsTrigger>
 
-						<TabsTrigger value="list" className="rounded-l-none">
+						<TabsTrigger value="list" className="rounded-lg">
 							<ListIcon />
 							<Trans>List</Trans>
 						</TabsTrigger>

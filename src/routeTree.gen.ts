@@ -29,8 +29,12 @@ import { Route as ApiHealthRouteImport } from "./routes/api/health";
 import { Route as UsernameSlugRouteImport } from "./routes/$username/$slug";
 import { Route as BuilderResumeIdRouteRouteImport } from "./routes/builder/$resumeId/route";
 import { Route as DashboardResumesIndexRouteImport } from "./routes/dashboard/resumes/index";
+import { Route as DashboardPlacementOfficerIndexRouteImport } from "./routes/dashboard/placement-officer/index";
 import { Route as DashboardInfoIndexRouteImport } from "./routes/dashboard/info/index";
+import { Route as DashboardFeedbackIndexRouteImport } from "./routes/dashboard/feedback/index";
+import { Route as DashboardFacultyIndexRouteImport } from "./routes/dashboard/faculty/index";
 import { Route as DashboardAtsScoreIndexRouteImport } from "./routes/dashboard/ats-score/index";
+import { Route as DashboardAdminIndexRouteImport } from "./routes/dashboard/admin/index";
 import { Route as BuilderResumeIdIndexRouteImport } from "./routes/builder/$resumeId/index";
 import { Route as UploadsUserIdSplatRouteImport } from "./routes/uploads/$userId.$";
 import { Route as DashboardSettingsProfileRouteImport } from "./routes/dashboard/settings/profile";
@@ -143,14 +147,35 @@ const DashboardResumesIndexRoute = DashboardResumesIndexRouteImport.update({
   path: "/resumes/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardPlacementOfficerIndexRoute =
+  DashboardPlacementOfficerIndexRouteImport.update({
+    id: "/placement-officer/",
+    path: "/placement-officer/",
+    getParentRoute: () => DashboardRouteRoute,
+  } as any);
 const DashboardInfoIndexRoute = DashboardInfoIndexRouteImport.update({
   id: "/info/",
   path: "/info/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
+const DashboardFeedbackIndexRoute = DashboardFeedbackIndexRouteImport.update({
+  id: "/feedback/",
+  path: "/feedback/",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
+const DashboardFacultyIndexRoute = DashboardFacultyIndexRouteImport.update({
+  id: "/faculty/",
+  path: "/faculty/",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
 const DashboardAtsScoreIndexRoute = DashboardAtsScoreIndexRouteImport.update({
   id: "/ats-score/",
   path: "/ats-score/",
+  getParentRoute: () => DashboardRouteRoute,
+} as any);
+const DashboardAdminIndexRoute = DashboardAdminIndexRouteImport.update({
+  id: "/admin/",
+  path: "/admin/",
   getParentRoute: () => DashboardRouteRoute,
 } as any);
 const BuilderResumeIdIndexRoute = BuilderResumeIdIndexRouteImport.update({
@@ -249,8 +274,12 @@ export interface FileRoutesByFullPath {
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute;
   "/uploads/$userId/$": typeof UploadsUserIdSplatRoute;
   "/builder/$resumeId/": typeof BuilderResumeIdIndexRoute;
+  "/dashboard/admin/": typeof DashboardAdminIndexRoute;
   "/dashboard/ats-score/": typeof DashboardAtsScoreIndexRoute;
+  "/dashboard/faculty/": typeof DashboardFacultyIndexRoute;
+  "/dashboard/feedback/": typeof DashboardFeedbackIndexRoute;
   "/dashboard/info/": typeof DashboardInfoIndexRoute;
+  "/dashboard/placement-officer/": typeof DashboardPlacementOfficerIndexRoute;
   "/dashboard/resumes/": typeof DashboardResumesIndexRoute;
   "/dashboard/settings/authentication/": typeof DashboardSettingsAuthenticationIndexRoute;
 }
@@ -281,8 +310,12 @@ export interface FileRoutesByTo {
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute;
   "/uploads/$userId/$": typeof UploadsUserIdSplatRoute;
   "/builder/$resumeId": typeof BuilderResumeIdIndexRoute;
+  "/dashboard/admin": typeof DashboardAdminIndexRoute;
   "/dashboard/ats-score": typeof DashboardAtsScoreIndexRoute;
+  "/dashboard/faculty": typeof DashboardFacultyIndexRoute;
+  "/dashboard/feedback": typeof DashboardFeedbackIndexRoute;
   "/dashboard/info": typeof DashboardInfoIndexRoute;
+  "/dashboard/placement-officer": typeof DashboardPlacementOfficerIndexRoute;
   "/dashboard/resumes": typeof DashboardResumesIndexRoute;
   "/dashboard/settings/authentication": typeof DashboardSettingsAuthenticationIndexRoute;
 }
@@ -318,8 +351,12 @@ export interface FileRoutesById {
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute;
   "/uploads/$userId/$": typeof UploadsUserIdSplatRoute;
   "/builder/$resumeId/": typeof BuilderResumeIdIndexRoute;
+  "/dashboard/admin/": typeof DashboardAdminIndexRoute;
   "/dashboard/ats-score/": typeof DashboardAtsScoreIndexRoute;
+  "/dashboard/faculty/": typeof DashboardFacultyIndexRoute;
+  "/dashboard/feedback/": typeof DashboardFeedbackIndexRoute;
   "/dashboard/info/": typeof DashboardInfoIndexRoute;
+  "/dashboard/placement-officer/": typeof DashboardPlacementOfficerIndexRoute;
   "/dashboard/resumes/": typeof DashboardResumesIndexRoute;
   "/dashboard/settings/authentication/": typeof DashboardSettingsAuthenticationIndexRoute;
 }
@@ -355,8 +392,12 @@ export interface FileRouteTypes {
     | "/dashboard/settings/profile"
     | "/uploads/$userId/$"
     | "/builder/$resumeId/"
+    | "/dashboard/admin/"
     | "/dashboard/ats-score/"
+    | "/dashboard/faculty/"
+    | "/dashboard/feedback/"
     | "/dashboard/info/"
+    | "/dashboard/placement-officer/"
     | "/dashboard/resumes/"
     | "/dashboard/settings/authentication/";
   fileRoutesByTo: FileRoutesByTo;
@@ -387,8 +428,12 @@ export interface FileRouteTypes {
     | "/dashboard/settings/profile"
     | "/uploads/$userId/$"
     | "/builder/$resumeId"
+    | "/dashboard/admin"
     | "/dashboard/ats-score"
+    | "/dashboard/faculty"
+    | "/dashboard/feedback"
     | "/dashboard/info"
+    | "/dashboard/placement-officer"
     | "/dashboard/resumes"
     | "/dashboard/settings/authentication";
   id:
@@ -423,8 +468,12 @@ export interface FileRouteTypes {
     | "/dashboard/settings/profile"
     | "/uploads/$userId/$"
     | "/builder/$resumeId/"
+    | "/dashboard/admin/"
     | "/dashboard/ats-score/"
+    | "/dashboard/faculty/"
+    | "/dashboard/feedback/"
     | "/dashboard/info/"
+    | "/dashboard/placement-officer/"
     | "/dashboard/resumes/"
     | "/dashboard/settings/authentication/";
   fileRoutesById: FileRoutesById;
@@ -588,6 +637,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardResumesIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
+    "/dashboard/placement-officer/": {
+      id: "/dashboard/placement-officer/";
+      path: "/placement-officer";
+      fullPath: "/dashboard/placement-officer/";
+      preLoaderRoute: typeof DashboardPlacementOfficerIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
     "/dashboard/info/": {
       id: "/dashboard/info/";
       path: "/info";
@@ -595,11 +651,32 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardInfoIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
+    "/dashboard/feedback/": {
+      id: "/dashboard/feedback/";
+      path: "/feedback";
+      fullPath: "/dashboard/feedback/";
+      preLoaderRoute: typeof DashboardFeedbackIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/faculty/": {
+      id: "/dashboard/faculty/";
+      path: "/faculty";
+      fullPath: "/dashboard/faculty/";
+      preLoaderRoute: typeof DashboardFacultyIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
     "/dashboard/ats-score/": {
       id: "/dashboard/ats-score/";
       path: "/ats-score";
       fullPath: "/dashboard/ats-score/";
       preLoaderRoute: typeof DashboardAtsScoreIndexRouteImport;
+      parentRoute: typeof DashboardRouteRoute;
+    };
+    "/dashboard/admin/": {
+      id: "/dashboard/admin/";
+      path: "/admin";
+      fullPath: "/dashboard/admin/";
+      preLoaderRoute: typeof DashboardAdminIndexRouteImport;
       parentRoute: typeof DashboardRouteRoute;
     };
     "/builder/$resumeId/": {
@@ -734,8 +811,12 @@ interface DashboardRouteRouteChildren {
   DashboardSettingsDangerZoneRoute: typeof DashboardSettingsDangerZoneRoute;
   DashboardSettingsPreferencesRoute: typeof DashboardSettingsPreferencesRoute;
   DashboardSettingsProfileRoute: typeof DashboardSettingsProfileRoute;
+  DashboardAdminIndexRoute: typeof DashboardAdminIndexRoute;
   DashboardAtsScoreIndexRoute: typeof DashboardAtsScoreIndexRoute;
+  DashboardFacultyIndexRoute: typeof DashboardFacultyIndexRoute;
+  DashboardFeedbackIndexRoute: typeof DashboardFeedbackIndexRoute;
   DashboardInfoIndexRoute: typeof DashboardInfoIndexRoute;
+  DashboardPlacementOfficerIndexRoute: typeof DashboardPlacementOfficerIndexRoute;
   DashboardResumesIndexRoute: typeof DashboardResumesIndexRoute;
   DashboardSettingsAuthenticationIndexRoute: typeof DashboardSettingsAuthenticationIndexRoute;
 }
@@ -747,8 +828,12 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardSettingsDangerZoneRoute: DashboardSettingsDangerZoneRoute,
   DashboardSettingsPreferencesRoute: DashboardSettingsPreferencesRoute,
   DashboardSettingsProfileRoute: DashboardSettingsProfileRoute,
+  DashboardAdminIndexRoute: DashboardAdminIndexRoute,
   DashboardAtsScoreIndexRoute: DashboardAtsScoreIndexRoute,
+  DashboardFacultyIndexRoute: DashboardFacultyIndexRoute,
+  DashboardFeedbackIndexRoute: DashboardFeedbackIndexRoute,
   DashboardInfoIndexRoute: DashboardInfoIndexRoute,
+  DashboardPlacementOfficerIndexRoute: DashboardPlacementOfficerIndexRoute,
   DashboardResumesIndexRoute: DashboardResumesIndexRoute,
   DashboardSettingsAuthenticationIndexRoute:
     DashboardSettingsAuthenticationIndexRoute,

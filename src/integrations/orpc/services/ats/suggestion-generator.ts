@@ -390,7 +390,7 @@ export async function generateSuggestions(
 					category: "tailoring",
 					severity: "warning",
 					title: "Tailor summary to job description",
-					description: `Your summary doesn't mention the target role "${jdAnalysis!.jobTitle}" or key JD skills. Here's a tailored version based on your experience.`,
+					description: `Your summary doesn't mention the target role "${jdAnalysis?.jobTitle}" or key JD skills. Here's a tailored version based on your experience.`,
 					autoApplicable: true,
 					patches: [{ op: "replace", path: "/summary/content", value: `<p>${llmResult.tailoredSummary}</p>` }],
 					estimatedScoreGain: 3,

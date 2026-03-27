@@ -28,11 +28,9 @@ import { toast } from "sonner";
 import { RichInput } from "@/components/input/rich-input";
 import { URLInput } from "@/components/input/url-input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { orpc } from "@/integrations/orpc/client";
 import { defaultUserInfoData, type UserInfoData, userInfoDataSchema } from "@/schema/resume/user-info";
 import { generateId } from "@/utils/string";
@@ -76,29 +74,25 @@ function RouteComponent() {
 
 	if (isLoading) {
 		return (
-			<div className="space-y-4">
+			<div className="space-y-8">
 				<DashboardHeader icon={UserIcon} title={t`My Info`} />
-				<Separator />
 				<div className="flex items-center justify-center py-12">
-					<p className="text-muted-foreground">Loading...</p>
+					<p className="text-slate-400 text-sm">Loading...</p>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center justify-between">
-				<DashboardHeader icon={UserIcon} title={t`My Info`} />
-				<Button onClick={form.handleSubmit(onSubmit)} disabled={isPending}>
+		<div className="space-y-6">
+			<DashboardHeader icon={UserIcon} title={t`My Info`}>
+				<Button onClick={form.handleSubmit(onSubmit)} disabled={isPending} size="sm" className="rounded-xl">
 					<FloppyDiskIcon className="mr-2" />
 					<Trans>Save</Trans>
 				</Button>
-			</div>
+			</DashboardHeader>
 
-			<Separator />
-
-			<p className="text-muted-foreground text-sm">
+			<p className="text-slate-500 text-sm">
 				<Trans>
 					Add your details here once. When you create a new resume, this information will be used to generate a
 					tailored, ATS-friendly resume. Changes here won't affect existing resumes.
@@ -107,7 +101,7 @@ function RouteComponent() {
 
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-					<Accordion type="multiple" defaultValue={["basics"]} className="space-y-2">
+					<Accordion type="multiple" defaultValue={["basics"]} className="space-y-3">
 						<BasicsSection />
 						<SummarySection />
 						<ProfilesSection />
@@ -142,19 +136,21 @@ type SectionWrapperProps = {
 
 function SectionWrapper({ value, icon, title, count, children }: SectionWrapperProps) {
 	return (
-		<AccordionItem value={value} className="rounded-lg border px-4">
+		<AccordionItem value={value} className="rounded-2xl border-0 bg-white px-5 shadow-sm">
 			<AccordionTrigger className="hover:no-underline">
-				<div className="flex items-center gap-x-2">
-					{icon}
-					<span className="font-medium">{title}</span>
+				<div className="flex items-center gap-x-3">
+					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+						{icon}
+					</div>
+					<span className="font-semibold text-slate-900">{title}</span>
 					{count !== undefined && count > 0 && (
-						<Badge variant="secondary" className="ml-1 text-xs">
+						<span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-600">
 							{count}
-						</Badge>
+						</span>
 					)}
 				</div>
 			</AccordionTrigger>
-			<AccordionContent className="pt-2 pb-4">{children}</AccordionContent>
+			<AccordionContent className="pt-2 pb-5">{children}</AccordionContent>
 		</AccordionItem>
 	);
 }

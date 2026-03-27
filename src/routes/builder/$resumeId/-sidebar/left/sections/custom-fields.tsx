@@ -95,7 +95,7 @@ export function CustomFieldsSection({ onSubmit }: Props) {
 							</Button>
 						</PopoverTrigger>
 
-						<PopoverContent align="center">
+						<PopoverContent align="start" side="right">
 							<div className="flex flex-col gap-y-1.5">
 								<span className="text-muted-foreground text-xs">
 									<Trans>Enter the URL to link to</Trans>
