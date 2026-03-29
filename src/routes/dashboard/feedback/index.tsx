@@ -1,12 +1,25 @@
 import { t } from "@lingui/core/macro";
-import { ChartLineIcon, FileTextIcon } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
+import {
+	ArrowSquareOutIcon,
+	BookOpenIcon,
+	CaretDownIcon,
+	ChartLineIcon,
+	CheckCircleIcon,
+	FileTextIcon,
+	ListChecksIcon,
+	PaperPlaneTiltIcon,
+} from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
+import { getEngLabsUserId, getTenantId } from "@/utils/sso-context";
+import { ChecklistsTab } from "../-components/checklists-tab";
 import { DashboardHeader } from "../-components/header";
+import { getEvaluationBadgeClass } from "../-components/score-helpers";
+import { ScoreCard, StatCard } from "../-components/stat-card";
 
 export const Route = createFileRoute("/dashboard/feedback/")({
 	component: RouteComponent,
@@ -15,28 +28,44 @@ export const Route = createFileRoute("/dashboard/feedback/")({
 	},
 });
 
+type FeedbackTab = "overview" | "checklists";
+
 function RouteComponent() {
 	const { session } = Route.useRouteContext();
+	const [expandedResumeId, setExpandedResumeId] = useState<string | null>(null);
+	const [engLabsUserId, setEngLabsUserId] = useState<string | null>(null);
+	const [tenantId, setTenantId] = useState<string>("default");
+	const [activeTab, setActiveTab] = useState<FeedbackTab>("overview");
+
+	useEffect(() => {
+		setEngLabsUserId(getEngLabsUserId());
+		setTenantId(getTenantId() ?? "default");
+	}, []);
 
 	const { data: dashboard, isLoading } = useQuery(
 		orpc.resume.dashboard.student.queryOptions({
-			input: { userId: session?.user?.id ?? "" },
+			input: {
+				userId: session?.user?.id ?? "",
+				engLabsUserId: engLabsUserId ?? undefined,
+			},
 		}),
 	);
 
 	const stats = useMemo(() => {
-		if (!dashboard) return { totalResumes: 0, withFeedback: 0, totalComments: 0, evaluationsReceived: 0, averageScore: null };
+		if (!dashboard)
+			return { totalResumes: 0, withFeedback: 0, totalComments: 0, evaluationsReceived: 0, averageScore: null };
 		return dashboard.stats;
 	}, [dashboard]);
+
 
 	if (isLoading) {
 		return (
 			<div className="space-y-8">
 				<DashboardHeader icon={ChartLineIcon} title={t`Feedback Summary`} />
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-					{[...Array(4)].map((_, i) => (
-						<div key={i} className="rounded-2xl bg-white shadow-sm p-6">
-							<Skeleton className="h-8 w-16 mb-2" />
+				<div className="grid gap-4 md:grid-cols-3">
+					{[...Array(3)].map((_, i) => (
+						<div key={i} className="rounded-2xl bg-white p-6 shadow-sm">
+							<Skeleton className="mb-2 h-8 w-16" />
 							<Skeleton className="h-4 w-24" />
 						</div>
 					))}
@@ -45,65 +74,104 @@ function RouteComponent() {
 		);
 	}
 
+	const enrollment = dashboard?.enrollment;
+
+	const tabs: { id: FeedbackTab; icon: React.ReactNode; label: string }[] = [
+		{ id: "overview", icon: <ChartLineIcon weight="duotone" className="size-4" />, label: t`Overview` },
+		{ id: "checklists", icon: <ListChecksIcon weight="duotone" className="size-4" />, label: t`Checklists` },
+	];
+
 	return (
 		<div className="space-y-8">
 			<DashboardHeader icon={ChartLineIcon} title={t`Feedback Summary`} />
 
+			{/* Tab bar */}
+			<div className="flex gap-1 border-b border-slate-100">
+				{tabs.map((tab) => (
+					<button
+						key={tab.id}
+						type="button"
+						onClick={() => setActiveTab(tab.id)}
+						className={cn(
+							"flex items-center gap-2 border-b-2 px-4 py-3 font-semibold text-sm transition-all",
+							activeTab === tab.id
+								? "border-indigo-600 text-indigo-600"
+								: "border-transparent text-slate-500 hover:text-slate-700",
+						)}
+					>
+						{tab.icon}
+						{tab.label}
+					</button>
+				))}
+			</div>
+
+			{activeTab === "checklists" && (
+				<ChecklistsTab tenantId={tenantId} onCreateNew={() => {}} />
+			)}
+
+			{activeTab === "overview" && (<div className="space-y-8">
+
+			{/* Enrollment context banner */}
+			{enrollment && (
+				<div className="flex flex-wrap items-center gap-3 rounded-2xl bg-indigo-50 px-5 py-3">
+					<BookOpenIcon weight="duotone" className="size-5 shrink-0 text-indigo-500" />
+					<div className="flex flex-wrap gap-2">
+						{enrollment.parentName && (
+							<span className="flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-indigo-800 text-xs font-semibold">
+								<span className="text-indigo-400 text-[10px] uppercase tracking-widest">Package</span>
+								{enrollment.parentName}
+							</span>
+						)}
+						<span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-indigo-700 text-xs font-semibold shadow-sm">
+							<span className="text-indigo-400 text-[10px] uppercase tracking-widest">
+								{enrollment.unitType.charAt(0) + enrollment.unitType.slice(1).toLowerCase()}
+							</span>
+							{enrollment.unitName}
+						</span>
+					</div>
+				</div>
+			)}
+
+
 			{/* Stats Cards */}
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 md:grid-cols-3">
 				<StatCard
-					label="Total Resumes"
+					label={t`My Resumes`}
 					value={stats.totalResumes}
 					iconBg="bg-indigo-50"
 					iconColor="text-indigo-600"
 					icon={<FileTextIcon weight="duotone" className="size-5" />}
 				/>
 				<StatCard
-					label="With Feedback"
-					value={stats.withFeedback}
+					label={t`Feedback Received`}
+					value={stats.totalComments}
 					iconBg="bg-sky-50"
 					iconColor="text-sky-600"
 					icon={<ChartLineIcon weight="duotone" className="size-5" />}
 				/>
-				<StatCard
-					label="Total Comments"
-					value={stats.totalComments}
-					iconBg="bg-violet-50"
-					iconColor="text-violet-600"
-					icon={<FileTextIcon weight="duotone" className="size-5" />}
-				/>
-				<StatCard
-					label="Evaluations Received"
-					value={stats.evaluationsReceived}
+				<ScoreCard
+					label={t`Average Score`}
+					value={stats.averageScore}
 					iconBg="bg-emerald-50"
 					iconColor="text-emerald-600"
-					icon={<ChartLineIcon weight="duotone" className="size-5" />}
+					icon={<CheckCircleIcon weight="duotone" className="size-5" />}
 				/>
 			</div>
 
-			{/* Average Score */}
-			{stats.averageScore !== null && (
-				<div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Average Evaluation Score</p>
-							<p className="mt-2 text-5xl font-bold text-slate-900">{stats.averageScore.toFixed(1)}</p>
-							<p className="mt-1 text-sm text-slate-500">out of 5.0</p>
-						</div>
-						<div className={cn("text-8xl font-bold opacity-5 select-none pointer-events-none", getScoreColor(stats.averageScore))}>
-							{Math.round(stats.averageScore * 20)}%
-						</div>
-					</div>
-				</div>
-			)}
-
-			{/* Resumes with Feedback */}
+			{/* Resumes */}
 			<div className="space-y-4">
-				<h3 className="font-semibold text-slate-900 text-lg">Your Resumes</h3>
+				<h3 className="font-semibold text-lg text-slate-900">Your Resumes</h3>
 				{dashboard?.resumes && dashboard.resumes.length > 0 ? (
-					<div className="space-y-2">
-						{dashboard.resumes.map((resume: any) => (
-							<ResumeCard key={resume.id} resume={resume} />
+					<div className="space-y-3">
+						{dashboard.resumes.map((resume) => (
+							<ResumeCard
+								key={resume.id}
+								resume={resume}
+								engLabsUserId={engLabsUserId}
+								tenantId={tenantId}
+								isExpanded={expandedResumeId === resume.id}
+								onToggle={() => setExpandedResumeId(expandedResumeId === resume.id ? null : resume.id)}
+							/>
 						))}
 					</div>
 				) : (
@@ -115,87 +183,183 @@ function RouteComponent() {
 					</div>
 				)}
 			</div>
+			</div>)}
 		</div>
 	);
 }
 
-function StatCard({
-	label,
-	value,
-	icon,
-	iconBg,
-	iconColor,
-}: {
-	label: string;
-	value: number;
-	icon: React.ReactNode;
-	iconBg: string;
-	iconColor: string;
-}) {
-	return (
-		<div className="relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.98]">
-			<div className={cn("mb-4 flex h-10 w-10 items-center justify-center rounded-2xl", iconBg, iconColor)}>
-				{icon}
-			</div>
-			<p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{label}</p>
-			<p className="mt-1 text-3xl font-bold text-slate-900">{value}</p>
-			<div className={cn("pointer-events-none absolute -bottom-3 -right-3 size-20 rotate-12 opacity-5", iconColor)}>
-				{icon}
-			</div>
-		</div>
-	);
-}
+type ResumeFeedback = {
+	totalComments: number;
+	evaluationScore: number | null;
+	isSubmitted: boolean;
+};
 
 function ResumeCard({
 	resume,
+	engLabsUserId,
+	tenantId,
+	isExpanded,
+	onToggle,
 }: {
 	resume: {
 		id: string;
 		name: string;
-		feedback: {
-			totalComments: number;
-			latestEvaluation: { overallScore: number | null; createdAt: Date } | null;
-			averageScore: number | null;
-		};
+		updatedAt: Date;
+		feedback: ResumeFeedback;
 	};
+	engLabsUserId: string | null;
+	tenantId: string;
+	isExpanded: boolean;
+	onToggle: () => void;
 }) {
+	const queryClient = useQueryClient();
+	const hasEvaluation = resume.feedback.evaluationScore !== null;
+	const hasComments = resume.feedback.totalComments > 0;
+	const isSubmitted = resume.feedback.isSubmitted;
+
+	let statusLabel = "Not Reviewed";
+	let statusBg = "bg-slate-100";
+	let statusText = "text-slate-500";
+	if (hasEvaluation) {
+		statusLabel = "Evaluated";
+		statusBg = "bg-emerald-50";
+		statusText = "text-emerald-700";
+	} else if (isSubmitted) {
+		statusLabel = "Submitted for Review";
+		statusBg = "bg-indigo-50";
+		statusText = "text-indigo-700";
+	} else if (hasComments) {
+		statusLabel = "Has Comments";
+		statusBg = "bg-amber-50";
+		statusText = "text-amber-700";
+	}
+
+	const { data: commentsData, isLoading: commentsLoading } = useQuery({
+		...orpc.resume.comments.list.queryOptions({ input: { resumeId: resume.id } }),
+		enabled: isExpanded,
+	});
+
+	const submitMutation = useMutation({
+		...orpc.resume.dashboard.submitResume.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries(
+				orpc.resume.dashboard.student.queryOptions({ input: { userId: "" } }),
+			);
+		},
+	});
+
+	const canSubmit = !isSubmitted && !hasEvaluation && !!engLabsUserId;
+
 	return (
-		<div className="rounded-xl bg-slate-50 p-4 transition-all hover:bg-slate-100 active:scale-[0.99]">
-			<div className="flex items-start justify-between">
-				<div className="flex-1">
-					<p className="font-semibold text-slate-900">{resume.name}</p>
-					<div className="mt-2 flex gap-2">
-						{resume.feedback.totalComments > 0 && (
-							<span className="rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-								{resume.feedback.totalComments} {resume.feedback.totalComments === 1 ? "Comment" : "Comments"}
+		<div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+			{/* biome-ignore lint: click to expand */}
+			<div
+				className="flex cursor-pointer items-start justify-between p-5 transition-colors hover:bg-slate-50/60"
+				onClick={onToggle}
+			>
+				<div className="min-w-0 flex-1">
+					<p className="truncate font-semibold text-slate-900">{resume.name}</p>
+					<p className="mt-0.5 text-slate-400 text-xs">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
+					<div className="mt-3 flex flex-wrap gap-2">
+						<span className={cn("rounded-full px-2.5 py-0.5 font-medium text-xs", statusBg, statusText)}>
+							{statusLabel}
+						</span>
+						{hasComments && (
+							<span className="rounded-full bg-sky-50 px-2.5 py-0.5 font-medium text-sky-700 text-xs">
+								{resume.feedback.totalComments} comment{resume.feedback.totalComments !== 1 ? "s" : ""}
 							</span>
 						)}
-						{resume.feedback.latestEvaluation && (
-							<span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", getEvaluationBadgeClass(resume.feedback.latestEvaluation.overallScore || 0))}>
-								Score: {(resume.feedback.latestEvaluation.overallScore || 0).toFixed(1)}/5
+						{hasEvaluation && (
+							<span
+								className={cn(
+									"rounded-full px-2.5 py-0.5 font-medium text-xs",
+									getEvaluationBadgeClass(resume.feedback.evaluationScore!),
+								)}
+							>
+								{resume.feedback.evaluationScore!.toFixed(1)}/5
 							</span>
 						)}
 					</div>
 				</div>
-				{resume.feedback.averageScore !== null && (
-					<div className="text-right">
-						<p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Avg Score</p>
-						<p className="mt-1 text-xl font-bold text-slate-900">{resume.feedback.averageScore.toFixed(1)}</p>
-					</div>
-				)}
+
+				<div className="ml-4 flex shrink-0 items-center gap-2">
+					<a
+						href={`/builder/${resume.id}`}
+						target="_blank"
+						rel="noreferrer"
+						title="Open resume builder"
+						onClick={(e) => e.stopPropagation()}
+						className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+					>
+						<ArrowSquareOutIcon weight="duotone" className="size-4" />
+					</a>
+					<CaretDownIcon
+						weight="bold"
+						className={cn("size-4 text-slate-400 transition-transform", isExpanded && "rotate-180")}
+					/>
+				</div>
 			</div>
+
+			{/* Expanded: Submit + Comments */}
+			{isExpanded && (
+				<div className="border-t border-slate-100 bg-slate-50/60 px-5 pb-5 pt-4">
+					{canSubmit && (
+						<div className="mb-4 flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
+							<div>
+								<p className="font-semibold text-indigo-900 text-sm">Ready for faculty review?</p>
+								<p className="text-indigo-600 text-xs">Submit this resume so your faculty can review and comment.</p>
+							</div>
+							<button
+								type="button"
+								disabled={submitMutation.isPending}
+								onClick={() => {
+									if (!engLabsUserId) return;
+									submitMutation.mutate({ resumeId: resume.id, studentId: engLabsUserId, tenantId });
+								}}
+								className="ml-4 flex shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-indigo-700 disabled:opacity-60"
+							>
+								<PaperPlaneTiltIcon weight="duotone" className="size-4" />
+								{submitMutation.isPending ? "Submitting…" : "Submit for Review"}
+							</button>
+						</div>
+					)}
+					{isSubmitted && !hasEvaluation && (
+						<div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+							<p className="font-semibold text-indigo-800 text-sm">Submitted for Review</p>
+							<p className="text-indigo-600 text-xs">Your resume is pending faculty review.</p>
+						</div>
+					)}
+
+					<p className="mb-3 font-semibold text-slate-500 text-xs uppercase tracking-widest">Faculty Comments</p>
+					{commentsLoading ? (
+						<div className="space-y-2">
+							{[...Array(2)].map((_, i) => (
+								<Skeleton key={i} className="h-16 w-full rounded-xl" />
+							))}
+						</div>
+					) : !commentsData || commentsData.length === 0 ? (
+						<p className="rounded-xl bg-white px-4 py-3 text-center text-slate-400 text-sm shadow-sm">
+							No comments yet from your faculty
+						</p>
+					) : (
+						<div className="space-y-2">
+							{commentsData.map((comment) => (
+								<div key={comment.id} className="rounded-xl bg-white p-3 shadow-sm">
+									<p className="text-slate-700 text-sm">{comment.content}</p>
+									<p className="mt-1.5 text-slate-400 text-xs">
+										{new Date(comment.createdAt).toLocaleDateString()} ·{" "}
+										{comment.status === "RESOLVED" ? (
+											<span className="text-emerald-600">Resolved</span>
+										) : (
+											<span className="text-amber-600">Open</span>
+										)}
+									</p>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
-}
-
-function getScoreColor(score: number): string {
-	if (score >= 4.5) return "text-green-600";
-	if (score >= 3.5) return "text-amber-600";
-	return "text-red-600";
-}
-
-function getEvaluationBadgeClass(score: number): string {
-	if (score >= 4.5) return "bg-green-100 text-green-800";
-	if (score >= 3.5) return "bg-amber-100 text-amber-800";
-	return "bg-red-100 text-red-800";
 }

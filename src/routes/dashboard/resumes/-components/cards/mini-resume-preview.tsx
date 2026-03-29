@@ -28,8 +28,11 @@ export function MiniResumePreview({ resume }: { resume: Resume }) {
 	return (
 		<div className="flex h-full flex-col bg-white text-slate-900">
 			{/* Colored Header Bar - 25% of card height */}
-			<div className={`${colors.header} flex flex-col items-center justify-center px-5 py-6 text-white`} style={{ height: '25%' }}>
-				<h3 className="text-center text-lg font-bold leading-tight line-clamp-3">{resumeName}</h3>
+			<div
+				className={`${colors.header} flex flex-col items-center justify-center px-5 py-6 text-white`}
+				style={{ height: "25%" }}
+			>
+				<h3 className="line-clamp-3 text-center font-bold text-lg leading-tight">{resumeName}</h3>
 			</div>
 
 			{/* Body Content */}
@@ -70,7 +73,7 @@ export function MiniResumePreview({ resume }: { resume: Resume }) {
 							{data.sections.skills.items.slice(0, 4).map((skill: SectionItem<"skills">, i: number) => (
 								<span
 									key={i}
-									className={`truncate rounded px-1.5 py-0.5 ${colors.header} text-white text-xs font-medium`}
+									className={`truncate rounded px-1.5 py-0.5 ${colors.header} font-medium text-white text-xs`}
 								>
 									{skill.name}
 								</span>

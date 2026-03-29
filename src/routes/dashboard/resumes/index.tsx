@@ -100,7 +100,9 @@ function RouteComponent() {
 					buttonProps={{
 						variant: "ghost",
 						title: t`Filter by`,
-						className: cn("rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900", { hidden: tagOptions.length === 0 }),
+						className: cn("rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900", {
+							hidden: tagOptions.length === 0,
+						}),
 						children: (_, options) => (
 							<>
 								<TagIcon />

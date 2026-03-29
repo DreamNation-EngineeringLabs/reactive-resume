@@ -6,6 +6,7 @@ import {
 	LockSimpleIcon,
 	LockSimpleOpenIcon,
 	PencilSimpleLineIcon,
+	StarIcon,
 	TrashSimpleIcon,
 } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
@@ -33,6 +34,7 @@ export function ResumeContextMenu({ resume, children }: Props) {
 
 	const { mutate: deleteResume } = useMutation(orpc.resume.delete.mutationOptions());
 	const { mutate: setLockedResume } = useMutation(orpc.resume.setLocked.mutationOptions());
+	const { mutate: setPrimaryResume } = useMutation(orpc.resume.setPrimary.mutationOptions());
 
 	const handleUpdate = () => {
 		openDialog("resume.update", resume);
@@ -83,6 +85,22 @@ export function ResumeContextMenu({ resume, children }: Props) {
 		);
 	};
 
+	const handleSetPrimary = () => {
+		const toastId = toast.loading(t`Setting as Master Resume...`);
+
+		setPrimaryResume(
+			{ id: resume.id },
+			{
+				onSuccess: () => {
+					toast.success(t`Successfully set as Master Resume.`, { id: toastId });
+				},
+				onError: (error) => {
+					toast.error(error.message, { id: toastId });
+				},
+			},
+		);
+	};
+
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
@@ -111,6 +129,13 @@ export function ResumeContextMenu({ resume, children }: Props) {
 					{resume.isLocked ? <LockSimpleOpenIcon /> : <LockSimpleIcon />}
 					{resume.isLocked ? <Trans>Unlock</Trans> : <Trans>Lock</Trans>}
 				</ContextMenuItem>
+
+				{!resume.isPrimary && (
+					<ContextMenuItem onSelect={handleSetPrimary}>
+						<StarIcon weight="duotone" className="text-amber-500" />
+						<Trans>Mark as Master</Trans>
+					</ContextMenuItem>
+				)}
 
 				<ContextMenuSeparator />
 

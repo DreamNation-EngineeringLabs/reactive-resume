@@ -1,5 +1,6 @@
 import { scryptSync } from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
+// @ts-expect-error
 import jwt from "jsonwebtoken";
 import { auth } from "@/integrations/auth/config";
 import { env } from "@/utils/env";
@@ -37,7 +38,23 @@ async function handler({ request }: { request: Request }) {
 			username: string;
 			userId: string;
 			source_url?: string;
+			role?: string;
+			tenantId?: string;
+			organisationId?: string;
+			organisationUnits?: string[];
 		};
+
+		console.log("[SSO] Decoded JWT payload:", JSON.stringify({
+			email: decoded.email,
+			name: decoded.name,
+			username: decoded.username,
+			userId: decoded.userId,
+			role: decoded.role ?? "NOT_SET",
+			tenantId: decoded.tenantId ?? "NOT_SET",
+			organisationId: decoded.organisationId ?? "NOT_SET",
+			organisationUnits: decoded.organisationUnits ?? "NOT_SET",
+			source_url: decoded.source_url ?? "NOT_SET",
+		}, null, 2));
 
 		if (!decoded.email) {
 			return errorRedirect("invalid_token_payload");
@@ -73,29 +90,50 @@ async function handler({ request }: { request: Request }) {
 			return errorRedirect("sso_failed");
 		}
 
-		// Forward the Set-Cookie headers
-		const headers = new Headers();
+		// Redirect to an intermediate HTML page that stores SSO context in localStorage
+		// then redirects to /dashboard. We can't use Set-Cookie (runtime merges headers)
+		// or query params (TanStack Router strips unknown search params).
+		const ssoContext = {
+			source_url: decoded.source_url ?? null,
+			// Normalize role to uppercase so sidebar comparisons are case-insensitive
+			role: decoded.role ? decoded.role.toUpperCase() : null,
+			engLabsUserId: decoded.userId ?? null,
+			tenantId: decoded.tenantId ?? null,
+			organisationId: decoded.organisationId ?? null,
+			organisationUnits: decoded.organisationUnits ?? [],
+			trace: traceId,
+		};
+
+		console.log("[SSO] Passing sso_context via intermediate page:", JSON.stringify(ssoContext));
+
+		const roleUpper = ssoContext.role?.toUpperCase();
+		const destination =
+			roleUpper === "INSTRUCTOR"
+				? "/dashboard/faculty?tab=overview"
+				: roleUpper === "PLACEMENT_OFFICER"
+					? "/dashboard/placement-officer?tab=overview"
+					: roleUpper === "ADMIN"
+						? "/dashboard/admin"
+						: "/dashboard/resumes?sort=lastUpdatedAt";
+
+		const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head><body>
+<script>
+localStorage.setItem("sso_context", ${JSON.stringify(JSON.stringify(ssoContext))});
+window.location.replace(${JSON.stringify(destination)});
+</script>
+<noscript><a href="${destination}">Continue to dashboard</a></noscript>
+</body></html>`;
+
+		// Forward auth cookies from better-auth on the HTML response
+		const responseHeaders = new Headers({ "Content-Type": "text/html; charset=utf-8" });
 		response.headers.forEach((value, key) => {
 			if (key.toLowerCase() === "set-cookie") {
-				headers.append(key, value);
+				responseHeaders.append(key, value);
 			}
 		});
 
-		// Set source_url cookie so frontend can redirect back to correct tenant dashboard
-		if (decoded.source_url) {
-			headers.append(
-				"Set-Cookie",
-				`source_url=${encodeURIComponent(decoded.source_url)}; Path=/; SameSite=Lax; Max-Age=86400`,
-			);
-		}
-		headers.append("Set-Cookie", `sso_trace=${encodeURIComponent(traceId)}; Path=/; SameSite=Lax; Max-Age=1800`);
-
-		// Redirect to dashboard
-		headers.set("Location", "/dashboard");
-		return new Response(null, {
-			status: 302,
-			headers,
-		});
+		return new Response(html, { status: 200, headers: responseHeaders });
 	} catch (e) {
 		console.error(`[SSOTrace:${traceId}] token:verify_failed`, e);
 		return errorRedirect("invalid_token");

@@ -93,6 +93,7 @@ export const resumeService = {
 				data: schema.resume.data,
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
+				isPrimary: schema.resume.isPrimary,
 				createdAt: schema.resume.createdAt,
 				updatedAt: schema.resume.updatedAt,
 			})
@@ -124,6 +125,7 @@ export const resumeService = {
 				data: schema.resume.data,
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
+				isPrimary: schema.resume.isPrimary,
 				hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 			})
 			.from(schema.resume)
@@ -178,6 +180,7 @@ export const resumeService = {
 				data: schema.resume.data,
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
+				isPrimary: schema.resume.isPrimary,
 				passwordHash: schema.resume.password,
 				hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 			})
@@ -204,6 +207,7 @@ export const resumeService = {
 				data: resume.data,
 				isPublic: resume.isPublic,
 				isLocked: resume.isLocked,
+				isPrimary: resume.isPrimary,
 				hasPassword: false as const,
 			};
 		}
@@ -219,6 +223,7 @@ export const resumeService = {
 				data: resume.data,
 				isPublic: resume.isPublic,
 				isLocked: resume.isLocked,
+				isPrimary: resume.isPrimary,
 				hasPassword: true as const,
 			};
 		}
@@ -307,6 +312,7 @@ export const resumeService = {
 					data: schema.resume.data,
 					isPublic: schema.resume.isPublic,
 					isLocked: schema.resume.isLocked,
+					isPrimary: schema.resume.isPrimary,
 					hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 				});
 
@@ -362,6 +368,7 @@ export const resumeService = {
 				data: schema.resume.data,
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
+				isPrimary: schema.resume.isPrimary,
 				hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 			});
 
@@ -430,5 +437,21 @@ export const resumeService = {
 		const deletePdfsPromise = storageService.delete(`uploads/${input.userId}/pdfs/${input.id}`);
 
 		await Promise.allSettled([deleteResumePromise, deleteScreenshotsPromise, deletePdfsPromise]);
+	},
+
+	setPrimary: async (input: { id: string; userId: string }) => {
+		await db.transaction(async (tx) => {
+			// Unset current primary resume
+			await tx
+				.update(schema.resume)
+				.set({ isPrimary: false })
+				.where(and(eq(schema.resume.userId, input.userId), eq(schema.resume.isPrimary, true)));
+
+			// Set new primary resume
+			await tx
+				.update(schema.resume)
+				.set({ isPrimary: true })
+				.where(and(eq(schema.resume.id, input.id), eq(schema.resume.userId, input.userId)));
+		});
 	},
 };

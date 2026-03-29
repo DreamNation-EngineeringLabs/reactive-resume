@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useCSSVariables } from "./hooks/use-css-variables";
 import { useWebfonts } from "./hooks/use-webfonts";
 import styles from "./preview.module.css";
-import { useResumeStore } from "./store/resume";
+import { useResumeStore, type Resume } from "./store/resume";
 import { AzurillTemplate } from "./templates/azurill";
 import { BronzorTemplate } from "./templates/bronzor";
 import { ChikoritaTemplate } from "./templates/chikorita";
@@ -59,8 +59,31 @@ type Props = React.ComponentProps<"div"> & {
 };
 
 export const ResumePreview = ({ showPageNumbers = false, pageClassName, className, ...props }: Props) => {
-	const picture = useResumeStore((state) => state.resume.data.picture);
-	const metadata = useResumeStore((state) => state.resume.data.metadata);
+	const resume = useResumeStore((state) => state.resume);
+
+	if (!resume || !resume.data) {
+		return null;
+	}
+
+	return (
+		<ResumePreviewContent
+			resume={resume}
+			showPageNumbers={showPageNumbers}
+			pageClassName={pageClassName}
+			className={className}
+			{...props}
+		/>
+	);
+};
+
+const ResumePreviewContent = ({
+	resume,
+	showPageNumbers,
+	pageClassName,
+	className,
+	...props
+}: Props & { resume: Resume }) => {
+	const { picture, metadata } = resume.data;
 
 	useWebfonts(metadata.typography);
 	const style = useCSSVariables({ picture, metadata });
@@ -104,7 +127,7 @@ export const ResumePreview = ({ showPageNumbers = false, pageClassName, classNam
 			{scopedCSS && <style dangerouslySetInnerHTML={{ __html: scopedCSS }} />}
 
 			<div style={style} className={cn("resume-preview-container", className)} {...props}>
-				{metadata.layout.pages.map((pageLayout, pageIndex) => (
+				{metadata.layout.pages.map((pageLayout: z.infer<typeof pageLayoutSchema>, pageIndex: number) => (
 					<PageContainer
 						key={pageIndex}
 						pageIndex={pageIndex}
@@ -126,13 +149,40 @@ type PageContainerProps = {
 };
 
 function PageContainer({ pageIndex, pageLayout, pageClassName, showPageNumbers = false }: PageContainerProps) {
+	const resume = useResumeStore((state) => state.resume);
+
+	if (!resume || !resume.data) {
+		return null;
+	}
+
+	return (
+		<PageContainerContent
+			resume={resume}
+			pageIndex={pageIndex}
+			pageLayout={pageLayout}
+			pageClassName={pageClassName}
+			showPageNumbers={showPageNumbers}
+		/>
+	);
+}
+
+function PageContainerContent({
+	resume,
+	pageIndex,
+	pageLayout,
+	pageClassName,
+	showPageNumbers = false,
+}: PageContainerProps & { resume: Resume }) {
 	const pageRef = useRef<HTMLDivElement>(null);
 	const [pageHeight, setPageHeight] = useState<number>(0);
 
-	const metadata = useResumeStore((state) => state.resume.data.metadata);
+	const { metadata } = resume.data;
 
 	const pageNumber = useMemo(() => pageIndex + 1, [pageIndex]);
-	const maxPageHeight = useMemo(() => pageDimensionsAsPixels[metadata.page.format].height, [metadata.page.format]);
+	const maxPageHeight = useMemo(() => {
+		const format = metadata.page.format as keyof typeof pageDimensionsAsPixels;
+		return pageDimensionsAsPixels[format].height;
+	}, [metadata.page.format]);
 	const totalNumberOfPages = useMemo(() => metadata.layout.pages.length, [metadata.layout.pages]);
 	const TemplateComponent = useMemo(() => getTemplateComponent(metadata.template), [metadata.template]);
 

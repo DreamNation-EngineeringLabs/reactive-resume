@@ -22,6 +22,9 @@ export const env = createEnv({
 		// Database
 		DATABASE_URL: z.url({ protocol: /postgres(ql)?/ }),
 
+		// Eng-Labs Database (read-only, for student/section data)
+		ENG_LABS_DATABASE_URL: z.url({ protocol: /postgres(ql)?/ }).optional(),
+
 		// Authentication
 		AUTH_SECRET: z.string().min(1),
 		MAIN_APP_SECRET: z.string().min(1).optional(),

@@ -11,6 +11,7 @@ const resumeSchema = createSelectSchema(schema.resume, {
 	tags: z.array(z.string()).describe("The tags of the resume."),
 	isPublic: z.boolean().describe("Whether the resume is public."),
 	isLocked: z.boolean().describe("Whether the resume is locked."),
+	isPrimary: z.boolean().describe("Whether the resume is the primary (Master) resume."),
 	password: z.string().min(6).max(64).nullable().describe("The password of the resume, if any."),
 	data: resumeDataSchema,
 	userId: z.string().describe("The ID of the user who owns the resume."),
@@ -99,6 +100,10 @@ export const resumeDto = {
 	},
 
 	delete: {
+		input: resumeSchema.pick({ id: true }),
+		output: z.void(),
+	},
+	setPrimary: {
 		input: resumeSchema.pick({ id: true }),
 		output: z.void(),
 	},

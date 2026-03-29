@@ -25,7 +25,7 @@ function RouteComponent() {
 
 	return (
 		<div className="flex h-full flex-col overflow-hidden bg-muted/30">
-			<div className="flex-none flex items-center border-b bg-background/80 backdrop-blur-sm px-3 py-1.5 z-10">
+			<div className="z-10 flex flex-none items-center border-b bg-background/80 px-3 py-1.5 backdrop-blur-sm">
 				<BuilderToolbar />
 			</div>
 

@@ -1,6 +1,6 @@
 # Polymath Resume Platform — Goals & Progress
 
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-03-29
 
 ---
 
@@ -11,7 +11,7 @@
 | Improve overall UX (audit + redesign) | 🔄 In Progress | Resume builder UI refined with new toolbar (38f2d51) | 38f2d517 |
 | Add option to create new resume versions | ⏳ Planned | Core resume management exists, need versioning feature | — |
 | Allow declaring one version as "primary resume" | ⏳ Planned | Depends on versioning feature | — |
-| Make GitHub & LinkedIn profile fields mandatory | ⏳ Planned | Requires schema update & validation | — |
+| Make GitHub & LinkedIn profile fields mandatory | ✅ Done | Requires schema update & validation | — |
 | (Future) Validate projects exist on GitHub/LinkedIn | ❌ Blocked | Requires GitHub/LinkedIn API integration | — |
 
 ---
@@ -20,13 +20,13 @@
 
 | Goal | Status | Notes | Commit |
 |------|--------|-------|--------|
-| View all resumes in assigned section | ✅ Done | Faculty dashboard implemented | 38f2d517 |
-| Create checklist of requirements | ⏳ Planned | Requires new checklist/rubric feature | — |
-| AI-based resume evaluation vs checklist | ⏳ Planned | Depends on checklist feature | — |
-| Manually review & add comments | ⏳ Planned | Requires comments/feedback system | — |
-| Notify students of feedback/comments | ⏳ Planned | Depends on comments system + email integration | — |
+| View all resumes in assigned section | ✅ Done | Faculty dashboard with eng-labs integration, section tabs, student resume table | — |
+| Create checklist of requirements | ✅ Done | Checklist creator dialog with weighted items | — |
+| AI-based resume evaluation vs checklist | ⏳ Planned | Depends on AI integration | — |
+| Manually review & add comments | ✅ Done | Comment dialog with Individual/Section scope | — |
+| Notify students of feedback/comments | ✅ Done | Email sent to student's eng-labs email on comment creation | — |
 | Show diff view (old vs new resumes) | ⏳ Planned | Requires version tracking | — |
-| Forward resumes to Placement Officer | ⏳ Planned | Requires PO handoff workflow | — |
+| Forward resumes to Placement Officer | ✅ Done | Forward button adds FORWARDED entry to resume history | — |
 
 ---
 
@@ -34,11 +34,11 @@
 
 | Goal | Status | Notes | Commit |
 |------|--------|-------|--------|
-| View all resumes across all sections | ✅ Done | PO dashboard implemented | 38f2d517 |
-| View faculty suggestions & diffs | ⏳ Planned | Depends on faculty comment/diff features | — |
-| Add suggestions at individual resume level | ⏳ Planned | Requires feedback system | — |
-| Add suggestions at class/section level | ⏳ Planned | Batch feedback feature | — |
-| Ensure visibility to faculty & students | ⏳ Planned | Depends on feedback system | — |
+| View all resumes across all sections | ✅ Done | PO dashboard with all sections, filter tabs, student resume table | — |
+| View faculty suggestions & diffs | 🔄 In Progress | Faculty comments visible; diff requires versioning | — |
+| Add suggestions at individual resume level | ✅ Done | Comment dialog (same as faculty) | — |
+| Add suggestions at class/section level | ✅ Done | Section-scoped comments via scope selector | — |
+| Ensure visibility to faculty & students | ✅ Done | Comments with INDIVIDUAL/SECTION scope visible to all relevant users | — |
 
 ---
 
@@ -46,10 +46,10 @@
 
 | Goal | Status | Notes | Commit |
 |------|--------|-------|--------|
-| Build admin dashboard | ✅ Done | Admin dashboard implemented | 38f2d517 |
-| Section-wise view (faculty assigned, pending count) | 🔄 In Progress | Dashboard foundation exists, needs metrics | 38f2d517 |
-| Individual student timeline & progress history | 🔄 In Progress | Requires activity tracking | 38f2d517 |
-| Faculty performance metrics | 🔄 In Progress | Requires analytics infrastructure | 38f2d517 |
+| Build admin dashboard | ✅ Done | Admin dashboard with shared StatCard components | — |
+| Section-wise view (faculty assigned, pending count) | ✅ Done | Section health table with student/resume/evaluation counts per section | — |
+| Individual student timeline & progress history | ✅ Done | StudentTimeline component using resume_history | — |
+| Faculty performance metrics | ✅ Done | Faculty performance table with evaluations/comments counts | — |
 
 ---
 
@@ -77,9 +77,16 @@
 
 ### Implemented Infrastructure
 - User roles: Student, Faculty, Placement Officer, Admin
-- Dashboard views for all roles (38f2d517)
+- Dashboard views for all roles with real eng-labs data integration
 - Resume builder with toolbar (38f2d517)
 - Session/auth improvements across all flows
+- SSO token extended with role, organisationUnits, tenantId, organisationId
+- Sidebar role-based filtering + org unit switcher
+- Shared dashboard components (StatCard, SectionMetricsView, StudentResumeTable, etc.)
+- Eng-labs DB integration for student/section data
+- Faculty/PO unified dashboard with section tabs, student resume table, comment/evaluate actions
+- Admin dashboard with section health table and faculty performance metrics
+- Checklist creator, comment dialog, evaluation form
 
 ### Key Dependencies
 - **Version tracking** → needed for: resume versions, primary resume selection, diff views

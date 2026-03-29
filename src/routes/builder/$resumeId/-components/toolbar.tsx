@@ -76,18 +76,8 @@ export function BuilderToolbar() {
 
 	return (
 		<div className="flex items-center gap-x-0.5">
-			<ToolbarIcon
-				disabled={!canUndo}
-				onClick={() => undo()}
-				icon={ArrowUUpLeftIcon}
-				title={t`Undo (Ctrl+Z)`}
-			/>
-			<ToolbarIcon
-				disabled={!canRedo}
-				onClick={() => redo()}
-				icon={ArrowUUpRightIcon}
-				title={t`Redo (Ctrl+Y)`}
-			/>
+			<ToolbarIcon disabled={!canUndo} onClick={() => undo()} icon={ArrowUUpLeftIcon} title={t`Undo (Ctrl+Z)`} />
+			<ToolbarIcon disabled={!canRedo} onClick={() => redo()} icon={ArrowUUpRightIcon} title={t`Redo (Ctrl+Y)`} />
 
 			<div className="mx-1.5 h-5 w-px bg-border" />
 

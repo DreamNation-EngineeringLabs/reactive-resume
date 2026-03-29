@@ -19,7 +19,7 @@ export function CreateResumeCard() {
 				<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100">
 					<PlusIcon weight="duotone" className="size-8 text-blue-600" />
 				</div>
-				<p className="text-center text-sm font-medium text-slate-600">Start fresh</p>
+				<p className="text-center font-medium text-slate-600 text-sm">Start fresh</p>
 			</div>
 		</BaseCard>
 	);

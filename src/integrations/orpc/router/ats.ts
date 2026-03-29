@@ -2,9 +2,9 @@ import { ORPCError } from "@orpc/client";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { protectedProcedure } from "../context";
+import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
 import { scoreResume } from "../services/ats";
 import { editSection } from "../services/ats/section-editor";
-import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
 
 export const atsRouter = {
 	score: protectedProcedure

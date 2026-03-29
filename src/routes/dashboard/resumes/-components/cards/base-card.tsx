@@ -41,16 +41,16 @@ export function BaseCard({
 			</div>
 
 			{/* Footer with Name and Description */}
-			<div className="border-t border-slate-100 px-5 py-3">
+			<div className="border-slate-100 border-t px-5 py-3">
 				<h4 className="truncate font-semibold text-slate-900 text-sm">{title}</h4>
 				<p className="mt-1 text-slate-400 text-xs">{description}</p>
 			</div>
 
 			{/* Tags (if any) */}
 			{tags && tags.length > 0 && (
-				<div className="flex flex-wrap gap-1 border-t border-slate-100 bg-slate-50 px-4 py-2">
+				<div className="flex flex-wrap gap-1 border-slate-100 border-t bg-slate-50 px-4 py-2">
 					{tags.map((tag) => (
-						<span key={tag} className="rounded-lg bg-slate-200 px-2 py-0.5 text-slate-600 text-xs font-medium">
+						<span key={tag} className="rounded-lg bg-slate-200 px-2 py-0.5 font-medium text-slate-600 text-xs">
 							{tag}
 						</span>
 					))}

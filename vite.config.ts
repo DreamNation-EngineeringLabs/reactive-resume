@@ -28,6 +28,7 @@ const config = defineConfig({
 		hmr: {
 			host: "localhost",
 			port: parseInt(process.env.PORT || "3001"),
+			overlay: false,
 		},
 	},
 

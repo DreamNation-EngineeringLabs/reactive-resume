@@ -1,13 +1,13 @@
-import z from "zod";
 import { ORPCError } from "@orpc/client";
+import z from "zod";
 import { sampleResumeData } from "@/schema/resume/sample";
 import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
 import { resumeDto } from "../dto/resume";
+import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
 import { resumeService } from "../services/resume";
 import { aiService as resumeAiService } from "../services/resume-ai";
 import { userInfoService } from "../services/user-info";
-import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
 import { dashboardRouter } from "./dashboard";
 
 const tagsRouter = {
@@ -435,6 +435,23 @@ export const resumeRouter = {
 			return await resumeService.delete({ id: input.id, userId: context.user.id });
 		}),
 
+	setPrimary: protectedProcedure
+		.route({
+			method: "POST",
+			path: "/resumes/{id}/primary",
+			tags: ["Resumes"],
+			operationId: "setResumePrimary",
+			summary: "Set resume as primary (Master Resume)",
+			description:
+				"Sets the specified resume as the user's primary (Master) resume. Any existing primary resume for the user will be unset. Requires authentication.",
+			successDescription: "The resume was set as primary successfully.",
+		})
+		.input(resumeDto.setPrimary.input)
+		.output(resumeDto.setPrimary.output)
+		.handler(async ({ context, input }) => {
+			return await resumeService.setPrimary({ id: input.id, userId: context.user.id });
+		}),
+
 	// ─────────────────────────────────────────────────────────────────────────────
 	// Resume Feedback Endpoints (Comments, Checklists, Evaluations)
 	// ─────────────────────────────────────────────────────────────────────────────
@@ -456,7 +473,7 @@ export const resumeRouter = {
 					tenantId: z.string().describe("eng-labs tenant ID"),
 					content: z.string().min(1).max(5000).describe("Comment content"),
 					scope: z.enum(["INDIVIDUAL", "SECTION"]).default("INDIVIDUAL").describe("Comment visibility scope"),
-				})
+				}),
 			)
 			.output(
 				z.object({
@@ -468,10 +485,12 @@ export const resumeRouter = {
 					authorId: z.string(),
 					createdAt: z.date(),
 					updatedAt: z.date(),
-				})
+				}),
 			)
 			.handler(async ({ context, input }) => {
 				const { createComment } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { getStudentById } = await import("@/integrations/eng-labs");
+				const { sendEmail } = await import("@/integrations/email/service");
 
 				const comment = await createComment({
 					resumeId: input.resumeId,
@@ -481,6 +500,24 @@ export const resumeRouter = {
 					content: input.content,
 					scope: input.scope,
 				});
+
+				// Trigger email notification to student (Phase 8)
+				try {
+					const [student, resume] = await Promise.all([
+						getStudentById(input.studentId),
+						resumeService.getById({ id: input.resumeId, userId: context.user.id }),
+					]);
+
+					if (student?.email) {
+						await sendEmail({
+							to: student.email,
+							subject: `New Feedback on your Resume: ${resume.name}`,
+							text: `Hello ${student.name},\n\nYou have received new feedback on your resume "${resume.name}" from ${context.user.name}.\n\nFeedback Content:\n"${input.content}"\n\nLogin to the dashboard to view more details.`,
+						});
+					}
+				} catch (error) {
+					console.error("[COMMENTS] Failed to send student notification email:", error);
+				}
 
 				return comment;
 			}),
@@ -505,12 +542,31 @@ export const resumeRouter = {
 						authorId: z.string(),
 						createdAt: z.date(),
 						updatedAt: z.date(),
-					})
-				)
+					}),
+				),
 			)
 			.handler(async ({ input }) => {
 				const { getCommentsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
 				return await getCommentsByResumeId(input.resumeId);
+			}),
+
+		updateStatus: protectedProcedure
+			.route({
+				method: "PATCH",
+				path: "/resumes/comments/{id}/status",
+				tags: ["Resume Feedback"],
+				operationId: "updateCommentStatus",
+				summary: "Update comment status",
+			})
+			.input(
+				z.object({
+					id: z.string(),
+					status: z.enum(["OPEN", "ADDRESSED", "RESOLVED"]),
+				}),
+			)
+			.handler(async ({ input }) => {
+				const { updateCommentStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				return await updateCommentStatus(input.id, input.status);
 			}),
 	},
 
@@ -537,10 +593,10 @@ export const resumeRouter = {
 								description: z.string().optional(),
 								weight: z.number().min(0).max(100).default(1.0),
 								order: z.number().int().min(0).default(0),
-							})
+							}),
 						)
 						.min(1),
-				})
+				}),
 			)
 			.output(
 				z.object({
@@ -553,7 +609,7 @@ export const resumeRouter = {
 					isActive: z.boolean(),
 					createdAt: z.date(),
 					updatedAt: z.date(),
-				})
+				}),
 			)
 			.handler(async ({ context, input }) => {
 				const { createChecklist } = await import("@/integrations/drizzle/services/resume-feedback.service");
@@ -582,18 +638,45 @@ export const resumeRouter = {
 				z.object({
 					courseId: z.string().optional(),
 					tenantId: z.string().optional(),
-				})
+					studentId: z.string().optional(),
+				}),
 			)
 			.output(z.array(z.object({ id: z.string(), title: z.string() })))
 			.handler(async ({ input }) => {
 				const { listChecklists } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { getStudentById, getUnitAncestors, getInstructorsForUnits } = await import("@/integrations/eng-labs");
+
+				let facultyIds: string[] | undefined;
+
+				if (input.studentId) {
+					const student = await getStudentById(input.studentId);
+					if (student?.sectionId) {
+						const unitIds = await getUnitAncestors(student.sectionId);
+						facultyIds = await getInstructorsForUnits(unitIds);
+					}
+				}
 
 				const checklists = await listChecklists({
 					courseId: input.courseId,
 					tenantId: input.tenantId || "",
+					facultyIds,
 				});
 
 				return checklists;
+			}),
+
+		get: protectedProcedure
+			.route({
+				method: "GET",
+				path: "/resumes/checklists/{checklistId}",
+				tags: ["Resume Feedback"],
+				operationId: "getChecklist",
+				summary: "Get a checklist with its items",
+			})
+			.input(z.object({ checklistId: z.string() }))
+			.handler(async ({ input }) => {
+				const { getChecklistById } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				return await getChecklistById(input.checklistId);
 			}),
 	},
 
@@ -621,10 +704,10 @@ export const resumeRouter = {
 								passed: z.boolean(),
 								notes: z.string().optional(),
 								score: z.number().optional(),
-							})
+							}),
 						)
 						.min(1),
-				})
+				}),
 			)
 			.output(
 				z.object({
@@ -632,11 +715,12 @@ export const resumeRouter = {
 					resumeId: z.string(),
 					overallScore: z.number().nullable(),
 					isAutoGenerated: z.boolean(),
+					snapshot: z.any().nullable(),
 					evaluatedAt: z.date(),
-				})
+				}),
 			)
 			.handler(async ({ context, input }) => {
-				const { createEvaluation, addToHistory } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { createEvaluation } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
 				const evaluation = await createEvaluation({
 					resumeId: input.resumeId,
@@ -646,17 +730,6 @@ export const resumeRouter = {
 					evaluatedBy: context.user.id,
 					isAutoGenerated: input.isAutoGenerated,
 					items: input.items,
-				});
-
-				// Record in history
-				await addToHistory({
-					resumeId: input.resumeId,
-					studentId: input.studentId,
-					tenantId: input.tenantId,
-					action: "EVALUATED",
-					changedBy: context.user.id,
-					actorType: "FACULTY",
-					currentData: { evaluationId: evaluation.id, score: evaluation.overallScore },
 				});
 
 				return evaluation;
@@ -677,9 +750,10 @@ export const resumeRouter = {
 						id: z.string(),
 						resumeId: z.string(),
 						overallScore: z.number().nullable(),
+						snapshot: z.any().nullable(),
 						evaluatedAt: z.date(),
-					})
-				)
+					}),
+				),
 			)
 			.handler(async ({ input }) => {
 				const { getEvaluationsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");

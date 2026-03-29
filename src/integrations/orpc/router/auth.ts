@@ -1,7 +1,7 @@
-import { protectedProcedure, publicProcedure } from "../context";
-import { authService, type ProviderList } from "../services/auth";
 import { auth } from "@/integrations/auth/config";
 import type { AuthSession } from "@/integrations/auth/types";
+import { protectedProcedure, publicProcedure } from "../context";
+import { authService, type ProviderList } from "../services/auth";
 
 export const authRouter = {
 	session: {

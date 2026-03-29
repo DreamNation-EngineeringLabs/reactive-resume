@@ -1,11 +1,11 @@
+import { CaretRightIcon } from "@phosphor-icons/react";
 import { Fragment } from "react";
 import { match } from "ts-pattern";
-import { CaretRightIcon } from "@phosphor-icons/react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { type RightSidebarSection } from "@/utils/resume/section";
+import type { RightSidebarSection } from "@/utils/resume/section";
 import { cn } from "@/utils/style";
 import { useSectionStore } from "../../-store/section";
 import { ATSScoreSectionBuilder } from "./sections/ats-score";
@@ -19,9 +19,19 @@ import { SharingSectionBuilder } from "./sections/sharing";
 import { StatisticsSectionBuilder } from "./sections/statistics";
 import { TemplateSectionBuilder } from "./sections/template";
 import { TypographySectionBuilder } from "./sections/typography";
+import { ReviewerFeedbackSectionBuilder } from "./sections/reviewer-feedback";
 
-const primarySections: RightSidebarSection[] = ["template", "ats-score", "export"];
-const advancedSections: RightSidebarSection[] = ["layout", "typography", "design", "page", "css", "notes", "sharing", "statistics"];
+const primarySections: RightSidebarSection[] = ["template", "reviewer-feedback", "ats-score", "export"];
+const advancedSections: RightSidebarSection[] = [
+	"layout",
+	"typography",
+	"design",
+	"page",
+	"css",
+	"notes",
+	"sharing",
+	"statistics",
+];
 
 function getSectionComponent(type: RightSidebarSection) {
 	return match(type)
@@ -35,12 +45,13 @@ function getSectionComponent(type: RightSidebarSection) {
 		.with("sharing", () => <SharingSectionBuilder />)
 		.with("statistics", () => <StatisticsSectionBuilder />)
 		.with("ats-score", () => <ATSScoreSectionBuilder />)
+		.with("reviewer-feedback", () => <ReviewerFeedbackSectionBuilder />)
 		.with("export", () => <ExportSectionBuilder />)
 		.exhaustive();
 }
 
 function AdvancedOptions() {
-	const collapsed = useSectionStore((state) => state.sections["advanced"]?.collapsed ?? true);
+	const collapsed = useSectionStore((state) => (state.sections as any)["advanced"]?.collapsed ?? true);
 	const toggleCollapsed = useSectionStore((state) => state.toggleCollapsed);
 
 	return (
@@ -61,13 +72,13 @@ function AdvancedOptions() {
 					</AccordionTrigger>
 
 					<div className="flex flex-1 items-center gap-x-4">
-						<h2 className="line-clamp-1 font-bold text-2xl tracking-tight">Advanced Options</h2>
+						<h2 className="line-clamp-1 font-bold text-lg tracking-tight">Advanced Options</h2>
 					</div>
 				</div>
 
 				<AccordionContent
 					className={cn(
-						"overflow-hidden pb-0 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down space-y-4",
+						"space-y-4 overflow-hidden pb-0 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down",
 					)}
 				>
 					{advancedSections.map((section) => (

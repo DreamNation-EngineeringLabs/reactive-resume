@@ -1,48 +1,48 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "permissions": {
-    "defaultMode": "auto",
-    "allow": [
-      "Read",
-      "Edit",
-      "Write",
-      "Glob",
-      "Grep",
-      "Agent",
-      "ToolSearch",
-      "WebFetch",
-      "WebSearch",
-      "mcp__ide__getDiagnostics",
-      "mcp__ide__executeCode",
-      "TaskCreate",
-      "TaskUpdate",
-      "TaskGet",
-      "TaskList",
-      "Bash",
-      "Bash(git *)",
-      "Bash(ls *)",
-      "Bash(cat *)",
-      "Bash(node *)",
-      "Bash(npm *)",
-      "Bash(npx *)",
-      "Bash(pnpm *)",
-      "Bash(python *)",
-      "Bash(pip *)",
-      "Bash(tsc *)",
-      "Bash(tsx *)",
-      "Bash(semgrep *)"
-    ],
-    "deny": [
-      "Bash(git push --force *)",
-      "Bash(git push -f *)",
-      "Bash(git push *)",
-      "Bash(rm -rf *)",
-      "Bash(sudo *)",
-      "Bash(curl *)",
-      "Bash(wget *)"
-    ]
-  },
-  "git": {
-    "addCoAuthoredBy": false
-  }
+	"$schema": "https://json.schemastore.org/claude-code-settings.json",
+	"permissions": {
+		"defaultMode": "auto",
+		"allow": [
+			"Read",
+			"Edit",
+			"Write",
+			"Glob",
+			"Grep",
+			"Agent",
+			"ToolSearch",
+			"WebFetch",
+			"WebSearch",
+			"mcp__ide__getDiagnostics",
+			"mcp__ide__executeCode",
+			"TaskCreate",
+			"TaskUpdate",
+			"TaskGet",
+			"TaskList",
+			"Bash",
+			"Bash(git *)",
+			"Bash(ls *)",
+			"Bash(cat *)",
+			"Bash(node *)",
+			"Bash(npm *)",
+			"Bash(npx *)",
+			"Bash(pnpm *)",
+			"Bash(python *)",
+			"Bash(pip *)",
+			"Bash(tsc *)",
+			"Bash(tsx *)",
+			"Bash(semgrep *)"
+		],
+		"deny": [
+			"Bash(git push --force *)",
+			"Bash(git push -f *)",
+			"Bash(git push *)",
+			"Bash(rm -rf *)",
+			"Bash(sudo *)",
+			"Bash(curl *)",
+			"Bash(wget *)"
+		]
+	},
+	"git": {
+		"addCoAuthoredBy": false
+	}
 }

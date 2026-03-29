@@ -1,18 +1,30 @@
 import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
+import { msg, t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import {
 	ArrowLeftIcon,
+	BuildingsIcon,
 	ChartBarIcon,
 	ChartLineIcon,
-	ChartPieIcon,
-	ClipboardTextIcon,
+	CheckIcon,
+	ListChecksIcon,
 	ReadCvLogoIcon,
+	SignOutIcon,
 	TargetIcon,
 	UserIcon,
+	UsersIcon,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Sidebar,
 	SidebarContent,
@@ -28,8 +40,11 @@ import {
 	SidebarSeparator,
 	useSidebarState,
 } from "@/components/ui/sidebar";
-import { UserDropdownMenu } from "@/components/user/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { authClient } from "@/integrations/auth/client";
+import { orpc } from "@/integrations/orpc/client";
 import { getSourceUrl } from "@/utils/source-url";
+import { getOrganisationUnits, getTenantId, getUserRole } from "@/utils/sso-context";
 import { getInitials } from "@/utils/string";
 import { cn } from "@/utils/style";
 
@@ -37,11 +52,13 @@ type SidebarItem = {
 	icon: React.ReactNode;
 	label: MessageDescriptor;
 	href: React.ComponentProps<typeof Link>["to"];
+	search?: Record<string, string>;
 	iconBg: string;
 	iconColor: string;
+	roles?: string[];
 };
 
-const appSidebarItems = [
+const appSidebarItems: SidebarItem[] = [
 	{
 		icon: <ReadCvLogoIcon weight="duotone" />,
 		label: msg`Resumes`,
@@ -63,9 +80,9 @@ const appSidebarItems = [
 		iconBg: "bg-emerald-50",
 		iconColor: "text-emerald-600",
 	},
-] as const satisfies SidebarItem[];
+];
 
-const dashboardSidebarItems = [
+const learnerSidebarItems: SidebarItem[] = [
 	{
 		icon: <ChartLineIcon weight="duotone" />,
 		label: msg`Feedback Summary`,
@@ -73,31 +90,46 @@ const dashboardSidebarItems = [
 		iconBg: "bg-sky-50",
 		iconColor: "text-sky-600",
 	},
-	{
-		icon: <ClipboardTextIcon weight="duotone" />,
-		label: msg`Faculty Dashboard`,
-		href: "/dashboard/faculty",
-		iconBg: "bg-amber-50",
-		iconColor: "text-amber-600",
-	},
-	{
-		icon: <ChartBarIcon weight="duotone" />,
-		label: msg`Admin Metrics`,
-		href: "/dashboard/admin",
-		iconBg: "bg-rose-50",
-		iconColor: "text-rose-600",
-	},
-	{
-		icon: <ChartPieIcon weight="duotone" />,
-		label: msg`PO Dashboard`,
-		href: "/dashboard/placement-officer",
-		iconBg: "bg-orange-50",
-		iconColor: "text-orange-600",
-	},
-] as const satisfies SidebarItem[];
+];
+
+function staffDashboardItems(role: string): SidebarItem[] {
+	const baseHref =
+		role === "INSTRUCTOR"
+			? "/dashboard/faculty"
+			: role === "PLACEMENT_OFFICER"
+				? "/dashboard/placement-officer"
+				: "/dashboard/admin";
+
+	return [
+		{
+			icon: <ChartBarIcon weight="duotone" />,
+			label: msg`Overview`,
+			href: baseHref,
+			search: { tab: "overview" },
+			iconBg: "bg-indigo-50",
+			iconColor: "text-indigo-600",
+		},
+		{
+			icon: <UsersIcon weight="duotone" />,
+			label: msg`Students`,
+			href: baseHref,
+			search: { tab: "students" },
+			iconBg: "bg-violet-50",
+			iconColor: "text-violet-600",
+		},
+		{
+			icon: <ListChecksIcon weight="duotone" />,
+			label: msg`Checklists`,
+			href: baseHref,
+			search: { tab: "checklists" },
+			iconBg: "bg-amber-50",
+			iconColor: "text-amber-600",
+		},
+	];
+}
 
 type SidebarItemListProps = {
-	items: readonly SidebarItem[];
+	items: SidebarItem[];
 };
 
 function SidebarItemList({ items }: SidebarItemListProps) {
@@ -108,10 +140,12 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 	return (
 		<SidebarMenu>
 			{items.map((item) => (
-				<SidebarMenuItem key={item.href}>
+				<SidebarMenuItem key={`${item.href as string}-${item.search?.tab ?? ""}`}>
 					<SidebarMenuButton asChild title={i18n.t(item.label)}>
 						<Link
 							to={item.href}
+							// biome-ignore lint: search params vary per route
+							search={item.search as any}
 							className="group/navitem flex items-center gap-x-3 rounded-xl px-2 py-2 transition-all hover:bg-slate-100 active:scale-[0.98]"
 							activeProps={{ className: "bg-slate-100 font-semibold" }}
 						>
@@ -126,7 +160,7 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 							</div>
 							<span
 								className={cn(
-									"shrink-0 text-sm text-slate-700 transition-[margin,opacity] duration-200 ease-in-out",
+									"shrink-0 text-slate-700 text-sm transition-[margin,opacity] duration-200 ease-in-out",
 									isCollapsed && "-ms-8 opacity-0",
 								)}
 							>
@@ -140,9 +174,120 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 	);
 }
 
+function OrgUnitSwitcher({
+	activeUnitId,
+	onUnitChange,
+}: {
+	activeUnitId: string | null;
+	onUnitChange: (unitId: string) => void;
+}) {
+	const role = getUserRole();
+	const orgUnits = getOrganisationUnits();
+	const tenantId = getTenantId();
+
+	// Hide for students - they don't need to switch sections
+	if (role === "LEARNER") return null;
+
+	// For PO/Admin, fetch all sections from DB
+	const shouldFetchAll = role === "PLACEMENT_OFFICER" || role === "ADMIN";
+	const { data: sectionsData } = useQuery(
+		orpc.resume.dashboard.sectionsList.queryOptions({
+			input: {
+				sectionIds: shouldFetchAll ? undefined : orgUnits.length > 0 ? orgUnits : undefined,
+				tenantId: tenantId ?? "default",
+			},
+		}),
+	);
+
+	const sections = sectionsData?.sections ?? [];
+
+	// Group sections by package
+	const groupedSections = useMemo(() => {
+		const groups: Record<string, { id: string; name: string; sections: typeof sections }> = {};
+
+		for (const section of sections) {
+			const pkgName = section.packageName || t`General`;
+			const pkgId = section.packageId || "general";
+			if (!groups[pkgId]) groups[pkgId] = { id: pkgId, name: pkgName, sections: [] };
+			groups[pkgId].sections.push(section);
+		}
+
+		return Object.values(groups);
+	}, [sections]);
+
+	if (sections.length === 0) return null;
+
+	return (
+		<div className="space-y-3 py-2">
+			<div className="px-2">
+				<p className="font-semibold text-slate-400 text-[10px] uppercase tracking-widest">{t`Entity`}</p>
+			</div>
+			<div className="space-y-1">
+				{groupedSections.map((group) => (
+					<div key={group.id} className="space-y-1">
+						{group.sections.map((section) => (
+							<button
+								key={section.id}
+								type="button"
+								onClick={() => onUnitChange(section.id)}
+								className={cn(
+									"group flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-all active:scale-[0.98]",
+									activeUnitId === section.id
+										? "bg-indigo-600 font-semibold text-white shadow-md shadow-indigo-100"
+										: "text-slate-600 hover:bg-slate-50",
+								)}
+							>
+								<div className="flex items-center gap-3">
+									<BuildingsIcon
+										weight={activeUnitId === section.id ? "fill" : "duotone"}
+										className={cn("size-4", activeUnitId === section.id ? "text-white" : "text-slate-400")}
+									/>
+									<span className="truncate">{section.name}</span>
+								</div>
+								{activeUnitId === section.id && (
+									<div className="rounded-full bg-white/20 p-0.5">
+										<CheckIcon weight="bold" className="size-3 text-white" />
+									</div>
+								)}
+							</button>
+						))}
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
 export function DashboardSidebar() {
 	const { state } = useSidebarState();
 	const isCollapsed = state === "collapsed";
+	const isMobile = useIsMobile();
+	const { data: session } = authClient.useSession();
+
+	const handleLogout = () => {
+		authClient.signOut({
+			fetchOptions: {
+				onSuccess: () => {
+					window.location.reload();
+				},
+			},
+		});
+	};
+
+	// Read role from localStorage after hydration (avoids SSR mismatch)
+	const [role, setRole] = useState<string | null>(null);
+	useEffect(() => {
+		const r = getUserRole();
+		setRole(r ? r.toUpperCase() : null);
+	}, []);
+
+	// Build dashboard nav items based on role
+	const filteredDashboardItems = useMemo(() => {
+		if (!role) return [];
+		if (role === "LEARNER") return learnerSidebarItems;
+		if (role === "INSTRUCTOR" || role === "PLACEMENT_OFFICER" || role === "ADMIN") return staffDashboardItems(role);
+		return [];
+	}, [role]);
 
 	const handleBackClick = () => {
 		const url = getSourceUrl();
@@ -154,11 +299,12 @@ export function DashboardSidebar() {
 		window.location.href = `${url}/placements`;
 	};
 
+	const showMySpace = role === "LEARNER" || !role;
+
 	return (
 		<Sidebar variant="sidebar" collapsible="icon">
 			<SidebarHeader className="pb-2">
 				<div className="flex items-center gap-2 px-2 pt-2">
-					{/* biome-ignore lint: onClick handles navigation */}
 					<button type="button" onClick={handleLogoClick} className={isCollapsed ? "hidden" : ""}>
 						<img
 							className="my-3 w-40"
@@ -168,49 +314,46 @@ export function DashboardSidebar() {
 						/>
 					</button>
 				</div>
-
-				{!isCollapsed && (
-					<p className="px-3 pb-1 font-semibold text-slate-400 text-xs uppercase tracking-widest">
-						Navigation
-					</p>
-				)}
 			</SidebarHeader>
 
 			<SidebarContent className="gap-y-1 px-2">
-				<SidebarGroup className="p-0">
-					<SidebarGroupLabel
-						className={cn(
-							"mb-1 px-2 font-semibold text-slate-400 text-xs uppercase tracking-widest",
-							isCollapsed && "sr-only",
-						)}
-					>
-						My Space
-					</SidebarGroupLabel>
-					<SidebarGroupContent>
-						<SidebarItemList items={appSidebarItems} />
-					</SidebarGroupContent>
-				</SidebarGroup>
+				{showMySpace && (
+					<SidebarGroup className="p-0">
+						<SidebarGroupLabel
+							className={cn(
+								"mb-1 px-2 font-semibold text-slate-400 text-xs uppercase tracking-widest",
+								isCollapsed && "sr-only",
+							)}
+						>
+							{t`My Space`}
+						</SidebarGroupLabel>
+						<SidebarGroupContent>
+							<SidebarItemList items={appSidebarItems} />
+						</SidebarGroupContent>
+					</SidebarGroup>
+				)}
 
-				<SidebarGroup className="p-0">
-					<SidebarGroupLabel
-						className={cn(
-							"mb-1 mt-3 px-2 font-semibold text-slate-400 text-xs uppercase tracking-widest",
-							isCollapsed && "sr-only",
-						)}
-					>
-						Dashboards
-					</SidebarGroupLabel>
-					<SidebarGroupContent>
-						<SidebarItemList items={dashboardSidebarItems} />
-					</SidebarGroupContent>
-				</SidebarGroup>
+				{filteredDashboardItems.length > 0 && (
+					<SidebarGroup className="p-0">
+						<SidebarGroupLabel
+							className={cn(
+								"mb-1 px-2 font-semibold text-slate-400 text-xs uppercase tracking-widest",
+								isCollapsed && "sr-only",
+							)}
+						>
+							{t`Menu`}
+						</SidebarGroupLabel>
+						<SidebarGroupContent>
+							<SidebarItemList items={filteredDashboardItems} />
+						</SidebarGroupContent>
+					</SidebarGroup>
+				)}
 
-				<SidebarGroup className="p-0 mt-auto">
+				<SidebarGroup className="mt-auto p-0">
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild title="Back to App">
-									{/* biome-ignore lint: onClick handles navigation */}
+								<SidebarMenuButton asChild title={t`Back to App`}>
 									<button
 										type="button"
 										onClick={handleBackClick}
@@ -221,11 +364,11 @@ export function DashboardSidebar() {
 										</div>
 										<span
 											className={cn(
-												"shrink-0 text-sm text-slate-600 transition-[margin,opacity] duration-200 ease-in-out",
+												"shrink-0 text-slate-700 text-sm transition-[margin,opacity] duration-200 ease-in-out",
 												isCollapsed && "-ms-8 opacity-0",
 											)}
 										>
-											Back to App
+											{t`Back to App`}
 										</span>
 									</button>
 								</SidebarMenuButton>
@@ -240,28 +383,69 @@ export function DashboardSidebar() {
 			<SidebarFooter className="px-2 pb-3">
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<UserDropdownMenu>
-							{({ session }) => (
-								<SidebarMenuButton className="h-auto gap-x-3 rounded-xl bg-slate-50 p-2 hover:bg-slate-100 group-data-[collapsible=icon]:p-1!">
-									<Avatar className="size-8 shrink-0 transition-all group-data-[collapsible=icon]:size-7">
-										<AvatarImage src={session.user.image ?? undefined} />
-										<AvatarFallback className="rounded-xl bg-indigo-100 font-semibold text-indigo-600 text-xs group-data-[collapsible=icon]:text-[0.5rem]">
-											{getInitials(session.user.name)}
-										</AvatarFallback>
-									</Avatar>
+						{session?.user && (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<SidebarMenuButton className="h-auto gap-x-3 rounded-xl bg-slate-50 p-2 hover:bg-slate-100 group-data-[collapsible=icon]:p-1!">
+										<Avatar className="size-8 shrink-0 transition-all group-data-[collapsible=icon]:size-7">
+											<AvatarImage src={session.user.image ?? undefined} />
+											<AvatarFallback className="rounded-xl bg-indigo-100 font-semibold text-indigo-600 text-xs group-data-[collapsible=icon]:text-[0.5rem]">
+												{getInitials(session.user.name)}
+											</AvatarFallback>
+										</Avatar>
 
-									<div
-										className={cn(
-											"min-w-0 flex-1 transition-[margin,opacity] duration-200 ease-in-out",
-											isCollapsed && "-ms-8 opacity-0",
-										)}
-									>
-										<p className="truncate font-semibold text-slate-900 text-sm">{session.user.name}</p>
-										<p className="truncate text-slate-500 text-xs">{session.user.email}</p>
+										<div
+											className={cn(
+												"min-w-0 flex-1 transition-[margin,opacity] duration-200 ease-in-out text-left",
+												isCollapsed && "-ms-8 opacity-0",
+											)}
+										>
+											<p className="truncate font-semibold text-slate-900 text-sm">{session.user.name}</p>
+											<p className="truncate text-slate-500 text-xs">{session.user.email}</p>
+										</div>
+									</SidebarMenuButton>
+								</DropdownMenuTrigger>
+
+								<DropdownMenuContent
+									className="w-80 overflow-hidden rounded-2xl p-0 shadow-2xl shadow-indigo-100/50"
+									side={isMobile ? "bottom" : "right"}
+									align="end"
+									sideOffset={4}
+								>
+									<div className="border-slate-100 border-b p-4">
+										<div className="flex items-center gap-3 text-left">
+											<Avatar className="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600">
+												<AvatarImage src={session.user.image ?? undefined} alt={session.user.name} />
+												<AvatarFallback className="rounded-xl font-bold">
+													{getInitials(session.user.name)}
+												</AvatarFallback>
+											</Avatar>
+											<div className="grid flex-1 leading-tight">
+												<span className="truncate font-bold text-slate-900">{session.user.name}</span>
+												<span className="truncate text-slate-400 text-xs">{session.user.email}</span>
+											</div>
+										</div>
 									</div>
-								</SidebarMenuButton>
-							)}
-						</UserDropdownMenu>
+
+									<div className="border-slate-100 border-b p-2">
+										<OrgUnitSwitcher
+											activeUnitId={getOrganisationUnits()[0] ?? null}
+											onUnitChange={() => {}}
+										/>
+									</div>
+
+									<div className="p-2">
+										<DropdownMenuItem
+											onClick={handleLogout}
+											className="flex cursor-pointer items-center gap-3 rounded-xl py-2.5 text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600 focus:bg-rose-50 focus:text-rose-600"
+										>
+											<SignOutIcon weight="duotone" className="size-4" />
+											<span className="font-semibold">{t`Logout`}</span>
+										</DropdownMenuItem>
+									</div>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarFooter>

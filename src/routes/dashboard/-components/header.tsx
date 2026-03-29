@@ -17,7 +17,7 @@ export function DashboardHeader({ title, icon: IconComponent, className, childre
 				<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-600">
 					<IconComponent weight="duotone" className="size-5" />
 				</div>
-				<h1 className="font-semibold text-xl tracking-tight text-slate-900">{title}</h1>
+				<h1 className="font-semibold text-slate-900 text-xl tracking-tight">{title}</h1>
 			</div>
 			{children && <div className="flex items-center gap-x-2">{children}</div>}
 		</div>

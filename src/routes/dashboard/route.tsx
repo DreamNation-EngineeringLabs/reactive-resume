@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getSourceUrl } from "@/utils/source-url";
@@ -20,6 +20,14 @@ export const Route = createFileRoute("/dashboard")({
 function RouteComponent() {
 	const router = useRouter();
 	const { sidebarState } = Route.useLoaderData();
+	const { location } = useRouterState();
+
+	// Collapse sidebar automatically in review/ats-score-detail mode to maximise preview space
+	const isFullBleedPage =
+		location.pathname.includes("/dashboard/review/") ||
+		/\/dashboard\/ats-score\/[^/]+/.test(location.pathname);
+
+	const isReviewPage = isFullBleedPage;
 
 	const handleSidebarOpenChange = (open: boolean) => {
 		setDashboardSidebarServerFn({ data: open }).then(() => {
@@ -41,14 +49,21 @@ function RouteComponent() {
 
 	return (
 		<div className="flex h-screen bg-slate-100">
-			<SidebarProvider open={sidebarState} onOpenChange={handleSidebarOpenChange}>
+			<SidebarProvider open={isReviewPage ? false : sidebarState} onOpenChange={handleSidebarOpenChange}>
 				<DashboardSidebar />
 
 				<div className="flex flex-1 flex-col overflow-hidden p-3 ps-0">
-					<main className="@container flex-1 overflow-y-auto rounded-2xl bg-white shadow-sm">
-						<div className="mx-auto h-full w-full max-w-screen-xl px-6 py-6 md:px-8 md:py-8">
-							<Outlet />
-						</div>
+					<main className="@container flex-1 overflow-hidden rounded-2xl bg-white shadow-sm">
+						{isReviewPage ? (
+							/* Review mode: full bleed, no max-width, no padding — the page handles its own layout */
+							<div className="h-full w-full overflow-hidden">
+								<Outlet />
+							</div>
+						) : (
+							<div className="mx-auto h-full w-full max-w-screen-xl overflow-y-auto px-6 py-6 md:px-8 md:py-8">
+								<Outlet />
+							</div>
+						)}
 					</main>
 				</div>
 			</SidebarProvider>

@@ -144,7 +144,7 @@ function SectionWrapper({ value, icon, title, count, children }: SectionWrapperP
 					</div>
 					<span className="font-semibold text-slate-900">{title}</span>
 					{count !== undefined && count > 0 && (
-						<span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-600">
+						<span className="rounded-full bg-indigo-100 px-2 py-0.5 font-semibold text-indigo-600 text-xs">
 							{count}
 						</span>
 					)}

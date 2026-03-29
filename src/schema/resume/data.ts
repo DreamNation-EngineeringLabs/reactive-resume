@@ -492,20 +492,21 @@ export const metadataSchema = z.object({
 		),
 });
 
-export const resumeDataSchema = z.object({
-	picture: pictureSchema.describe("Configuration for photograph displayed on the resume"),
-	basics: basicsSchema.describe(
-		"Basic information about the author, such as name, email, phone, location, and website",
-	),
-	summary: summarySchema.describe("Summary section of the resume, useful for a short bio or introduction"),
-	sections: sectionsSchema.describe("Various sections of the resume, such as experience, education, projects, etc."),
-	customSections: customSectionsSchema.describe(
-		"Custom sections of the resume, such as a custom section for notes, etc.",
-	),
-	metadata: metadataSchema.describe(
-		"Metadata for the resume, such as template, layout, typography, etc. This section describes the overall design and appearance of the resume.",
-	),
-});
+export const resumeDataSchema = z
+	.object({
+		picture: pictureSchema.describe("Configuration for photograph displayed on the resume"),
+		basics: basicsSchema.describe(
+			"Basic information about the author, such as name, email, phone, location, and website",
+		),
+		summary: summarySchema.describe("Summary section of the resume, useful for a short bio or introduction"),
+		sections: sectionsSchema.describe("Various sections of the resume, such as experience, education, projects, etc."),
+		customSections: customSectionsSchema.describe(
+			"Custom sections of the resume, such as a custom section for notes, etc.",
+		),
+		metadata: metadataSchema.describe(
+			"Metadata for the resume, such as template, layout, typography, etc. This section describes the overall design and appearance of the resume.",
+		),
+	});
 
 export type ResumeData = z.infer<typeof resumeDataSchema>;
 

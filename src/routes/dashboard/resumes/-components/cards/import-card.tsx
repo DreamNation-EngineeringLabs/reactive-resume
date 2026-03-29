@@ -19,7 +19,7 @@ export function ImportResumeCard() {
 				<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
 					<DownloadSimpleIcon weight="duotone" className="size-8 text-emerald-600" />
 				</div>
-				<p className="text-center text-sm font-medium text-slate-600">Upload file</p>
+				<p className="text-center font-medium text-slate-600 text-sm">Upload file</p>
 			</div>
 		</BaseCard>
 	);

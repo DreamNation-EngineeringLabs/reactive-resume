@@ -31,9 +31,9 @@ export function SectionBase({ type, className, extra, ...props }: Props) {
 						</Button>
 					</AccordionTrigger>
 
-					<div className="flex flex-1 items-center gap-x-4">
+					<div className="flex flex-1 items-center gap-x-3">
 						{getSectionIcon(type)}
-						<h2 className="line-clamp-1 font-bold text-2xl tracking-tight">{getSectionTitle(type)}</h2>
+						<h2 className="line-clamp-1 font-bold text-lg tracking-tight">{getSectionTitle(type)}</h2>
 					</div>
 
 					{extra}

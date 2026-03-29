@@ -1,113 +1,95 @@
-import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import { CircleNotchIcon, LockSimpleIcon } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
+import { LockSimpleIcon, StarIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
-import { match, P } from "ts-pattern";
-import { orpc, type RouterOutput } from "@/integrations/orpc/client";
+import type { RouterOutput } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
 import { ResumeContextMenu } from "../menus/context-menu";
-import { BaseCard } from "./base-card";
-import { MiniResumePreview } from "./mini-resume-preview";
 
 type ResumeCardProps = {
 	resume: RouterOutput["resume"]["list"][number];
 };
 
-const templateColors: Record<string, { header: string; accent: string }> = {
-	azurill: { header: "bg-blue-600", accent: "text-blue-600" },
-	bronzor: { header: "bg-slate-600", accent: "text-slate-600" },
-	chikorita: { header: "bg-green-600", accent: "text-green-600" },
-	ditgar: { header: "bg-purple-600", accent: "text-purple-600" },
-	ditto: { header: "bg-pink-600", accent: "text-pink-600" },
-	gengar: { header: "bg-indigo-600", accent: "text-indigo-600" },
-	glalie: { header: "bg-cyan-600", accent: "text-cyan-600" },
-	kakuna: { header: "bg-yellow-600", accent: "text-yellow-600" },
-	lapras: { header: "bg-blue-500", accent: "text-blue-500" },
-	leafish: { header: "bg-emerald-600", accent: "text-emerald-600" },
-	onyx: { header: "bg-slate-700", accent: "text-slate-700" },
-	pikachu: { header: "bg-amber-500", accent: "text-amber-500" },
-	rhyhorn: { header: "bg-orange-600", accent: "text-orange-600" },
-};
+// ---------------------------------------------------------------------------
+// 10 colour palettes — header (top 15%) + body (remaining 85%)
+// Text colours chosen for strong contrast on each background.
+// ---------------------------------------------------------------------------
+
+const PALETTES = [
+	{ header: "bg-slate-800", body: "bg-slate-50", name: "text-slate-800", tag: "bg-white/20 text-white" },
+	{ header: "bg-indigo-700", body: "bg-indigo-50", name: "text-indigo-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-emerald-700", body: "bg-emerald-50", name: "text-emerald-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-rose-700", body: "bg-rose-50", name: "text-rose-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-amber-600", body: "bg-amber-50", name: "text-amber-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-cyan-700", body: "bg-cyan-50", name: "text-cyan-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-violet-700", body: "bg-violet-50", name: "text-violet-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-sky-700", body: "bg-sky-50", name: "text-sky-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-teal-700", body: "bg-teal-50", name: "text-teal-900", tag: "bg-white/20 text-white" },
+	{ header: "bg-pink-700", body: "bg-pink-50", name: "text-pink-900", tag: "bg-white/20 text-white" },
+] as const;
+
+function getPalette(id: string) {
+	let hash = 0;
+	for (let i = 0; i < id.length; i++) {
+		hash = ((hash * 31) + id.charCodeAt(i)) & 0xffff_ffff;
+	}
+	return PALETTES[Math.abs(hash) % PALETTES.length]!;
+}
+
+// ---------------------------------------------------------------------------
 
 export function ResumeCard({ resume }: ResumeCardProps) {
 	const { i18n } = useLingui();
+	const palette = getPalette(resume.id);
 
-	const { data: screenshotData, isLoading } = useQuery(
-		orpc.printer.getResumeScreenshot.queryOptions({ input: { id: resume.id } }),
+	const updatedAt = useMemo(
+		() => Intl.DateTimeFormat(i18n.locale, { dateStyle: "medium" }).format(resume.updatedAt),
+		[i18n.locale, resume.updatedAt],
 	);
-
-	const template = resume.data?.metadata?.template ?? "onyx";
-	const templateColor = templateColors[template] || templateColors.onyx;
-
-	const updatedAt = useMemo(() => {
-		return Intl.DateTimeFormat(i18n.locale, { dateStyle: "medium" }).format(resume.updatedAt);
-	}, [i18n.locale, resume.updatedAt]);
 
 	return (
 		<ResumeContextMenu resume={resume}>
 			<Link to="/builder/$resumeId" params={{ resumeId: resume.id }} className="cursor-default">
 				<button
 					type="button"
-					className="group flex w-full flex-col overflow-hidden rounded-2xl bg-white text-start shadow-sm transition-all hover:-translate-y-1 hover:shadow-md active:scale-[0.98]"
+					className="group flex w-full flex-col overflow-hidden rounded-2xl text-start shadow-sm transition-all hover:-translate-y-1 hover:shadow-md active:scale-[0.98]"
 				>
-					{/* Preview thumbnail */}
-					<div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-50">
-						{match({ isLoading, imageSrc: screenshotData?.url })
-							.with({ isLoading: true }, () => (
-								<div className="relative size-full">
-									<div className="flex size-full flex-col">
-										<MiniResumePreview resume={resume} />
-									</div>
-									<div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-sm">
-										<CircleNotchIcon weight="thin" className="size-10 animate-spin text-slate-400" />
-									</div>
-								</div>
-							))
-							.with({ imageSrc: P.string }, ({ imageSrc }) => (
-								<img
-									src={imageSrc}
-									alt={resume.name}
-									className={cn("size-full object-cover object-top transition-transform duration-300 group-hover:scale-105", resume.isLocked && "blur-sm")}
-								/>
-							))
-							.otherwise(() => (
-								<div className={cn("size-full overflow-hidden", resume.isLocked && "blur-sm")}>
-									<MiniResumePreview resume={resume} />
-								</div>
-							))}
+					{/* ── Main area: aspect-[3/4] to match base card height ── */}
+					<div className="relative aspect-[3/4] w-full flex-1">
+						{/* Top 15%: coloured header band */}
+						<div className={cn("absolute inset-x-0 top-0 flex h-[15%] items-start justify-end p-3", palette.header)}>
+							<div className="flex flex-wrap items-center gap-1.5">
+								{resume.isPrimary && (
+									<span className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest", palette.tag)}>
+										<StarIcon weight="fill" className="size-3 text-amber-300" />
+										Master
+									</span>
+								)}
+								{resume.isLocked && (
+									<span className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest", palette.tag)}>
+										<LockSimpleIcon weight="bold" className="size-3" />
+										Locked
+									</span>
+								)}
+							</div>
+						</div>
 
-						<ResumeLockOverlay isLocked={resume.isLocked} />
+						{/* Bottom 85%: body with resume name */}
+						<div className={cn("absolute inset-x-0 bottom-0 flex h-[85%] flex-col items-center justify-center px-5 py-6", palette.body)}>
+							<p className={cn("text-center font-bold text-xl leading-snug", palette.name)}>
+								{resume.name}
+							</p>
+						</div>
 					</div>
 
-					{/* Card footer */}
-					<div className={cn("border-t border-slate-100 px-4 py-3")}>
-						<p className="truncate text-slate-400 text-xs">Last updated on {updatedAt}</p>
+					{/* ── Footer: last updated ── */}
+					<div className={cn("border-t border-black/5 px-4 py-3", palette.body)}>
+						<p className="w-full truncate text-center text-muted-foreground text-xs">
+							Last updated on {updatedAt}
+						</p>
 					</div>
 				</button>
 			</Link>
 		</ResumeContextMenu>
-	);
-}
-
-function ResumeLockOverlay({ isLocked }: { isLocked: boolean }) {
-	return (
-		<AnimatePresence>
-			{isLocked && (
-				<motion.div
-					key="resume-lock-overlay"
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					exit={{ opacity: 0 }}
-					className="absolute inset-0 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
-				>
-					<div className="flex items-center justify-center rounded-full bg-white p-6 shadow-lg">
-						<LockSimpleIcon weight="thin" className="size-12 text-slate-600" />
-					</div>
-				</motion.div>
-			)}
-		</AnimatePresence>
 	);
 }
