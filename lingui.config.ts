@@ -55,10 +55,8 @@ export default defineConfig({
 		"vi-VN",
 		"zh-CN",
 		"zh-TW",
-		"zu-ZA",
 	],
 	fallbackLocales: {
-		"zu-ZA": "en-US",
 		default: "en-US",
 	},
 	formatOptions: {

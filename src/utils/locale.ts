@@ -58,7 +58,6 @@ const localeSchema = z.union([
 	z.literal("vi-VN"),
 	z.literal("zh-CN"),
 	z.literal("zh-TW"),
-	z.literal("zu-ZA"),
 ]);
 
 export type Locale = z.infer<typeof localeSchema>;
@@ -119,7 +118,6 @@ export const localeMap = {
 	"vi-VN": msg`Vietnamese`,
 	"zh-CN": msg`Chinese (Simplified)`,
 	"zh-TW": msg`Chinese (Traditional)`,
-	"zu-ZA": msg`Zulu`,
 } satisfies Record<Locale, MessageDescriptor>;
 
 export function isLocale(locale: string): locale is Locale {

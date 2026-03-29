@@ -3200,3 +3200,33 @@ msgstr "Menu"
 #: src/routes/dashboard/-components/sidebar.tsx
 msgid "Back to App"
 msgstr "Back to App"
+
+#: src/routes/dashboard/-components/header.tsx
+msgid "Manage and build professional, ATS-friendly resumes."
+msgstr "Manage and build professional, ATS-friendly resumes."
+
+#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
+msgid "Start building your resume from scratch using our builder."
+msgstr "Start building your resume from scratch using our builder."
+
+#: src/routes/dashboard/resumes/-components/cards/import-card.tsx
+msgid "Upload your existing resume to continue building."
+msgstr "Upload your existing resume to continue building."
+
+msgid "Last updated on {updatedAt}"
+msgstr "Last updated on {updatedAt}"
+
+msgid "Start fresh"
+msgstr "Start fresh"
+
+msgid "Upload file"
+msgstr "Upload file"
+
+msgid "Open Builder →"
+msgstr "Open Builder →"
+
+msgid "Master"
+msgstr "Master"
+
+msgid "Locked"
+msgstr "Locked"
