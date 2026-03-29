@@ -48,19 +48,19 @@ function RouteComponent() {
 	}, []);
 
 	return (
-		<div className="flex h-screen bg-slate-100">
+		<div className="flex h-screen bg-background">
 			<SidebarProvider open={isReviewPage ? false : sidebarState} onOpenChange={handleSidebarOpenChange}>
 				<DashboardSidebar />
 
-				<div className="flex flex-1 flex-col overflow-hidden p-3 ps-0">
-					<main className="@container flex-1 overflow-hidden rounded-2xl bg-white shadow-sm">
+				<div className="flex flex-1 flex-col overflow-hidden p-0">
+					<main className="@container flex-1 overflow-hidden bg-background">
 						{isReviewPage ? (
 							/* Review mode: full bleed, no max-width, no padding — the page handles its own layout */
 							<div className="h-full w-full overflow-hidden">
 								<Outlet />
 							</div>
 						) : (
-							<div className="mx-auto h-full w-full max-w-screen-xl overflow-y-auto px-6 py-6 md:px-8 md:py-8">
+							<div className="mx-auto h-full w-full max-w-[1600px] overflow-y-auto p-10 md:p-12">
 								<Outlet />
 							</div>
 						)}

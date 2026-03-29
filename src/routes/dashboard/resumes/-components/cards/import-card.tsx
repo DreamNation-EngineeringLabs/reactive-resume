@@ -9,17 +9,16 @@ export function ImportResumeCard() {
 	return (
 		<BaseCard
 			title={t`Import an existing resume`}
-			description={t`Continue where you left off`}
-			headerColor="bg-emerald-600"
+			description={t`Upload your existing resume to continue building.`}
 			accentColor="text-emerald-600"
 			onClick={() => openDialog("resume.import", undefined)}
-			className="cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md active:scale-[0.98]"
+			className="cursor-pointer"
 		>
-			<div className="flex size-full flex-col items-center justify-center bg-gradient-to-br from-emerald-50 via-emerald-50 to-slate-50 p-6">
-				<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
-					<DownloadSimpleIcon weight="duotone" className="size-8 text-emerald-600" />
+			<div className="flex size-full flex-col items-center justify-center p-6">
+				<div className="mb-6 flex size-20 items-center justify-center rounded-[2rem] bg-emerald-100/50 text-emerald-600 transition-all duration-300 group-hover:bg-emerald-600 group-hover:text-white group-hover:-rotate-6">
+					<DownloadSimpleIcon weight="duotone" className="size-10" />
 				</div>
-				<p className="text-center font-medium text-slate-600 text-sm">Upload file</p>
+				<p className="text-center font-bold text-emerald-600 uppercase tracking-widest text-xs opacity-60 group-hover:opacity-100 transition-opacity">Upload file</p>
 			</div>
 		</BaseCard>
 	);

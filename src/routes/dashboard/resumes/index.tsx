@@ -68,9 +68,13 @@ function RouteComponent() {
 
 	return (
 		<div className="space-y-6">
-			<DashboardHeader icon={ReadCvLogoIcon} title={t`Resumes`} />
+			<DashboardHeader 
+				icon={ReadCvLogoIcon} 
+				title={t`Resumes`} 
+				description={t`Manage and build professional, ATS-friendly resumes.`}
+			/>
 
-			<div className="flex items-center gap-x-2 rounded-2xl bg-white px-3 py-2 shadow-sm">
+			<div className="flex items-center gap-x-3 rounded-[1.5rem] border border-border bg-white p-3 shadow-sm transition-all duration-300 hover:shadow-md">
 				<Combobox
 					value={sort}
 					options={sortOptions}
@@ -81,15 +85,17 @@ function RouteComponent() {
 					buttonProps={{
 						title: t`Sort by`,
 						variant: "ghost",
-						className: "rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+						className: "rounded-xl text-slate-600 hover:bg-primary/5 hover:text-primary transition-all tap-active",
 						children: (_, option) => (
 							<>
-								<SortAscendingIcon />
-								{option?.label}
+								<SortAscendingIcon className="size-5" />
+								<span className="font-semibold">{option?.label}</span>
 							</>
 						),
 					}}
 				/>
+
+				<div className="h-6 w-px bg-border mx-2" />
 
 				<MultipleCombobox
 					value={tags}
@@ -100,31 +106,36 @@ function RouteComponent() {
 					buttonProps={{
 						variant: "ghost",
 						title: t`Filter by`,
-						className: cn("rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900", {
+						className: cn("rounded-xl text-slate-600 hover:bg-primary/5 hover:text-primary transition-all tap-active", {
 							hidden: tagOptions.length === 0,
 						}),
 						children: (_, options) => (
 							<>
-								<TagIcon />
-								{options.map((option) => (
-									<Badge key={option.value} variant="outline" className="rounded-lg border-slate-200 text-slate-600">
-										{option.label}
-									</Badge>
-								))}
+								<TagIcon className="size-5" />
+								<span className="font-semibold">{t`Tags`}</span>
+								{options.length > 0 && (
+									<div className="flex gap-1">
+										{options.map((option) => (
+											<Badge key={option.value} variant="secondary" className="rounded-lg bg-primary/10 text-primary border-none text-[10px] font-bold uppercase transition-all">
+												{option.label}
+											</Badge>
+										))}
+									</div>
+								)}
 							</>
 						),
 					}}
 				/>
 
 				<Tabs className="ltr:ms-auto rtl:me-auto" value={view} onValueChange={onViewChange}>
-					<TabsList className="rounded-xl bg-slate-100">
-						<TabsTrigger value="grid" className="rounded-lg">
-							<GridFourIcon />
+					<TabsList className="h-11 rounded-xl bg-slate-50 p-1 border border-border">
+						<TabsTrigger value="grid" className="rounded-lg px-4 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all tap-active">
+							<GridFourIcon weight="duotone" className="size-4" />
 							<Trans>Grid</Trans>
 						</TabsTrigger>
 
-						<TabsTrigger value="list" className="rounded-lg">
-							<ListIcon />
+						<TabsTrigger value="list" className="rounded-lg px-4 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all tap-active">
+							<ListIcon weight="duotone" className="size-4" />
 							<Trans>List</Trans>
 						</TabsTrigger>
 					</TabsList>

@@ -9,17 +9,15 @@ export function CreateResumeCard() {
 	return (
 		<BaseCard
 			title={t`Create a new resume`}
-			description={t`Start building your resume from scratch`}
-			headerColor="bg-blue-600"
-			accentColor="text-blue-600"
+			description={t`Start building your resume from scratch using our builder.`}
 			onClick={() => openDialog("resume.create", undefined)}
-			className="cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md active:scale-[0.98]"
+			className="cursor-pointer"
 		>
-			<div className="flex size-full flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-blue-50 to-slate-50 p-6">
-				<div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100">
-					<PlusIcon weight="duotone" className="size-8 text-blue-600" />
+			<div className="flex size-full flex-col items-center justify-center p-6">
+				<div className="mb-6 flex size-20 items-center justify-center rounded-[2rem] bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:rotate-6">
+					<PlusIcon weight="duotone" className="size-10" />
 				</div>
-				<p className="text-center font-medium text-slate-600 text-sm">Start fresh</p>
+				<p className="text-center font-bold text-primary uppercase tracking-widest text-xs opacity-60 group-hover:opacity-100 transition-opacity">Start fresh</p>
 			</div>
 		</BaseCard>
 	);

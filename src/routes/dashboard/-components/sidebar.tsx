@@ -15,7 +15,7 @@ import {
 	UsersIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -136,40 +136,61 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 	const { i18n } = useLingui();
 	const { state } = useSidebarState();
 	const isCollapsed = state === "collapsed";
+	const routerState = useRouterState();
 
 	return (
 		<SidebarMenu>
-			{items.map((item) => (
-				<SidebarMenuItem key={`${item.href as string}-${item.search?.tab ?? ""}`}>
-					<SidebarMenuButton asChild title={i18n.t(item.label)}>
-						<Link
-							to={item.href}
-							// biome-ignore lint: search params vary per route
-							search={item.search as any}
-							className="group/navitem flex items-center gap-x-3 rounded-xl px-2 py-2 transition-all hover:bg-slate-100 active:scale-[0.98]"
-							activeProps={{ className: "bg-slate-100 font-semibold" }}
+			{items.map((item) => {
+				const isActive = routerState.location.pathname.startsWith(item.href as string);
+
+				return (
+					<SidebarMenuItem key={`${item.href as string}-${item.search?.tab ?? ""}`}>
+						<SidebarMenuButton
+							asChild
+							isActive={isActive}
+							title={i18n.t(item.label)}
+							className="h-11 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary/90 data-[active=true]:focus-visible:bg-primary/90"
 						>
-							<div
-								className={cn(
-									"flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all",
-									item.iconBg,
-									item.iconColor,
-								)}
+							<Link
+								to={item.href}
+								// biome-ignore lint: search params vary per route
+								search={item.search as any}
+								className="group/navitem flex items-center gap-x-3 rounded-xl px-2 py-2 transition-all duration-300 active:scale-[0.98] tap-active outline-none"
+								activeProps={{
+									className: "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20",
+								}}
 							>
-								{item.icon}
-							</div>
-							<span
-								className={cn(
-									"shrink-0 text-slate-700 text-sm transition-[margin,opacity] duration-200 ease-in-out",
-									isCollapsed && "-ms-8 opacity-0",
-								)}
-							>
-								{i18n.t(item.label)}
-							</span>
-						</Link>
-					</SidebarMenuButton>
-				</SidebarMenuItem>
-			))}
+								<div
+									className={cn(
+										"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300",
+										"group-active/navitem:scale-90",
+										// By default, use the provided icon colors, but they will be overridden by active state
+										item.iconBg,
+										item.iconColor,
+										// Override when item is in an active link
+										isActive && "bg-white/20 text-white",
+									)}
+								>
+									{item.icon && (
+										<div className="size-5 [&_svg]:size-full">
+											{item.icon}
+										</div>
+									)}
+								</div>
+								<span
+									className={cn(
+										"shrink-0 text-sm transition-[margin,opacity] duration-300 ease-in-out font-medium",
+										isCollapsed && "-ms-10 opacity-0",
+										isActive ? "text-white font-bold" : "text-slate-600",
+									)}
+								>
+									{i18n.t(item.label)}
+								</span>
+							</Link>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
+				);
+			})}
 		</SidebarMenu>
 	);
 }
@@ -231,10 +252,10 @@ function OrgUnitSwitcher({
 								type="button"
 								onClick={() => onUnitChange(section.id)}
 								className={cn(
-									"group flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-all active:scale-[0.98]",
+									"group flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-300 tap-active",
 									activeUnitId === section.id
-										? "bg-indigo-600 font-semibold text-white shadow-md shadow-indigo-100"
-										: "text-slate-600 hover:bg-slate-50",
+										? "bg-primary font-bold text-white shadow-md shadow-primary/20"
+										: "text-slate-600 hover:bg-white/50",
 								)}
 							>
 								<div className="flex items-center gap-3">
@@ -357,14 +378,14 @@ export function DashboardSidebar() {
 									<button
 										type="button"
 										onClick={handleBackClick}
-										className="flex w-full items-center gap-x-3 rounded-xl px-2 py-2 transition-all hover:bg-slate-100 active:scale-[0.98]"
+										className="flex w-full items-center gap-x-3 rounded-xl px-2 py-2 transition-all duration-300 hover:bg-white/50 active:scale-[0.98] tap-active"
 									>
-										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
 											<ArrowLeftIcon weight="duotone" />
 										</div>
 										<span
 											className={cn(
-												"shrink-0 text-slate-700 text-sm transition-[margin,opacity] duration-200 ease-in-out",
+												"shrink-0 text-slate-700 text-sm transition-[margin,opacity] duration-300 ease-in-out font-medium",
 												isCollapsed && "-ms-8 opacity-0",
 											)}
 										>
@@ -386,21 +407,21 @@ export function DashboardSidebar() {
 						{session?.user && (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton className="h-auto gap-x-3 rounded-xl bg-slate-50 p-2 hover:bg-slate-100 group-data-[collapsible=icon]:p-1!">
+									<SidebarMenuButton className="h-auto gap-x-3 rounded-xl bg-white/50 border border-black/5 p-2 hover:bg-white transition-all duration-300 group-data-[collapsible=icon]:p-1! tap-active">
 										<Avatar className="size-8 shrink-0 transition-all group-data-[collapsible=icon]:size-7">
 											<AvatarImage src={session.user.image ?? undefined} />
-											<AvatarFallback className="rounded-xl bg-indigo-100 font-semibold text-indigo-600 text-xs group-data-[collapsible=icon]:text-[0.5rem]">
+											<AvatarFallback className="rounded-xl bg-primary/10 font-bold text-primary text-xs group-data-[collapsible=icon]:text-[0.5rem]">
 												{getInitials(session.user.name)}
 											</AvatarFallback>
 										</Avatar>
 
 										<div
 											className={cn(
-												"min-w-0 flex-1 transition-[margin,opacity] duration-200 ease-in-out text-left",
+												"min-w-0 flex-1 transition-[margin,opacity] duration-300 ease-in-out text-left",
 												isCollapsed && "-ms-8 opacity-0",
 											)}
 										>
-											<p className="truncate font-semibold text-slate-900 text-sm">{session.user.name}</p>
+											<p className="truncate font-bold text-slate-900 text-sm">{session.user.name}</p>
 											<p className="truncate text-slate-500 text-xs">{session.user.email}</p>
 										</div>
 									</SidebarMenuButton>
