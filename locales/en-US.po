@@ -3188,3 +3188,15 @@ msgstr "Zoom out"
 #: src/utils/locale.ts
 msgid "Zulu"
 msgstr "Zulu"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "My Space"
+msgstr "My Space"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Menu"
+msgstr "Menu"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Back to App"
+msgstr "Back to App"
