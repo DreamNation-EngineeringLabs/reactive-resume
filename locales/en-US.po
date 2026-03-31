@@ -3230,3 +3230,106 @@ msgstr "Master"
 
 msgid "Locked"
 msgstr "Locked"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Overview"
+msgstr "Overview"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Students"
+msgstr "Students"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Checklists"
+msgstr "Checklists"
+
+#: src/routes/dashboard/faculty/index.tsx
+msgid "Faculty Review Dashboard"
+msgstr "Faculty Review Dashboard"
+
+#: src/routes/dashboard/placement-officer/index.tsx
+msgid "Placement Officer Dashboard"
+msgstr "Placement Officer Dashboard"
+
+#: src/routes/dashboard/admin/index.tsx
+msgid "Admin Metrics Dashboard"
+msgstr "Admin Metrics Dashboard"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Entity"
+msgstr "Entity"
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "General"
+msgstr "General"
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "New Checklist"
+msgstr "New Checklist"
+
+#: src/routes/dashboard/-components/stat-card.tsx
+msgid "Total Students"
+msgstr "Total Students"
+
+#: src/routes/dashboard/-components/stat-card.tsx
+msgid "Total Resumes"
+msgstr "Total Resumes"
+
+#: src/routes/dashboard/-components/stat-card.tsx
+msgid "Completion Rate"
+msgstr "Completion Rate"
+
+#: src/routes/dashboard/-components/stat-card.tsx
+msgid "Avg Score"
+msgstr "Avg Score"
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Search by name or roll number..."
+msgstr "Search by name or roll number..."
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "Filters"
+msgstr "Filters"
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "Package"
+msgstr "Package"
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "Type"
+msgstr "Type"
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "All packages"
+msgstr "All packages"
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "All types"
+msgstr "All types"
+
+msgid "All"
+msgstr "All"
+
+msgid "Not Reviewed"
+msgstr "Not Reviewed"
+
+msgid "Evaluated"
+msgstr "Evaluated"
+
+msgid "Has Comments"
+msgstr "Has Comments"
+
+msgid "With Resumes"
+msgstr "With Resumes"
+
+msgid "No Resume Yet"
+msgstr "No Resume Yet"
+
+msgid "Pending Review"
+msgstr "Pending Review"
+
+msgid "Verified / Evaluated"
+msgstr "Verified / Evaluated"
+
+msgid "No student data found"
+msgstr "No student data found"

@@ -201,7 +201,7 @@ const { data: dashboard, isLoading } = useQuery(
 							</div>
 							<div>
 								<p className="font-bold text-slate-900 text-xl">{detailedStats.withResumes}</p>
-								<p className="text-slate-500 text-xs">With Resumes</p>
+								<p className="text-slate-500 text-xs">{t`With Resumes`}</p>
 							</div>
 						</div>
 						<div className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
@@ -210,7 +210,7 @@ const { data: dashboard, isLoading } = useQuery(
 							</div>
 							<div>
 								<p className="font-bold text-slate-900 text-xl">{detailedStats.noResumes}</p>
-								<p className="text-slate-500 text-xs">No Resume Yet</p>
+								<p className="text-slate-500 text-xs">{t`No Resume Yet`}</p>
 							</div>
 						</div>
 						<div className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
@@ -219,7 +219,7 @@ const { data: dashboard, isLoading } = useQuery(
 							</div>
 							<div>
 								<p className="font-bold text-slate-900 text-xl">{detailedStats.pendingReview}</p>
-								<p className="text-slate-500 text-xs">Pending Review</p>
+								<p className="text-slate-500 text-xs">{t`Pending Review`}</p>
 							</div>
 						</div>
 						<div className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
@@ -228,7 +228,7 @@ const { data: dashboard, isLoading } = useQuery(
 							</div>
 							<div>
 								<p className="font-bold text-slate-900 text-xl">{detailedStats.evaluated}</p>
-								<p className="text-slate-500 text-xs">Verified / Evaluated</p>
+								<p className="text-slate-500 text-xs">{t`Verified / Evaluated`}</p>
 							</div>
 						</div>
 					</div>
@@ -237,7 +237,7 @@ const { data: dashboard, isLoading } = useQuery(
 					{!hasStudents && (
 						<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
 							<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
-							<p className="font-semibold text-slate-600">No student data found</p>
+							<p className="font-semibold text-slate-600">{t`No student data found`}</p>
 							<p className="mt-1 max-w-xs text-slate-400 text-sm">
 								No students found for the assigned sections. Ensure eng-labs is configured and students are enrolled.
 							</p>

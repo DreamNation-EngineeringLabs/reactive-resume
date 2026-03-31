@@ -6,6 +6,7 @@
  * For instructor scope the server already restricts allOrgUnits to assigned units only.
  */
 
+import { t } from "@lingui/core/macro";
 import { FunnelSimpleIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { Combobox } from "@/components/ui/combobox";
@@ -76,17 +77,17 @@ export function OrgUnitFilter({ packages, unitTypes, allOrgUnits, value, onChang
 		<div className="flex flex-wrap items-center gap-3">
 			<div className="flex items-center gap-1.5 text-slate-400 text-xs">
 				<FunnelSimpleIcon weight="duotone" className="size-3.5" />
-				<span className="font-medium">Filters</span>
+				<span className="font-medium">{t`Filters`}</span>
 			</div>
 
 			{/* Package */}
 			{packages.length > 0 && (
 				<div className="flex items-center gap-2">
-					<span className="text-slate-500 text-xs font-medium">Package</span>
+					<span className="text-slate-500 text-xs font-medium">{t`Package`}</span>
 					<Combobox
 						options={packageOptions}
 						value={value.packageId ?? null}
-						placeholder="All packages"
+						placeholder={t`All packages`}
 						clearable={true}
 						buttonProps={{ className: dropdownClass }}
 						onValueChange={(v) =>
@@ -99,11 +100,11 @@ export function OrgUnitFilter({ packages, unitTypes, allOrgUnits, value, onChang
 			{/* Type */}
 			{unitTypes.length > 0 && (
 				<div className="flex items-center gap-2">
-					<span className="text-slate-500 text-xs font-medium">Type</span>
+					<span className="text-slate-500 text-xs font-medium">{t`Type`}</span>
 					<Combobox
 						options={typeOptions}
 						value={value.unitType ?? null}
-						placeholder="All types"
+						placeholder={t`All types`}
 						clearable={true}
 						buttonProps={{ className: dropdownClass }}
 						onValueChange={(v) =>

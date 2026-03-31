@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import {
 	MagnifyingGlassIcon,
 	UserIcon,
@@ -70,7 +71,7 @@ export function StudentResumeTable({
 					<MagnifyingGlassIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
 					<input
 						type="text"
-						placeholder="Search by name or roll number..."
+						placeholder={t`Search by name or roll number...`}
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						className="h-10 w-full rounded-xl border-0 bg-slate-50 pr-4 pl-9 text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
@@ -79,10 +80,10 @@ export function StudentResumeTable({
 				<div className="flex gap-1.5">
 					{(["all", "not_reviewed", "evaluated", "has_comments"] as const).map((status) => {
 						const labels = {
-							all: "All",
-							not_reviewed: "Not Reviewed",
-							evaluated: "Evaluated",
-							has_comments: "Has Comments",
+							all: t`All`,
+							not_reviewed: t`Not Reviewed`,
+							evaluated: t`Evaluated`,
+							has_comments: t`Has Comments`,
 						};
 						return (
 							<button
