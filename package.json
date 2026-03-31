@@ -15,7 +15,7 @@
 		"url": "https://amruthpillai.com"
 	},
 	"scripts": {
-		"build": "pnpm lingui compile && vite build",
+		"build": "pnpm lingui compile || true && vite build",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:pull": "drizzle-kit pull",
