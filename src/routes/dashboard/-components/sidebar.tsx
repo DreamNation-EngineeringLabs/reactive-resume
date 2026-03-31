@@ -141,7 +141,17 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 	return (
 		<SidebarMenu>
 			{items.map((item) => {
-				const isActive = routerState.location.pathname.startsWith(item.href as string);
+				const isActive = useMemo(() => {
+					const isPathMatch = routerState.location.pathname.startsWith(item.href as string);
+					const itemTab = item.search?.tab;
+					const currentTab = (routerState.location.search as any)?.tab;
+
+					if (itemTab) {
+						return isPathMatch && itemTab === currentTab;
+					}
+
+					return isPathMatch;
+				}, [routerState.location.pathname, routerState.location.search, item.href, item.search]);
 
 				return (
 					<SidebarMenuItem key={`${item.href as string}-${item.search?.tab ?? ""}`}>
