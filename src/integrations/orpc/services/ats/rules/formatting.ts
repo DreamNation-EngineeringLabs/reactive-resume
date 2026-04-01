@@ -49,6 +49,16 @@ export function isStandardDateFormat(dateStr: string): boolean {
 	return /^(present|current|\d{4}|[a-z]+\.?,?\s*\d{4}|\d{2}\/\d{4}|\d{4}-\d{2})/i.test(dateStr.trim());
 }
 
+/**
+ * True when the resume actually shows a profile image in the UI/PDF.
+ * Matches `PagePicture`: no render when url is empty; `hidden` hides the block when url exists.
+ */
+export function isProfilePictureDisplayedOnResume(data: ResumeData): boolean {
+	if (data.picture.hidden) return false;
+	const url = (data.picture.url ?? "").trim();
+	return url.length > 0;
+}
+
 /** Regex matching emoji/icon unicode ranges */
 const EMOJI_REGEX =
 	/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u{2B50}\u{2B55}\u{231A}-\u{231B}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2614}-\u{2615}\u{2648}-\u{2653}\u{267F}\u{2693}\u{26A1}\u{26AA}-\u{26AB}\u{26BD}-\u{26BE}\u{26C4}-\u{26C5}\u{26CE}\u{26D4}\u{26EA}\u{26F2}-\u{26F3}\u{26F5}\u{26FA}\u{26FD}\u{2702}\u{2705}\u{2708}-\u{270D}\u{270F}\u{2712}\u{2714}\u{2716}\u{271D}\u{2721}\u{2728}\u{2733}-\u{2734}\u{2744}\u{2747}\u{274C}\u{274E}\u{2753}-\u{2755}\u{2757}\u{2763}-\u{2764}\u{2795}-\u{2797}\u{27A1}\u{27B0}\u{2934}-\u{2935}\u{2B05}-\u{2B07}]/u;
@@ -79,18 +89,20 @@ export async function scoreFormatting(data: ResumeData): Promise<CategoryScore> 
 			: `Font "${fontFamily}" may not be ATS-safe. Consider using Arial, Calibri, or similar.`,
 	});
 
-	// FM-2: No profile picture visible (2 pts)
-	const pictureHidden = data.picture.hidden;
-	const fm2Score = pictureHidden ? 2 : 0;
+	// FM-2: No profile picture visible (2 pts) — only penalize when an image actually renders
+	const pictureShown = isProfilePictureDisplayedOnResume(data);
+	const fm2Score = pictureShown ? 0 : 2;
 
 	details.push({
 		ruleId: "FM-2",
 		ruleName: "No profile picture",
 		score: fm2Score,
 		maxScore: 2,
-		details: pictureHidden
-			? "Profile picture is hidden — ATS-friendly."
-			: "Profile picture is visible. Most ATS systems can't parse images — consider hiding it.",
+		details: pictureShown
+			? "A profile photo appears on your resume. Many ATS tools can't read images reliably — consider hiding it in resume settings."
+			: data.picture.hidden
+				? "Profile picture is hidden — ATS-friendly."
+				: "No profile photo is shown (no image URL). Nothing for ATS to parse here.",
 	});
 
 	// FM-3: ATS-safe template (4 pts)
@@ -132,7 +144,7 @@ export async function scoreFormatting(data: ResumeData): Promise<CategoryScore> 
 	});
 
 	const fm4Score =
-		itemsWithDates.length === 0 ? 4 : Math.round((1 - nonStandardDates.length / itemsWithDates.length) * 4);
+		itemsWithDates.length === 0 ? 0 : Math.round((1 - nonStandardDates.length / itemsWithDates.length) * 4);
 
 	details.push({
 		ruleId: "FM-4",
@@ -140,9 +152,11 @@ export async function scoreFormatting(data: ResumeData): Promise<CategoryScore> 
 		score: fm4Score,
 		maxScore: 4,
 		details:
-			nonStandardDates.length > 0
-				? `${nonStandardDates.length} date(s) use non-standard formats. Use "Jan 2023" or "2023" style.`
-				: "All dates use standard ATS-readable formats.",
+			itemsWithDates.length === 0
+				? "No dates found to evaluate."
+				: nonStandardDates.length > 0
+					? `${nonStandardDates.length} date(s) use non-standard formats. Use "Jan 2023" or "2023" style.`
+					: "All dates use standard ATS-readable formats.",
 	});
 
 	// FM-5: No emojis or icons (1 pt)
@@ -175,6 +189,24 @@ export async function scoreFormatting(data: ResumeData): Promise<CategoryScore> 
 			}
 		}
 	}
+
+	// Content Floor for Formatting
+	if (allText.join("").trim().length < 100) {
+		return {
+			score: 0,
+			max: MAX_SCORE,
+			details: [
+				{
+					ruleId: "FM-0",
+					ruleName: "Minimum content",
+					score: 0,
+					maxScore: MAX_SCORE,
+					details: "Resume is too thin to evaluate formatting.",
+				},
+			],
+		};
+	}
+
 	const emojiCount = allText.reduce((count, t) => count + findEmojis(t).length, 0);
 	const fm5Score = emojiCount === 0 ? 1 : 0;
 

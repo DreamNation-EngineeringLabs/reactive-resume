@@ -35,6 +35,7 @@ const searchSchema = z.object({
 	packageId: z.string().optional(),
 	unitType: z.string().optional(),
 	unitId: z.string().optional(),
+	scope: z.enum(["faculty", "po", "admin"]).optional().default("faculty"),
 });
 
 export const Route = createFileRoute("/dashboard/review/$resumeId/")({
@@ -50,12 +51,13 @@ type ReviewTab = "comments" | "evaluate" | "changes" | "timeline";
 
 function ReviewPage() {
 	const { resumeId } = Route.useParams();
-	const { engLabsStudentId, tenantId, packageId, unitType, unitId } = Route.useSearch();
+	const { engLabsStudentId, tenantId, packageId, unitType, unitId, scope } = Route.useSearch();
 
 	const [activeTab, setActiveTab] = useState<ReviewTab>("comments");
 	const [showHighlights, setShowHighlights] = useState(true);
 	const [showDiff, setShowDiff] = useState(false);
 	const [newComment, setNewComment] = useState("");
+	const [replyTo, setReplyTo] = useState<string | null>(null);
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 
@@ -65,7 +67,7 @@ function ReviewPage() {
 			input: {
 				sectionIds: (getOrganisationUnits() ?? []) as string[],
 				tenantId: tenantId!,
-				scope: "faculty" as const,
+				scope: (scope === "po" || scope === "admin" ? "po" : "faculty") as "faculty" | "po",
 				activeUnitId: unitId,
 			},
 		}),
@@ -96,6 +98,7 @@ function ReviewPage() {
 				packageId,
 				unitType: unitType as any,
 				unitId,
+				scope,
 			},
 		});
 	};
@@ -119,7 +122,15 @@ function ReviewPage() {
 	useEffect(() => {
 		if (!data?.resume) return;
 		const r = data.resume;
-		initialize({ id: r.id, name: r.name, slug: r.slug, tags: r.tags, isLocked: r.isLocked, data: r.data });
+		initialize({ 
+			id: r.id, 
+			name: r.name, 
+			slug: r.slug, 
+			tags: r.tags, 
+			isLocked: r.isLocked, 
+			data: r.data, 
+			reviewStatus: r.reviewStatus as any 
+		});
 		return () => initialize(null);
 	}, [data?.resume, initialize]);
 
@@ -127,12 +138,27 @@ function ReviewPage() {
 		...orpc.resume.comments.create.mutationOptions(),
 		onSuccess: () => {
 			setNewComment("");
+			setReplyTo(null);
 			queryClient.invalidateQueries(reviewQueryKey);
 		},
 	});
 
 	const updateCommentStatusMutation = useMutation({
 		...orpc.resume.comments.updateStatus.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries(reviewQueryKey);
+		},
+	});
+
+	const updateResumeStatusMutation = useMutation({
+		...orpc.resume.dashboard.updateStatus.mutationOptions(),
+		onSuccess: () => {
+			queryClient.invalidateQueries(reviewQueryKey);
+		},
+	});
+
+	const toggleLockMutation = useMutation({
+		...orpc.resume.dashboard.toggleResumeLock.mutationOptions(),
 		onSuccess: () => {
 			queryClient.invalidateQueries(reviewQueryKey);
 		},
@@ -192,7 +218,7 @@ function ReviewPage() {
 			{/* ── Top bar ── */}
 			<div className="flex shrink-0 items-center gap-4 border-b border-slate-100 bg-white px-6 py-3">
 				<Link
-					to="/dashboard/faculty"
+					to={scope === "po" || scope === "admin" ? "/dashboard/placement-officer" : "/dashboard/faculty"}
 					search={{ tab: "students", packageId, unitType, unitId }}
 					className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-slate-200"
 				>
@@ -339,17 +365,123 @@ function ReviewPage() {
 						))}
 					</div>
 
+					{/* Overall Status & Actions */}
+					<div className="border-b border-slate-100 bg-slate-50/50 p-5">
+						<div className="flex items-center justify-between gap-4">
+							<div>
+								<p className="mb-1 font-bold text-slate-400 text-[10px] uppercase tracking-wider">{t`Overall Review Status`}</p>
+								<div className="flex items-center gap-2">
+									<span className={cn(
+										"rounded-full px-2.5 py-0.5 font-bold text-xs shadow-sm",
+										resume.reviewStatus === "DRAFT" && "bg-slate-100 text-slate-600",
+										resume.reviewStatus === "SUBMITTED_TO_FACULTY" && "bg-blue-100 text-blue-700",
+										resume.reviewStatus === "FACULTY_REVISION_REQUESTED" && "bg-amber-100 text-amber-700",
+										resume.reviewStatus === "FACULTY_VERIFIED" && "bg-emerald-100 text-emerald-700",
+										resume.reviewStatus === "FINALIZED_BY_FACULTY" && "bg-indigo-100 text-indigo-700",
+										resume.reviewStatus === "PO_REVISION_REQUESTED" && "bg-rose-100 text-rose-700",
+										resume.reviewStatus === "RESUBMITTED_TO_PO" && "bg-purple-100 text-purple-700",
+										resume.reviewStatus === "APPROVED" && "bg-teal-100 text-teal-700",
+									)}>
+										{resume.reviewStatus?.replace(/_/g, " ")}
+									</span>
+									{resume.reviewStatus === "FINALIZED_BY_FACULTY" && (
+										<span className="flex items-center gap-1 text-slate-400 text-[10px] italic">
+											<ClockCounterClockwiseIcon className="size-3" />
+											{t`Pending PO Review`}
+										</span>
+									)}
+								</div>
+							</div>
+
+							<div className="flex items-center gap-2">
+								{/* Manual Lock/Unlock (Visible to both Faculty/PO) */}
+								<button
+									onClick={() => toggleLockMutation.mutate({ resumeId, isLocked: !resume.isLocked })}
+									disabled={toggleLockMutation.isPending}
+									className={cn(
+										"rounded-xl px-3 py-1.5 font-bold text-xs transition-all shadow-sm flex items-center gap-1.5",
+										resume.isLocked 
+											? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
+											: "bg-slate-100 text-slate-700 hover:bg-slate-200"
+									)}
+								>
+									{resume.isLocked ? (
+										<><ClockCounterClockwiseIcon className="size-3.5" />{t`Unlock Resume`}</>
+									) : (
+										<><CheckCircleIcon className="size-3.5" />{t`Lock Resume`}</>
+									)}
+								</button>
+
+								<div className="h-4 w-px bg-slate-200 mx-1" />
+
+								{/* Faculty Actions */}
+								{(resume.reviewStatus === "SUBMITTED_TO_FACULTY" || resume.reviewStatus === "FACULTY_REVISION_REQUESTED") && (
+									<>
+										<button
+											onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "FACULTY_REVISION_REQUESTED" })}
+											disabled={updateResumeStatusMutation.isPending}
+											className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-600 text-xs transition-all hover:bg-slate-50 disabled:opacity-50"
+										>
+											{t`Request Revision`}
+										</button>
+										<button
+											onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "FACULTY_VERIFIED" })}
+											disabled={updateResumeStatusMutation.isPending}
+											className="rounded-xl bg-emerald-600 px-3 py-1.5 font-bold text-white text-xs transition-all hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+										>
+											{t`Verify Individual`}
+										</button>
+									</>
+								)}
+
+								{/* PO Actions */}
+								{(resume.reviewStatus === "FINALIZED_BY_FACULTY" || resume.reviewStatus === "RESUBMITTED_TO_PO" || resume.reviewStatus === "PO_REVISION_REQUESTED" || resume.reviewStatus === "APPROVED") && (
+									<>
+										<button
+											onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "PO_REVISION_REQUESTED" })}
+											disabled={updateResumeStatusMutation.isPending}
+											className="rounded-xl border border-rose-200 bg-white px-3 py-1.5 font-bold text-rose-600 text-xs transition-all hover:bg-rose-50 disabled:opacity-50"
+										>
+											{t`PO: Request Revision`}
+										</button>
+										{resume.reviewStatus !== "APPROVED" && (
+											<button
+												onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "APPROVED" })}
+												disabled={updateResumeStatusMutation.isPending}
+												className="rounded-xl bg-teal-600 px-3 py-1.5 font-bold text-white text-xs transition-all hover:bg-teal-700 shadow-sm disabled:opacity-50"
+											>
+												{t`Final Approve`}
+											</button>
+										)}
+									</>
+								)}
+							</div>
+						</div>
+					</div>
+
 					{/* Panel content */}
 					<div className="flex-1 overflow-y-auto p-5">
 						{/* ── Comments ── */}
 						{activeTab === "comments" && (
 							<div className="space-y-4">
 								<div className="rounded-2xl bg-slate-50 p-4">
-									<p className="mb-2 font-semibold text-slate-700 text-sm">{t`Add Feedback Comment`}</p>
+									<div className="mb-2 flex items-center justify-between">
+										<p className="font-semibold text-slate-700 text-sm">
+											{replyTo ? t`Reply to Thread` : t`Add Feedback Comment`}
+										</p>
+										{replyTo && (
+											<button
+												onClick={() => setReplyTo(null)}
+												className="text-indigo-600 text-xs hover:underline"
+											>
+												{t`Cancel Reply`}
+											</button>
+										)}
+									</div>
 									<textarea
 										value={newComment}
 										onChange={(e) => setNewComment(e.target.value)}
-										placeholder={t`Write specific, actionable feedback for the student...`}
+										placeholder={replyTo ? t`Write your reply...` : t`Write specific, actionable feedback for the student...`}
 										rows={4}
 										className="mb-3 w-full resize-none rounded-xl border-0 bg-white px-4 py-3 text-slate-900 text-sm outline-none ring-1 ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
 									/>
@@ -363,12 +495,13 @@ function ReviewPage() {
 												studentId: engLabsStudentId,
 												tenantId,
 												content: newComment.trim(),
+												parentId: replyTo ?? undefined,
 											});
 										}}
 										className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-indigo-700 disabled:opacity-50"
 									>
 										<PaperPlaneTiltIcon weight="duotone" className="size-4" />
-										{addCommentMutation.isPending ? t`Posting…` : t`Post Comment`}
+										{addCommentMutation.isPending ? t`Posting…` : replyTo ? t`Post Reply` : t`Post Comment`}
 									</button>
 								</div>
 
@@ -378,62 +511,135 @@ function ReviewPage() {
 										<p className="text-slate-400 text-sm">{t`No comments yet — add your feedback above`}</p>
 									</div>
 								) : (
-									<div className="space-y-3">
-										{[...comments].reverse().map((c) => (
-											<div key={c.id} className={cn(
-												"rounded-2xl border p-4 transition-all",
-												c.status === "RESOLVED" ? "bg-emerald-50/20 border-emerald-100" : "bg-white border-slate-100"
-											)}>
-												<p className={cn(
-													"text-slate-800 text-sm leading-relaxed",
-													c.status === "RESOLVED" && "text-slate-400 line-through"
-												)}>{c.content}</p>
-												<div className="mt-3 flex items-center justify-between">
-													<p className="text-slate-400 text-[10px]">
-														{new Date(c.createdAt).toLocaleDateString()}
-													</p>
-													<div className="flex items-center gap-2">
-														{c.status === "OPEN" && (
-															<button
-																type="button"
-																onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "ADDRESSED" })}
-																className="rounded-lg bg-white px-2 py-1 text-[10px] font-semibold text-amber-600 shadow-sm ring-1 ring-amber-200 hover:bg-amber-50"
-															>
-																{t`Mark Addressed`}
-															</button>
-														)}
-														{c.status === "ADDRESSED" && (
-															<button
-																type="button"
-																onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "RESOLVED" })}
-																className="rounded-lg bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow-sm hover:bg-emerald-700"
-															>
-																{t`Approve`}
-															</button>
-														)}
-														{c.status === "RESOLVED" && (
-															<button
-																type="button"
-																onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "OPEN" })}
-																className="text-[10px] font-medium text-slate-400 hover:text-slate-600 underline"
-															>
-																{t`Re-open`}
-															</button>
-														)}
-														<span
-															className={cn(
-																"rounded-full px-2 py-0.5 text-[10px] font-semibold",
-																c.status === "RESOLVED"
-																	? "bg-emerald-50 text-emerald-700"
-																	: "bg-amber-50 text-amber-700",
-															)}
-														>
-															{c.status === "RESOLVED" ? t`Resolved` : t`Open`}
-														</span>
+									<div className="space-y-4">
+										{comments.filter(c => !c.parentId).reverse().map((c) => {
+											const replies = comments.filter(r => r.parentId === c.id);
+											return (
+												<div key={c.id} className="space-y-2">
+													<div className={cn(
+														"rounded-2xl border p-4 transition-all shadow-sm",
+														c.status === "RESOLVED" ? "bg-emerald-50/20 border-emerald-100" : "bg-white border-slate-100"
+													)}>
+														<p className={cn(
+															"text-slate-800 text-sm leading-relaxed",
+															c.status === "RESOLVED" && "text-slate-400 line-through"
+														)}>{c.content}</p>
+														<div className="mt-3 flex items-center justify-between">
+															<div className="flex items-center gap-3">
+																<p className="text-slate-400 text-[10px]">
+																	{new Date(c.createdAt).toLocaleDateString()}
+																</p>
+																<button
+																	type="button"
+																	onClick={() => {
+																		setReplyTo(c.id);
+																		// Focus textarea
+																		window.scrollTo({ top: 0, behavior: 'smooth' });
+																	}}
+																	className="text-indigo-600 text-[10px] font-bold hover:underline"
+																>
+																	{t`Reply`}
+																</button>
+															</div>
+															<div className="flex items-center gap-2">
+																{c.status === "OPEN" && (
+																	<button
+																		type="button"
+																		onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "ADDRESSED" })}
+																		className="rounded-lg bg-white px-2 py-1 text-[10px] font-semibold text-amber-600 shadow-sm ring-1 ring-amber-200 hover:bg-amber-50"
+																	>
+																		{t`Mark Addressed`}
+																	</button>
+																)}
+																{c.status === "ADDRESSED" && (
+																	<button
+																		type="button"
+																		onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "RESOLVED" })}
+																		className="rounded-lg bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow-sm hover:bg-emerald-700"
+																	>
+																		{t`Approve`}
+																	</button>
+																)}
+																{c.status === "RESOLVED" && (
+																	<button
+																		type="button"
+																		onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "OPEN" })}
+																		className="text-[10px] font-medium text-slate-400 hover:text-slate-600 underline"
+																	>
+																		{t`Re-open`}
+																	</button>
+																)}
+																<span
+																	className={cn(
+																		"rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-tight",
+																		c.status === "RESOLVED"
+																			? "bg-emerald-50 text-emerald-700"
+																			: c.status === "ADDRESSED" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700",
+																	)}
+																>
+																	{c.status}
+																</span>
+															</div>
+														</div>
 													</div>
+
+													{/* Replies */}
+													{replies.length > 0 && (
+														<div className="ml-8 space-y-2 border-slate-100 border-l pl-4">
+															{replies.map((reply) => (
+																<div key={reply.id} className="rounded-xl bg-slate-50 p-3 text-xs border border-slate-100 space-y-2">
+																	<div className="flex items-center justify-between">
+																		<div className="flex items-center gap-2 opacity-60">
+																			<span className="font-bold uppercase text-[9px] tracking-tight">{t`Reply`}</span>
+																			<span className="text-[9px]">{new Date(reply.createdAt).toLocaleDateString()}</span>
+																		</div>
+																		
+																		<div className="flex items-center gap-1.5">
+																			{reply.status === "OPEN" && (
+																				<button
+																					type="button"
+																					onClick={() => updateCommentStatusMutation.mutate({ id: reply.id, status: "ADDRESSED" })}
+																					className="rounded-md border border-amber-200 bg-white px-1.5 py-0.5 text-[9px] font-bold text-amber-600 hover:bg-amber-50"
+																				>
+																					{t`Mark Addressed`}
+																				</button>
+																			)}
+																			{reply.status === "ADDRESSED" && (
+																				<button
+																					type="button"
+																					onClick={() => updateCommentStatusMutation.mutate({ id: reply.id, status: "RESOLVED" })}
+																					className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white hover:bg-emerald-700"
+																				>
+																					{t`Resolve`}
+																				</button>
+																			)}
+																			{reply.status === "RESOLVED" && (
+																				<button
+																					type="button"
+																					onClick={() => updateCommentStatusMutation.mutate({ id: reply.id, status: "OPEN" })}
+																					className="text-[9px] font-medium text-slate-400 hover:text-slate-600 underline"
+																				>
+																					{t`Re-open`}
+																				</button>
+																			)}
+																			<div className={cn(
+																				"px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-sm border",
+																				reply.status === "RESOLVED" ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+																				reply.status === "ADDRESSED" ? "bg-amber-100 text-amber-700 border-amber-200" :
+																				"bg-blue-100 text-blue-700 border-blue-200"
+																			)}>
+																				{reply.status === "PUBLISHED" ? "OPEN" : reply.status}
+																			</div>
+																		</div>
+																	</div>
+																	<p className={cn("text-slate-700 leading-relaxed", reply.status === "RESOLVED" && "text-slate-400 line-through")}>{reply.content}</p>
+																</div>
+															))}
+														</div>
+													)}
 												</div>
-											</div>
-										))}
+											);
+										})}
 									</div>
 								)}
 							</div>

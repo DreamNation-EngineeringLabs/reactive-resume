@@ -54,7 +54,9 @@ export const atsRouter = {
 			});
 
 			try {
-				const result = await scoreResume(resume.data as ResumeData, input.jobDescription, input.includeAiSuggestions);
+				const dataForScoring = structuredClone(resume.data) as ResumeData;
+				await resumeService.normalizePictureForPreview(dataForScoring);
+				const result = await scoreResume(dataForScoring, input.jobDescription, input.includeAiSuggestions);
 
 				// Consume credit after successful scoring
 				await consumePlacementCredit(context.user.email, "ATS_SCORE");

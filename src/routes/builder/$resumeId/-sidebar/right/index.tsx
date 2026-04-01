@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useResumeStore } from "@/components/resume/store/resume";
 import type { RightSidebarSection } from "@/utils/resume/section";
 import { cn } from "@/utils/style";
 import { useSectionStore } from "../../-store/section";
@@ -21,7 +22,6 @@ import { TemplateSectionBuilder } from "./sections/template";
 import { TypographySectionBuilder } from "./sections/typography";
 import { ReviewerFeedbackSectionBuilder } from "./sections/reviewer-feedback";
 
-const primarySections: RightSidebarSection[] = ["template", "reviewer-feedback", "ats-score", "export"];
 const advancedSections: RightSidebarSection[] = [
 	"layout",
 	"typography",
@@ -94,11 +94,20 @@ function AdvancedOptions() {
 }
 
 export function BuilderSidebarRight() {
+	const isPrimary = useResumeStore((state) => state.resume.isPrimary);
+
+	const visiblePrimarySections: RightSidebarSection[] = [
+		"template",
+		...(isPrimary ? (["reviewer-feedback"] as RightSidebarSection[]) : []),
+		"ats-score",
+		"export",
+	];
+
 	return (
 		<>
 			<ScrollArea className="@container h-[calc(100svh-3.5rem)] bg-background">
 				<div className="space-y-4 p-4">
-					{primarySections.map((section) => (
+					{visiblePrimarySections.map((section) => (
 						<Fragment key={section}>
 							{getSectionComponent(section)}
 							<Separator />

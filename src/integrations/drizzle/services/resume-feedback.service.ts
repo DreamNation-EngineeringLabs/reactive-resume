@@ -25,6 +25,7 @@ export async function createComment({
 	authorId,
 	content,
 	scope = "INDIVIDUAL",
+	parentId,
 }: {
 	resumeId: string;
 	studentId: string;
@@ -32,6 +33,7 @@ export async function createComment({
 	authorId: string;
 	content: string;
 	scope?: "INDIVIDUAL" | "SECTION";
+	parentId?: string;
 }) {
 	const result = await db
 		.insert(resumeComment)
@@ -43,11 +45,21 @@ export async function createComment({
 			authorId,
 			content,
 			scope,
+			parentId,
 			status: "OPEN",
 			createdAt: new Date(),
 			updatedAt: new Date(),
 		})
 		.returning();
+
+	// If this is a reply (has parentId), and the parent is ADDRESSED/RESOLVED,
+	// we should probably re-open it because the feedback is ongoing.
+	if (parentId) {
+		await db
+			.update(resumeComment)
+			.set({ status: "OPEN", resolvedAt: null, updatedAt: new Date() })
+			.where(eq(resumeComment.id, parentId));
+	}
 
 	return result[0];
 }
@@ -426,9 +438,21 @@ export async function addToHistory({
 	currentData,
 }: {
 	resumeId: string;
-	studentId: string;
-	tenantId: string;
-	action: "CREATED" | "UPDATED" | "COMMENTED" | "EVALUATED" | "FORWARDED" | "SUBMITTED";
+	studentId?: string;
+	tenantId?: string;
+	action:
+		| "CREATED"
+		| "UPDATED"
+		| "COMMENTED"
+		| "EVALUATED"
+		| "FORWARDED"
+		| "SUBMITTED"
+		| "FACULTY_VERIFIED"
+		| "FINALIZED"
+		| "PO_REVISION_REQUESTED"
+		| "PO_APPROVED"
+		| "PO_REJECTED"
+		| "RESUBMITTED";
 	changedBy: string;
 	actorType: "LEARNER" | "INSTRUCTOR" | "PLACEMENT_OFFICER" | "ADMIN";
 	previousData?: unknown;
@@ -437,17 +461,190 @@ export async function addToHistory({
 	const result = await db
 		.insert(resumeHistory)
 		.values({
-			id: crypto.randomUUID(),
 			resumeId,
-			studentId,
-			tenantId,
+			studentId: studentId ?? "unknown",
+			tenantId: tenantId ?? "default",
 			action,
 			changedBy,
 			actorType,
 			previousData,
 			currentData,
-			createdAt: new Date(),
 		})
+		.returning();
+
+	return result[0];
+}
+
+/**
+ * UPDATE: Update resume review status and record history
+ */
+export async function updateResumeStatus({
+	resumeId,
+	studentId,
+	tenantId,
+	status,
+	changedBy,
+	actorType,
+	isLocked: explicitIsLocked,
+}: {
+	resumeId: string;
+	studentId?: string;
+	tenantId?: string;
+	status:
+		| "DRAFT"
+		| "SUBMITTED_TO_FACULTY"
+		| "FACULTY_REVISION_REQUESTED"
+		| "FACULTY_VERIFIED"
+		| "FINALIZED_BY_FACULTY"
+		| "PO_REVISION_REQUESTED"
+		| "RESUBMITTED_TO_PO"
+		| "PO_VERIFIED"
+		| "APPROVED";
+	changedBy: string;
+	actorType: "LEARNER" | "INSTRUCTOR" | "PLACEMENT_OFFICER" | "ADMIN";
+	isLocked?: boolean;
+}) {
+	// Decide default locking based on status if not explicitly provided
+	let lockValue = explicitIsLocked;
+	if (lockValue === undefined) {
+		const lockStatuses = ["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_VERIFIED", "APPROVED"];
+		const unlockStatuses = ["DRAFT", "FACULTY_REVISION_REQUESTED", "PO_REVISION_REQUESTED"];
+		
+		if (lockStatuses.includes(status)) lockValue = true;
+		if (unlockStatuses.includes(status)) lockValue = false;
+	}
+
+	const result = await db
+		.update(resume)
+		.set({ 
+			reviewStatus: status, 
+			isLocked: lockValue,
+			updatedAt: new Date() 
+		})
+		.where(eq(resume.id, resumeId))
+		.returning();
+
+	// Map status to history action
+	const actionMap: Record<string, string> = {
+		SUBMITTED_TO_FACULTY: "SUBMITTED",
+		FACULTY_REVISION_REQUESTED: "UPDATED",
+		FACULTY_VERIFIED: "FACULTY_VERIFIED",
+		FINALIZED_BY_FACULTY: "FINALIZED",
+		PO_REVISION_REQUESTED: "PO_REVISION_REQUESTED",
+		RESUBMITTED_TO_PO: "RESUBMITTED",
+		PO_VERIFIED: "FACULTY_VERIFIED",
+		APPROVED: "PO_APPROVED",
+	};
+
+	if (actionMap[status]) {
+		await addToHistory({
+			resumeId,
+			studentId,
+			tenantId,
+			action: actionMap[status] as any,
+			changedBy,
+			actorType,
+		});
+	}
+
+	return result[0];
+}
+
+/**
+ * UPDATE: Bulk update status for an entire section
+ * Used by Faculty to "Finalize Section" after individual reviews
+ */
+export async function bulkUpdateSectionResumes({
+	resumes,
+	tenantId,
+	toStatus,
+	changedBy,
+	actorType,
+}: {
+	resumes: Array<{ id: string; studentId: string }>;
+	tenantId: string;
+	toStatus:
+		| "DRAFT"
+		| "SUBMITTED_TO_FACULTY"
+		| "FACULTY_REVISION_REQUESTED"
+		| "FACULTY_VERIFIED"
+		| "FINALIZED_BY_FACULTY"
+		| "PO_REVISION_REQUESTED"
+		| "RESUBMITTED_TO_PO"
+		| "PO_VERIFIED"
+		| "APPROVED";
+	changedBy: string;
+	actorType: "INSTRUCTOR" | "PLACEMENT_OFFICER" | "ADMIN";
+}) {
+	const resumeIds = resumes.map((r) => r.id);
+
+	// Decide locking based on status
+	const lockStatuses = ["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_VERIFIED", "APPROVED"];
+	const isLocked = lockStatuses.includes(toStatus);
+
+	// 1. Update all resumes
+	const results = await db
+		.update(resume)
+		.set({ 
+			reviewStatus: toStatus, 
+			isLocked,
+			updatedAt: new Date() 
+		})
+		.where(inArray(resume.id, resumeIds))
+		.returning();
+
+	// 2. Map status to history action
+	const actionMap: Record<string, string> = {
+		SUBMITTED_TO_FACULTY: "SUBMITTED",
+		FACULTY_REVISION_REQUESTED: "UPDATED",
+		FACULTY_VERIFIED: "FACULTY_VERIFIED",
+		FINALIZED_BY_FACULTY: "FINALIZED",
+		PO_REVISION_REQUESTED: "PO_REVISION_REQUESTED",
+		RESUBMITTED_TO_PO: "RESUBMITTED",
+		PO_VERIFIED: "FACULTY_VERIFIED",
+		APPROVED: "PO_APPROVED",
+	};
+
+	// 3. Record history for each (Drizzle doesn't support bulk insert with different values easily if we want to reuse addToHistory)
+	// But we can do a bulk insert into resumeHistory directly.
+	if (actionMap[toStatus]) {
+		await db.insert(resumeHistory).values(
+			resumes.map((r) => ({
+				id: crypto.randomUUID(),
+				resumeId: r.id,
+				studentId: r.studentId,
+				tenantId,
+				action: actionMap[toStatus] as any,
+				changedBy,
+				actorType,
+				createdAt: new Date(),
+			})),
+		);
+	}
+
+	return results;
+}
+
+/**
+ * UPDATE: Explicitly toggle lock on a resume
+ */
+export async function toggleLock({
+	resumeId,
+	isLocked,
+	reason,
+}: {
+	resumeId: string;
+	isLocked: boolean;
+	reason?: string;
+}) {
+	const result = await db
+		.update(resume)
+		.set({ 
+			isLocked, 
+			unlockReason: isLocked ? null : reason, 
+			updatedAt: new Date() 
+		})
+		.where(eq(resume.id, resumeId))
 		.returning();
 
 	return result[0];

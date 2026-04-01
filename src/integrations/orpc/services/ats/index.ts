@@ -1,6 +1,7 @@
 import type { ResumeData } from "@/schema/resume/data";
 import { extractKeywords } from "./keyword-extractor";
 import { scoreBrevity } from "./rules/brevity";
+import { scoreContentQuality } from "./rules/content-quality";
 import { scoreFormatting } from "./rules/formatting";
 import { scoreImpactMetrics } from "./rules/impact-metrics";
 import { scoreKeywordMatch } from "./rules/keyword-match";
@@ -38,6 +39,12 @@ export interface JsonPatchOp {
 	newText?: string;
 }
 
+/** Optional structured body for readable suggestion cards (bullets / sections). */
+export interface SuggestionBodySection {
+	title?: string;
+	items: string[];
+}
+
 export interface Suggestion {
 	id: string;
 	ruleId: string;
@@ -45,6 +52,9 @@ export interface Suggestion {
 	severity: "critical" | "warning" | "info";
 	title: string;
 	description: string;
+	/** When set, UIs should prefer rendering these as a list instead of a single paragraph. */
+	descriptionBullets?: string[];
+	bodySections?: SuggestionBodySection[];
 	autoApplicable: boolean;
 	patches?: JsonPatchOp[];
 	estimatedScoreGain: number;
@@ -75,7 +85,16 @@ export interface ScoringResult {
 		keywordsMissing: string[];
 		totalBullets: number;
 		estimatedPages: number;
+		/** True when AI-powered rewrites were skipped or failed (e.g. no API key, LLM error). */
+		aiRewriteUnavailable?: boolean;
 	};
+}
+
+/** Passed into suggestion generation so cards align with scoring signals. */
+export interface AtsScoringContext {
+	jdProvided: boolean;
+	requiredJdKeywords: string[];
+	categories: ScoringResult["categories"];
 }
 
 export interface JDAnalysis {
@@ -90,7 +109,7 @@ export interface JDAnalysis {
 }
 
 export const SCORING_LLM_CONFIG = {
-	model: "gpt-4o",
+	model: "gpt-4o-mini",
 	temperature: 0,
 	seed: 42,
 } as const;
@@ -207,30 +226,134 @@ export async function scoreResume(
 	const niceToHaveKeywords = jdAnalysis ? [...jdAnalysis.softSkills, ...jdAnalysis.certifications] : [];
 	const allJdKeywords = [...requiredKeywords, ...niceToHaveKeywords];
 
-	const [keywordMatch, impactMetrics, structure, formatting, brevity, tailoring] = await Promise.all([
+	// Step 3: Global Content Gate
+	const { countResumeWords } = await import("./rules/brevity");
+	const wordCount = countResumeWords(resumeData);
+	const bullets = getAllBullets(resumeData);
+
+	if (wordCount < 30) {
+		const thinCategories: ScoringResult["categories"] = {
+			keywordMatch: {
+				score: 0,
+				max: 25,
+				details: [
+					{
+						ruleId: "KW-0",
+						ruleName: "Insufficient Content",
+						score: 0,
+						maxScore: 25,
+						details: "Resume is too short to provide a keyword analysis.",
+					},
+				],
+			},
+			impactMetrics: {
+				score: 0,
+				max: 20,
+				details: [
+					{
+						ruleId: "IM-0",
+						ruleName: "Insufficient Content",
+						score: 0,
+						maxScore: 20,
+						details: "Add experience bullets to evaluate impact.",
+					},
+				],
+			},
+			structure: {
+				score: 0,
+				max: 20,
+				details: [
+					{
+						ruleId: "SC-0",
+						ruleName: "Insufficient Content",
+						score: 0,
+						maxScore: 20,
+						details: "Complete your basic profile and sections.",
+					},
+				],
+			},
+			formatting: {
+				score: 0,
+				max: 15,
+				details: [
+					{
+						ruleId: "FM-0",
+						ruleName: "Insufficient Content",
+						score: 0,
+						maxScore: 15,
+						details: "Formatting cannot be evaluated on an empty resume.",
+					},
+				],
+			},
+			brevity: {
+				score: 0,
+				max: 10,
+				details: [
+					{
+						ruleId: "BR-0",
+						ruleName: "Insufficient Content",
+						score: 0,
+						maxScore: 10,
+						details: "Resume is too short.",
+					},
+				],
+			},
+			tailoring: {
+				score: 0,
+				max: 10,
+				details: [
+					{
+						ruleId: jdProvided ? "TR-0" : "CQ-0",
+						ruleName: "Insufficient Content",
+						score: 0,
+						maxScore: 10,
+						details: jdProvided ? "Add headline and summary to check tailoring." : "Add content to evaluate quality.",
+					},
+				],
+			},
+		};
+		const thinGen = includeAiSuggestions
+			? await generateSuggestions(resumeData, jdAnalysis, [], [], {
+					jdProvided,
+					requiredJdKeywords: requiredKeywords,
+					categories: thinCategories,
+				})
+			: { suggestions: [] as Suggestion[], aiRewriteUnavailable: false };
+
+		return {
+			overall: 0,
+			categories: thinCategories,
+			suggestions: thinGen.suggestions,
+			metadata: {
+				jdProvided,
+				keywordsExtracted: allJdKeywords,
+				keywordsMatched: [],
+				keywordsMissing: allJdKeywords,
+				totalBullets: bullets.length,
+				estimatedPages: estimatePageCount(resumeData),
+				aiRewriteUnavailable: thinGen.aiRewriteUnavailable,
+			},
+		};
+	}
+
+	const [keywordMatch, impactMetrics, structure, formatting, brevity, sixthCategory] = await Promise.all([
 		scoreKeywordMatch(resumeData, requiredKeywords),
 		scoreImpactMetrics(resumeData),
 		scoreStructure(resumeData),
 		scoreFormatting(resumeData),
 		scoreBrevity(resumeData),
-		jdProvided ? scoreTailoring(resumeData, jdAnalysis!) : Promise.resolve(null),
+		// Always compute a 6th category worth 10 pts — keeps the total always out of 100
+		jdProvided ? scoreTailoring(resumeData, jdAnalysis!) : scoreContentQuality(resumeData),
 	]);
 
-	// Step 3: Calculate overall score
-	const maxPossible = jdProvided ? 100 : 90;
+	// Step 4: Calculate overall score — always out of 100
 	const rawScore =
-		keywordMatch.score +
-		impactMetrics.score +
-		structure.score +
-		formatting.score +
-		brevity.score +
-		(tailoring?.score ?? 0);
+		keywordMatch.score + impactMetrics.score + structure.score + formatting.score + brevity.score + sixthCategory.score;
 
-	const overall = Math.round(Math.min(100, Math.max(0, (rawScore / maxPossible) * 100)));
+	const overall = Math.round(Math.min(100, Math.max(0, rawScore)));
 
-	// Step 4: Gather matched/missing keywords
+	// Step 5: Gather matched/missing keywords
 	const resumeSkills = getResumeSkills(resumeData);
-	const bullets = getAllBullets(resumeData);
 	const allResumeText = [
 		...resumeSkills,
 		...bullets.map((b) => b.text),
@@ -248,22 +371,28 @@ export async function scoreResume(
 	const missingRequired = keywordsMissing.filter((kw) => requiredSet.has(kw.toLowerCase()));
 	const missingNiceToHave = keywordsMissing.filter((kw) => !requiredSet.has(kw.toLowerCase()));
 
-	// Step 5: Generate suggestions
-	const suggestions = includeAiSuggestions
-		? await generateSuggestions(resumeData, jdAnalysis, missingRequired, missingNiceToHave)
-		: [];
+	// Step 6: Generate suggestions
+	const categoriesResult: ScoringResult["categories"] = {
+		keywordMatch,
+		impactMetrics,
+		structure,
+		formatting,
+		brevity,
+		tailoring: sixthCategory,
+	};
+
+	const genResult = includeAiSuggestions
+		? await generateSuggestions(resumeData, jdAnalysis, missingRequired, missingNiceToHave, {
+				jdProvided,
+				requiredJdKeywords: requiredKeywords,
+				categories: categoriesResult,
+			})
+		: { suggestions: [] as Suggestion[], aiRewriteUnavailable: false };
 
 	return {
 		overall,
-		categories: {
-			keywordMatch,
-			impactMetrics,
-			structure,
-			formatting,
-			brevity,
-			tailoring,
-		},
-		suggestions,
+		categories: categoriesResult,
+		suggestions: genResult.suggestions,
 		metadata: {
 			jdProvided,
 			keywordsExtracted: allJdKeywords,
@@ -271,6 +400,7 @@ export async function scoreResume(
 			keywordsMissing,
 			totalBullets: bullets.length,
 			estimatedPages: estimatePageCount(resumeData),
+			aiRewriteUnavailable: genResult.aiRewriteUnavailable,
 		},
 	};
 }

@@ -13,11 +13,22 @@ export function getEvaluationBadgeClass(score: number): string {
 export function getStatusBadgeClass(status: string): { bg: string; text: string; label: string } {
 	switch (status) {
 		case "evaluated":
-			return { bg: "bg-emerald-50", text: "text-emerald-700", label: "Evaluated" };
+		case "FACULTY_VERIFIED":
+			return { bg: "bg-emerald-50", text: "text-emerald-700", label: "Verified" };
 		case "submitted":
-			return { bg: "bg-indigo-50", text: "text-indigo-700", label: "Submitted for Review" };
+		case "SUBMITTED_TO_FACULTY":
+			return { bg: "bg-blue-50", text: "text-blue-700", label: "Submitted for Review" };
 		case "has_comments":
-			return { bg: "bg-amber-50", text: "text-amber-700", label: "Has Comments" };
+		case "FACULTY_REVISION_REQUESTED":
+			return { bg: "bg-amber-50", text: "text-amber-700", label: "Revision Requested" };
+		case "FINALIZED_BY_FACULTY":
+			return { bg: "bg-indigo-50", text: "text-indigo-700", label: "Finalized / Pending PO" };
+		case "PO_REVISION_REQUESTED":
+			return { bg: "bg-rose-50", text: "text-rose-700", label: "PO: Revision Requested" };
+		case "RESUBMITTED_TO_PO":
+			return { bg: "bg-purple-50", text: "text-purple-700", label: "Resubmitted to PO" };
+		case "APPROVED":
+			return { bg: "bg-teal-50", text: "text-teal-700", label: "Approved" };
 		default:
 			return { bg: "bg-slate-100", text: "text-slate-500", label: "Not Reviewed" };
 	}

@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { CheckCircleIcon } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, redirect, stripSearchParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
@@ -101,6 +103,9 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 	const rightSidebarSize = isMobile ? "0%" : `${initialLayout.right}%`;
 	const artboardSize = isMobile ? "100%" : `${initialLayout.artboard}%`;
 
+	const { data: resume } = useSuspenseQuery(orpc.resume.getById.queryOptions({ input: { id: Route.useParams().resumeId } }));
+	const isLocked = resume.isLocked;
+
 	return (
 		<div className="flex h-svh flex-col" {...props}>
 			<BuilderHeader />
@@ -114,12 +119,23 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 					maxSize={`${getSidebarMaxSize("left")}%`}
 					minSize="0%"
 					defaultSize={leftSidebarSize}
-					className="h-[calc(100svh-3.5rem)] overflow-hidden"
+					className="relative h-[calc(100svh-3.5rem)] overflow-hidden"
 				>
 					<BuilderSidebarLeft />
+					{isLocked && (
+						<div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-3 bg-white/70 backdrop-blur-sm cursor-not-allowed">
+							<div className="rounded-2xl bg-white px-5 py-3.5 shadow-lg border border-slate-200 flex flex-col items-center gap-2 text-center">
+								<CheckCircleIcon className="size-6 text-emerald-500" />
+								<p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t`View Only`}</p>
+								<p className="text-[11px] text-slate-400 max-w-[160px] leading-snug">
+									{t`This resume is locked and cannot be edited.`}
+								</p>
+							</div>
+						</div>
+					)}
 				</ResizablePanel>
 				<ResizableSeparator withHandle className="z-50 border-s" />
-				<ResizablePanel id="artboard" defaultSize={artboardSize} className="h-[calc(100svh-3.5rem)]">
+				<ResizablePanel id="artboard" defaultSize={artboardSize} className="h-[calc(100svh-3.5rem)] relative">
 					<Outlet />
 				</ResizablePanel>
 				<ResizableSeparator withHandle className="z-50 border-e" />

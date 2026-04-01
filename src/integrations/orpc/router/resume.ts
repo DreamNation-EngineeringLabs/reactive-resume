@@ -471,6 +471,7 @@ export const resumeRouter = {
 					resumeId: z.string().describe("Resume ID"),
 					studentId: z.string().describe("eng-labs student ID"),
 					tenantId: z.string().describe("eng-labs tenant ID"),
+					parentId: z.string().uuid().optional().describe("Parent comment ID for replies"),
 					content: z.string().min(1).max(5000).describe("Comment content"),
 					scope: z.enum(["INDIVIDUAL", "SECTION"]).default("INDIVIDUAL").describe("Comment visibility scope"),
 				}),
@@ -479,6 +480,7 @@ export const resumeRouter = {
 				z.object({
 					id: z.string(),
 					resumeId: z.string(),
+					parentId: z.string().uuid().nullable(),
 					content: z.string(),
 					scope: z.string(),
 					status: z.string(),
@@ -497,6 +499,7 @@ export const resumeRouter = {
 					studentId: input.studentId,
 					tenantId: input.tenantId,
 					authorId: context.user.id,
+					parentId: input.parentId,
 					content: input.content,
 					scope: input.scope,
 				});
@@ -509,10 +512,11 @@ export const resumeRouter = {
 					]);
 
 					if (student?.email) {
+						const authorName = context.user.name || "A faculty member";
 						await sendEmail({
 							to: student.email,
 							subject: `New Feedback on your Resume: ${resume.name}`,
-							text: `Hello ${student.name},\n\nYou have received new feedback on your resume "${resume.name}" from ${context.user.name}.\n\nFeedback Content:\n"${input.content}"\n\nLogin to the dashboard to view more details.`,
+							text: `Hello ${student.name},\n\nYou have received new feedback on your resume "${resume.name}" from ${authorName}.\n\nFeedback Content:\n"${input.content}"\n\nLogin to the dashboard to view more details.`,
 						});
 					}
 				} catch (error) {
@@ -536,6 +540,7 @@ export const resumeRouter = {
 					z.object({
 						id: z.string(),
 						resumeId: z.string(),
+						parentId: z.string().uuid().nullable(),
 						content: z.string(),
 						scope: z.string(),
 						status: z.string(),

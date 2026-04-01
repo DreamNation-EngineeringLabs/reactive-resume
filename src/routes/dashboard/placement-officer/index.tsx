@@ -1,5 +1,4 @@
 import { t } from "@lingui/core/macro";
-import { ChartPieIcon } from "@phosphor-icons/react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { useEffect, useState } from "react";
@@ -13,7 +12,7 @@ export const Route = createFileRoute("/dashboard/placement-officer/")({
 	component: RouteComponent,
 	validateSearch: zodValidator(
 		z.object({
-			tab: z.enum(["overview", "students", "checklists"]).catch("overview"),
+			tab: z.enum(["overview", "inbox", "sections", "students", "checklists"]).catch("overview"),
 			packageId: z.string().optional(),
 			unitType: z.string().optional(),
 			unitId: z.string().optional(),
@@ -34,7 +33,7 @@ function RouteComponent() {
 
 	return (
 		<div className="space-y-6">
-			<DashboardHeader icon={ChartPieIcon} title={t`Placement Officer Dashboard`} />
+			<DashboardHeader title={t`Placement Officer Dashboard`} />
 			<SectionMetricsView
 				scope="po"
 				sectionIds={[]}

@@ -16,6 +16,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AtsSuggestionDescription } from "@/components/ats/suggestion-description";
 import { flushResumeSync, useResumeStore } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -403,6 +404,14 @@ function ATSScoreSheetBody({ state }: { state: ATSPanelState }) {
 
 				{result && (
 					<>
+						{result.metadata.aiRewriteUnavailable ? (
+							<p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950 text-xs dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+								<Trans>
+									Some AI rewrites could not be generated. Manual suggestions and scores still apply — check your AI
+									configuration or try re-scoring.
+								</Trans>
+							</p>
+						) : null}
 						{/* Overall score ring + summary bar */}
 						<div className="flex flex-col items-center gap-6 rounded-xl border bg-muted/30 p-6 sm:flex-row">
 							<ScoreRing score={result.overall} />
@@ -648,7 +657,7 @@ function CategoryDetailPanel({
 			)}
 
 			{/* Actionable Suggestions */}
-			{pendingSuggestions.length > 0 && (
+			{(pendingSuggestions.length > 0 || deductedRules.length > 0) && (
 				<div className="space-y-2">
 					<h4 className="flex items-center gap-1.5 font-semibold text-blue-600 text-sm">
 						<LightningIcon weight="fill" className="size-4" />
@@ -659,18 +668,27 @@ function CategoryDetailPanel({
 							</Badge>
 						)}
 					</h4>
-					<div className="space-y-2">
-						{pendingSuggestions.map((suggestion) => (
-							<SuggestionCard
-								key={suggestion.id}
-								suggestion={suggestion}
-								applied={false}
-								dismissed={false}
-								onApply={onApply}
-								onDismiss={onDismiss}
-							/>
-						))}
-					</div>
+					{pendingSuggestions.length > 0 ? (
+						<div className="space-y-2">
+							{pendingSuggestions.map((suggestion) => (
+								<SuggestionCard
+									key={suggestion.id}
+									suggestion={suggestion}
+									applied={false}
+									dismissed={false}
+									onApply={onApply}
+									onDismiss={onDismiss}
+								/>
+							))}
+						</div>
+					) : (
+						<p className="rounded-lg border border-dashed bg-muted/30 px-3 py-3 text-center text-muted-foreground text-xs">
+							<Trans>
+								No suggestion cards in this tab. Use “Needs Improvement” above, try other categories, or re-score after
+								edits.
+							</Trans>
+						</p>
+					)}
 				</div>
 			)}
 
@@ -796,7 +814,7 @@ function SuggestionCard({ suggestion, applied, dismissed, onApply, onDismiss }: 
 				<SeverityIcon weight="fill" className={cn("mt-0.5 size-4 shrink-0", config.color)} />
 				<div className="min-w-0 flex-1">
 					<h4 className="font-medium text-sm leading-tight">{suggestion.title}</h4>
-					<p className="mt-1 text-muted-foreground text-xs">{suggestion.description}</p>
+					<AtsSuggestionDescription suggestion={suggestion} />
 
 					{suggestion.diff.hunks.length > 0 && <DiffView hunks={suggestion.diff.hunks} />}
 
@@ -811,7 +829,7 @@ function SuggestionCard({ suggestion, applied, dismissed, onApply, onDismiss }: 
 								{suggestion.autoApplicable && suggestion.patches?.length ? (
 									<Button size="sm" variant="outline" onClick={() => onApply(suggestion)} className="h-7 text-xs">
 										<TargetIcon className="mr-1 size-3" />
-										<Trans>Apply</Trans>
+										<Trans>Apply fix</Trans>
 									</Button>
 								) : null}
 								<Button
@@ -864,7 +882,13 @@ function getCategories(result: ScoringResult | null): CategoryInfo[] {
 		{ key: "formatting", label: t`Formatting`, score: result.categories.formatting },
 		{ key: "brevity", label: t`Brevity`, score: result.categories.brevity },
 		...(result.categories.tailoring
-			? [{ key: "tailoring", label: t`Tailoring`, score: result.categories.tailoring }]
+			? [
+					{
+						key: "tailoring",
+						label: result.metadata.jdProvided ? t`Tailoring` : t`Content Quality`,
+						score: result.categories.tailoring,
+					},
+				]
 			: []),
 	];
 }

@@ -1,5 +1,7 @@
 import { t } from "@lingui/core/macro";
 import {
+	CalendarBlankIcon,
+	ChatDotsIcon,
 	MagnifyingGlassIcon,
 	UserIcon,
 } from "@phosphor-icons/react";
@@ -15,6 +17,7 @@ type ResumeEntry = {
 	commentCount: number;
 	isSubmitted: boolean;
 	status: "not_reviewed" | "submitted" | "evaluated" | "has_comments";
+	reviewStatus: string | null;
 };
 
 export type StudentWithResumes = {
@@ -66,8 +69,8 @@ export function StudentResumeTable({
 	return (
 		<div className="space-y-4">
 			{/* Search & Filter Bar */}
-			<div className="flex flex-wrap items-center gap-3">
-				<div className="relative flex-1">
+			<div className="space-y-3">
+				<div className="relative">
 					<MagnifyingGlassIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
 					<input
 						type="text"
@@ -77,7 +80,7 @@ export function StudentResumeTable({
 						className="h-10 w-full rounded-xl border-0 bg-slate-50 pr-4 pl-9 text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
 					/>
 				</div>
-				<div className="flex gap-1.5">
+				<div className="flex flex-wrap gap-1.5">
 					{(["all", "not_reviewed", "evaluated", "has_comments"] as const).map((status) => {
 						const labels = {
 							all: t`All`,
@@ -93,7 +96,7 @@ export function StudentResumeTable({
 								className={cn(
 									"rounded-xl px-3 py-2 font-semibold text-xs transition-all active:scale-[0.97]",
 									statusFilter === status
-										? "bg-indigo-600 text-white"
+										? "bg-indigo-600 text-white shadow-sm"
 										: "bg-slate-100 text-slate-600 hover:bg-slate-200",
 								)}
 							>
@@ -104,107 +107,125 @@ export function StudentResumeTable({
 				</div>
 			</div>
 
-			{/* Table */}
+			{/* Student Cards */}
 			{filteredStudents.length === 0 ? (
-				<div className="rounded-2xl bg-slate-50 p-12 text-center">
-					<p className="font-semibold text-slate-400 text-sm">No students or resumes found</p>
+				<div className="rounded-2xl bg-slate-50 py-12 text-center">
+					<p className="font-semibold text-slate-400 text-sm">{t`No students or resumes found`}</p>
 				</div>
 			) : (
 				<div className="space-y-3">
 					{filteredStudents.map((student) => (
-						<div key={student.engLabsId} className="rounded-2xl bg-white shadow-sm">
+						<div
+							key={student.engLabsId}
+							className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+						>
 							{/* Student Header */}
-							<div className="flex items-center gap-4 px-5 pt-4 pb-2">
-								<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 font-bold text-indigo-600 text-sm">
+							<div className="flex items-center gap-3 border-b border-slate-50 bg-slate-50/50 px-4 py-3">
+								<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 font-bold text-indigo-600 text-sm">
 									{student.name.charAt(0).toUpperCase()}
 								</div>
 								<div className="min-w-0 flex-1">
-									<p className="truncate font-semibold text-slate-900 text-sm">{student.name}</p>
-									<p className="text-slate-400 text-xs">
+									<p className="truncate font-semibold text-slate-900 text-sm leading-tight">{student.name}</p>
+									<p className="mt-0.5 text-slate-400 text-xs">
 										{student.rollNumber ?? student.email}
-										{student.sectionName && ` · ${student.sectionName}`}
+										{student.sectionName && (
+											<span className="ml-1 text-slate-300">·</span>
+										)}
+										{student.sectionName && (
+											<span className="ml-1 text-slate-500">{student.sectionName}</span>
+										)}
 									</p>
 								</div>
-								<span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-medium text-slate-500 text-xs">
-									{student.resumes.length} resume{student.resumes.length !== 1 ? "s" : ""}
-								</span>
-								{onStudentClick && (
-									<button
-										type="button"
-										onClick={() => onStudentClick(student)}
-										title="View student details"
-										className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600 active:scale-[0.95]"
-									>
-										<UserIcon weight="duotone" className="size-4" />
-									</button>
-								)}
+								<div className="flex shrink-0 items-center gap-2">
+									<span className="rounded-full bg-white px-2.5 py-0.5 font-medium text-slate-500 text-xs ring-1 ring-slate-200">
+										{student.resumes.length} resume{student.resumes.length !== 1 ? "s" : ""}
+									</span>
+									{onStudentClick && (
+										<button
+											type="button"
+											onClick={() => onStudentClick(student)}
+											title={t`View student details`}
+											className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200 transition-all hover:bg-indigo-50 hover:text-indigo-600 hover:ring-indigo-200 active:scale-[0.95]"
+										>
+											<UserIcon weight="duotone" className="size-3.5" />
+										</button>
+									)}
+								</div>
 							</div>
 
-							{/* Resumes */}
+							{/* Resume Entries */}
 							{student.resumes.length > 0 ? (
-								<div className="space-y-1 px-5 pb-4">
+								<div className="divide-y divide-slate-50">
 									{student.resumes.map((resume) => {
-										const statusBadge = getStatusBadgeClass(resume.status);
+										const statusInfo = getStatusBadgeClass(resume.reviewStatus || resume.status);
 										return (
-											<div
-												key={resume.id}
-												className="flex items-center gap-3 rounded-xl bg-slate-50/80 px-4 py-3 transition-all hover:bg-slate-100"
-											>
-												<div className="min-w-0 flex-1">
-													<p className="truncate font-medium text-slate-900 text-sm">{resume.name}</p>
-													<p className="text-slate-400 text-xs">
-														Updated {new Date(resume.updatedAt).toLocaleDateString()}
+											<div key={resume.id} className="px-4 py-3 transition-colors hover:bg-slate-50/50">
+												{/* Resume name + date row */}
+												<div className="mb-2.5 flex items-start justify-between gap-3">
+													<p className="truncate font-semibold text-slate-800 text-sm leading-tight">
+														{resume.name}
 													</p>
+													<span className="flex shrink-0 items-center gap-1 text-slate-400 text-[11px]">
+														<CalendarBlankIcon className="size-3" />
+														{new Date(resume.updatedAt).toLocaleDateString()}
+													</span>
 												</div>
 
-												{/* Score */}
-												{resume.evaluationScore !== null && (
+												{/* Badges + action row */}
+												<div className="flex flex-wrap items-center gap-2">
+													{/* Status badge */}
 													<span
 														className={cn(
-															"rounded-full px-2.5 py-0.5 font-medium text-xs",
-															getEvaluationBadgeClass(resume.evaluationScore),
+															"rounded-full px-2.5 py-0.5 font-semibold text-[11px]",
+															statusInfo.bg,
+															statusInfo.text,
 														)}
 													>
-														{resume.evaluationScore.toFixed(1)}/5
+														{statusInfo.label}
 													</span>
-												)}
 
-												{/* Comment count */}
-												{resume.commentCount > 0 && (
-													<span className="rounded-full bg-sky-50 px-2.5 py-0.5 font-medium text-sky-700 text-xs">
-														{resume.commentCount} comment{resume.commentCount !== 1 ? "s" : ""}
-													</span>
-												)}
-
-												{/* Status badge */}
-												<span
-													className={cn(
-														"rounded-full px-2.5 py-0.5 font-medium text-xs",
-														statusBadge.bg,
-														statusBadge.text,
+													{/* Score badge */}
+													{resume.evaluationScore !== null && (
+														<span
+															className={cn(
+																"rounded-full px-2.5 py-0.5 font-semibold text-[11px]",
+																getEvaluationBadgeClass(resume.evaluationScore),
+															)}
+														>
+															Score: {resume.evaluationScore.toFixed(1)}/5
+														</span>
 													)}
-												>
-													{statusBadge.label}
-												</span>
 
-												{/* Actions */}
-												{onReview && (
-													<button
-														type="button"
-														onClick={() => onReview(resume.id, student.engLabsId)}
-														className="rounded-xl bg-indigo-600 px-3 py-1.5 font-semibold text-white text-xs transition-all hover:bg-indigo-700 active:scale-[0.97]"
-													>
-														Review
-													</button>
-												)}
+													{/* Comment count */}
+													{resume.commentCount > 0 && (
+														<span className="flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-0.5 font-semibold text-sky-700 text-[11px]">
+															<ChatDotsIcon className="size-3" />
+															{resume.commentCount} comment{resume.commentCount !== 1 ? "s" : ""}
+														</span>
+													)}
+
+													{/* Spacer */}
+													<div className="flex-1" />
+
+													{/* Review action */}
+													{onReview && (
+														<button
+															type="button"
+															onClick={() => onReview(resume.id, student.engLabsId)}
+															className="rounded-xl bg-indigo-600 px-3.5 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-indigo-700 active:scale-[0.97]"
+														>
+															{t`Review`}
+														</button>
+													)}
+												</div>
 											</div>
 										);
 									})}
 								</div>
 							) : (
-								<div className="px-5 pb-4">
-									<p className="rounded-xl bg-slate-50/80 px-4 py-3 text-center text-slate-400 text-xs">
-										No resumes created yet
+								<div className="px-4 py-4">
+									<p className="rounded-xl bg-slate-50 px-4 py-3 text-center text-slate-400 text-xs">
+										{t`No resumes created yet`}
 									</p>
 								</div>
 							)}

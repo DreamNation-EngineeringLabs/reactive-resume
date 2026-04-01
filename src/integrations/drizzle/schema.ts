@@ -3,6 +3,9 @@ import { defaultResumeData, type ResumeData } from "@/schema/resume/data";
 import type { UserInfoData } from "@/schema/resume/user-info";
 import { generateId } from "@/utils/string";
 
+// Workaround for CockroachDB internal types that Drizzle should ignore/recognize
+export const crdbInternalRegion = pg.pgEnum("crdb_internal_region", ["aws-ap-south-1"]);
+
 export const user = pg.pgTable(
 	"user",
 	{
@@ -180,6 +183,12 @@ export const resume = pg.pgTable(
 			.uuid("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
+		reviewStatus: pg
+			.text("review_status")
+			.notNull()
+			.default("DRAFT"), // DRAFT | SUBMITTED_TO_FACULTY | FACULTY_REVISION_REQUESTED | FACULTY_VERIFIED | FINALIZED_BY_FACULTY | PO_REVISION_REQUESTED | RESUBMITTED_TO_PO | APPROVED
+		locked: pg.boolean("locked").notNull().default(false),
+		unlockReason: pg.text("unlock_reason"),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: pg
 			.timestamp("updated_at", { withTimezone: true })
@@ -190,6 +199,7 @@ export const resume = pg.pgTable(
 	(t) => [
 		pg.unique().on(t.slug, t.userId),
 		pg.index().on(t.userId),
+		pg.index().on(t.reviewStatus),
 		pg.index().on(t.createdAt.asc()),
 		pg.index().on(t.userId, t.updatedAt.desc()),
 		pg.index().on(t.isPublic, t.slug, t.userId),
@@ -301,6 +311,7 @@ export const resumeComment = pg.pgTable(
 		tenantId: pg.text("tenant_id").notNull(), // Reference to eng-labs tenant
 		authorId: pg.text("author_id").notNull(), // eng-labs user ID (faculty/PO)
 		studentId: pg.text("student_id").notNull(), // eng-labs user ID (student)
+		parentId: pg.uuid("parent_id"), // Support for nested replies
 		content: pg.text("content").notNull(),
 		scope: pg.text("scope").notNull().default("INDIVIDUAL"), // INDIVIDUAL | SECTION
 		status: pg.text("status").notNull().default("OPEN"), // OPEN | ADDRESSED | RESOLVED
@@ -312,7 +323,13 @@ export const resumeComment = pg.pgTable(
 			.defaultNow()
 			.$onUpdate(() => /* @__PURE__ */ new Date()),
 	},
-	(t) => [pg.index().on(t.resumeId), pg.index().on(t.studentId), pg.index().on(t.tenantId), pg.index().on(t.authorId)],
+	(t) => [
+		pg.index().on(t.resumeId),
+		pg.index().on(t.studentId),
+		pg.index().on(t.tenantId),
+		pg.index().on(t.authorId),
+		pg.index().on(t.parentId),
+	],
 );
 
 export const resumeChecklist = pg.pgTable(

@@ -6,8 +6,16 @@ import {
 	LockSimpleIcon,
 	LockSimpleOpenIcon,
 	PencilSimpleLineIcon,
+	ProhibitIcon,
 	TrashSimpleIcon,
 } from "@phosphor-icons/react";
+
+const PO_LOCKED_STATUSES = new Set([
+	"FINALIZED_BY_FACULTY",
+	"RESUBMITTED_TO_PO",
+	"PO_VERIFIED",
+	"APPROVED",
+]);
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -107,10 +115,17 @@ export function ResumeDropdownMenu({ resume, children, ...props }: Props) {
 					<Trans>Duplicate</Trans>
 				</DropdownMenuItem>
 
-				<DropdownMenuItem onSelect={handleToggleLock}>
-					{resume.isLocked ? <LockSimpleOpenIcon /> : <LockSimpleIcon />}
-					{resume.isLocked ? <Trans>Unlock</Trans> : <Trans>Lock</Trans>}
-				</DropdownMenuItem>
+				{resume.isLocked && resume.reviewStatus && PO_LOCKED_STATUSES.has(resume.reviewStatus) ? (
+					<DropdownMenuItem disabled>
+						<ProhibitIcon className="text-rose-400" />
+						<Trans>Locked by Placement Officer</Trans>
+					</DropdownMenuItem>
+				) : (
+					<DropdownMenuItem onSelect={handleToggleLock}>
+						{resume.isLocked ? <LockSimpleOpenIcon /> : <LockSimpleIcon />}
+						{resume.isLocked ? <Trans>Unlock</Trans> : <Trans>Lock</Trans>}
+					</DropdownMenuItem>
+				)}
 
 				<DropdownMenuSeparator />
 

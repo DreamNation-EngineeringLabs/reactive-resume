@@ -5,7 +5,7 @@ export function PagePicture({ className, style }: { className?: string; style?: 
 	const name = useResumeStore((state) => state.resume.data.basics.name);
 	const picture = useResumeStore((state) => state.resume.data.picture);
 
-	if (picture.url === "") return null;
+	if (!(picture.url ?? "").trim()) return null;
 
 	return (
 		<div

@@ -264,16 +264,7 @@ export const sectionsDashboard = protectedProcedure
 		//     (the sections themselves + their ancestors up the tree)
 		let scopedOrgUnits = allOrgUnits;
 		if (scope === "faculty" && sections.length > 0) {
-			const relevantIds = new Set<string>();
-			for (const section of sections) {
-				// Walk up the tree: section → parent → grandparent → ...
-				let currentId: string | null = section.id;
-				while (currentId) {
-					relevantIds.add(currentId);
-					const unit = allOrgUnits.find((u) => u.id === currentId);
-					currentId = unit?.parentId ?? null;
-				}
-			}
+			const relevantIds = new Set(sections.map(s => s.id));
 			scopedOrgUnits = allOrgUnits.filter((u) => relevantIds.has(u.id));
 		}
 
@@ -363,30 +354,76 @@ export const sectionsDashboard = protectedProcedure
 						commentCount: comments,
 						isSubmitted,
 						status,
+						reviewStatus: (r as any).reviewStatus ?? "DRAFT",
+						locked: (r as any).locked ?? false,
+						unlockReason: (r as any).unlockReason ?? null,
 					};
 				}),
 			};
 		});
 
-		// 11. Per-section stats (over all sections, not just effective)
-		const sectionStats = sections.map((section) => {
-			const sectionStudents = students.filter((s) => s.sectionId === section.id);
-			const sectionResumes = sectionStudents.flatMap((s) => s.resumes);
-			const evaluated = sectionResumes.filter((r) => r.evaluationScore !== null);
-			const submitted = sectionResumes.filter((r) => r.isSubmitted);
-			const scores = evaluated.map((r) => r.evaluationScore!);
+		// 11. Calculate stats for ALL org units (hierarchical aggregation)
+		const unitStats = scopedOrgUnits.map((unit) => {
+			// Find all descendant CLASS-level section IDs for this unit
+			const descendantSectionIds = new Set<string>();
+			const queue = [unit.id];
+			const processed = new Set<string>();
+
+			while (queue.length > 0) {
+				const currentId = queue.shift()!;
+				if (processed.has(currentId)) continue;
+				processed.add(currentId);
+
+				// If it's a leaf section, add it
+				const isSection = sections.some(s => s.id === currentId);
+				if (isSection) descendantSectionIds.add(currentId);
+
+				// Find children in allOrgUnits to continue recursion
+				for (const u of allOrgUnits) {
+					if (u.parentId === currentId) queue.push(u.id);
+				}
+			}
+
+			const unitStudents = students.filter((s) => descendantSectionIds.has(s.sectionId));
+			const unitResumes = unitStudents.flatMap((s) => s.resumes);
+			
+			// New logic: 
+			// 1. Verified = Any progress from Faculty or PO
+			const verified = unitResumes.filter((r) => 
+				["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT")
+			);
+			
+			// 2. FinalizedByFaculty = Waiting in PO Inbox
+			const finalized = unitResumes.filter((r) => 
+				["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT")
+			);
+			
+			// 3. PassedFaculty = Cleared faculty stage once (even if in PO revision)
+			const clearedFaculty = unitResumes.filter((r) => 
+				["FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT")
+			);
+
+			// 4. PO Verified = Verified by PO but not yet approved section-wide
+			const poVerified = unitResumes.filter((r) => (r as any).reviewStatus === "PO_VERIFIED");
+
+			// 5. ApprovedOnly = Final Status
+			const approved = unitResumes.filter((r) => (r as any).reviewStatus === "APPROVED");
+
+			const scores = unitResumes.filter(r => r.evaluationScore !== null).map((r) => r.evaluationScore!);
 
 			return {
-				id: section.id,
-				name: section.name,
-				code: section.code,
-				unitType: section.type,
+				id: unit.id,
+				name: unit.name,
+				unitType: unit.type,
 				stats: {
-					totalStudents: sectionStudents.length,
-					totalResumes: sectionResumes.length,
-					evaluatedResumes: evaluated.length,
-					submittedResumes: submitted.length,
-					completionRate: sectionResumes.length > 0 ? Math.round((evaluated.length / sectionResumes.length) * 100) : 0,
+					totalStudents: unitStudents.length,
+					totalResumes: unitResumes.length,
+					evaluatedResumes: verified.length,
+					submittedResumes: finalized.length,
+					passedFaculty: clearedFaculty.length,
+					poVerifiedResumes: poVerified.length,
+					approvedResumes: approved.length,
+					completionRate: unitResumes.length > 0 ? Math.round((verified.length / unitResumes.length) * 100) : 0,
 					averageScore: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null,
 				},
 			};
@@ -439,7 +476,7 @@ export const sectionsDashboard = protectedProcedure
 			unitTypes: scopedUnitTypes,
 			allOrgUnits: scopedOrgUnits,
 			// Section-level stats (CLASS leaf nodes)
-			sections: sectionStats,
+			sections: unitStats,
 			students,
 			aggregateStats: {
 				totalStudents: students.length,
@@ -527,8 +564,12 @@ export const studentResumes = protectedProcedure
 						content: c.content,
 						authorId: c.authorId,
 						status: c.status,
+						parentId: c.parentId,
 						createdAt: c.createdAt,
 					})),
+					reviewStatus: (resume as any).reviewStatus,
+					locked: (resume as any).locked ?? false,
+					unlockReason: (resume as any).unlockReason ?? null,
 					evaluations: evaluations.slice(0, 3),
 					history,
 				};
@@ -554,20 +595,171 @@ export const submitResume = protectedProcedure
 	.input(
 		z.object({
 			resumeId: z.string(),
-			studentId: z.string().describe("eng-labs student ID"),
-			tenantId: z.string(),
+			studentId: z.string().describe("eng-labs student ID").optional(),
+			tenantId: z.string().optional(),
 		}),
 	)
 	.handler(async ({ context, input }) => {
-		const { addToHistory } = await import("@/integrations/drizzle/services/resume-feedback.service");
+		const { updateResumeStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
-		await addToHistory({
+		// Fetch current status to decide if it's an initial submission or a re-submission to PO
+		const [currentResume] = await db.select().from(schema.resume).where(eq(schema.resume.id, input.resumeId)).limit(1);
+
+		let nextStatus: any = "SUBMITTED_TO_FACULTY";
+		if (currentResume?.reviewStatus === "PO_REVISION_REQUESTED") {
+			nextStatus = "RESUBMITTED_TO_PO";
+		}
+
+		await updateResumeStatus({
+			resumeId: input.resumeId,
+			studentId: input.studentId ?? currentResume?.userId ?? "unknown",
+			tenantId: input.tenantId ?? "default",
+			status: nextStatus,
+			changedBy: context.user.id,
+			actorType: "LEARNER",
+		});
+
+		return { success: true };
+	});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PO Individual Approval Action
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const approveResume = protectedProcedure
+	.route({
+		method: "POST",
+		path: "/resumes/dashboard/approve",
+		tags: ["Dashboard"],
+		summary: "Approve a resume (PO action)",
+	})
+	.input(
+		z.object({
+			resumeId: z.string(),
+			studentId: z.string().optional(),
+			tenantId: z.string().optional(),
+		}),
+	)
+	.handler(async ({ context, input }) => {
+		const { updateResumeStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+		await updateResumeStatus({
 			resumeId: input.resumeId,
 			studentId: input.studentId,
 			tenantId: input.tenantId,
-			action: "SUBMITTED",
+			status: "PO_VERIFIED",
 			changedBy: context.user.id,
-			actorType: "LEARNER",
+			actorType: "PLACEMENT_OFFICER",
+		});
+
+		return { success: true };
+	});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manual Lock/Unlock Toggle
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const toggleResumeLock = protectedProcedure
+	.route({
+		method: "POST",
+		path: "/resumes/dashboard/lock",
+		tags: ["Dashboard"],
+		summary: "Lock or unlock a resume manually",
+	})
+	.input(
+		z.object({
+			resumeId: z.string(),
+			isLocked: z.boolean(),
+			reason: z.string().optional(),
+		}),
+	)
+	.handler(async ({ input }) => {
+		const { toggleLock } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+		await toggleLock({
+			resumeId: input.resumeId,
+			isLocked: input.isLocked,
+			reason: input.reason,
+		});
+
+		return { success: true };
+	});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Update Resume Status (Faculty/PO action)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const updateStatus = protectedProcedure
+	.route({
+		method: "POST",
+		path: "/resumes/dashboard/status",
+		tags: ["Dashboard"],
+		operationId: "updateResumeStatus",
+		summary: "Update resume review status",
+	})
+	.input(
+		z.object({
+			resumeId: z.string(),
+			studentId: z.string(),
+			tenantId: z.string(),
+			status: z.enum([
+				"FACULTY_REVISION_REQUESTED",
+				"FACULTY_VERIFIED",
+				"FINALIZED_BY_FACULTY",
+				"PO_REVISION_REQUESTED",
+				"PO_VERIFIED",
+				"APPROVED",
+			]),
+		}),
+	)
+	.handler(async ({ context, input }) => {
+		const { updateResumeStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+		const actorType =
+			input.status.startsWith("PO_") || input.status === "APPROVED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
+
+		await updateResumeStatus({
+			resumeId: input.resumeId,
+			studentId: input.studentId,
+			tenantId: input.tenantId,
+			status: input.status as any,
+			changedBy: context.user.id,
+			actorType,
+		});
+
+		return { success: true };
+	});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bulk Update Resumes (Faculty/PO action)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const bulkUpdateResumes = protectedProcedure
+	.route({
+		method: "POST",
+		path: "/resumes/dashboard/bulk-status",
+		tags: ["Dashboard"],
+		operationId: "bulkUpdateResumes",
+		summary: "Bulk update resume review statuses",
+	})
+	.input(
+		z.object({
+			resumes: z.array(z.object({ id: z.string(), studentId: z.string() })),
+			tenantId: z.string(),
+			status: z.enum(["FINALIZED_BY_FACULTY", "PO_VERIFIED", "APPROVED"]),
+		}),
+	)
+	.handler(async ({ context, input }) => {
+		const { bulkUpdateSectionResumes } = await import("@/integrations/drizzle/services/resume-feedback.service");
+
+		const actorType = input.status === "APPROVED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
+
+		await bulkUpdateSectionResumes({
+			resumes: input.resumes,
+			tenantId: input.tenantId,
+			toStatus: input.status as any,
+			changedBy: context.user.id,
+			actorType,
 		});
 
 		return { success: true };
@@ -815,6 +1007,7 @@ export const reviewResume = protectedProcedure
 				data: r.data,
 				updatedAt: r.updatedAt,
 				createdAt: r.createdAt,
+				reviewStatus: (r as any).reviewStatus,
 				isSubmitted,
 				latestScore,
 			},
@@ -823,6 +1016,7 @@ export const reviewResume = protectedProcedure
 				content: c.content,
 				authorId: c.authorId,
 				status: c.status,
+				parentId: c.parentId,
 				createdAt: c.createdAt,
 			})),
 			evaluations: evaluations.slice(0, 5),
@@ -843,5 +1037,9 @@ export const dashboardRouter = {
 	admin: adminDashboard,
 	forward: forwardResume,
 	sectionsList,
+	updateStatus,
+	bulkUpdateResumes,
+	approveResume,
+	toggleResumeLock,
 };
 

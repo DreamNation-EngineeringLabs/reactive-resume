@@ -11,6 +11,7 @@ import {
 	ReadCvLogoIcon,
 	SignOutIcon,
 	TargetIcon,
+	TrayIcon,
 	UserIcon,
 	UsersIcon,
 } from "@phosphor-icons/react";
@@ -100,7 +101,7 @@ function staffDashboardItems(role: string): SidebarItem[] {
 				? "/dashboard/placement-officer"
 				: "/dashboard/admin";
 
-	return [
+	const items: SidebarItem[] = [
 		{
 			icon: <ChartBarIcon weight="duotone" />,
 			label: msg`Overview`,
@@ -108,6 +109,29 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			search: { tab: "overview" },
 			iconBg: "bg-indigo-50",
 			iconColor: "text-indigo-600",
+		},
+	];
+
+	// Faculty and Placement Officer get a dedicated Inbox
+	if (role === "INSTRUCTOR" || role === "PLACEMENT_OFFICER") {
+		items.push({
+			icon: <TrayIcon weight="duotone" />,
+			label: msg`Inbox`,
+			href: baseHref,
+			search: { tab: "inbox" },
+			iconBg: "bg-rose-50",
+			iconColor: "text-rose-600",
+		});
+	}
+
+	items.push(
+		{
+			icon: <BuildingsIcon weight="duotone" />,
+			label: msg`Sections`,
+			href: baseHref,
+			search: { tab: "sections" },
+			iconBg: "bg-blue-50",
+			iconColor: "text-blue-600",
 		},
 		{
 			icon: <UsersIcon weight="duotone" />,
@@ -124,8 +148,10 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			search: { tab: "checklists" },
 			iconBg: "bg-amber-50",
 			iconColor: "text-amber-600",
-		},
-	];
+		}
+	);
+
+	return items;
 }
 
 type SidebarItemListProps = {
@@ -170,27 +196,32 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 									className: "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20",
 								}}
 							>
+								{/* Icon container — adapts between expanded and collapsed */}
 								<div
 									className={cn(
-										"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-300",
+										"flex shrink-0 items-center justify-center transition-all duration-300",
 										"group-active/navitem:scale-90",
-										// By default, use the provided icon colors, but they will be overridden by active state
-										item.iconBg,
-										item.iconColor,
-										// Override when item is in an active link
-										isActive && "bg-white/20 text-white",
+										!isCollapsed && cn(
+											"h-9 w-9 rounded-xl",
+											item.iconBg,
+											item.iconColor,
+											isActive && "bg-white/20 text-white",
+										),
+										isCollapsed && cn(
+											"size-4",
+											isActive ? item.iconColor : "text-slate-400",
+										),
 									)}
 								>
-									{item.icon && (
-										<div className="size-5 [&_svg]:size-full">
-											{item.icon}
-										</div>
-									)}
+									<div className={cn(isCollapsed ? "size-full" : "size-5", "[&_svg]:size-full")}>
+										{item.icon}
+									</div>
 								</div>
+
 								<span
 									className={cn(
 										"shrink-0 text-sm transition-[margin,opacity] duration-300 ease-in-out font-medium",
-										isCollapsed && "-ms-10 opacity-0",
+										isCollapsed && "sr-only",
 										isActive ? "text-white font-bold" : "text-slate-600",
 									)}
 								>
@@ -390,13 +421,20 @@ export function DashboardSidebar() {
 										onClick={handleBackClick}
 										className="flex w-full items-center gap-x-3 rounded-xl px-2 py-2 transition-all duration-300 hover:bg-white/50 active:scale-[0.98] tap-active"
 									>
-										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-											<ArrowLeftIcon weight="duotone" />
+										<div
+											className={cn(
+												"flex shrink-0 items-center justify-center transition-all duration-200",
+												isCollapsed
+													? "size-4 text-slate-400"
+													: "h-8 w-8 rounded-xl bg-primary/10 text-primary",
+											)}
+										>
+											<ArrowLeftIcon weight="duotone" className={isCollapsed ? "size-full" : "size-4"} />
 										</div>
 										<span
 											className={cn(
 												"shrink-0 text-slate-700 text-sm transition-[margin,opacity] duration-300 ease-in-out font-medium",
-												isCollapsed && "-ms-8 opacity-0",
+												isCollapsed && "sr-only",
 											)}
 										>
 											{t`Back to App`}

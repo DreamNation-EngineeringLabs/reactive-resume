@@ -22,7 +22,38 @@ const weakPhrases = [
 	"tasked with",
 	"was able to",
 	"successfully",
+	"various",
+	"multiple",
+	"different",
+	"several",
 ];
+
+/** Patterns that indicate placeholder / extremely vague content */
+const VAGUE_PATTERNS = [
+	/^a\s+simple\s+/i,
+	/^a\s+basic\s+/i,
+	/^a\s+sample\s+/i,
+	/\ba\s+simple\s+project\b/i,
+	/\ba\s+sample\s+website\b/i,
+	/\ba\s+basic\s+(app|application|website|project)\b/i,
+	/developed\s+and\s+maintained\s+a\s+(sample|simple|basic)\s+/i,
+	/worked\s+on\s+(a\s+)?(simple|sample|basic)\s+/i,
+	/created\s+a\s+(simple|basic|sample)\s+/i,
+];
+
+/** Check if a bullet is too vague or placeholder-like */
+function isVagueBullet(bullet: string): string | null {
+	const lower = bullet.toLowerCase().trim();
+	// Too short to be meaningful
+	if (lower.split(/\s+/).filter(Boolean).length < 6) {
+		return "too short (< 6 words)";
+	}
+	// Matches placeholder patterns
+	for (const pattern of VAGUE_PATTERNS) {
+		if (pattern.test(lower)) return "placeholder/generic content detected";
+	}
+	return null;
+}
 
 /** Check if a bullet starts with a strong action verb */
 function startsWithActionVerb(bullet: string): boolean {
@@ -77,35 +108,46 @@ function countFillerWords(bullet: string): number {
 	return count;
 }
 
+const MIN_EXPECTED_BULLETS = 6;
+const MINIMUM_EVALUABLE_BULLETS = 4;
+
 export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
 	const bullets = getAllBullets(data);
 
 	if (bullets.length === 0) {
 		details.push({
-			ruleId: "IM-1",
-			ruleName: "Action verb usage",
+			ruleId: "IM-0",
+			ruleName: "Minimum content",
 			score: 0,
-			maxScore: 5,
-			details: "No bullet points found in experience/projects sections.",
+			maxScore: MAX_SCORE,
+			details: "No experience bullets found. Add detailed bullet points describing your accomplishments.",
 		});
-		details.push({ ruleId: "IM-2", ruleName: "Quantified metrics", score: 0, maxScore: 5, details: "No bullets." });
-		details.push({ ruleId: "IM-3", ruleName: "XYZ formula compliance", score: 0, maxScore: 5, details: "No bullets." });
-		details.push({ ruleId: "IM-4", ruleName: "No weak phrases", score: 0, maxScore: 5, details: "No bullets." });
 		return { score: 0, max: MAX_SCORE, details };
 	}
+
+	/** Below 4 bullets, cap the maximum category score proportionally (still evaluate quality of what exists). */
+	const thinBulletCap = bullets.length < MINIMUM_EVALUABLE_BULLETS ? bullets.length / MINIMUM_EVALUABLE_BULLETS : 1;
+
+	// Penalize proportionally if content is thin (4-5 bullets)
+	const contentPenalty = bullets.length < MIN_EXPECTED_BULLETS ? bullets.length / MIN_EXPECTED_BULLETS : 1;
 
 	// IM-1: Action verb usage (5 pts)
 	const bulletsWithVerbs = bullets.filter((b) => startsWithActionVerb(b.text));
 	const verbRatio = bulletsWithVerbs.length / bullets.length;
 	const im1Score = Math.round(verbRatio * 5);
 
+	const thinNote =
+		thinBulletCap < 1
+			? `Only ${bullets.length} bullet(s) — max impact score is scaled until you reach ${MINIMUM_EVALUABLE_BULLETS}+. `
+			: "";
+
 	details.push({
 		ruleId: "IM-1",
 		ruleName: "Action verb usage",
 		score: im1Score,
 		maxScore: 5,
-		details: `${bulletsWithVerbs.length}/${bullets.length} bullets start with action verbs (${Math.round(verbRatio * 100)}%).`,
+		details: `${thinNote}${bulletsWithVerbs.length}/${bullets.length} bullets start with action verbs (${Math.round(verbRatio * 100)}%).`,
 	});
 
 	// IM-2: Quantified metrics (5 pts)
@@ -134,23 +176,47 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 		details: `${xyzBullets.length}/${bullets.length} bullets follow the XYZ formula (${Math.round(xyzRatio * 100)}%).`,
 	});
 
-	// IM-4: No weak phrases (5 pts) — start at full, deduct per weak phrase found
+	// IM-4: No weak phrases (3 pts) — deduct per weak phrase found
 	const bulletsWithWeakPhrases = bullets.filter((b) => containsWeakPhrase(b.text) !== null);
 	const weakRatio = 1 - bulletsWithWeakPhrases.length / bullets.length;
-	const im4Score = Math.round(weakRatio * 5);
+	const im4Score = Math.round(weakRatio * 3);
 
 	details.push({
 		ruleId: "IM-4",
 		ruleName: "No weak phrases",
 		score: im4Score,
-		maxScore: 5,
+		maxScore: 3,
 		details:
 			bulletsWithWeakPhrases.length > 0
-				? `${bulletsWithWeakPhrases.length} bullets contain weak phrases.`
-				: "No weak phrases found.",
+				? `${bulletsWithWeakPhrases.length} bullet(s) use weak phrases like "responsible for", "worked on", or "assisted with". Replace with strong action verbs that own the impact.`
+				: "No weak phrases found. Strong ownership language used throughout.",
 	});
 
-	const totalScore = Math.min(MAX_SCORE, im1Score + im2Score + im3Score + im4Score);
+	// IM-5: No vague / placeholder content (2 pts)
+	const vagueBullets = bullets
+		.map((b) => ({ bullet: b, reason: isVagueBullet(b.text) }))
+		.filter((x) => x.reason !== null);
+	const vagueRatio = 1 - vagueBullets.length / bullets.length;
+	const im5Score = Math.round(vagueRatio * 2);
+
+	const vagueExamples = vagueBullets
+		.slice(0, 2)
+		.map((v) => `"${v.bullet.text.slice(0, 60)}${v.bullet.text.length > 60 ? "…" : ""}" (${v.reason})`)
+		.join("; ");
+
+	details.push({
+		ruleId: "IM-5",
+		ruleName: "No vague or placeholder content",
+		score: im5Score,
+		maxScore: 2,
+		details:
+			vagueBullets.length > 0
+				? `${vagueBullets.length} bullet(s) are too vague or generic: ${vagueExamples}. Be specific — name the technology, the scale, the outcome, and your exact role.`
+				: "All bullets have specific, concrete content.",
+	});
+
+	const rawWeighted = (im1Score + im2Score + im3Score + im4Score + im5Score) * contentPenalty;
+	const totalScore = Math.round(Math.min(MAX_SCORE * thinBulletCap, rawWeighted));
 	return { score: totalScore, max: MAX_SCORE, details };
 }
 

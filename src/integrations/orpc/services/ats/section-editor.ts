@@ -3,7 +3,7 @@ import { generateText } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
-import { stripHtml } from "./index";
+import { SCORING_LLM_CONFIG, stripHtml } from "./index";
 
 const patchSchema = z.object({
 	patches: z.array(
@@ -19,7 +19,7 @@ const patchSchema = z.object({
 function getModel() {
 	const apiKey = env.OPENAI_API_KEY;
 	if (!apiKey) throw new Error("OPENAI_API_KEY is not configured");
-	return createOpenAI({ apiKey, baseURL: env.OPENAI_BASE_URL }).languageModel("gpt-4o");
+	return createOpenAI({ apiKey, baseURL: env.OPENAI_BASE_URL }).languageModel(SCORING_LLM_CONFIG.model);
 }
 
 function extractSectionData(data: ResumeData, sectionType: string): unknown {

@@ -3,11 +3,18 @@ import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
-import type { JDAnalysis, Suggestion } from "./index";
-import { estimatePageCount, getAllBullets, SCORING_LLM_CONFIG, stripHtml } from "./index";
+import type { AtsScoringContext, JDAnalysis, Suggestion, SuggestionBodySection } from "./index";
+import { estimatePageCount, getAllBullets, getResumeSkills, SCORING_LLM_CONFIG, stripHtml } from "./index";
 import { countResumeWords, RECOMMENDED_BULLET_RANGE, RECOMMENDED_WORD_RANGE } from "./rules/brevity";
-import { ATS_SAFE_FONTS, ATS_SAFE_TEMPLATES, findEmojis, isStandardDateFormat } from "./rules/formatting";
+import {
+	ATS_SAFE_FONTS,
+	ATS_SAFE_TEMPLATES,
+	findEmojis,
+	isProfilePictureDisplayedOnResume,
+	isStandardDateFormat,
+} from "./rules/formatting";
 import { containsWeakPhrase, hasQuantifiedMetric, isXYZCompliant, startsWithActionVerb } from "./rules/impact-metrics";
+import { getIndustryTaxonomyMatchCount, getJdKeywordsNotInBulletText } from "./rules/keyword-match";
 import { extractLatestYear, isReverseChronological } from "./rules/structure";
 
 const comprehensiveSchema = z.object({
@@ -36,87 +43,220 @@ const comprehensiveSchema = z.object({
 	),
 	summary: z.string().nullable(),
 	tailoredSummary: z.string().nullable(),
+	projectRewrites: z
+		.array(
+			z.object({
+				index: z.number(),
+				rewritten: z.string(),
+				reason: z.string(),
+			}),
+		)
+		.default([]),
 });
+
+export type GenerateSuggestionsResult = {
+	suggestions: Suggestion[];
+	/** Comprehensive LLM pass was needed but did not return usable output. */
+	aiRewriteUnavailable: boolean;
+};
 
 export async function generateSuggestions(
 	data: ResumeData,
 	jdAnalysis: JDAnalysis | null,
 	missingRequired: string[],
 	missingNiceToHave: string[] = [],
-): Promise<Suggestion[]> {
+	scoringContext: AtsScoringContext | null = null,
+): Promise<GenerateSuggestionsResult> {
 	const suggestions: Suggestion[] = [];
 	const bullets = getAllBullets(data);
+	const resumeSkills = getResumeSkills(data).map((s: string) => s.toLowerCase());
+	const kwCategoryScore = scoringContext?.categories.keywordMatch;
+	const taxonomyCount = getIndustryTaxonomyMatchCount(data);
 
-	// ── 1. Required keyword suggestions (score impact) ──
-	for (const keyword of missingRequired.slice(0, 5)) {
-		suggestions.push({
-			id: `KW-S1-${keyword.toLowerCase().replace(/\s+/g, "-")}`,
-			ruleId: "KW-1",
-			category: "keywordMatch",
-			severity: "critical",
-			title: `Add missing keyword: ${keyword}`,
-			description: `The job description requires "${keyword}" but it's not in your resume. Add it to your Skills section.`,
-			autoApplicable: true,
-			patches: [
-				{
-					op: "add",
-					path: "/sections/skills/items/-",
-					value: {
-						id: crypto.randomUUID(),
-						hidden: false,
-						options: { showLinkInTitle: false },
-						icon: "",
-						name: keyword,
-						proficiency: "",
-						level: 0,
-						keywords: [],
+	const cqSuggestionCategory = jdAnalysis ? "impactMetrics" : "tailoring";
+
+	// ── 1. Keyword suggestions ──
+	if (missingRequired.length > 0) {
+		// Specific JD-based suggestions
+		for (const keyword of missingRequired.slice(0, 5)) {
+			suggestions.push({
+				id: `KW-S1-${keyword.toLowerCase().replace(/\s+/g, "-")}`,
+				ruleId: "KW-1",
+				category: "keywordMatch",
+				severity: "critical",
+				title: `Add missing keyword: ${keyword}`,
+				description: `The job description requires "${keyword}" but it's not in your resume. Add it to your Skills section.`,
+				autoApplicable: true,
+				patches: [
+					{
+						op: "add",
+						path: "/sections/skills/items/-",
+						value: {
+							id: crypto.randomUUID(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							icon: "",
+							name: keyword,
+							proficiency: "",
+							level: 0,
+							keywords: [],
+						},
 					},
+				],
+				estimatedScoreGain: Math.ceil(25 / Math.max(1, missingRequired.length)),
+				diff: {
+					type: "add_item",
+					location: "Skills",
+					fieldPath: "/sections/skills/items/-",
+					hunks: [{ added: keyword }],
 				},
-			],
-			estimatedScoreGain: Math.ceil(25 / Math.max(1, missingRequired.length)),
-			diff: {
-				type: "add_item",
-				location: "Skills",
-				fieldPath: "/sections/skills/items/-",
-				hunks: [{ added: keyword }],
-			},
-		});
+			});
+		}
+	} else if (!jdAnalysis) {
+		// NO JD — align with taxonomy-based keyword score, not only skills row count
+		const popularFoundations = [
+			{ name: "Programming Languages", examples: "Python, JavaScript, Java, C++" },
+			{ name: "Frameworks / Libraries", examples: "React, Node.js, Spring Boot, Django" },
+			{ name: "Database Systems", examples: "PostgreSQL, MySQL, MongoDB" },
+			{ name: "Cloud & DevOps", examples: "AWS, Docker, Kubernetes, Git" },
+		];
+
+		const hasLanguage = resumeSkills.some((s: string) =>
+			["python", "javascript", "java", "cpp", "c++", "golang", "ruby", "typescript"].includes(s),
+		);
+		const hasFramework = resumeSkills.some((s: string) =>
+			["react", "angular", "vue", "node", "spring", "django", "flask", "express", "next.js"].includes(s),
+		);
+
+		const scoreRatio = kwCategoryScore && kwCategoryScore.max > 0 ? kwCategoryScore.score / kwCategoryScore.max : 1;
+		const needsDensityHelp =
+			taxonomyCount < 12 || scoreRatio < 0.55 || !hasLanguage || !hasFramework || resumeSkills.length < 10;
+
+		if (needsDensityHelp) {
+			const skillsSectionHidden = data.sections.skills.hidden;
+			const skillsRows = resumeSkills.length;
+			const skillsExplainer = skillsSectionHidden
+				? "Your Skills section is hidden. Turn it on in the editor and list your main languages, frameworks, and tools — that helps scanners and recruiters."
+				: skillsRows === 0
+					? `Your Skills section is empty, but we still see about ${taxonomyCount} technical term${taxonomyCount !== 1 ? "s" : ""} elsewhere (e.g. bullets or summary). Filling the Skills section with those same tools makes them easier for ATS to find.`
+					: `Your Skills section has ${skillsRows} entr${skillsRows !== 1 ? "ies" : "y"}. We also see about ${taxonomyCount} familiar terms resume-wide — aim for more total coverage (15–25 is a good target) and repeat key tools in your bullets.`;
+
+			const bodySections: SuggestionBodySection[] = [
+				{
+					title: "What this score means",
+					items: [
+						"Without a pasted job description, we count how many standard tech terms (languages, frameworks, databases, cloud tools, etc.) appear anywhere on your resume.",
+						skillsExplainer,
+						"Next step: add each important tool as its own line under Skills, and mention the same tools when you describe what you built or shipped.",
+					],
+				},
+				{
+					title: "Examples of what to list",
+					items: popularFoundations.map((f) => `${f.name}: ${f.examples}`),
+				},
+			];
+			suggestions.push({
+				id: "KW-S-thin-skills",
+				ruleId: "KW-1",
+				category: "keywordMatch",
+				severity: "warning",
+				title: "Add more tools and technologies",
+				description:
+					"Your resume doesn’t show enough recognizable technical terms for a strong general ATS result. Use the Skills section and your bullet points so scanners see what you actually use.",
+				bodySections,
+				autoApplicable: false,
+				estimatedScoreGain: 5,
+				diff: {
+					type: "add_item",
+					location: "Skills",
+					fieldPath: "/sections/skills/items/-",
+					hunks: [
+						{
+							context:
+								"Add skills one per row (e.g. Python, React, PostgreSQL). The examples above are inspiration — use what you truly know.",
+						},
+					],
+				},
+			});
+		}
+	}
+
+	// JD: keywords that appear on the resume but only in skills/summary — hurts KW-2
+	if (jdAnalysis && scoringContext?.requiredJdKeywords?.length) {
+		const notInBullets = getJdKeywordsNotInBulletText(data, scoringContext.requiredJdKeywords);
+		const toSurface = notInBullets.slice(0, 8);
+		if (toSurface.length > 0) {
+			const bodySections: SuggestionBodySection[] = [
+				{
+					title: "Say what you did with each term",
+					items: toSurface.map(
+						(kw) =>
+							`"${kw}" — add a bullet that says how you used it (e.g. "Built … using ${kw}" or "Shipped … with ${kw}").`,
+					),
+				},
+			];
+			suggestions.push({
+				id: "KW-S-context-gap",
+				ruleId: "KW-2",
+				category: "keywordMatch",
+				severity: "warning",
+				title: "Mention these in your work or project bullets",
+				description: `These words from the job description already appear on your resume (often only in the skills list), but not inside your bullet points. Recruiters and many ATS tools care more about skills tied to real work — weave each into a concrete achievement.`,
+				bodySections,
+				descriptionBullets: toSurface,
+				autoApplicable: false,
+				estimatedScoreGain: Math.min(6, toSurface.length * 2),
+				diff: {
+					type: "text_replace",
+					location: "Experience / Projects",
+					fieldPath: "",
+					hunks: [
+						{
+							context:
+								"Edit an experience or project bullet so the term appears next to something you built, improved, or shipped.",
+						},
+					],
+				},
+			});
+		}
 	}
 
 	// ── 1b. Nice-to-have keyword suggestions (no score impact) ──
-	for (const keyword of missingNiceToHave.slice(0, 3)) {
-		suggestions.push({
-			id: `KW-S2-${keyword.toLowerCase().replace(/\s+/g, "-")}`,
-			ruleId: "KW-1",
-			category: "keywordMatch",
-			severity: "info",
-			title: `Good to have: ${keyword}`,
-			description: `The job description mentions "${keyword}" — adding it could strengthen your application.`,
-			autoApplicable: true,
-			patches: [
-				{
-					op: "add",
-					path: "/sections/skills/items/-",
-					value: {
-						id: crypto.randomUUID(),
-						hidden: false,
-						options: { showLinkInTitle: false },
-						icon: "",
-						name: keyword,
-						proficiency: "",
-						level: 0,
-						keywords: [],
+	if (missingNiceToHave.length > 0) {
+		for (const keyword of missingNiceToHave.slice(0, 3)) {
+			suggestions.push({
+				id: `KW-S2-${keyword.toLowerCase().replace(/\s+/g, "-")}`,
+				ruleId: "KW-1",
+				category: "keywordMatch",
+				severity: "info",
+				title: `Good to have: ${keyword}`,
+				description: `The job description mentions "${keyword}" — adding it could strengthen your application.`,
+				autoApplicable: true,
+				patches: [
+					{
+						op: "add",
+						path: "/sections/skills/items/-",
+						value: {
+							id: crypto.randomUUID(),
+							hidden: false,
+							options: { showLinkInTitle: false },
+							icon: "",
+							name: keyword,
+							proficiency: "",
+							level: 0,
+							keywords: [],
+						},
 					},
+				],
+				estimatedScoreGain: 0,
+				diff: {
+					type: "add_item",
+					location: "Skills",
+					fieldPath: "/sections/skills/items/-",
+					hunks: [{ added: keyword }],
 				},
-			],
-			estimatedScoreGain: 0,
-			diff: {
-				type: "add_item",
-				location: "Skills",
-				fieldPath: "/sections/skills/items/-",
-				hunks: [{ added: keyword }],
-			},
-		});
+			});
+		}
 	}
 
 	// ── 2. Collect ALL problematic bullets — merge ALL issues per bullet into one entry ──
@@ -223,13 +363,38 @@ export async function generateSuggestions(
 		return !mentionsRole || matchRatio < 0.3;
 	})();
 
+	// ── 4b. Weak project descriptions (LLM can rewrite full HTML field) ──
+	type ProjectCoachingRow = { itemIndex: number; name: string; plain: string; rawHtml: string };
+	const projectsToRewrite: ProjectCoachingRow[] = [];
+	for (const [idx, project] of (data.sections.projects?.items ?? []).entries()) {
+		if (project.hidden) continue;
+		const projectName = String((project as { name?: string }).name ?? "").trim() || "Untitled Project";
+		const rawDesc = "description" in project ? (project as { description: string }).description : "";
+		const desc = stripHtml(rawDesc).trim();
+		const descWords = desc.split(/\s+/).filter(Boolean).length;
+		const hasTechStack =
+			/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify)\b/i.test(
+				desc,
+			);
+		const hasOutcome =
+			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
+				desc,
+			);
+		const isVague = /\b(simple|basic|sample|just|only|small|mini|practice|learning|demo|placeholder)\b/i.test(desc);
+		const needsCoaching = descWords < 20 || (!hasTechStack && !hasOutcome) || isVague;
+		if (!needsCoaching) continue;
+		projectsToRewrite.push({ itemIndex: idx, name: projectName, plain: desc, rawHtml: rawDesc });
+	}
+
+	let aiRewriteUnavailable = false;
 	// ── 5. Single LLM call for ALL actionable suggestions ──
 	if (
 		bulletsToRewrite.length > 0 ||
 		datesToFix.length > 0 ||
 		needsSummary ||
 		needsTailoredSummary ||
-		brevityCandidates.length > 0
+		brevityCandidates.length > 0 ||
+		projectsToRewrite.length > 0
 	) {
 		const llmResult = await getComprehensiveSuggestions(
 			data,
@@ -240,7 +405,12 @@ export async function generateSuggestions(
 			brevityCandidates,
 			{ wordCount, totalBulletCount, pages, tooManyWords },
 			needsTailoredSummary,
+			projectsToRewrite,
 		);
+
+		if (!llmResult) {
+			aiRewriteUnavailable = true;
+		}
 
 		// Process bullet rewrites
 		if (llmResult) {
@@ -278,13 +448,13 @@ export async function generateSuggestions(
 									? "IM-2"
 									: "IM-3";
 
-				// Build a combined title showing all issues
+				// Build a coaching-oriented title
 				const issueLabels: string[] = [];
-				if (bullet.weakness) issueLabels.push(`weak phrase`);
-				if (!startsWithActionVerb(bullet.text)) issueLabels.push("no action verb");
-				if (!hasQuantifiedMetric(bullet.text)) issueLabels.push("no metric");
-				if (!isXYZCompliant(bullet.text)) issueLabels.push("not XYZ");
-				const title = `Rewrite bullet: ${issueLabels.join(", ")}`;
+				if (bullet.weakness) issueLabels.push(`replace "${bullet.weakness}"`);
+				else if (!startsWithActionVerb(bullet.text)) issueLabels.push("start with an action verb");
+				if (!hasQuantifiedMetric(bullet.text)) issueLabels.push("add a measurable outcome");
+				if (isXYZCompliant(bullet.text) === false && issueLabels.length === 0) issueLabels.push("follow XYZ formula");
+				const title = `Strengthen bullet: ${issueLabels.join(" + ")}`;
 
 				suggestions.push({
 					id: `IM-S-${bullet.sectionKey}-${bullet.itemIndex}-${rewrite.index}`,
@@ -399,6 +569,42 @@ export async function generateSuggestions(
 						location: "Summary",
 						fieldPath: "/summary/content",
 						hunks: [{ removed: currentSummary }, { added: llmResult.tailoredSummary }],
+					},
+				});
+			}
+
+			// Process project description rewrites
+			for (const pr of llmResult.projectRewrites ?? []) {
+				const row = projectsToRewrite[pr.index];
+				if (!row) continue;
+				const sanitized = pr.rewritten.trim();
+				if (!sanitized) continue;
+				if (stripHtml(sanitized) === row.plain && row.plain.length > 0) continue;
+
+				suggestions.push({
+					id: `CQ-S-proj-rewrite-${row.itemIndex}`,
+					ruleId: "CQ-3",
+					category: cqSuggestionCategory,
+					severity: "warning",
+					title: `Rewrite project: "${row.name}"`,
+					description: pr.reason,
+					autoApplicable: true,
+					patches: [
+						{
+							op: "replace",
+							path: `/sections/projects/items/${row.itemIndex}/description`,
+							value: sanitized,
+						},
+					],
+					estimatedScoreGain: 2,
+					diff: {
+						type: "field_replace",
+						location: `Projects → ${row.name}`,
+						fieldPath: `/sections/projects/items/${row.itemIndex}/description`,
+						hunks: [
+							{ removed: row.plain || "(empty)" },
+							{ added: stripHtml(sanitized).slice(0, 200) + (stripHtml(sanitized).length > 200 ? "…" : "") },
+						],
 					},
 				});
 			}
@@ -531,8 +737,8 @@ export async function generateSuggestions(
 		});
 	}
 
-	// Hide profile picture
-	if (!data.picture.hidden) {
+	// Hide profile picture (only when one actually displays — same rules as PagePicture + hidden flag)
+	if (isProfilePictureDisplayedOnResume(data)) {
 		suggestions.push({
 			id: "FM-S1-picture",
 			ruleId: "FM-2",
@@ -885,6 +1091,217 @@ export async function generateSuggestions(
 		});
 	}
 
+	// ── 9. Project coaching (non-auto when LLM did not supply a rewrite) ──
+	const projectItems = (data.sections.projects?.items ?? []).filter((i) => !i.hidden);
+	const autoAppliedProjectPaths = new Set(suggestions.map((s) => s.diff.fieldPath));
+
+	for (const project of projectItems) {
+		const projectName = String((project as { name?: string }).name ?? "").trim() || "Untitled Project";
+		const rawDesc = "description" in project ? (project as { description: string }).description : "";
+		const desc = stripHtml(rawDesc).trim();
+		const descWords = desc.split(/\s+/).filter(Boolean).length;
+
+		const hasTechStack =
+			/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify)\b/i.test(
+				desc,
+			);
+		const hasOutcome =
+			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
+				desc,
+			);
+		const isVague = /\b(simple|basic|sample|just|only|small|mini|practice|learning|demo|placeholder)\b/i.test(desc);
+
+		const needsCoaching = descWords < 20 || (!hasTechStack && !hasOutcome) || isVague;
+		if (!needsCoaching) continue;
+
+		const realIdx = data.sections.projects?.items.indexOf(project) ?? -1;
+		if (realIdx === -1) continue;
+
+		const fieldPath = `/sections/projects/items/${realIdx}/description`;
+		if (autoAppliedProjectPaths.has(fieldPath)) continue;
+
+		const issues: string[] = [];
+		if (descWords === 0) issues.push("no description");
+		else if (descWords < 20) issues.push(`only ${descWords} word${descWords !== 1 ? "s" : ""}`);
+		if (!hasTechStack) issues.push("no tech stack");
+		if (!hasOutcome) issues.push("no outcomes or impact");
+		if (isVague) issues.push("contains filler words");
+
+		const bodySections: SuggestionBodySection[] = [
+			{
+				title: `Issues: ${issues.join(", ")}`,
+				items: [
+					"What does it do? Example: A web app that helps students track internship applications.",
+					"What tech did you use? Example: React, Node.js, PostgreSQL.",
+					"What was the impact? Example: Used by 200+ students; deployed on Vercel.",
+				],
+			},
+		];
+		if (!hasTechStack) {
+			bodySections.push({
+				title: "Add technologies",
+				items: ["Name frameworks, databases, cloud services, and languages you used."],
+			});
+		}
+		if (!hasOutcome) {
+			bodySections.push({
+				title: "Add a measurable result",
+				items: ["Users, uptime, accuracy, latency, GitHub stars, or class size — estimates are better than none."],
+			});
+		}
+		if (isVague && desc) {
+			bodySections.push({
+				title: "Tone",
+				items: ['Drop vague words like "simple", "basic", and "just" — they weaken how your work reads.'],
+			});
+		}
+
+		suggestions.push({
+			id: `CQ-S-proj-${realIdx}`,
+			ruleId: "CQ-3",
+			category: cqSuggestionCategory,
+			severity: descWords < 5 || !hasTechStack ? "critical" : "warning",
+			title: `Strengthen project: "${projectName}"`,
+			description: `"${projectName}" needs a stronger description (${issues.join(", ")}). Expand with tech stack, your role, and outcomes — or use Accept Change if an AI rewrite is available after re-scoring.`,
+			bodySections,
+			autoApplicable: false,
+			estimatedScoreGain: 2,
+			diff: {
+				type: "text_replace",
+				location: `Projects → ${projectName}`,
+				fieldPath,
+				hunks: desc ? [{ removed: desc }] : [{ added: "Add description" }],
+			},
+		});
+	}
+
+	// ── 10. Action verb coaching (aggregate tip when multiple bullets are affected) ──
+	const bulletsLackingVerb = bullets.filter((b) => !startsWithActionVerb(b.text));
+	if (bulletsLackingVerb.length >= 2) {
+		const examples = bulletsLackingVerb
+			.slice(0, 2)
+			.map((b) => `"${b.text.trim().split(/\s+/).slice(0, 3).join(" ")}..."`)
+			.join(", ");
+
+		suggestions.push({
+			id: "IM-S-actionverb-coach",
+			ruleId: "IM-1",
+			category: "impactMetrics",
+			severity: "warning",
+			title: `${bulletsLackingVerb.length} bullet${bulletsLackingVerb.length !== 1 ? "s" : ""} need a strong action verb`,
+			description: `Bullets like ${examples} don't open with an action verb — they hide your contribution and look passive to recruiters.\n\nEvery bullet must start with a past-tense verb that shows what YOU did:\n• Technical work: Built, Engineered, Developed, Implemented, Deployed, Designed, Automated, Integrated, Architected\n• Performance improvements: Optimized, Reduced, Increased, Improved, Streamlined, Accelerated, Eliminated\n• Leadership: Led, Coordinated, Mentored, Managed, Spearheaded, Directed, Organized\n• Research/analysis: Analyzed, Investigated, Evaluated, Researched, Identified, Benchmarked\n• Creation: Created, Launched, Established, Authored, Founded, Initiated\n\nAvoid passive openers: "Responsible for", "Worked on", "Helped", "Assisted", "Participated in", "Was involved in" — replace these with the verb that describes your actual action.`,
+			autoApplicable: false,
+			estimatedScoreGain: 3,
+			diff: {
+				type: "text_replace",
+				location: "Multiple bullets",
+				fieldPath: "",
+				hunks: [{ context: `${bulletsLackingVerb.length} bullets need action verbs` }],
+			},
+		});
+	}
+
+	// ── 11. Metric/impact coaching (aggregate tip when multiple bullets lack numbers) ──
+	const bulletsLackingMetric = bullets.filter((b) => !hasQuantifiedMetric(b.text) && startsWithActionVerb(b.text));
+	if (bulletsLackingMetric.length >= 3) {
+		suggestions.push({
+			id: "IM-S-metric-coach",
+			ruleId: "IM-2",
+			category: "impactMetrics",
+			severity: "warning",
+			title: `${bulletsLackingMetric.length} bullet${bulletsLackingMetric.length !== 1 ? "s" : ""} have no measurable outcome`,
+			description: `Quantified bullets are 40% more likely to pass ATS filters and get recruiter attention. Add specific numbers to show the scale and impact of your work.\n\nAsk yourself for each bullet:\n• How many users/customers/records were affected?\n• What percentage did something improve, reduce, or increase?\n• How long did it save? How much faster?\n• What was the scale — requests/sec, GB of data, number of endpoints?\n\nExamples:\n• "Built a REST API" → "Built a REST API serving 500+ daily requests across 3 microservices"\n• "Improved performance" → "Reduced page load time by 40% through lazy loading and caching"\n• "Managed a database" → "Managed a PostgreSQL database with 10,000+ student records"\n• "Trained a model" → "Trained a classification model achieving 92% accuracy on 5,000 samples"\n\nFor student projects, even estimates are better than nothing — if your app was used in class, mention how many students.`,
+			autoApplicable: false,
+			estimatedScoreGain: 4,
+			diff: {
+				type: "text_replace",
+				location: "Multiple bullets",
+				fieldPath: "",
+				hunks: [{ context: `${bulletsLackingMetric.length} bullets lack measurable outcomes` }],
+			},
+		});
+	}
+
+	// ── 12. XYZ formula coaching (if overall compliance is low) ──
+	const nonXYZBullets = bullets.filter((b) => !isXYZCompliant(b.text));
+	if (nonXYZBullets.length >= 3 && bullets.length >= 4) {
+		const xyzRatio = nonXYZBullets.length / bullets.length;
+		if (xyzRatio > 0.6) {
+			suggestions.push({
+				id: "IM-S-xyz-coach",
+				ruleId: "IM-3",
+				category: "impactMetrics",
+				severity: "info",
+				title: "Apply the XYZ formula to your bullets",
+				description: `${nonXYZBullets.length} of your ${bullets.length} bullets don't follow the XYZ formula — the gold standard for resume bullets used by Google's hiring guidelines.\n\nXYZ Formula: "Accomplished [X] as measured by [Y], by doing [Z]"\n\n• X = what you achieved (the result/outcome)\n• Y = how you measured it (the metric)\n• Z = how you did it (the method/tool/approach)\n\nExamples:\n• "Reduced API response time [X] by 35% [Y] by implementing Redis caching [Z]"\n• "Built an internship tracker [X] used by 200 students [Y] using React and Supabase [Z]"\n• "Increased test coverage [X] from 45% to 87% [Y] by writing 120 unit tests with Jest [Z]"\n\nNot every bullet needs all three, but aim for at least X + Y or X + Z. Bullets with only X ("Developed a feature") are the weakest.`,
+				autoApplicable: false,
+				estimatedScoreGain: 2,
+				diff: {
+					type: "text_replace",
+					location: "Multiple bullets",
+					fieldPath: "",
+					hunks: [{ context: `${nonXYZBullets.length}/${bullets.length} bullets don't follow XYZ formula` }],
+				},
+			});
+		}
+	}
+
+	// ── 13. Summary coaching (when summary exists but is generic boilerplate) ──
+	if (!needsSummary) {
+		const summaryPlain = stripHtml(data.summary.content).trim();
+		const boilerplateTerms = [
+			"results-driven",
+			"dynamic professional",
+			"passionate about",
+			"strong communication skills",
+			"team player",
+			"hardworking",
+			"detail-oriented",
+			"self-motivated",
+			"fast learner",
+			"quick learner",
+			"seeking impactful opportunities",
+			"adept at collaborating",
+		];
+		const summaryLower = summaryPlain.toLowerCase();
+		const boilerplateCount = boilerplateTerms.filter((t) => summaryLower.includes(t)).length;
+		const summaryHasTech =
+			/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|sql|machine learning|deep learning|spring|django|flask|express|mongodb|postgresql|kubernetes|graphql)\b/i.test(
+				summaryPlain,
+			);
+		const summaryHasMetric = /\d+[%+]|\d+\s*(years?|months?|projects?|apps?|systems?)/i.test(summaryPlain);
+
+		if (boilerplateCount >= 2 || (!summaryHasTech && !summaryHasMetric && summaryPlain.length > 20)) {
+			const problems: string[] = [];
+			if (boilerplateCount >= 2)
+				problems.push(`${boilerplateCount} generic buzzword${boilerplateCount !== 1 ? "s" : ""}`);
+			if (!summaryHasTech) problems.push("no specific technologies mentioned");
+			if (!summaryHasMetric) problems.push("no quantified experience");
+
+			suggestions.push({
+				id: "SC-S4-summary-coach",
+				ruleId: "SC-2",
+				category: "structure",
+				severity: "warning",
+				title: `Summary is too generic (${problems.join(", ")})`,
+				description: `Your summary reads as boilerplate — recruiters see hundreds of "results-driven team players" and skip them. A strong summary is specific to YOU.\n\nRewrite it to answer:\n1. Who are you? — your field, level, and specialization (e.g., "Final-year Computer Science student specializing in full-stack development")\n2. What have you built/done? — name 1-2 specific projects or achievements with tech/metrics (e.g., "Built a React + Node.js internship tracker used by 200+ students")\n3. What are you targeting? — the role or domain you're applying for\n\nExample: "Final-year B.Tech student with hands-on experience building full-stack web apps using React, Node.js, and PostgreSQL. Developed an internship management platform used by 200+ students at our college. Looking for backend/full-stack engineer roles where I can work on scalable systems."\n\nRemove: "${boilerplateTerms
+					.filter((t) => summaryLower.includes(t))
+					.slice(0, 3)
+					.join('", "')}"`,
+				autoApplicable: false,
+				estimatedScoreGain: 2,
+				diff: {
+					type: "text_replace",
+					location: "Summary",
+					fieldPath: "/summary/content",
+					hunks: [{ removed: summaryPlain.slice(0, 120) + (summaryPlain.length > 120 ? "..." : "") }],
+				},
+			});
+		}
+	}
+
+	ensureCategoryCoverage(suggestions, scoringContext);
+
 	// Sort by estimated score gain (highest first), then by severity
 	const severityOrder = { critical: 0, warning: 1, info: 2 };
 	suggestions.sort((a, b) => {
@@ -892,7 +1309,49 @@ export async function generateSuggestions(
 		return severityOrder[a.severity] - severityOrder[b.severity];
 	});
 
-	return suggestions;
+	return { suggestions, aiRewriteUnavailable };
+}
+
+function ensureCategoryCoverage(suggestions: Suggestion[], scoringContext: AtsScoringContext | null) {
+	if (!scoringContext) return;
+
+	const cats = scoringContext.categories;
+	const entries: { key: keyof typeof cats; cat: (typeof cats)[keyof typeof cats] }[] = [
+		{ key: "keywordMatch", cat: cats.keywordMatch },
+		{ key: "impactMetrics", cat: cats.impactMetrics },
+		{ key: "structure", cat: cats.structure },
+		{ key: "formatting", cat: cats.formatting },
+		{ key: "brevity", cat: cats.brevity },
+	];
+	if (cats.tailoring) {
+		entries.push({ key: "tailoring", cat: cats.tailoring });
+	}
+
+	for (const { key, cat } of entries) {
+		if (!cat || cat.score >= cat.max) continue;
+		const hasAny = suggestions.some((s) => s.category === key);
+		if (hasAny) continue;
+
+		const weakRules = cat.details.filter((r) => r.score < r.maxScore).slice(0, 2);
+		for (const rule of weakRules) {
+			suggestions.push({
+				id: `FALLBACK-${key}-${rule.ruleId}`,
+				ruleId: rule.ruleId,
+				category: key,
+				severity: "info",
+				title: rule.ruleName,
+				description: rule.details ?? "Review this area and edit in the resume builder.",
+				autoApplicable: false,
+				estimatedScoreGain: Math.max(1, Math.min(4, rule.maxScore - rule.score)),
+				diff: {
+					type: "text_replace",
+					location: String(key),
+					fieldPath: "",
+					hunks: [],
+				},
+			});
+		}
+	}
 }
 
 async function getComprehensiveSuggestions(
@@ -904,6 +1363,7 @@ async function getComprehensiveSuggestions(
 	brevityCandidates: Array<{ text: string; wordCount: number; sectionKey: string }>,
 	brevityStats: { wordCount: number; totalBulletCount: number; pages: number; tooManyWords: boolean },
 	needsTailoredSummary: boolean,
+	projectsToRewrite: Array<{ itemIndex: number; name: string; plain: string; rawHtml: string }>,
 ): Promise<z.infer<typeof comprehensiveSchema> | null> {
 	try {
 		const apiKey = env.OPENAI_API_KEY;
@@ -920,12 +1380,17 @@ Fix each bullet's specific tagged issue. Make MINIMAL edits — only fix what's 
 Rules:
 - Each bullet may have MULTIPLE tagged issues (e.g. [no action verb + no quantified metric + not XYZ compliant])
 - Fix ALL tagged issues in a single rewrite — the output must be the FINAL improved version
-- Start with a strong past-tense action verb
-- Add quantified metrics where tagged (numbers, percentages, dollar amounts)
-- Follow XYZ formula: "Action-verb + result/metric + by/using/via method"
-- If a weak phrase is tagged, replace it entirely
+- Start with a strong past-tense action verb (Built, Engineered, Developed, Implemented, Designed, Deployed, Optimized, Reduced, Increased, Led, Created, Automated, Integrated, Analyzed, Launched)
+- Add quantified metrics where tagged: use numbers (e.g. "500+ users", "40% faster", "3 services"), even estimates are better than none
+- Follow XYZ formula: "Accomplished [X] as measured by [Y] by doing [Z]" — action verb + measurable result + method/tool
+- If a weak phrase is tagged (e.g., "Worked on", "Responsible for", "Helped", "Participated in"), replace the entire opening — these hide the student's real contribution
 - Keep within ±5 words of original length
 - Preserve all existing metrics, numbers, technologies, proper nouns exactly
+
+For the "reason" field write a coaching explanation in 2 sentences max:
+1. Name the specific problem (e.g., "Opens with 'Participated in' — a passive phrase that hides your ownership")
+2. State what makes the rewrite stronger (e.g., "Changed to 'Led' and added the team size '4 engineers' to show leadership and scale")
+Be specific and educational — the student should understand what rule to apply on their own next time.
 
 Input bullets:
 ${bulletsToRewrite.map((b, i) => `${i}. [${b.reason}] "${b.text}"`).join("\n")}`);
@@ -1038,6 +1503,22 @@ Input bullets (sorted longest first):
 ${brevityCandidates.map((b, i) => `${i}. [${b.wordCount} words, ${b.sectionKey}] "${b.text}"`).join("\n")}`);
 		}
 
+		if (projectsToRewrite.length > 0) {
+			const jdHint = jdAnalysis?.jobTitle
+				? `Optional angle: you may lightly align wording with the target role "${jdAnalysis.jobTitle}" without inventing employers, dates, or tools the student did not imply.`
+				: "No target job is provided — optimize for general ATS clarity and specificity only; do not invent employers, credentials, or tools not implied by the text.";
+			promptParts.push(`## PROJECT DESCRIPTIONS (replace full HTML field)
+${jdHint}
+Rules:
+- Output valid HTML for the resume JSON "description" field only.
+- Allowed tags: <p>, <ul>, <li>, <strong>, <br> — no scripts, styles, iframes, or class attributes.
+- Prefer a <ul> with 2–4 <li> items covering: problem/scope, tech stack, your contribution, outcome or metric.
+- Ground every claim in the current plain text or project name; expand vague lines into concrete, plausible student-project detail — never fabricate company employment.
+
+Projects (index matches projectRewrites array):
+${projectsToRewrite.map((p, i) => `${i}. "${p.name}" — current: ${p.plain || "(empty)"}`).join("\n")}`);
+		}
+
 		const result = await generateText({
 			model,
 			temperature: SCORING_LLM_CONFIG.temperature,
@@ -1046,18 +1527,22 @@ ${brevityCandidates.map((b, i) => `${i}. [${b.wordCount} words, ${b.sectionKey}]
 			messages: [
 				{
 					role: "system",
-					content: `You are an expert resume writer. You will receive multiple types of resume improvements to make. Return ALL fixes in a single structured response. Every bullet rewrite, every date correction, and a professional summary (if requested) — all at once.
+					content: `You are an expert resume writer. Return ALL requested fixes in ONE structured response: bullet rewrites, date corrections, brevity edits, optional summaries, optional project description HTML — only for sections provided below.
 
 ${promptParts.join("\n\n")}`,
 				},
 				{
 					role: "user",
-					content: `Fix everything listed above. Return bulletRewrites array (with index, original, rewritten, reason), dateCorrections array (with index, original, corrected), brevityEdits array (with index, action, rewritten, reason), summary (string or null), and tailoredSummary (string or null).${
-						bulletsToRewrite.length === 0 ? " bulletRewrites should be an empty array." : ""
-					}${datesToFix.length === 0 ? " dateCorrections should be an empty array." : ""}${
-						brevityCandidates.length === 0 ? " brevityEdits should be an empty array." : ""
-					}${!needsSummary ? " summary should be null." : ""}${
-						!needsTailoredSummary ? " tailoredSummary should be null." : ""
+					content: `Fix everything listed above. Return bulletRewrites (index, original, rewritten, reason), dateCorrections (index, original, corrected), brevityEdits (index, action, rewritten, reason), summary, tailoredSummary, and projectRewrites (index, rewritten, reason).${
+						bulletsToRewrite.length === 0 ? " bulletRewrites must be []." : ""
+					}${datesToFix.length === 0 ? " dateCorrections must be []." : ""}${
+						brevityCandidates.length === 0 ? " brevityEdits must be []." : ""
+					}${!needsSummary ? " summary must be null." : ""}${
+						!needsTailoredSummary ? " tailoredSummary must be null." : ""
+					}${
+						projectsToRewrite.length === 0
+							? " projectRewrites must be []."
+							: ` projectRewrites must have exactly one object per project (indices 0-${projectsToRewrite.length - 1}), with full replacement HTML in "rewritten".`
 					}`,
 				},
 			],

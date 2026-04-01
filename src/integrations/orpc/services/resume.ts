@@ -79,6 +79,28 @@ const statistics = {
 	},
 };
 
+/**
+ * Trims `picture.url`, then inlines the image as base64 when possible (printer iframe).
+ * If the server cannot fetch the file (missing asset, wrong host, 403/404), clears the URL
+ * so the UI matches "no visible photo" and ATS scoring does not false-positive on a dead link.
+ */
+async function normalizeResumePictureForPreview(data: ResumeData): Promise<void> {
+	const pic = data.picture;
+	pic.url = (pic.url ?? "").trim();
+	if (pic.hidden || !pic.url) return;
+
+	try {
+		const url = pic.url.replace(env.APP_URL, "http://localhost:3000");
+		const res = await fetch(url);
+		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+		const buffer = await res.arrayBuffer();
+		const base64 = Buffer.from(buffer).toString("base64");
+		pic.url = `data:image/jpeg;base64,${base64}`;
+	} catch {
+		pic.url = "";
+	}
+}
+
 export const resumeService = {
 	tags,
 	statistics,
@@ -94,6 +116,7 @@ export const resumeService = {
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
 				isPrimary: schema.resume.isPrimary,
+				reviewStatus: schema.resume.reviewStatus,
 				createdAt: schema.resume.createdAt,
 				updatedAt: schema.resume.updatedAt,
 			})
@@ -126,6 +149,8 @@ export const resumeService = {
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
 				isPrimary: schema.resume.isPrimary,
+				reviewStatus: schema.resume.reviewStatus,
+				unlockReason: schema.resume.unlockReason,
 				hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 			})
 			.from(schema.resume)
@@ -135,6 +160,8 @@ export const resumeService = {
 
 		return resume;
 	},
+
+	normalizePictureForPreview: normalizeResumePictureForPreview,
 
 	getByIdForPrinter: async (input: { id: string }) => {
 		const [resume] = await db
@@ -146,6 +173,7 @@ export const resumeService = {
 				data: schema.resume.data,
 				userId: schema.resume.userId,
 				isLocked: schema.resume.isLocked,
+				reviewStatus: schema.resume.reviewStatus,
 				updatedAt: schema.resume.updatedAt,
 			})
 			.from(schema.resume)
@@ -153,19 +181,7 @@ export const resumeService = {
 
 		if (!resume) throw new ORPCError("NOT_FOUND");
 
-		try {
-			if (!resume.data.picture.url) throw new Error("Picture is not available");
-
-			// Convert picture URL to base64 data, so there's no fetching required on the client.
-			const url = resume.data.picture.url.replace(env.APP_URL, "http://localhost:3000");
-			const base64 = await fetch(url)
-				.then((res) => res.arrayBuffer())
-				.then((buffer) => Buffer.from(buffer).toString("base64"));
-
-			resume.data.picture.url = `data:image/jpeg;base64,${base64}`;
-		} catch {
-			// Ignore errors, as the picture is not always available
-		}
+		await normalizeResumePictureForPreview(resume.data);
 
 		return resume;
 	},
@@ -181,6 +197,8 @@ export const resumeService = {
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
 				isPrimary: schema.resume.isPrimary,
+				reviewStatus: schema.resume.reviewStatus,
+				unlockReason: schema.resume.unlockReason,
 				passwordHash: schema.resume.password,
 				hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 			})
@@ -208,6 +226,8 @@ export const resumeService = {
 				isPublic: resume.isPublic,
 				isLocked: resume.isLocked,
 				isPrimary: resume.isPrimary,
+				reviewStatus: resume.reviewStatus,
+				unlockReason: resume.unlockReason,
 				hasPassword: false as const,
 			};
 		}
@@ -224,6 +244,8 @@ export const resumeService = {
 				isPublic: resume.isPublic,
 				isLocked: resume.isLocked,
 				isPrimary: resume.isPrimary,
+				reviewStatus: resume.reviewStatus,
+				unlockReason: resume.unlockReason,
 				hasPassword: true as const,
 			};
 		}
@@ -313,6 +335,8 @@ export const resumeService = {
 					isPublic: schema.resume.isPublic,
 					isLocked: schema.resume.isLocked,
 					isPrimary: schema.resume.isPrimary,
+					reviewStatus: schema.resume.reviewStatus,
+					unlockReason: schema.resume.unlockReason,
 					hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 				});
 
@@ -369,6 +393,8 @@ export const resumeService = {
 				isPublic: schema.resume.isPublic,
 				isLocked: schema.resume.isLocked,
 				isPrimary: schema.resume.isPrimary,
+				reviewStatus: schema.resume.reviewStatus,
+				unlockReason: schema.resume.unlockReason,
 				hasPassword: sql<boolean>`${schema.resume.password} IS NOT NULL`,
 			});
 
@@ -376,6 +402,29 @@ export const resumeService = {
 	},
 
 	setLocked: async (input: { id: string; userId: string; isLocked: boolean }) => {
+		// If trying to unlock, check whether the resume is in a PO-controlled state.
+		// Students are not permitted to unlock resumes that the placement officer owns.
+		if (!input.isLocked) {
+			const PO_LOCKED_STATUSES = new Set([
+				"FINALIZED_BY_FACULTY",
+				"RESUBMITTED_TO_PO",
+				"PO_VERIFIED",
+				"APPROVED",
+			]);
+
+			const [current] = await db
+				.select({ reviewStatus: schema.resume.reviewStatus })
+				.from(schema.resume)
+				.where(and(eq(schema.resume.id, input.id), eq(schema.resume.userId, input.userId)));
+
+			if (current && PO_LOCKED_STATUSES.has(current.reviewStatus)) {
+				throw new ORPCError("FORBIDDEN", {
+					message:
+						"This resume has been locked by the Placement Officer and cannot be unlocked. Contact your placement officer if you need changes.",
+				});
+			}
+		}
+
 		await db
 			.update(schema.resume)
 			.set({ isLocked: input.isLocked })

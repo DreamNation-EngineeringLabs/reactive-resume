@@ -28,6 +28,24 @@ export async function scoreTailoring(data: ResumeData, jdAnalysis: JDAnalysis): 
 
 		const headline = data.basics.headline;
 		const summary = stripHtml(data.summary.content);
+
+		// GUARD: Don't waste AI calls on empty content
+		if (!headline.trim() && !summary.trim()) {
+			return {
+				score: 0,
+				max: MAX_SCORE,
+				details: [
+					{
+						ruleId: "TR-0",
+						ruleName: "Minimum content",
+						score: 0,
+						maxScore: MAX_SCORE,
+						details: "Add a headline and summary to evaluate tailoring.",
+					},
+				],
+			};
+		}
+
 		const recentPositions = data.sections.experience.items
 			.filter((item) => !item.hidden)
 			.slice(0, 3)
