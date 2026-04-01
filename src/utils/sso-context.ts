@@ -20,7 +20,13 @@ function getSsoContext(): SsoContext | null {
 }
 
 export function getUserRole(): string | null {
-	return getSsoContext()?.role ?? null;
+	const role = getSsoContext()?.role;
+	if (!role) return null;
+	const r = role.toUpperCase().replace(/[- ]/g, "_");
+	if (r === "PO" || r === "PLACEMENT_OFFICER" || r === "PLACEMENT_ADMIN") return "PLACEMENT_OFFICER";
+	if (r === "FACULTY" || r === "INSTRUCTOR") return "INSTRUCTOR";
+	if (r === "STUDENT" || r === "LEARNER") return "LEARNER";
+	return r;
 }
 
 export function getOrganisationUnits(): string[] {

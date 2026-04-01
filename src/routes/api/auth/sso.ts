@@ -96,7 +96,14 @@ async function handler({ request }: { request: Request }) {
 		const ssoContext = {
 			source_url: decoded.source_url ?? null,
 			// Normalize role to uppercase so sidebar comparisons are case-insensitive
-			role: decoded.role ? decoded.role.toUpperCase() : null,
+			role: (() => {
+				if (!decoded.role) return null;
+				const r = decoded.role.toUpperCase().replace(/[- ]/g, "_");
+				if (r === "PO" || r === "PLACEMENT_OFFICER" || r === "PLACEMENT_ADMIN") return "PLACEMENT_OFFICER";
+				if (r === "FACULTY" || r === "INSTRUCTOR") return "INSTRUCTOR";
+				if (r === "STUDENT" || r === "LEARNER") return "LEARNER";
+				return r;
+			})(),
 			engLabsUserId: decoded.userId ?? null,
 			tenantId: decoded.tenantId ?? null,
 			organisationId: decoded.organisationId ?? null,
