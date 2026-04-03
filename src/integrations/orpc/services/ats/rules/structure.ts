@@ -102,17 +102,30 @@ export async function scoreStructure(data: ResumeData): Promise<CategoryScore> {
 			if (!hasCompleteEntry) thinSections.push("education (missing degree/area)");
 		} else if (key === "skills") {
 			let filledRows = 0;
-			let keywordCount = 0;
+			const allKeywords: string[] = [];
 			for (const item of visibleItems) {
 				const name = String((item as { name?: string }).name ?? "").trim();
 				const keywords = (item as { keywords?: string[] }).keywords ?? [];
-				keywordCount += keywords.length;
+				allKeywords.push(...keywords.map((k) => k.toLowerCase().trim()).filter(Boolean));
 				if (name.length > 0 || keywords.length > 0) filledRows++;
 			}
-			const hasSkills = filledRows >= MIN_SKILL_ROWS_FILLED || (filledRows >= 1 && keywordCount >= 4);
+			const hasSkills = filledRows >= MIN_SKILL_ROWS_FILLED || (filledRows >= 1 && allKeywords.length >= 4);
 			if (!hasSkills) {
 				thinSections.push(
 					`skills (add at least ${MIN_SKILL_ROWS_FILLED} skill rows, or one row with several tools listed)`,
+				);
+			}
+			// Detect duplicate skill keywords listed more than once across all skill rows
+			const seen = new Set<string>();
+			const duplicates = new Set<string>();
+			for (const kw of allKeywords) {
+				if (seen.has(kw)) duplicates.add(kw);
+				else seen.add(kw);
+			}
+			if (duplicates.size > 0) {
+				const examples = [...duplicates].slice(0, 4).join(", ");
+				thinSections.push(
+					`skills (${duplicates.size} duplicate skill${duplicates.size > 1 ? "s" : ""} listed more than once: ${examples}${duplicates.size > 4 ? "…" : ""} — remove duplicates and use that space for new skills)`,
 				);
 			}
 		}

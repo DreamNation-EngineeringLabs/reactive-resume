@@ -264,15 +264,13 @@ export const sectionsDashboard = protectedProcedure
 		//     (the sections themselves + their ancestors up the tree)
 		let scopedOrgUnits = allOrgUnits;
 		if (scope === "faculty" && sections.length > 0) {
-			const relevantIds = new Set(sections.map(s => s.id));
+			const relevantIds = new Set(sections.map((s) => s.id));
 			scopedOrgUnits = allOrgUnits.filter((u) => relevantIds.has(u.id));
 		}
 
 		// 4c. Derive unit types present in the scoped units (overrides full-org unitTypes for faculty)
 		const scopedUnitTypes =
-			scope === "faculty" && sections.length > 0
-				? [...new Set(scopedOrgUnits.map((u) => u.type))].sort()
-				: unitTypes;
+			scope === "faculty" && sections.length > 0 ? [...new Set(scopedOrgUnits.map((u) => u.type))].sort() : unitTypes;
 
 		// 5. If a specific unit is selected in the filter, narrow sections to descendants of that unit
 		let effectiveSectionIds = sections.map((s) => s.id);
@@ -375,7 +373,7 @@ export const sectionsDashboard = protectedProcedure
 				processed.add(currentId);
 
 				// If it's a leaf section, add it
-				const isSection = sections.some(s => s.id === currentId);
+				const isSection = sections.some((s) => s.id === currentId);
 				if (isSection) descendantSectionIds.add(currentId);
 
 				// Find children in allOrgUnits to continue recursion
@@ -386,21 +384,30 @@ export const sectionsDashboard = protectedProcedure
 
 			const unitStudents = students.filter((s) => descendantSectionIds.has(s.sectionId));
 			const unitResumes = unitStudents.flatMap((s) => s.resumes);
-			
-			// New logic: 
+
+			// New logic:
 			// 1. Verified = Any progress from Faculty or PO
-			const verified = unitResumes.filter((r) => 
-				["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT")
+			const verified = unitResumes.filter((r) =>
+				[
+					"FACULTY_VERIFIED",
+					"FINALIZED_BY_FACULTY",
+					"PO_REVISION_REQUESTED",
+					"RESUBMITTED_TO_PO",
+					"PO_VERIFIED",
+					"APPROVED",
+				].includes((r as any).reviewStatus ?? "DRAFT"),
 			);
-			
+
 			// 2. FinalizedByFaculty = Waiting in PO Inbox
-			const finalized = unitResumes.filter((r) => 
-				["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT")
+			const finalized = unitResumes.filter((r) =>
+				["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT"),
 			);
-			
+
 			// 3. PassedFaculty = Cleared faculty stage once (even if in PO revision)
-			const clearedFaculty = unitResumes.filter((r) => 
-				["FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT")
+			const clearedFaculty = unitResumes.filter((r) =>
+				["FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"].includes(
+					(r as any).reviewStatus ?? "DRAFT",
+				),
 			);
 
 			// 4. PO Verified = Verified by PO but not yet approved section-wide
@@ -409,7 +416,7 @@ export const sectionsDashboard = protectedProcedure
 			// 5. ApprovedOnly = Final Status
 			const approved = unitResumes.filter((r) => (r as any).reviewStatus === "APPROVED");
 
-			const scores = unitResumes.filter(r => r.evaluationScore !== null).map((r) => r.evaluationScore!);
+			const scores = unitResumes.filter((r) => r.evaluationScore !== null).map((r) => r.evaluationScore!);
 
 			return {
 				id: unit.id,
@@ -461,13 +468,25 @@ export const sectionsDashboard = protectedProcedure
 		const enrichedEvaluations = recentEvaluations.map((e) => {
 			const email = resumeIdToEmail.get(e.resumeId);
 			const student = email ? engLabsStudents.find((s) => s.email === email) : null;
-			return { id: e.id, resumeId: e.resumeId, overallScore: e.overallScore, evaluatedAt: e.evaluatedAt, studentName: student?.name ?? null };
+			return {
+				id: e.id,
+				resumeId: e.resumeId,
+				overallScore: e.overallScore,
+				evaluatedAt: e.evaluatedAt,
+				studentName: student?.name ?? null,
+			};
 		});
 
 		const enrichedComments = recentComments.map((c) => {
 			const email = resumeIdToEmail.get(c.resumeId);
 			const student = email ? engLabsStudents.find((s) => s.email === email) : null;
-			return { id: c.id, resumeId: c.resumeId, content: c.content, createdAt: c.createdAt, studentName: student?.name ?? null };
+			return {
+				id: c.id,
+				resumeId: c.resumeId,
+				content: c.content,
+				createdAt: c.createdAt,
+				studentName: student?.name ?? null,
+			};
 		});
 
 		return {
@@ -505,7 +524,8 @@ export const studentResumes = protectedProcedure
 		tags: ["Dashboard"],
 		operationId: "getStudentResumes",
 		summary: "Get full resume detail for a student",
-		description: "Returns all resumes for a student with comments, evaluations, and history. Used by faculty detail panel.",
+		description:
+			"Returns all resumes for a student with comments, evaluations, and history. Used by faculty detail panel.",
 	})
 	.input(
 		z.object({
@@ -746,13 +766,14 @@ export const bulkUpdateResumes = protectedProcedure
 		z.object({
 			resumes: z.array(z.object({ id: z.string(), studentId: z.string() })),
 			tenantId: z.string(),
-			status: z.enum(["FINALIZED_BY_FACULTY", "PO_VERIFIED", "APPROVED"]),
+			status: z.enum(["FINALIZED_BY_FACULTY", "SUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]),
 		}),
 	)
 	.handler(async ({ context, input }) => {
 		const { bulkUpdateSectionResumes } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
-		const actorType = input.status === "APPROVED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
+		const actorType =
+			input.status === "APPROVED" || input.status === "PO_VERIFIED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
 
 		await bulkUpdateSectionResumes({
 			resumes: input.resumes,
@@ -946,14 +967,11 @@ export const sectionsList = protectedProcedure
 
 		// Fallback to inputs
 		if (sections.length === 0) {
-			sections = input.sectionIds?.length
-				? await getSectionsByIds(input.sectionIds)
-				: await getAllSections(tenantId);
+			sections = input.sectionIds?.length ? await getSectionsByIds(input.sectionIds) : await getAllSections(tenantId);
 		}
 
 		return { sections };
 	});
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Review Resume (Faculty — fetch resume + full feedback for review page)
@@ -970,9 +988,7 @@ export const reviewResume = protectedProcedure
 	})
 	.input(z.object({ resumeId: z.string() }))
 	.handler(async ({ input }) => {
-		const { getEvaluationsByResumeId } = await import(
-			"@/integrations/drizzle/services/resume-feedback.service"
-		);
+		const { getEvaluationsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
 		const [resume, comments, evaluations, history] = await Promise.all([
 			db.select().from(schema.resume).where(eq(schema.resume.id, input.resumeId)).limit(1),
@@ -1028,6 +1044,123 @@ export const reviewResume = protectedProcedure
 // Dashboard Router
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PO Section Review — send section back to faculty with notes + optional voice note
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const poReviewSection = protectedProcedure
+	.route({
+		method: "POST",
+		path: "/resumes/dashboard/po-review-section",
+		tags: ["Dashboard"],
+		operationId: "poReviewSection",
+		summary: "PO sends section back to faculty with review notes",
+		description:
+			"Saves PO review notes and an optional voice note URL, then bulk-resets all submitted resumes in the section back to FINALIZED_BY_FACULTY so the faculty can address the feedback and resubmit.",
+	})
+	.input(
+		z.object({
+			sectionId: z.string().describe("eng-labs section / org-unit ID"),
+			tenantId: z.string(),
+			facultyId: z.string().optional().describe("eng-labs ID of the faculty who submitted this section"),
+			reviewNotes: z.string().min(1, "Review notes are required"),
+			voiceNoteUrl: z.string().optional().describe("Storage URL of the recorded voice note"),
+			resumes: z.array(z.object({ id: z.string(), studentId: z.string() })),
+		}),
+	)
+	.handler(async ({ context, input }) => {
+		const { createPoSectionReview, bulkUpdateSectionResumes } = await import(
+			"@/integrations/drizzle/services/resume-feedback.service"
+		);
+
+		// 1. Persist the review record
+		await createPoSectionReview({
+			sectionId: input.sectionId,
+			tenantId: input.tenantId,
+			facultyId: input.facultyId,
+			poId: context.user.id,
+			reviewNotes: input.reviewNotes,
+			voiceNoteUrl: input.voiceNoteUrl,
+			resumeIds: input.resumes.map((r) => r.id),
+		});
+
+		// 2. Bulk-reset all resumes back to FINALIZED_BY_FACULTY so faculty can address and resubmit
+		await bulkUpdateSectionResumes({
+			resumes: input.resumes,
+			tenantId: input.tenantId,
+			toStatus: "FINALIZED_BY_FACULTY",
+			changedBy: context.user.id,
+			actorType: "PLACEMENT_OFFICER",
+		});
+
+		return { success: true };
+	});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Get PO Section Reviews (faculty reads feedback)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const updatePoSectionReview = protectedProcedure
+	.route({
+		method: "PATCH",
+		path: "/resumes/dashboard/po-section-reviews/{id}",
+		tags: ["Dashboard"],
+		operationId: "updatePoSectionReview",
+		summary: "Edit an existing PO section review",
+	})
+	.input(
+		z.object({
+			id: z.string(),
+			reviewNotes: z.string().min(1, "Review notes are required"),
+			voiceNoteUrl: z.string().optional().nullable(),
+		}),
+	)
+	.handler(async ({ input }) => {
+		const { updatePoSectionReview: updateReview } = await import(
+			"@/integrations/drizzle/services/resume-feedback.service"
+		);
+		return updateReview(input.id, {
+			reviewNotes: input.reviewNotes,
+			voiceNoteUrl: input.voiceNoteUrl,
+		});
+	});
+
+export const getPoSectionReviews = protectedProcedure
+	.route({
+		method: "GET",
+		path: "/resumes/dashboard/po-section-reviews",
+		tags: ["Dashboard"],
+		operationId: "getPoSectionReviews",
+		summary: "Get PO section review history for a section",
+	})
+	.input(
+		z.object({
+			sectionId: z.string(),
+			tenantId: z.string(),
+		}),
+	)
+	.output(
+		z.array(
+			z.object({
+				id: z.string(),
+				sectionId: z.string(),
+				tenantId: z.string(),
+				facultyId: z.string().nullable(),
+				poId: z.string(),
+				reviewNotes: z.string(),
+				voiceNoteUrl: z.string().nullable(),
+				resumeIds: z.array(z.string()),
+				createdAt: z.date(),
+			}),
+		),
+	)
+	.handler(async ({ input }) => {
+		const { getPoSectionReviews: getSectionReviews } = await import(
+			"@/integrations/drizzle/services/resume-feedback.service"
+		);
+		return getSectionReviews(input.sectionId, input.tenantId);
+	});
+
 export const dashboardRouter = {
 	student: studentDashboard,
 	sections: sectionsDashboard,
@@ -1041,5 +1174,7 @@ export const dashboardRouter = {
 	bulkUpdateResumes,
 	approveResume,
 	toggleResumeLock,
+	poReviewSection,
+	updatePoSectionReview,
+	getPoSectionReviews,
 };
-

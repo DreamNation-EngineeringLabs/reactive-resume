@@ -14,10 +14,12 @@ export function CreateResumeCard() {
 			className="cursor-pointer"
 		>
 			<div className="flex size-full flex-col items-center justify-center p-6">
-				<div className="mb-6 flex size-20 items-center justify-center rounded-[2rem] bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:rotate-6">
+				<div className="mb-6 flex size-20 items-center justify-center rounded-[2rem] bg-primary/10 text-primary transition-all duration-300 group-hover:rotate-6 group-hover:bg-primary group-hover:text-white">
 					<PlusIcon weight="duotone" className="size-10" />
 				</div>
-				<p className="text-center font-bold text-primary uppercase tracking-widest text-xs opacity-60 group-hover:opacity-100 transition-opacity">Start fresh</p>
+				<p className="text-center font-bold text-primary text-xs uppercase tracking-widest opacity-60 transition-opacity group-hover:opacity-100">
+					Start fresh
+				</p>
 			</div>
 		</BaseCard>
 	);

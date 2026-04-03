@@ -53,7 +53,7 @@ export function Header() {
 
 			<nav aria-label={t`Main navigation`} className="container mx-auto flex items-center gap-x-4 p-3 lg:px-12">
 				<Link to="/" className="transition-opacity hover:opacity-80" aria-label={t`Resume Builder - Go to homepage`}>
-					<BrandIcon className="size-10" />
+					<BrandIcon className="h-8 w-auto" />
 				</Link>
 
 				<div className="ml-auto flex items-center gap-x-2">

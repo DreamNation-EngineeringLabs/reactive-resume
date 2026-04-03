@@ -4,7 +4,7 @@ import { scoreBrevity } from "./rules/brevity";
 import { scoreContentQuality } from "./rules/content-quality";
 import { scoreFormatting } from "./rules/formatting";
 import { scoreImpactMetrics } from "./rules/impact-metrics";
-import { scoreKeywordMatch } from "./rules/keyword-match";
+import { getIndustryTaxonomyMatchCount, scoreKeywordMatch } from "./rules/keyword-match";
 import { scoreStructure } from "./rules/structure";
 import { scoreTailoring } from "./rules/tailoring";
 import { generateSuggestions } from "./suggestion-generator";
@@ -87,6 +87,11 @@ export interface ScoringResult {
 		estimatedPages: number;
 		/** True when AI-powered rewrites were skipped or failed (e.g. no API key, LLM error). */
 		aiRewriteUnavailable?: boolean;
+		/**
+		 * Number of unique taxonomy skills detected in the resume (no-JD mode only).
+		 * Used to show the student their position on the scoring curve chart.
+		 */
+		taxonomyMatchCount?: number;
 	};
 }
 
@@ -102,6 +107,11 @@ export interface JDAnalysis {
 	softSkills: string[];
 	tools: string[];
 	certifications: string[];
+	/**
+	 * Development methodologies, processes, and architectural patterns explicitly or implicitly required.
+	 * e.g. Agile, Scrum, TDD, REST, GraphQL, microservices, CI/CD, DevOps, code review, pair programming.
+	 */
+	methodologies: string[];
 	jobTitle: string;
 	experienceLevel: string;
 	requiredYears?: number;
@@ -208,6 +218,30 @@ export function estimatePageCount(data: ResumeData): number {
 	return Math.max(1, Math.ceil(wordCount / 675));
 }
 
+/**
+ * JD mode weights (must sum to 100).
+ * When a job description is provided, relevance signals (KW, Tailoring) get more weight
+ * and hygiene checks (Formatting, Brevity) become less important.
+ */
+const JD_MODE_WEIGHTS = {
+	keywordMatch: 28, // +3 (vs 25) — most important signal for JD matching
+	tailoring: 22, // +12 (vs 10) — summary/title/experience fit matters most
+	impactMetrics: 20, // unchanged
+	structure: 15, // -5 (vs 20) — hygiene but less critical vs relevance
+	formatting: 10, // -5 (vs 15) — hygiene
+	brevity: 5, // -5 (vs 10) — hygiene
+} as const;
+
+/** Rescale a CategoryScore to a new max (proportional, same quality ratio). */
+function rescaleCategory(cat: CategoryScore, newMax: number): CategoryScore {
+	if (cat.max === 0) return { ...cat, max: newMax };
+	return {
+		...cat,
+		score: Math.round((cat.score / cat.max) * newMax),
+		max: newMax,
+	};
+}
+
 export async function scoreResume(
 	resumeData: ResumeData,
 	jobDescription?: string,
@@ -221,10 +255,14 @@ export async function scoreResume(
 		jdAnalysis = await extractKeywords(jobDescription!);
 	}
 
-	// Step 2: Split keywords into required (scored) and nice-to-have (not scored)
+	// Step 2: Split keywords by scoring tier
+	// Tier A (hard scored): technical skills + tools — KW-1/KW-2 rules
 	const requiredKeywords = jdAnalysis ? [...jdAnalysis.hardSkills, ...jdAnalysis.tools] : [];
-	const niceToHaveKeywords = jdAnalysis ? [...jdAnalysis.softSkills, ...jdAnalysis.certifications] : [];
-	const allJdKeywords = [...requiredKeywords, ...niceToHaveKeywords];
+	// Tier B (soft scored): soft skills + methodologies + certifications — KW-3 rule
+	const softKeywords = jdAnalysis
+		? [...jdAnalysis.softSkills, ...jdAnalysis.methodologies, ...jdAnalysis.certifications]
+		: [];
+	const allJdKeywords = [...requiredKeywords, ...softKeywords];
 
 	// Step 3: Global Content Gate
 	const { countResumeWords } = await import("./rules/brevity");
@@ -332,12 +370,13 @@ export async function scoreResume(
 				totalBullets: bullets.length,
 				estimatedPages: estimatePageCount(resumeData),
 				aiRewriteUnavailable: thinGen.aiRewriteUnavailable,
+				taxonomyMatchCount: jdProvided ? undefined : 0,
 			},
 		};
 	}
 
-	const [keywordMatch, impactMetrics, structure, formatting, brevity, sixthCategory] = await Promise.all([
-		scoreKeywordMatch(resumeData, requiredKeywords),
+	let [keywordMatch, impactMetrics, structure, formatting, brevity, sixthCategory] = await Promise.all([
+		scoreKeywordMatch(resumeData, requiredKeywords, softKeywords),
 		scoreImpactMetrics(resumeData),
 		scoreStructure(resumeData),
 		scoreFormatting(resumeData),
@@ -346,32 +385,34 @@ export async function scoreResume(
 		jdProvided ? scoreTailoring(resumeData, jdAnalysis!) : scoreContentQuality(resumeData),
 	]);
 
-	// Step 4: Calculate overall score — always out of 100
+	// Step 4: In JD mode, rebalance category weights so relevance signals dominate
+	// (Tailoring +12, KW +3; Structure/Formatting/Brevity reduced as hygiene checks)
+	if (jdProvided) {
+		keywordMatch = rescaleCategory(keywordMatch, JD_MODE_WEIGHTS.keywordMatch);
+		sixthCategory = rescaleCategory(sixthCategory, JD_MODE_WEIGHTS.tailoring);
+		// impactMetrics stays at 20
+		structure = rescaleCategory(structure, JD_MODE_WEIGHTS.structure);
+		formatting = rescaleCategory(formatting, JD_MODE_WEIGHTS.formatting);
+		brevity = rescaleCategory(brevity, JD_MODE_WEIGHTS.brevity);
+	}
+
+	// Step 5: Calculate overall score — always out of 100
 	const rawScore =
 		keywordMatch.score + impactMetrics.score + structure.score + formatting.score + brevity.score + sixthCategory.score;
 
 	const overall = Math.round(Math.min(100, Math.max(0, rawScore)));
 
-	// Step 5: Gather matched/missing keywords
-	const resumeSkills = getResumeSkills(resumeData);
-	const allResumeText = [
-		...resumeSkills,
-		...bullets.map((b) => b.text),
-		stripHtml(resumeData.summary.content),
-		resumeData.basics.headline,
-	]
-		.join(" ")
-		.toLowerCase();
+	// Step 6: Gather matched/missing keywords using the same matcher as the scoring rules
+	const { keywordFoundInResumeText } = await import("./rules/keyword-match");
+	const keywordsMatched = allJdKeywords.filter((kw) => keywordFoundInResumeText(kw, resumeData));
+	const keywordsMissing = allJdKeywords.filter((kw) => !keywordFoundInResumeText(kw, resumeData));
 
-	const keywordsMatched = allJdKeywords.filter((kw) => allResumeText.includes(kw.toLowerCase()));
-	const keywordsMissing = allJdKeywords.filter((kw) => !allResumeText.includes(kw.toLowerCase()));
-
-	// Split missing keywords into required vs nice-to-have
+	// Split missing keywords into required (hard scored) vs soft/nice-to-have
 	const requiredSet = new Set(requiredKeywords.map((k) => k.toLowerCase()));
 	const missingRequired = keywordsMissing.filter((kw) => requiredSet.has(kw.toLowerCase()));
 	const missingNiceToHave = keywordsMissing.filter((kw) => !requiredSet.has(kw.toLowerCase()));
 
-	// Step 6: Generate suggestions
+	// Step 7: Generate suggestions
 	const categoriesResult: ScoringResult["categories"] = {
 		keywordMatch,
 		impactMetrics,
@@ -401,6 +442,7 @@ export async function scoreResume(
 			totalBullets: bullets.length,
 			estimatedPages: estimatePageCount(resumeData),
 			aiRewriteUnavailable: genResult.aiRewriteUnavailable,
+			taxonomyMatchCount: jdProvided ? undefined : getIndustryTaxonomyMatchCount(resumeData),
 		},
 	};
 }

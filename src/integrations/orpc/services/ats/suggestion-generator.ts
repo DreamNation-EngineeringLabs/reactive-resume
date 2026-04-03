@@ -13,7 +13,7 @@ import {
 	isProfilePictureDisplayedOnResume,
 	isStandardDateFormat,
 } from "./rules/formatting";
-import { containsWeakPhrase, hasQuantifiedMetric, isXYZCompliant, startsWithActionVerb } from "./rules/impact-metrics";
+import { containsWeakPhrase, findNearDuplicateBullets, findRepetitiveOpeners, hasQuantifiedMetric, isXYZCompliant, startsWithActionVerb } from "./rules/impact-metrics";
 import { getIndustryTaxonomyMatchCount, getJdKeywordsNotInBulletText } from "./rules/keyword-match";
 import { extractLatestYear, isReverseChronological } from "./rules/structure";
 
@@ -49,6 +49,24 @@ const comprehensiveSchema = z.object({
 				index: z.number(),
 				rewritten: z.string(),
 				reason: z.string(),
+			}),
+		)
+		.default([]),
+	/**
+	 * New bullets to add to existing experience/project items, each weaving in a JD keyword
+	 * that currently appears only in the skills list but not in any bullet.
+	 */
+	keywordBulletAdditions: z
+		.array(
+			z.object({
+				keyword: z.string().describe("The JD keyword this bullet is demonstrating"),
+				sectionKey: z.string().describe("Which section: 'experience' or 'projects'"),
+				itemIndex: z.number().describe("Zero-based index of the item within that section"),
+				newBullet: z
+					.string()
+					.describe(
+						"Plain text for the new bullet (no HTML). Must start with a past-tense action verb, include the keyword, and follow XYZ format where possible.",
+					),
 			}),
 		)
 		.default([]),
@@ -194,14 +212,20 @@ export async function generateSuggestions(
 							`"${kw}" — add a bullet that says how you used it (e.g. "Built … using ${kw}" or "Shipped … with ${kw}").`,
 					),
 				},
+				{
+					title: "Quick fix",
+					items: [
+						"Accept the generated bullet suggestions below — each one adds a keyword-backed achievement to your work or project bullets automatically.",
+					],
+				},
 			];
 			suggestions.push({
 				id: "KW-S-context-gap",
 				ruleId: "KW-2",
 				category: "keywordMatch",
 				severity: "warning",
-				title: "Mention these in your work or project bullets",
-				description: `These words from the job description already appear on your resume (often only in the skills list), but not inside your bullet points. Recruiters and many ATS tools care more about skills tied to real work — weave each into a concrete achievement.`,
+				title: "Mention these skills in your work or project bullets",
+				description: `${toSurface.length} keyword${toSurface.length !== 1 ? "s" : ""} from the job description appear only in your skills list — not in any bullet point. ATS tools and recruiters weight skills-in-context far more than a bare skills entry. Accept the generated bullet suggestions below to fix this automatically.`,
 				bodySections,
 				descriptionBullets: toSurface,
 				autoApplicable: false,
@@ -386,6 +410,12 @@ export async function generateSuggestions(
 		projectsToRewrite.push({ itemIndex: idx, name: projectName, plain: desc, rawHtml: rawDesc });
 	}
 
+	// ── 4c. Collect JD keywords in skills but not in any bullet (for keyword bullet weaving) ──
+	const keywordsNotInBullets =
+		jdAnalysis && scoringContext?.requiredJdKeywords?.length
+			? getJdKeywordsNotInBulletText(data, scoringContext.requiredJdKeywords).slice(0, 5)
+			: [];
+
 	let aiRewriteUnavailable = false;
 	// ── 5. Single LLM call for ALL actionable suggestions ──
 	if (
@@ -394,7 +424,8 @@ export async function generateSuggestions(
 		needsSummary ||
 		needsTailoredSummary ||
 		brevityCandidates.length > 0 ||
-		projectsToRewrite.length > 0
+		projectsToRewrite.length > 0 ||
+		keywordsNotInBullets.length > 0
 	) {
 		const llmResult = await getComprehensiveSuggestions(
 			data,
@@ -406,10 +437,191 @@ export async function generateSuggestions(
 			{ wordCount, totalBulletCount, pages, tooManyWords },
 			needsTailoredSummary,
 			projectsToRewrite,
+			keywordsNotInBullets,
 		);
 
 		if (!llmResult) {
-			aiRewriteUnavailable = true;
+			// Only show the banner when an API key was configured but the call genuinely failed.
+			// When no API key is present at all, this is expected — generate heuristic fallbacks instead.
+			if (env.OPENAI_API_KEY) {
+				aiRewriteUnavailable = true;
+			}
+
+			// ── Fallback: generate coaching suggestions without LLM ──
+
+			// Bullet coaching (non-auto-applicable)
+			for (const bullet of bulletsToRewrite.slice(0, 6)) {
+				const sectionName =
+					bullet.sectionKey === "experience"
+						? "Experience"
+						: bullet.sectionKey === "projects"
+							? "Projects"
+							: "Volunteer";
+				const section = data.sections[bullet.sectionKey as keyof typeof data.sections];
+				const item = section.items[bullet.itemIndex] as { company?: string; name?: string; position?: string };
+				const itemLabel = item.company || item.name || item.position || "";
+				const ruleId = bullet.weakness ? "IM-4" : !startsWithActionVerb(bullet.text) ? "IM-1" : "IM-2";
+
+				suggestions.push({
+					id: `IM-S-fallback-${bullet.sectionKey}-${bullet.itemIndex}-${bullet.bulletIndex}`,
+					ruleId,
+					category: "impactMetrics",
+					severity: bullet.weakness ? "critical" : "warning",
+					title: `Rewrite bullet: ${bullet.reasons[0] ?? bullet.reason}`,
+					description: `"${bullet.text.slice(0, 90)}${bullet.text.length > 90 ? "…" : ""}" — ${bullet.reason}. Edit this bullet in the builder to fix the issue.`,
+					autoApplicable: false,
+					estimatedScoreGain: Math.min(4, bullet.reasons.length * 2),
+					diff: {
+						type: "text_replace",
+						location: `${sectionName} → ${itemLabel}`,
+						fieldPath: bullet.path,
+						hunks: [{ removed: bullet.text }],
+					},
+				});
+			}
+
+			// Summary coaching (non-auto)
+			if (needsSummary) {
+				suggestions.push({
+					id: "SC-S1-summary-fallback",
+					ruleId: "SC-2",
+					category: "structure",
+					severity: "warning",
+					title: "Add a professional summary",
+					description:
+						"Your resume is missing a summary section. Write 2–3 sentences covering: who you are (role + level), what you've built (key project or achievement), and what role you're targeting.",
+					autoApplicable: false,
+					estimatedScoreGain: 2,
+					diff: {
+						type: "add_item",
+						location: "Summary",
+						fieldPath: "/summary/content",
+						hunks: [
+							{
+								added:
+									"e.g. 'Final-year CS student with experience building full-stack apps using React and Node.js. Looking for backend or full-stack roles.'",
+							},
+						],
+					},
+				});
+			}
+
+			// Date format coaching (non-auto)
+			for (const dateItem of datesToFix.slice(0, 3)) {
+				const sectionLabel = dateItem.sectionKey.charAt(0).toUpperCase() + dateItem.sectionKey.slice(1);
+				const section = data.sections[dateItem.sectionKey as keyof typeof data.sections];
+				const item = section.items[dateItem.itemIndex] as {
+					company?: string;
+					institution?: string;
+					name?: string;
+					position?: string;
+				};
+				const itemLabel = item.company || item.institution || item.name || item.position || "";
+
+				suggestions.push({
+					id: `FM-S-date-fallback-${dateItem.sectionKey}-${dateItem.itemIndex}`,
+					ruleId: "FM-4",
+					category: "formatting",
+					severity: "warning",
+					title: `Fix date format: "${dateItem.period}"`,
+					description: `Change "${dateItem.period}" to a standard ATS format: "Jan 2023 - Dec 2023" or "Jan 2023 - Present".`,
+					autoApplicable: false,
+					estimatedScoreGain: 1,
+					diff: {
+						type: "field_replace",
+						location: `${sectionLabel} → ${itemLabel}`,
+						fieldPath: `/sections/${dateItem.sectionKey}/items/${dateItem.itemIndex}/period`,
+						hunks: [{ removed: dateItem.period }, { added: "Jan YYYY - Mon YYYY  (or Present)" }],
+					},
+				});
+			}
+
+			// Project coaching (non-auto)
+			for (const project of projectsToRewrite.slice(0, 3)) {
+				suggestions.push({
+					id: `CQ-S-proj-fallback-${project.itemIndex}`,
+					ruleId: "CQ-3",
+					category: cqSuggestionCategory,
+					severity: "warning",
+					title: `Strengthen project: "${project.name}"`,
+					description: `"${project.name}" needs a stronger description. Expand it to cover: (1) what the project does, (2) the full tech stack (e.g. React, Node.js, PostgreSQL), (3) your specific contribution, and (4) an outcome or metric (users, performance, deployment).`,
+					autoApplicable: false,
+					estimatedScoreGain: 2,
+					diff: {
+						type: "text_replace",
+						location: `Projects → ${project.name}`,
+						fieldPath: `/sections/projects/items/${project.itemIndex}/description`,
+						hunks: project.plain ? [{ removed: project.plain }] : [{ added: "Add description" }],
+					},
+				});
+			}
+
+			// Tailored summary fallback — auto-applicable with a template
+			if (needsTailoredSummary && jdAnalysis) {
+				const currentSummary = stripHtml(data.summary.content);
+
+				// Detect entry-level role
+				const isFallbackEntryLevel =
+					/\b(trainee|intern|fresher|graduate|entry|junior|associate|apprentice|campus)\b/i.test(
+						jdAnalysis.jobTitle,
+					) || jdAnalysis.experienceLevel === "entry";
+
+				// Build a concise template from available resume data
+				// Prefer technical skills (languages, frameworks, tools) over soft skills
+				const softSkillTerms =
+					/\b(communication|teamwork|leadership|problem.?solving|collaboration|interpersonal|adaptability|creativity|time.?management|work.?ethic|critical.?thinking|attention.?to.?detail)\b/i;
+				const resumeSkillNames = data.sections.skills.items
+					.filter((s) => !s.hidden)
+					.map((s) => s.name)
+					.filter((n) => Boolean(n) && !softSkillTerms.test(n));
+				const matchingSkills = [...jdAnalysis.hardSkills, ...jdAnalysis.tools].filter((sk) =>
+					resumeSkillNames.some((r) => r.toLowerCase().includes(sk.toLowerCase())),
+				);
+				const topSkillsStr =
+					matchingSkills.slice(0, 3).join(", ") || resumeSkillNames.slice(0, 3).join(", ") || "software development";
+
+				// Sanitize headline — reject generic section-heading placeholders
+				const PLACEHOLDER_HEADLINES = /^(overview|summary|about|profile|about me|objective|bio)$/i;
+				const rawHeadline = data.basics.headline?.trim() ?? "";
+				const cleanHeadline = PLACEHOLDER_HEADLINES.test(rawHeadline) ? "" : rawHeadline;
+
+				const latestRole = data.sections.experience.items.find((e) => !e.hidden);
+				const roleContext = latestRole
+					? `with experience as ${latestRole.position ?? "developer"} at ${latestRole.company ?? "previous company"}`
+					: "with hands-on project experience";
+
+				let generatedSummary: string;
+				if (isFallbackEntryLevel) {
+					// Entry-level: open with "Aspiring X", don't repeat title in closing
+					const opener = `Aspiring ${jdAnalysis.jobTitle}`;
+					generatedSummary = `${opener} ${roleContext}, with a strong foundation in ${topSkillsStr}. Passionate about building real-world solutions and eager to contribute to a high-impact team.`;
+				} else {
+					// Mid/senior: lead with current identity, mention target role once in closing
+					const opener = cleanHeadline || `${latestRole?.position ?? "Software engineer"}`;
+					generatedSummary = `${opener} ${roleContext}, skilled in ${topSkillsStr}. Seeking a ${jdAnalysis.jobTitle} role to bring hands-on technical depth and drive meaningful outcomes.`;
+				}
+
+				suggestions.push({
+					id: "TR-S2-summary-fallback",
+					ruleId: "TR-2",
+					category: "tailoring",
+					severity: "warning",
+					title: "Tailor summary to job description",
+					description: `Your summary doesn't mention the target role "${jdAnalysis.jobTitle}" or key JD skills. A tailored version has been generated — accept it or use it as a starting point.`,
+					autoApplicable: true,
+					patches: [{ op: "replace", path: "/summary/content", value: `<p>${generatedSummary}</p>` }],
+					estimatedScoreGain: 3,
+					diff: {
+						type: "text_replace",
+						location: "Summary",
+						fieldPath: "/summary/content",
+						hunks: [
+							{ removed: currentSummary.slice(0, 120) + (currentSummary.length > 120 ? "…" : "") },
+							{ added: generatedSummary },
+						],
+					},
+				});
+			}
 		}
 
 		// Process bullet rewrites
@@ -605,6 +817,46 @@ export async function generateSuggestions(
 							{ removed: row.plain || "(empty)" },
 							{ added: stripHtml(sanitized).slice(0, 200) + (stripHtml(sanitized).length > 200 ? "…" : "") },
 						],
+					},
+				});
+			}
+
+			// Process keyword bullet additions
+			for (const addition of llmResult.keywordBulletAdditions ?? []) {
+				const { keyword, sectionKey, itemIndex, newBullet } = addition;
+				if (!newBullet?.trim()) continue;
+
+				// Validate that sectionKey and itemIndex refer to a real, visible item
+				const section = data.sections[sectionKey as keyof typeof data.sections];
+				if (!section) continue;
+				const item = section.items[itemIndex] as
+					| { hidden?: boolean; description?: string; company?: string; name?: string; position?: string }
+					| undefined;
+				if (!item || item.hidden) continue;
+
+				const currentHtml = (item as { description?: string }).description ?? "";
+				const newHtml = insertBulletIntoHtml(currentHtml, newBullet.trim());
+				const fieldPath = `/sections/${sectionKey}/items/${itemIndex}/description`;
+
+				const sectionLabel =
+					sectionKey === "experience" ? "Experience" : sectionKey === "projects" ? "Projects" : "Volunteer";
+				const itemLabel = item.company || item.name || item.position || `${sectionLabel} item ${itemIndex + 1}`;
+
+				suggestions.push({
+					id: `KW-S-bullet-add-${keyword.toLowerCase().replace(/\s+/g, "-")}-${sectionKey}-${itemIndex}`,
+					ruleId: "KW-2",
+					category: "keywordMatch",
+					severity: "warning",
+					title: `Add "${keyword}" to a bullet`,
+					description: `"${keyword}" is in your skills list but not in any work or project bullet. A generated bullet demonstrates real usage, which ATS tools weight more heavily than skills lists alone.`,
+					autoApplicable: true,
+					patches: [{ op: "replace", path: fieldPath, value: newHtml }],
+					estimatedScoreGain: 2,
+					diff: {
+						type: "text_replace",
+						location: `${sectionLabel} → ${itemLabel}`,
+						fieldPath,
+						hunks: [{ added: newBullet }],
 					},
 				});
 			}
@@ -1300,7 +1552,202 @@ export async function generateSuggestions(
 		}
 	}
 
+	// ── 14. Brevity explanation (what this score means) ──
+	if (scoringContext) {
+		const brevCat = scoringContext.categories.brevity;
+		const brevPct = brevCat.max > 0 ? brevCat.score / brevCat.max : 1;
+		const hasBrevitySuggestion = suggestions.some((s) => s.category === "brevity" && s.ruleId !== "BR-S-cols");
+
+		if (!hasBrevitySuggestion && brevPct < 0.8) {
+			const wc = countResumeWords(data);
+			const pages = estimatePageCount(data);
+			const bulletCount = bullets.length;
+			const brevityIssues: string[] = [];
+			if (wc > RECOMMENDED_WORD_RANGE.max)
+				brevityIssues.push(`${wc} words (target: ${RECOMMENDED_WORD_RANGE.min}–${RECOMMENDED_WORD_RANGE.max})`);
+			if (pages > 1) brevityIssues.push(`${pages} pages (target: 1)`);
+			if (bulletCount > RECOMMENDED_BULLET_RANGE.max)
+				brevityIssues.push(
+					`${bulletCount} bullets (target: ${RECOMMENDED_BULLET_RANGE.min}–${RECOMMENDED_BULLET_RANGE.max})`,
+				);
+
+			if (brevityIssues.length > 0) {
+				suggestions.push({
+					id: "BR-S-explain",
+					ruleId: "BR-5",
+					category: "brevity",
+					severity: "info",
+					title: `Brevity: ${brevityIssues.join(" | ")}`,
+					description: `The Brevity score checks: word count (400–675), total bullet count (12–20), and page length (ideally 1). Concise resumes perform better in ATS — recruiters spend ~7 seconds on a first pass.\n\nTo improve:\n• Cut filler phrases ("responsible for", "participated in") — replace with direct verbs\n• Limit each role to 3–5 bullets; keep only the strongest achievements\n• Aim for bullets under 20 words\n• If you have high school education listed alongside a degree, hide it — it wastes space and looks junior`,
+					autoApplicable: false,
+					estimatedScoreGain: Math.ceil((brevCat.max - brevCat.score) / 2),
+					diff: {
+						type: "text_replace",
+						location: "Overall resume",
+						fieldPath: "",
+						hunks: [{ context: brevityIssues.join(" | ") }],
+					},
+				});
+			}
+		}
+	}
+
+	// ── 15. Content Quality / Tailoring explanation ──
+	if (scoringContext && scoringContext.categories.tailoring) {
+		const cqCat = scoringContext.categories.tailoring;
+		const cqPct = cqCat.max > 0 ? cqCat.score / cqCat.max : 1;
+		const hasCQSuggestion = suggestions.some((s) => s.category === "tailoring");
+		const isJDMode = scoringContext.jdProvided;
+
+		if (!hasCQSuggestion && cqPct < 0.8) {
+			if (isJDMode) {
+				suggestions.push({
+					id: "TR-S-explain",
+					ruleId: "TR-0",
+					category: "tailoring",
+					severity: "info",
+					title: "How Tailoring is scored",
+					description: `In Job Match mode, Tailoring (${cqCat.score}/${cqCat.max}) checks 4 dimensions:\n\n• **Title alignment** (0–3): Does your headline match the JD title? Even partial match (e.g. "Software Engineer" vs "Backend Software Engineer") earns points.\n• **Summary relevance** (0–3): Does your summary mention the target role and key required skills?\n• **Experience relevance** (0–2): Do your recent positions reflect the JD role's domain?\n• **Education match** (0–2): Does your degree/area match what the JD requires?\n\nTo improve: update your headline to include the exact job title, rewrite your summary to reference the role and 2–3 required skills, and ensure your experience bullets use JD-relevant terminology.`,
+					autoApplicable: false,
+					estimatedScoreGain: Math.ceil((cqCat.max - cqCat.score) / 2),
+					diff: {
+						type: "text_replace",
+						location: "Summary + Headline",
+						fieldPath: "",
+						hunks: [
+							{
+								context: `Tailoring score: ${cqCat.score}/${cqCat.max} — update headline, summary, and bullets to match the JD`,
+							},
+						],
+					},
+				});
+			} else {
+				suggestions.push({
+					id: "CQ-S-explain",
+					ruleId: "CQ-0",
+					category: "tailoring",
+					severity: "info",
+					title: "How Content Quality is scored",
+					description: `Without a job description, Content Quality (${cqCat.score}/${cqCat.max}) measures the inherent strength of your resume content across 4 dimensions:\n\n• **Bullet specificity** (0–4): Are your bullets concrete? Do they name technologies, scales, and outcomes? Generic bullets ("developed a website") score 0.\n• **Summary quality** (0–2): Is your summary specific to YOU, or boilerplate ("results-driven professional")?\n• **Project depth** (0–2): Do your project descriptions include tech stack + what it does + outcome?\n• **Career narrative** (0–2): Does your overall resume tell a coherent story (skills + experience + education aligned)?\n\nPaste a job description to switch to Job Match mode and get role-specific tailoring feedback.`,
+					autoApplicable: false,
+					estimatedScoreGain: Math.ceil((cqCat.max - cqCat.score) / 2),
+					diff: {
+						type: "text_replace",
+						location: "Summary + Projects + Bullets",
+						fieldPath: "",
+						hunks: [
+							{ context: `Content Quality: ${cqCat.score}/${cqCat.max} — add specifics, tech names, and outcomes` },
+						],
+					},
+				});
+			}
+		}
+	}
+
+	// ── Repetition checks (IM-6) ──
+	// These run statically — no LLM needed. Added after the main pass so they always appear.
+	const bulletTexts = bullets.map((b) => b.text);
+
+	// Repetitive openers
+	const repeatedOpeners = findRepetitiveOpeners(bulletTexts, 3);
+	if (repeatedOpeners.size > 0 && !suggestions.some((s) => s.id === "IM-6-openers")) {
+		const examples = [...repeatedOpeners.entries()]
+			.map(([word, count]) => `"${word}" (${count}×)`)
+			.join(", ");
+		const offendingWords = [...repeatedOpeners.keys()];
+		suggestions.push({
+			id: "IM-6-openers",
+			ruleId: "IM-6",
+			category: "impactMetrics",
+			severity: "warning",
+			title: "Repetitive bullet openers",
+			description: `The following starting words appear 3 or more times across your bullets: ${examples}. Recruiters notice when every bullet starts the same way — it makes your experience look narrow and copy-pasted.`,
+			descriptionBullets: [
+				`Replace repeated openers with varied action verbs from different categories — e.g. instead of only "Developed", try "Designed", "Architected", "Shipped", "Optimised", "Integrated".`,
+				`Aim for no single opener appearing more than 2 times across all bullets.`,
+				`Words to diversify: ${offendingWords.join(", ")}.`,
+			],
+			autoApplicable: false,
+			estimatedScoreGain: 1,
+			diff: {
+				type: "text_replace",
+				location: "Experience / Projects bullets",
+				fieldPath: "",
+				hunks: offendingWords.map((word) => ({
+					context: `Find bullets starting with "${word}" and replace with a different strong action verb that better describes that specific contribution.`,
+				})),
+			},
+		});
+	}
+
+	// Near-duplicate bullets
+	const duplicatePairs = findNearDuplicateBullets(bulletTexts, 0.65);
+	if (duplicatePairs.length > 0 && !suggestions.some((s) => s.id === "IM-6-duplicates")) {
+		const pairExamples = duplicatePairs.slice(0, 3).map(([i, j]) => {
+			const a = bulletTexts[i] ? `"${bulletTexts[i].slice(0, 55)}${bulletTexts[i].length > 55 ? "…" : ""}"` : "";
+			const b = bulletTexts[j] ? `"${bulletTexts[j].slice(0, 55)}${bulletTexts[j].length > 55 ? "…" : ""}"` : "";
+			return `${a} ↔ ${b}`;
+		});
+		suggestions.push({
+			id: "IM-6-duplicates",
+			ruleId: "IM-6",
+			category: "impactMetrics",
+			severity: "warning",
+			title: `${duplicatePairs.length} near-duplicate bullet${duplicatePairs.length > 1 ? "s" : ""} detected`,
+			description: `${duplicatePairs.length} pair${duplicatePairs.length > 1 ? "s" : ""} of bullets share more than 65% of their words. Each bullet should describe a distinct accomplishment — duplicates dilute impact and waste your limited resume space.`,
+			descriptionBullets: [
+				...pairExamples,
+				"For each duplicate pair: keep the stronger bullet and rewrite the other to highlight a different outcome, tool, or scale.",
+			],
+			autoApplicable: false,
+			estimatedScoreGain: 1,
+			diff: {
+				type: "text_replace",
+				location: "Experience / Projects bullets",
+				fieldPath: "",
+				hunks: duplicatePairs.slice(0, 3).map(([i, j]) => ({
+					removed: bulletTexts[j]?.slice(0, 100),
+					context: `This bullet is too similar to bullet starting: "${bulletTexts[i]?.slice(0, 60)}"`,
+				})),
+			},
+		});
+	}
+
 	ensureCategoryCoverage(suggestions, scoringContext);
+
+	// ── Cross-category consistency signal ──
+	// When keyword coverage is high but impact bullets are weak, the resume will pass ATS
+	// but fail recruiter review — flag this explicitly so students understand the gap.
+	if (scoringContext) {
+		const kwCat = scoringContext.categories.keywordMatch;
+		const imCat = scoringContext.categories.impactMetrics;
+		const kwPct = kwCat.max > 0 ? kwCat.score / kwCat.max : 0;
+		const imPct = imCat.max > 0 ? imCat.score / imCat.max : 0;
+
+		if (kwPct > 0.8 && imPct < 0.4 && !suggestions.some((s) => s.id === "CROSS-KW-IM")) {
+			suggestions.push({
+				id: "CROSS-KW-IM",
+				ruleId: "CROSS-1",
+				category: "impactMetrics",
+				severity: "warning",
+				title: "Your keywords aren't backed by demonstrated experience",
+				description: `Your keyword coverage is strong (${kwCat.score}/${kwCat.max}) but your impact bullets are weak (${imCat.score}/${imCat.max}). Keywords get you past the ATS filter — but recruiters will see bullets that don't back them up. Each key skill should appear in at least one bullet showing what you built, shipped, or improved using it.\n\nExample: if "PostgreSQL" is in your skills, add a bullet like "Designed and optimized PostgreSQL schema for 10,000+ records, reducing query time by 35%".`,
+				autoApplicable: false,
+				estimatedScoreGain: 5,
+				diff: {
+					type: "text_replace",
+					location: "Experience / Projects",
+					fieldPath: "",
+					hunks: [
+						{
+							context:
+								"For each listed skill, write a bullet showing HOW you used it — tool + action + result (even an estimate).",
+						},
+					],
+				},
+			});
+		}
+	}
 
 	// Sort by estimated score gain (highest first), then by severity
 	const severityOrder = { critical: 0, warning: 1, info: 2 };
@@ -1364,6 +1811,7 @@ async function getComprehensiveSuggestions(
 	brevityStats: { wordCount: number; totalBulletCount: number; pages: number; tooManyWords: boolean },
 	needsTailoredSummary: boolean,
 	projectsToRewrite: Array<{ itemIndex: number; name: string; plain: string; rawHtml: string }>,
+	keywordsNotInBullets: string[] = [],
 ): Promise<z.infer<typeof comprehensiveSchema> | null> {
 	try {
 		const apiKey = env.OPENAI_API_KEY;
@@ -1444,11 +1892,16 @@ Make it specific to their background. No generic filler.`);
 					return `${p.name}: ${desc}`;
 				});
 
+			const isEntryLevel =
+				/\b(trainee|intern|fresher|graduate|entry|junior|associate|apprentice|campus)\b/i.test(jdAnalysis.jobTitle) ||
+				jdAnalysis.experienceLevel === "entry";
+
 			promptParts.push(`## TAILORED SUMMARY
 The current summary is NOT tailored to the target job. Rewrite it (plain text, no HTML) to specifically target this role.
 
 Current summary: "${currentSummary}"
 Target role: ${jdAnalysis.jobTitle}
+Experience level: ${isEntryLevel ? "entry-level / trainee / student (candidate does NOT yet hold this title)" : jdAnalysis.experienceLevel}
 Required hard skills: ${jdAnalysis.hardSkills.join(", ") || "none"}
 Required tools: ${jdAnalysis.tools.join(", ") || "none"}
 Resume skills: ${skills.join(", ") || "not listed"}
@@ -1456,10 +1909,13 @@ Recent experience: ${experiences.join("; ") || "not listed"}
 Key projects: ${projects.join("; ") || "not listed"}
 
 Rules:
-- Keep it 2-3 sentences, concise
-- Mention the target role title ("${jdAnalysis.jobTitle}")
-- Incorporate JD hard skills and tools that are ACTUALLY in the resume (don't fabricate)
-- Reference real experience and projects from the resume
+- Write 2-3 flowing sentences, professional but natural — not a list
+- ${isEntryLevel ? `Open with "Aspiring ${jdAnalysis.jobTitle}" or "[Field] student/recent graduate" framing — the candidate is targeting this role, not claiming they already hold it` : `Lead with the candidate's current level and domain (e.g. "Senior backend engineer with 5 years...")`}
+- Mention the target role EXACTLY ONCE — either in the opening framing OR as a closing career goal, never in both
+- Prefer TECHNICAL skills (languages, frameworks, tools) over soft skills (teamwork, communication, leadership) — only use soft skills if no technical skills are available
+- Include at least one specific project, company, or measurable achievement from the resume — name it explicitly rather than using vague phrases
+- Do NOT use cliché fillers: "deliver impactful solutions", "apply my technical background", "passionate about", "seeking opportunities to", "results-driven", "leverage my skills"
+- Do NOT fabricate experience, companies, skills, or details not present in the provided context
 - Return the tailored summary in the "tailoredSummary" field`);
 		}
 
@@ -1519,6 +1975,56 @@ Projects (index matches projectRewrites array):
 ${projectsToRewrite.map((p, i) => `${i}. "${p.name}" — current: ${p.plain || "(empty)"}`).join("\n")}`);
 		}
 
+		if (keywordsNotInBullets.length > 0) {
+			// Build a concise context snapshot for the LLM to write plausible bullets
+			const expItems = data.sections.experience.items
+				.filter((e) => !e.hidden)
+				.slice(0, 4)
+				.map((e, idx) => {
+					const bullets = getAllBullets(data)
+						.filter((b) => b.sectionKey === "experience" && b.itemIndex === idx)
+						.map((b) => b.text)
+						.slice(0, 3);
+					return {
+						sectionKey: "experience",
+						itemIndex: idx,
+						label: `${e.position ?? ""} at ${e.company ?? ""}`.trim() || `Experience ${idx + 1}`,
+						bullets,
+					};
+				});
+			const projItems = data.sections.projects.items
+				.filter((p) => !p.hidden)
+				.slice(0, 3)
+				.map((p, idx) => {
+					const plain = stripHtml((p as { description?: string }).description ?? "").slice(0, 120);
+					return {
+						sectionKey: "projects",
+						itemIndex: idx,
+						label: (p as { name?: string }).name ?? `Project ${idx + 1}`,
+						bullets: [plain],
+					};
+				});
+			const contextItems = [...expItems, ...projItems];
+
+			promptParts.push(`## KEYWORD BULLET WEAVING
+The following JD keywords appear on the resume (e.g. in the skills list) but are MISSING from all experience/project bullets. For each keyword, write ONE new bullet to add to the most relevant experience or project entry.
+
+Rules:
+- Start with a strong past-tense action verb (Built, Implemented, Deployed, Applied, Used, Integrated, Designed, etc.)
+- Weave the keyword naturally into a realistic achievement (do NOT just say "Used Python")
+- Follow XYZ format where possible: action verb + outcome + method/context
+- Use scale or metrics when plausible (e.g. "processed 5,000+ records", "served 200 users")
+- Base the bullet on the EXISTING bullets/description for that item — do not fabricate employers, dates, or roles
+- Choose the item where the keyword fits most naturally; prefer experience over projects
+- Output sectionKey ("experience" or "projects"), itemIndex (0-based), the keyword, and the new bullet text (plain text, no HTML)
+
+Keywords to add (pick the best item for each):
+${keywordsNotInBullets.map((kw) => `- "${kw}"`).join("\n")}
+
+Available items:
+${contextItems.map((c) => `[${c.sectionKey}][${c.itemIndex}] ${c.label}${c.bullets.length > 0 ? `\n  Existing bullets: ${c.bullets.map((b) => `"${b.slice(0, 80)}"`)  .join("; ")}` : "\n  (no bullets yet)"}`).join("\n")}`);
+		}
+
 		const result = await generateText({
 			model,
 			temperature: SCORING_LLM_CONFIG.temperature,
@@ -1533,7 +2039,7 @@ ${promptParts.join("\n\n")}`,
 				},
 				{
 					role: "user",
-					content: `Fix everything listed above. Return bulletRewrites (index, original, rewritten, reason), dateCorrections (index, original, corrected), brevityEdits (index, action, rewritten, reason), summary, tailoredSummary, and projectRewrites (index, rewritten, reason).${
+					content: `Fix everything listed above. Return bulletRewrites (index, original, rewritten, reason), dateCorrections (index, original, corrected), brevityEdits (index, action, rewritten, reason), summary, tailoredSummary, projectRewrites (index, rewritten, reason), and keywordBulletAdditions (keyword, sectionKey, itemIndex, newBullet).${
 						bulletsToRewrite.length === 0 ? " bulletRewrites must be []." : ""
 					}${datesToFix.length === 0 ? " dateCorrections must be []." : ""}${
 						brevityCandidates.length === 0 ? " brevityEdits must be []." : ""
@@ -1543,7 +2049,7 @@ ${promptParts.join("\n\n")}`,
 						projectsToRewrite.length === 0
 							? " projectRewrites must be []."
 							: ` projectRewrites must have exactly one object per project (indices 0-${projectsToRewrite.length - 1}), with full replacement HTML in "rewritten".`
-					}`,
+					}${keywordsNotInBullets.length === 0 ? " keywordBulletAdditions must be []." : ` keywordBulletAdditions must have one entry per keyword (${keywordsNotInBullets.join(", ")}).`}`,
 				},
 			],
 		});
@@ -1552,6 +2058,29 @@ ${promptParts.join("\n\n")}`,
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * Insert a plain-text bullet into an HTML description field.
+ * If the description already has a <ul>, appends a new <li> before </ul>.
+ * Otherwise wraps in a new <ul>.
+ */
+function insertBulletIntoHtml(html: string, newBullet: string): string {
+	const escapedBullet = newBullet
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;");
+	const newLi = `<li>${escapedBullet}</li>`;
+
+	if (/<ul[^>]*>/i.test(html)) {
+		// Insert before the last </ul>
+		return html.replace(/<\/ul>(?![\s\S]*<\/ul>)/i, `${newLi}</ul>`);
+	}
+	if (html.trim()) {
+		// Wrap existing content + new bullet in a <ul>
+		return `${html}<ul>${newLi}</ul>`;
+	}
+	return `<ul>${newLi}</ul>`;
 }
 
 /** Remove all emoji characters from text, cleaning up extra spaces */

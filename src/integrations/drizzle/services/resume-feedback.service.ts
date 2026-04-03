@@ -6,6 +6,7 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/integrations/drizzle/client";
 import {
+	poSectionReview,
 	resume,
 	resumeChecklist,
 	resumeChecklistItem,
@@ -496,6 +497,7 @@ export async function updateResumeStatus({
 		| "FACULTY_REVISION_REQUESTED"
 		| "FACULTY_VERIFIED"
 		| "FINALIZED_BY_FACULTY"
+		| "SUBMITTED_TO_PO"
 		| "PO_REVISION_REQUESTED"
 		| "RESUBMITTED_TO_PO"
 		| "PO_VERIFIED"
@@ -507,19 +509,19 @@ export async function updateResumeStatus({
 	// Decide default locking based on status if not explicitly provided
 	let lockValue = explicitIsLocked;
 	if (lockValue === undefined) {
-		const lockStatuses = ["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_VERIFIED", "APPROVED"];
+		const lockStatuses = ["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "SUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"];
 		const unlockStatuses = ["DRAFT", "FACULTY_REVISION_REQUESTED", "PO_REVISION_REQUESTED"];
-		
+
 		if (lockStatuses.includes(status)) lockValue = true;
 		if (unlockStatuses.includes(status)) lockValue = false;
 	}
 
 	const result = await db
 		.update(resume)
-		.set({ 
-			reviewStatus: status, 
+		.set({
+			reviewStatus: status,
 			isLocked: lockValue,
-			updatedAt: new Date() 
+			updatedAt: new Date(),
 		})
 		.where(eq(resume.id, resumeId))
 		.returning();
@@ -530,6 +532,7 @@ export async function updateResumeStatus({
 		FACULTY_REVISION_REQUESTED: "UPDATED",
 		FACULTY_VERIFIED: "FACULTY_VERIFIED",
 		FINALIZED_BY_FACULTY: "FINALIZED",
+		SUBMITTED_TO_PO: "SUBMITTED_TO_PO",
 		PO_REVISION_REQUESTED: "PO_REVISION_REQUESTED",
 		RESUBMITTED_TO_PO: "RESUBMITTED",
 		PO_VERIFIED: "FACULTY_VERIFIED",
@@ -569,6 +572,7 @@ export async function bulkUpdateSectionResumes({
 		| "FACULTY_REVISION_REQUESTED"
 		| "FACULTY_VERIFIED"
 		| "FINALIZED_BY_FACULTY"
+		| "SUBMITTED_TO_PO"
 		| "PO_REVISION_REQUESTED"
 		| "RESUBMITTED_TO_PO"
 		| "PO_VERIFIED"
@@ -579,16 +583,16 @@ export async function bulkUpdateSectionResumes({
 	const resumeIds = resumes.map((r) => r.id);
 
 	// Decide locking based on status
-	const lockStatuses = ["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_VERIFIED", "APPROVED"];
+	const lockStatuses = ["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "SUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"];
 	const isLocked = lockStatuses.includes(toStatus);
 
 	// 1. Update all resumes
 	const results = await db
 		.update(resume)
-		.set({ 
-			reviewStatus: toStatus, 
+		.set({
+			reviewStatus: toStatus,
 			isLocked,
-			updatedAt: new Date() 
+			updatedAt: new Date(),
 		})
 		.where(inArray(resume.id, resumeIds))
 		.returning();
@@ -599,6 +603,7 @@ export async function bulkUpdateSectionResumes({
 		FACULTY_REVISION_REQUESTED: "UPDATED",
 		FACULTY_VERIFIED: "FACULTY_VERIFIED",
 		FINALIZED_BY_FACULTY: "FINALIZED",
+		SUBMITTED_TO_PO: "SUBMITTED_TO_PO",
 		PO_REVISION_REQUESTED: "PO_REVISION_REQUESTED",
 		RESUBMITTED_TO_PO: "RESUBMITTED",
 		PO_VERIFIED: "FACULTY_VERIFIED",
@@ -639,10 +644,10 @@ export async function toggleLock({
 }) {
 	const result = await db
 		.update(resume)
-		.set({ 
-			isLocked, 
-			unlockReason: isLocked ? null : reason, 
-			updatedAt: new Date() 
+		.set({
+			isLocked,
+			unlockReason: isLocked ? null : reason,
+			updatedAt: new Date(),
 		})
 		.where(eq(resume.id, resumeId))
 		.returning();
@@ -674,4 +679,77 @@ export async function getStudentHistory(studentId: string, tenantId: string) {
 		.orderBy(desc(resumeHistory.createdAt));
 
 	return history;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PO Section Review
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * CREATE: Record a PO's section-level review feedback.
+ * Call this BEFORE bulk-setting the resumes back to FINALIZED_BY_FACULTY.
+ */
+export async function createPoSectionReview({
+	sectionId,
+	tenantId,
+	facultyId,
+	poId,
+	reviewNotes,
+	voiceNoteUrl,
+	resumeIds,
+}: {
+	sectionId: string;
+	tenantId: string;
+	facultyId?: string;
+	poId: string;
+	reviewNotes: string;
+	voiceNoteUrl?: string;
+	resumeIds: string[];
+}) {
+	const result = await db
+		.insert(poSectionReview)
+		.values({
+			id: crypto.randomUUID(),
+			sectionId,
+			tenantId,
+			facultyId: facultyId ?? null,
+			poId,
+			reviewNotes,
+			voiceNoteUrl: voiceNoteUrl ?? null,
+			resumeIds,
+			createdAt: new Date(),
+		})
+		.returning();
+
+	return result[0];
+}
+
+/**
+ * UPDATE: Edit an existing PO section review (notes and/or voice note).
+ */
+export async function updatePoSectionReview(
+	id: string,
+	{ reviewNotes, voiceNoteUrl }: { reviewNotes: string; voiceNoteUrl?: string | null },
+) {
+	const result = await db
+		.update(poSectionReview)
+		.set({
+			reviewNotes,
+			voiceNoteUrl: voiceNoteUrl ?? null,
+		})
+		.where(eq(poSectionReview.id, id))
+		.returning();
+
+	return result[0];
+}
+
+/**
+ * READ: Get PO section reviews for a given section, newest first.
+ */
+export async function getPoSectionReviews(sectionId: string, tenantId: string) {
+	return db
+		.select()
+		.from(poSectionReview)
+		.where(and(eq(poSectionReview.sectionId, sectionId), eq(poSectionReview.tenantId, tenantId)))
+		.orderBy(desc(poSectionReview.createdAt));
 }

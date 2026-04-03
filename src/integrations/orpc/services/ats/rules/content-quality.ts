@@ -4,7 +4,7 @@ import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
 import type { CategoryScore, RuleResult } from "../index";
-import { SCORING_LLM_CONFIG, getAllBullets, getResumeSkills, stripHtml } from "../index";
+import { getAllBullets, getResumeSkills, SCORING_LLM_CONFIG, stripHtml } from "../index";
 
 const MAX_SCORE = 10;
 
@@ -31,8 +31,10 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	// CQ-1: Bullet specificity — check for metrics, tech names, specific outcomes
 	const technicalTermRegex =
 		/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|rest|graphql|machine learning|deep learning|tensorflow|pytorch|spring|django|flask|express|mongodb|postgresql|redis|git|ci\/cd|agile|scrum)\b/i;
-	const metricRegex = /\d+[%x]|\$[\d,.]+[KMB]?|\d+\s*(users|customers|ms|seconds|hours|requests|endpoints|records|transactions)/i;
-	const vagueRegex = /^(developed|maintained|worked on|helped|assisted|was responsible|involved in|participated)(\s+a)?\s+(simple|basic|sample|website|app|application|project)\b/i;
+	const metricRegex =
+		/\d+[%x]|\$[\d,.]+[KMB]?|\d+\s*(users|customers|ms|seconds|hours|requests|endpoints|records|transactions)/i;
+	const vagueRegex =
+		/^(developed|maintained|worked on|helped|assisted|was responsible|involved in|participated)(\s+a)?\s+(simple|basic|sample|website|app|application|project)\b/i;
 
 	let specificBullets = 0;
 	let vagueBullets = 0;
@@ -106,12 +108,15 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 
 	// CQ-4: Career narrative coherence
 	const hasSkills = skills.length >= 3;
-	const hasExperience = !data.sections.experience.hidden && data.sections.experience.items.filter((i) => !i.hidden).length > 0;
-	const hasEducationDegree = data.sections.education.items.filter((i) => !i.hidden).some((i) => {
-		const deg = String((i as { degree?: string }).degree ?? "").trim();
-		const area = String((i as { area?: string }).area ?? "").trim();
-		return deg.length > 0 || area.length > 0;
-	});
+	const hasExperience =
+		!data.sections.experience.hidden && data.sections.experience.items.filter((i) => !i.hidden).length > 0;
+	const hasEducationDegree = data.sections.education.items
+		.filter((i) => !i.hidden)
+		.some((i) => {
+			const deg = String((i as { degree?: string }).degree ?? "").trim();
+			const area = String((i as { area?: string }).area ?? "").trim();
+			return deg.length > 0 || area.length > 0;
+		});
 	const narrativeScore = (hasSkills ? 1 : 0) + (hasExperience && hasEducationDegree ? 1 : 0);
 
 	return {
@@ -127,12 +132,11 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 					: specificBullets < bulletCount / 2
 						? "Most bullets lack specific technologies or measurable outcomes."
 						: "Bullets have reasonable specificity.",
-		summaryFeedback:
-			!summary
-				? "No summary found."
-				: boilerplateCount >= 3
-					? `Summary uses ${boilerplateCount} boilerplate phrase(s). Replace with specific achievements, technologies, and goals.`
-					: "Summary is acceptable.",
+		summaryFeedback: !summary
+			? "No summary found."
+			: boilerplateCount >= 3
+				? `Summary uses ${boilerplateCount} boilerplate phrase(s). Replace with specific achievements, technologies, and goals.`
+				: "Summary is acceptable.",
 		projectFeedback:
 			projects.length === 0
 				? "No projects found."

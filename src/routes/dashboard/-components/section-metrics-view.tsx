@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import {
 	ArrowRightIcon,
 	ChartBarIcon,
+	ChatCircleDotsIcon,
 	CheckCircleIcon,
 	FileTextIcon,
 	HourglassIcon,
@@ -12,23 +13,23 @@ import {
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AdminAtsStats } from "@/components/ats/admin-ats-stats";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Sheet,
-	SheetContent,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet";
 import { orpc } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
 import { ChecklistCreator } from "./checklist-creator";
 import { ChecklistsTab } from "./checklists-tab";
 import { InboxView } from "./inbox-view";
 import type { OrgUnitFilterValue } from "./org-unit-filter";
-import { SectionIntelligence } from "./section-intelligence";
 import { OrgUnitFilter } from "./org-unit-filter";
+import { POFeedbackSentBadge } from "./po-feedback-sent-badge";
+import { POSectionCardActions } from "./po-section-card-actions";
+import { POSectionFeedbackBanner } from "./po-section-feedback-banner";
+import { POSectionReviewDialog } from "./po-section-review-dialog";
 import { RecentActivity } from "./recent-activity";
+import { SectionIntelligence } from "./section-intelligence";
 import { CompletionRateCard, ScoreCard, StatCard } from "./stat-card";
 import { StudentDetailPanel } from "./student-detail-panel";
 import type { StudentWithResumes } from "./student-resume-table";
@@ -65,8 +66,17 @@ export function SectionMetricsView({
 	const [showChecklistCreator, setShowChecklistCreator] = useState(false);
 	const [viewLevel, setViewLevel] = useState<string | null>(null);
 	const [reviewSection, setReviewSection] = useState<{ id: string; name: string; unitType: string } | null>(null);
+	const [poReviewDialog, setPoReviewDialog] = useState<{
+		sectionId: string;
+		sectionName: string;
+		resumes: Array<{ id: string; studentId: string }>;
+	} | null>(null);
 
-	const { data: dashboard, isLoading, error } = useQuery(
+	const {
+		data: dashboard,
+		isLoading,
+		error,
+	} = useQuery(
 		orpc.resume.dashboard.sections.queryOptions({
 			input: {
 				sectionIds,
@@ -81,14 +91,16 @@ export function SectionMetricsView({
 		...orpc.resume.dashboard.bulkUpdateResumes.mutationOptions(),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: orpc.resume.dashboard.sections.queryOptions({ input: { sectionIds, tenantId, scope: scope as any } }).queryKey as any
+				queryKey: orpc.resume.dashboard.sections.queryOptions({ input: { sectionIds, tenantId, scope: scope as any } })
+					.queryKey as any,
 			});
 		},
 	});
 
 	// ── Derived stats ──────────────────────────────────────────────────────────
 	const stats = useMemo(() => {
-		if (!dashboard) return { totalStudents: 0, totalResumes: 0, completionRate: 0, averageScore: null as number | null };
+		if (!dashboard)
+			return { totalStudents: 0, totalResumes: 0, completionRate: 0, averageScore: null as number | null };
 		return dashboard.aggregateStats;
 	}, [dashboard]);
 
@@ -134,13 +146,13 @@ export function SectionMetricsView({
 
 	if (error) {
 		return (
-			<div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white/50 p-12 text-center">
+			<div className="flex flex-col items-center justify-center rounded-2xl border-2 border-slate-200 border-dashed bg-white/50 p-12 text-center">
 				<WarningIcon className="mb-4 size-12 text-amber-500 opacity-50" />
-				<h3 className="font-bold text-slate-900 text-lg">{t`Unable to load dashboard data`}</h3>
+				<h3 className="font-bold text-lg text-slate-900">{t`Unable to load dashboard data`}</h3>
 				<p className="mt-2 max-w-md text-slate-500 text-sm">
 					{t`There was an error fetching student data. This might be due to missing database columns. Please ensure 'npm run db:push' has been executed.`}
 				</p>
-				<p className="mt-4 text-xs text-slate-400 bg-slate-50 p-2 rounded border border-slate-100 font-mono">
+				<p className="mt-4 rounded border border-slate-100 bg-slate-50 p-2 font-mono text-slate-400 text-xs">
 					{error.message}
 				</p>
 			</div>
@@ -274,7 +286,7 @@ export function SectionMetricsView({
 
 					{/* Empty state */}
 					{!hasStudents && (
-						<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
+						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
 							<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
 							<p className="font-semibold text-slate-600">{t`No student data found`}</p>
 							<p className="mt-1 max-w-xs text-slate-400 text-sm">
@@ -304,6 +316,9 @@ export function SectionMetricsView({
 							recentComments={dashboard.recentActivity.recentComments}
 						/>
 					)}
+
+					{/* ATS Score Improvements (admin/PO only) */}
+					{scope !== "faculty" && <AtsImprovementsSection />}
 				</div>
 			)}
 
@@ -316,7 +331,7 @@ export function SectionMetricsView({
 							s.resumes.some((r) =>
 								scope === "faculty"
 									? r.reviewStatus === "SUBMITTED_TO_FACULTY"
-									: r.reviewStatus === "FINALIZED_BY_FACULTY" || r.reviewStatus === "RESUBMITTED_TO_PO",
+									: r.reviewStatus === "SUBMITTED_TO_PO" || r.reviewStatus === "RESUBMITTED_TO_PO",
 							),
 						)
 						.map((s) => ({
@@ -324,7 +339,7 @@ export function SectionMetricsView({
 							resumes: s.resumes.filter((r) =>
 								scope === "faculty"
 									? r.reviewStatus === "SUBMITTED_TO_FACULTY"
-									: r.reviewStatus === "FINALIZED_BY_FACULTY" || r.reviewStatus === "RESUBMITTED_TO_PO",
+									: r.reviewStatus === "SUBMITTED_TO_PO" || r.reviewStatus === "RESUBMITTED_TO_PO",
 							),
 						}))}
 					onReview={(resumeId, engLabsStudentId) => {
@@ -350,7 +365,7 @@ export function SectionMetricsView({
 					{/* Level Selector */}
 					{filterUnitTypes.length > 1 && (
 						<div className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm">
-							<span className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t`View by`}:</span>
+							<span className="font-bold text-slate-500 text-sm uppercase tracking-wider">{t`View by`}:</span>
 							<div className="flex gap-2">
 								{filterUnitTypes.map((type) => (
 									<button
@@ -358,10 +373,10 @@ export function SectionMetricsView({
 										type="button"
 										onClick={() => setViewLevel(type)}
 										className={cn(
-											"rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
-											(viewLevel === type || (!viewLevel && type === "CLASS"))
+											"rounded-lg px-3 py-1.5 font-bold text-xs transition-all",
+											viewLevel === type || (!viewLevel && type === "CLASS")
 												? "bg-indigo-600 text-white shadow-md"
-												: "bg-slate-100 text-slate-500 hover:bg-slate-200"
+												: "bg-slate-100 text-slate-500 hover:bg-slate-200",
 										)}
 									>
 										{type}
@@ -373,44 +388,88 @@ export function SectionMetricsView({
 
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{(dashboard?.sections ?? [])
-							.filter(s => s.unitType === (viewLevel || (filterUnitTypes.includes("CLASS") ? "CLASS" : filterUnitTypes[0])))
+							.filter(
+								(s) => s.unitType === (viewLevel || (filterUnitTypes.includes("CLASS") ? "CLASS" : filterUnitTypes[0])),
+							)
 							.map((unit) => {
 								const { stats } = unit;
 								const totalResumes = stats.totalResumes;
 								const verifiedResumes = stats.evaluatedResumes;
-								const finalizedResumes = stats.submittedResumes;
-								
-								const isFullyVerified = totalResumes > 0 && verifiedResumes >= totalResumes;
-								const isAlreadyFinalized = totalResumes > 0 && finalizedResumes >= totalResumes;
 
-								// Only for Faculty: we need the list of resumes for bulk submission
-								// (PO doesn't need to bulk-submit to themselves)
-								const sectionStudents = dashboard?.students.filter(s => s.sectionId === unit.id) || [];
-								const pendingResumesList = sectionStudents.flatMap(s => s.resumes.filter(r => r.reviewStatus === "FACULTY_VERIFIED").map(r => ({ id: r.id, studentId: s.engLabsId })));
+								const sectionStudents = dashboard?.students.filter((s) => s.sectionId === unit.id) || [];
+
+								// Faculty: resumes eligible to submit to PO (FACULTY_VERIFIED or FINALIZED_BY_FACULTY for re-submission after PO feedback)
+								const pendingResumesList = sectionStudents.flatMap((s) =>
+									s.resumes
+										.filter(
+											(r) =>
+												r.reviewStatus === "FACULTY_VERIFIED" || r.reviewStatus === "FINALIZED_BY_FACULTY",
+										)
+										.map((r) => ({ id: r.id, studentId: s.engLabsId })),
+								);
+
+								// States that are "in PO hands" — faculty cannot submit or change these
+								const PO_MANAGED = ["SUBMITTED_TO_PO", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"];
+
+								// Resumes currently in PO-managed states
+								const resumesInPOHands = sectionStudents.flatMap((s) =>
+									s.resumes.filter((r) => PO_MANAGED.includes(r.reviewStatus ?? "")),
+								);
+								const isInPOHands = resumesInPOHands.length > 0;
+
+								// PO: all resumes that are in any active PO-managed state (excluding APPROVED — those are done)
+								const poSubmittedResumes = sectionStudents.flatMap((s) =>
+									s.resumes
+										.filter(
+											(r) =>
+												PO_MANAGED.includes(r.reviewStatus ?? "") && r.reviewStatus !== "APPROVED",
+										)
+										.map((r) => ({ id: r.id, studentId: s.engLabsId })),
+								);
+
+								// Summary label for faculty when section is in PO hands
+								const poHandsStatusLabel = (() => {
+									if (resumesInPOHands.every((r) => r.reviewStatus === "APPROVED")) return "Approved";
+									if (resumesInPOHands.some((r) => r.reviewStatus === "PO_REVISION_REQUESTED")) return "PO: Revision Requested";
+									if (resumesInPOHands.some((r) => r.reviewStatus === "SUBMITTED_TO_PO")) return "Awaiting PO Review";
+									return "With PO";
+								})();
+
 
 								return (
-									<div key={unit.id} className="flex flex-col rounded-2xl bg-white p-5 shadow-sm transition-all hover:shadow-md">
+									<div
+										key={unit.id}
+										className="flex flex-col rounded-2xl bg-white p-5 shadow-sm transition-all hover:shadow-md"
+									>
 										<div className="mb-4 flex items-center justify-between">
-											<h3 className="font-bold text-slate-900 text-lg line-clamp-1">{unit.name}</h3>
-											<span className="rounded-lg bg-slate-100 px-2 py-1 font-bold text-slate-500 text-[10px] uppercase">
+											<h3 className="line-clamp-1 font-bold text-lg text-slate-900">{unit.name}</h3>
+											<span className="rounded-lg bg-slate-100 px-2 py-1 font-bold text-[10px] text-slate-500 uppercase">
 												{unit.unitType}
 											</span>
 										</div>
 
-										<div className="mb-4 space-y-3 flex-1">
+										<div className="mb-4 flex-1 space-y-3">
 											<div className="flex justify-between text-xs">
 												<span className="text-slate-500">{t`Verified Progress`}</span>
-												<span className="font-bold text-slate-900">{verifiedResumes} / {totalResumes}</span>
+												<span className="font-bold text-slate-900">
+													{verifiedResumes} / {totalResumes}
+												</span>
 											</div>
 											<div className="h-2 overflow-hidden rounded-full bg-slate-100">
 												<div
-													className="h-full bg-emerald-500 transition-all text-[8px]"
+													className="h-full bg-emerald-500 text-[8px] transition-all"
 													style={{ width: `${totalResumes > 0 ? (verifiedResumes / totalResumes) * 100 : 0}%` }}
 												/>
 											</div>
 											<div className="flex justify-between text-[10px] text-slate-400 italic">
-												<span>{t`Total Students`}: {stats.totalStudents}</span>
-												{stats.averageScore && <span>{t`Avg Score`}: {stats.averageScore.toFixed(1)}</span>}
+												<span>
+													{t`Total Students`}: {stats.totalStudents}
+												</span>
+												{stats.averageScore && (
+													<span>
+														{t`Avg Score`}: {stats.averageScore.toFixed(1)}
+													</span>
+												)}
 											</div>
 										</div>
 
@@ -426,74 +485,55 @@ export function SectionMetricsView({
 										</button>
 
 										{scope === "faculty" ? (
-											<button
-												type="button"
-												disabled={!isFullyVerified || isAlreadyFinalized || bulkUpdateMutation.isPending}
-												onClick={() => {
-													bulkUpdateMutation.mutate({
-														resumes: pendingResumesList,
-														tenantId,
-														status: "FINALIZED_BY_FACULTY",
-													});
-												}}
-												className={cn(
-													"flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-bold text-sm transition-all shadow-sm active:scale-[0.98]",
-													isFullyVerified && !isAlreadyFinalized
-														? "bg-indigo-600 text-white hover:bg-indigo-700"
-														: isAlreadyFinalized 
-															? "bg-emerald-50 text-emerald-600 border border-emerald-100 cursor-default"
-															: "bg-slate-50 text-slate-400 border border-slate-100 cursor-not-allowed"
-												)}
-											>
-												{isAlreadyFinalized ? (
-													<>
+											<>
+												{/* Show PO feedback banner if the section was returned with notes */}
+												<POSectionFeedbackBanner sectionId={unit.id} tenantId={tenantId} />
+
+												{isInPOHands ? (
+													/* Read-only: section is currently with the PO — faculty cannot submit */
+													<div className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 py-2.5 font-bold text-orange-600 text-sm">
 														<CheckCircleIcon weight="fill" className="size-4" />
-														{t`Submitted to PO`}
-													</>
-												) : isFullyVerified ? (
-													t`Submit Section to PO`
+														{poHandsStatusLabel}
+													</div>
 												) : (
-													t`Verify All Resumes First`
+													<button
+														type="button"
+														disabled={pendingResumesList.length === 0 || bulkUpdateMutation.isPending}
+														onClick={() => {
+															bulkUpdateMutation.mutate({
+																resumes: pendingResumesList,
+																tenantId,
+																status: "SUBMITTED_TO_PO",
+															});
+														}}
+														className={cn(
+															"mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-bold text-sm shadow-sm transition-all active:scale-[0.98]",
+															pendingResumesList.length > 0
+																? "bg-indigo-600 text-white hover:bg-indigo-700"
+																: "cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-400",
+														)}
+													>
+														{pendingResumesList.length > 0 ? t`Submit Section to PO` : t`Verify All Resumes First`}
+													</button>
 												)}
-											</button>
+											</>
 										) : (
-											<button
-												type="button"
-												disabled={((stats as any).poVerifiedResumes ?? 0) + stats.approvedResumes < stats.totalResumes || stats.approvedResumes === stats.totalResumes || bulkUpdateMutation.isPending}
-												onClick={() => {
-													const poPendingList = sectionStudents.flatMap(s => s.resumes.filter(r => r.reviewStatus === "PO_VERIFIED" || r.reviewStatus === "FINALIZED_BY_FACULTY" || r.reviewStatus === "RESUBMITTED_TO_PO").map(r => ({ id: r.id, studentId: s.engLabsId })));
-													bulkUpdateMutation.mutate({
-														resumes: poPendingList,
-														tenantId,
-														status: "APPROVED",
-													});
-												}}
-												className={cn(
-													"flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-bold text-sm transition-all shadow-sm active:scale-[0.98]",
-													((stats as any).poVerifiedResumes ?? 0) + stats.approvedResumes >= stats.totalResumes && stats.approvedResumes < stats.totalResumes && stats.totalResumes > 0
-														? "bg-indigo-600 text-white hover:bg-indigo-700"
-														: stats.approvedResumes === stats.totalResumes && stats.totalResumes > 0
-															? "bg-emerald-50 text-emerald-600 border border-emerald-100 cursor-default"
-															: (stats as any).passedFaculty === stats.totalResumes && stats.totalResumes > 0
-																? "bg-amber-50 text-amber-600 border border-amber-200 cursor-help"
-																: "bg-slate-50 text-slate-400 border border-slate-100 cursor-not-allowed"
-												)}
-											>
-												{stats.approvedResumes === stats.totalResumes && stats.totalResumes > 0 ? (
-													<>
-														<CheckCircleIcon weight="fill" className="size-4" />
-														{t`Approved for Placement`}
-													</>
-												) : ((stats as any).poVerifiedResumes ?? 0) + stats.approvedResumes >= stats.totalResumes ? (
-													t`Approve for Placement`
-												) : ((stats as any).poVerifiedResumes ?? 0) > 0 ? (
-													t`Verify All (${(stats as any).poVerifiedResumes} / ${stats.totalResumes - stats.approvedResumes}) First`
-												) : (stats as any).passedFaculty === stats.totalResumes ? (
-													t`Ready for PO Review`
-												) : (
-													t`Waiting for Faculty`
-												)}
-											</button>
+											<POSectionCardActions
+												sectionId={unit.id}
+												sectionName={unit.name}
+												tenantId={tenantId}
+												stats={stats as any}
+												poSubmittedResumes={poSubmittedResumes}
+												sectionStudents={sectionStudents}
+												onOpenReviewDialog={() =>
+													setPoReviewDialog({
+														sectionId: unit.id,
+														sectionName: unit.name,
+														resumes: poSubmittedResumes,
+													})
+												}
+												isPending={bulkUpdateMutation.isPending}
+											/>
 										)}
 									</div>
 								);
@@ -532,7 +572,7 @@ export function SectionMetricsView({
 					)}
 
 					{!hasStudents ? (
-						<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
+						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
 							<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
 							<p className="font-semibold text-slate-600">No student data found</p>
 						</div>
@@ -549,6 +589,7 @@ export function SectionMetricsView({
 										packageId: filter.packageId,
 										unitType: filter.unitType,
 										unitId: filter.unitId,
+										scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
 									},
 								});
 							}}
@@ -587,17 +628,13 @@ export function SectionMetricsView({
 					<SheetHeader className="border-b px-6 py-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<SheetTitle className="text-lg font-bold text-slate-900">
-									{reviewSection?.name}
-								</SheetTitle>
-								<span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+								<SheetTitle className="font-bold text-lg text-slate-900">{reviewSection?.name}</SheetTitle>
+								<span className="font-semibold text-[11px] text-slate-400 uppercase tracking-wider">
 									{reviewSection?.unitType}
 								</span>
 							</div>
-							<span className="rounded-lg bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600">
-								{reviewSection
-									? filteredStudents.filter((s) => s.sectionId === reviewSection.id).length
-									: 0}{" "}
+							<span className="rounded-lg bg-indigo-50 px-3 py-1 font-bold text-indigo-600 text-xs">
+								{reviewSection ? filteredStudents.filter((s) => s.sectionId === reviewSection.id).length : 0}{" "}
 								{t`students`}
 							</span>
 						</div>
@@ -617,6 +654,7 @@ export function SectionMetricsView({
 											packageId: filter.packageId,
 											unitType: filter.unitType,
 											unitId: filter.unitId,
+											scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
 										},
 									});
 									setReviewSection(null);
@@ -630,6 +668,53 @@ export function SectionMetricsView({
 					</div>
 				</SheetContent>
 			</Sheet>
+
+			{/* ══════════════════ PO SECTION REVIEW DIALOG ══════════════════ */}
+			{poReviewDialog && (
+				<POSectionReviewDialog
+					open={!!poReviewDialog}
+					onClose={() => setPoReviewDialog(null)}
+					sectionId={poReviewDialog.sectionId}
+					sectionName={poReviewDialog.sectionName}
+					tenantId={tenantId}
+					resumes={poReviewDialog.resumes}
+					onSuccess={() => {
+						queryClient.invalidateQueries({
+							queryKey: orpc.resume.dashboard.sections.queryOptions({
+								input: { sectionIds, tenantId, scope: scope as any },
+							}).queryKey as any,
+						});
+					}}
+				/>
+			)}
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// ATS Improvements section — shown in the admin/PO overview tab
+// ---------------------------------------------------------------------------
+
+function AtsImprovementsSection() {
+	return (
+		<div className="space-y-3 rounded-2xl border bg-white p-5 shadow-sm">
+			<div className="flex items-center gap-2">
+				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						className="size-4 text-green-600"
+						viewBox="0 0 256 256"
+						fill="currentColor"
+					>
+						<path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1,0-16H224A8,8,0,0,1,232,208ZM48,168a8,8,0,0,0,8-8V128a8,8,0,0,0-16,0v32A8,8,0,0,0,48,168Zm40,0a8,8,0,0,0,8-8V80a8,8,0,0,0-16,0v80A8,8,0,0,0,88,168Zm40,0a8,8,0,0,0,8-8V104a8,8,0,0,0-16,0v56A8,8,0,0,0,128,168Zm40,0a8,8,0,0,0,8-8V56a8,8,0,0,0-16,0v104A8,8,0,0,0,168,168Z" />
+					</svg>
+				</div>
+				<div>
+					<h3 className="font-semibold text-slate-900 text-sm">ATS Score Improvements</h3>
+					<p className="text-slate-500 text-xs">Platform-wide ATS scoring activity and improvement trends</p>
+				</div>
+			</div>
+			<AdminAtsStats />
 		</div>
 	);
 }

@@ -1,11 +1,11 @@
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { Fragment } from "react";
 import { match } from "ts-pattern";
+import { useResumeStore } from "@/components/resume/store/resume";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useResumeStore } from "@/components/resume/store/resume";
 import type { RightSidebarSection } from "@/utils/resume/section";
 import { cn } from "@/utils/style";
 import { useSectionStore } from "../../-store/section";
@@ -16,11 +16,11 @@ import { ExportSectionBuilder } from "./sections/export";
 import { LayoutSectionBuilder } from "./sections/layout";
 import { NotesSectionBuilder } from "./sections/notes";
 import { PageSectionBuilder } from "./sections/page";
+import { ReviewerFeedbackSectionBuilder } from "./sections/reviewer-feedback";
 import { SharingSectionBuilder } from "./sections/sharing";
 import { StatisticsSectionBuilder } from "./sections/statistics";
 import { TemplateSectionBuilder } from "./sections/template";
 import { TypographySectionBuilder } from "./sections/typography";
-import { ReviewerFeedbackSectionBuilder } from "./sections/reviewer-feedback";
 
 const advancedSections: RightSidebarSection[] = [
 	"layout",

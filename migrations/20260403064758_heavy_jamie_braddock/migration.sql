@@ -1,0 +1,1 @@
+DROP INDEX "user_info_user_id_index";

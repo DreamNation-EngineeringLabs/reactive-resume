@@ -1,0 +1,1 @@
+ALTER TABLE "po_section_review" ALTER COLUMN "faculty_id" DROP NOT NULL;

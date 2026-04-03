@@ -51,22 +51,14 @@ const dropdownClass =
 	"h-8 min-w-[160px] rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-50";
 
 export function OrgUnitFilter({ packages, unitTypes, allOrgUnits, value, onChange }: OrgUnitFilterProps) {
-	const packageOptions = useMemo(
-		() => packages.map((p) => ({ value: p.id, label: p.name })),
-		[packages],
-	);
+	const packageOptions = useMemo(() => packages.map((p) => ({ value: p.id, label: p.name })), [packages]);
 
-	const typeOptions = useMemo(
-		() => unitTypes.map((t) => ({ value: t, label: formatUnitType(t) })),
-		[unitTypes],
-	);
+	const typeOptions = useMemo(() => unitTypes.map((t) => ({ value: t, label: formatUnitType(t) })), [unitTypes]);
 
 	const unitOptions = useMemo(
 		() =>
 			value.unitType
-				? allOrgUnits
-						.filter((u) => u.type === value.unitType)
-						.map((u) => ({ value: u.id, label: u.name }))
+				? allOrgUnits.filter((u) => u.type === value.unitType).map((u) => ({ value: u.id, label: u.name }))
 				: [],
 		[allOrgUnits, value.unitType],
 	);
@@ -83,16 +75,14 @@ export function OrgUnitFilter({ packages, unitTypes, allOrgUnits, value, onChang
 			{/* Package */}
 			{packages.length > 0 && (
 				<div className="flex items-center gap-2">
-					<span className="text-slate-500 text-xs font-medium">{t`Package`}</span>
+					<span className="font-medium text-slate-500 text-xs">{t`Package`}</span>
 					<Combobox
 						options={packageOptions}
 						value={value.packageId ?? null}
 						placeholder={t`All packages`}
 						clearable={true}
 						buttonProps={{ className: dropdownClass }}
-						onValueChange={(v) =>
-							onChange({ packageId: v ?? undefined, unitType: undefined, unitId: undefined })
-						}
+						onValueChange={(v) => onChange({ packageId: v ?? undefined, unitType: undefined, unitId: undefined })}
 					/>
 				</div>
 			)}
@@ -100,16 +90,14 @@ export function OrgUnitFilter({ packages, unitTypes, allOrgUnits, value, onChang
 			{/* Type */}
 			{unitTypes.length > 0 && (
 				<div className="flex items-center gap-2">
-					<span className="text-slate-500 text-xs font-medium">{t`Type`}</span>
+					<span className="font-medium text-slate-500 text-xs">{t`Type`}</span>
 					<Combobox
 						options={typeOptions}
 						value={value.unitType ?? null}
 						placeholder={t`All types`}
 						clearable={true}
 						buttonProps={{ className: dropdownClass }}
-						onValueChange={(v) =>
-							onChange({ ...value, unitType: v ?? undefined, unitId: undefined })
-						}
+						onValueChange={(v) => onChange({ ...value, unitType: v ?? undefined, unitId: undefined })}
 					/>
 				</div>
 			)}
@@ -117,7 +105,7 @@ export function OrgUnitFilter({ packages, unitTypes, allOrgUnits, value, onChang
 			{/* Unit — only shown when a type is selected and there are units for it */}
 			{value.unitType && unitOptions.length > 0 && (
 				<div className="flex items-center gap-2">
-					<span className="text-slate-500 text-xs font-medium">{formatUnitType(value.unitType)}</span>
+					<span className="font-medium text-slate-500 text-xs">{formatUnitType(value.unitType)}</span>
 					<Combobox
 						options={unitOptions}
 						value={value.unitId ?? null}

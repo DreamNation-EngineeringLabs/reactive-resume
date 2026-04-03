@@ -14,19 +14,19 @@ import {
 	ShootingStarIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import { compare } from "fast-json-patch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { zodValidator } from "@tanstack/zod-adapter";
+import { compare } from "fast-json-patch";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "usehooks-ts";
 import { z } from "zod";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { ResumePreview } from "@/components/resume/preview";
 import { useResumeStore } from "@/components/resume/store/resume";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
-import { cn } from "@/utils/style";
 import { getOrganisationUnits } from "@/utils/sso-context";
+import { cn } from "@/utils/style";
 import { StudentTimeline } from "../../-components/student-timeline";
 
 const searchSchema = z.object({
@@ -107,7 +107,9 @@ function ReviewPage() {
 	const [containerWidth, setContainerWidth] = useState(0);
 	useResizeObserver({
 		ref: previewContainerRef as RefObject<HTMLDivElement>,
-		onResize: ({ width }) => { if (width) setContainerWidth(width); },
+		onResize: ({ width }) => {
+			if (width) setContainerWidth(width);
+		},
 	});
 	const PAGE_NATURAL_WIDTH = 794;
 	const scale = containerWidth > 0 ? Math.min(1, containerWidth / PAGE_NATURAL_WIDTH) : 1;
@@ -122,14 +124,14 @@ function ReviewPage() {
 	useEffect(() => {
 		if (!data?.resume) return;
 		const r = data.resume;
-		initialize({ 
-			id: r.id, 
-			name: r.name, 
-			slug: r.slug, 
-			tags: r.tags, 
-			isLocked: r.isLocked, 
-			data: r.data, 
-			reviewStatus: r.reviewStatus as any 
+		initialize({
+			id: r.id,
+			name: r.name,
+			slug: r.slug,
+			tags: r.tags,
+			isLocked: r.isLocked,
+			data: r.data,
+			reviewStatus: r.reviewStatus as any,
 		});
 		return () => initialize(null);
 	}, [data?.resume, initialize]);
@@ -216,7 +218,7 @@ function ReviewPage() {
 	return (
 		<div className="relative flex h-full flex-col overflow-hidden">
 			{/* ── Top bar ── */}
-			<div className="flex shrink-0 items-center gap-4 border-b border-slate-100 bg-white px-6 py-3">
+			<div className="flex shrink-0 items-center gap-4 border-slate-100 border-b bg-white px-6 py-3">
 				<Link
 					to={scope === "po" || scope === "admin" ? "/dashboard/placement-officer" : "/dashboard/faculty"}
 					search={{ tab: "students", packageId, unitType, unitId }}
@@ -226,12 +228,10 @@ function ReviewPage() {
 				</Link>
 				<div className="min-w-0 flex-1">
 					<h1 className="truncate font-bold text-slate-900">{resume.name}</h1>
-					<p className="text-slate-400 text-xs">
-						Updated {new Date(resume.updatedAt).toLocaleDateString()}
-					</p>
+					<p className="text-slate-400 text-xs">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
 				</div>
 				<div className="flex shrink-0 items-center gap-2">
-					<div className="mr-2 flex items-center gap-1 border-r border-slate-100 pr-4">
+					<div className="mr-2 flex items-center gap-1 border-slate-100 border-r pr-4">
 						<button
 							type="button"
 							disabled={!prevResume}
@@ -290,9 +290,9 @@ function ReviewPage() {
 			{/* ── Body ── */}
 			<div className="flex flex-1 overflow-hidden">
 				{/* Left: Resume preview */}
-				<div className="flex w-[55%] flex-col border-r border-slate-100 bg-slate-100">
+				<div className="flex w-[55%] flex-col border-slate-100 border-r bg-slate-100">
 					{/* Compact stats bar */}
-					<div className="flex shrink-0 items-center gap-4 border-b border-slate-200 bg-white px-5 py-2.5">
+					<div className="flex shrink-0 items-center gap-4 border-slate-200 border-b bg-white px-5 py-2.5">
 						{[
 							{ label: "Comments", value: comments.length, color: "text-sky-700", bg: "bg-sky-50" },
 							{
@@ -325,10 +325,7 @@ function ReviewPage() {
 								marginLeft: containerWidth > 0 ? (containerWidth - PAGE_NATURAL_WIDTH) / 2 : 0,
 							}}
 						>
-							<ResumePreview
-								className="flex flex-col items-center space-y-4"
-								pageClassName="shadow-xl rounded-sm"
-							/>
+							<ResumePreview className="flex flex-col items-center space-y-4" pageClassName="shadow-xl rounded-sm" />
 						</div>
 					</div>
 				</div>
@@ -336,7 +333,7 @@ function ReviewPage() {
 				{/* Right: Review panel */}
 				<div className="flex w-[45%] flex-col overflow-hidden bg-white">
 					{/* Panel tabs */}
-					<div className="flex shrink-0 gap-0.5 border-b border-slate-100 bg-slate-50 px-4 pt-3">
+					<div className="flex shrink-0 gap-0.5 border-slate-100 border-b bg-slate-50 px-4 pt-3">
 						{tabs.map((tab) => (
 							<button
 								key={tab.id}
@@ -344,9 +341,7 @@ function ReviewPage() {
 								onClick={() => setActiveTab(tab.id)}
 								className={cn(
 									"flex items-center gap-1.5 rounded-t-xl px-4 py-2.5 font-semibold text-sm transition-all",
-									activeTab === tab.id
-										? "bg-white text-indigo-600 shadow-sm"
-										: "text-slate-500 hover:text-slate-700",
+									activeTab === tab.id ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700",
 								)}
 							>
 								{tab.icon}
@@ -366,26 +361,29 @@ function ReviewPage() {
 					</div>
 
 					{/* Overall Status & Actions */}
-					<div className="border-b border-slate-100 bg-slate-50/50 p-5">
+					<div className="border-slate-100 border-b bg-slate-50/50 p-5">
 						<div className="flex items-center justify-between gap-4">
 							<div>
-								<p className="mb-1 font-bold text-slate-400 text-[10px] uppercase tracking-wider">{t`Overall Review Status`}</p>
+								<p className="mb-1 font-bold text-[10px] text-slate-400 uppercase tracking-wider">{t`Overall Review Status`}</p>
 								<div className="flex items-center gap-2">
-									<span className={cn(
-										"rounded-full px-2.5 py-0.5 font-bold text-xs shadow-sm",
-										resume.reviewStatus === "DRAFT" && "bg-slate-100 text-slate-600",
-										resume.reviewStatus === "SUBMITTED_TO_FACULTY" && "bg-blue-100 text-blue-700",
-										resume.reviewStatus === "FACULTY_REVISION_REQUESTED" && "bg-amber-100 text-amber-700",
-										resume.reviewStatus === "FACULTY_VERIFIED" && "bg-emerald-100 text-emerald-700",
-										resume.reviewStatus === "FINALIZED_BY_FACULTY" && "bg-indigo-100 text-indigo-700",
-										resume.reviewStatus === "PO_REVISION_REQUESTED" && "bg-rose-100 text-rose-700",
-										resume.reviewStatus === "RESUBMITTED_TO_PO" && "bg-purple-100 text-purple-700",
-										resume.reviewStatus === "APPROVED" && "bg-teal-100 text-teal-700",
-									)}>
+									<span
+										className={cn(
+											"rounded-full px-2.5 py-0.5 font-bold text-xs shadow-sm",
+											resume.reviewStatus === "DRAFT" && "bg-slate-100 text-slate-600",
+											resume.reviewStatus === "SUBMITTED_TO_FACULTY" && "bg-blue-100 text-blue-700",
+											resume.reviewStatus === "FACULTY_REVISION_REQUESTED" && "bg-amber-100 text-amber-700",
+											resume.reviewStatus === "FACULTY_VERIFIED" && "bg-emerald-100 text-emerald-700",
+											resume.reviewStatus === "FINALIZED_BY_FACULTY" && "bg-indigo-100 text-indigo-700",
+											resume.reviewStatus === "SUBMITTED_TO_PO" && "bg-orange-100 text-orange-700",
+											resume.reviewStatus === "PO_REVISION_REQUESTED" && "bg-rose-100 text-rose-700",
+											resume.reviewStatus === "RESUBMITTED_TO_PO" && "bg-purple-100 text-purple-700",
+											resume.reviewStatus === "APPROVED" && "bg-teal-100 text-teal-700",
+										)}
+									>
 										{resume.reviewStatus?.replace(/_/g, " ")}
 									</span>
 									{resume.reviewStatus === "FINALIZED_BY_FACULTY" && (
-										<span className="flex items-center gap-1 text-slate-400 text-[10px] italic">
+										<span className="flex items-center gap-1 text-[10px] text-slate-400 italic">
 											<ClockCounterClockwiseIcon className="size-3" />
 											{t`Pending PO Review`}
 										</span>
@@ -399,62 +397,102 @@ function ReviewPage() {
 									onClick={() => toggleLockMutation.mutate({ resumeId, isLocked: !resume.isLocked })}
 									disabled={toggleLockMutation.isPending}
 									className={cn(
-										"rounded-xl px-3 py-1.5 font-bold text-xs transition-all shadow-sm flex items-center gap-1.5",
-										resume.isLocked 
-											? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
-											: "bg-slate-100 text-slate-700 hover:bg-slate-200"
+										"flex items-center gap-1.5 rounded-xl px-3 py-1.5 font-bold text-xs shadow-sm transition-all",
+										resume.isLocked
+											? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+											: "bg-slate-100 text-slate-700 hover:bg-slate-200",
 									)}
 								>
 									{resume.isLocked ? (
-										<><ClockCounterClockwiseIcon className="size-3.5" />{t`Unlock Resume`}</>
+										<>
+											<ClockCounterClockwiseIcon className="size-3.5" />
+											{t`Unlock Resume`}
+										</>
 									) : (
-										<><CheckCircleIcon className="size-3.5" />{t`Lock Resume`}</>
+										<>
+											<CheckCircleIcon className="size-3.5" />
+											{t`Lock Resume`}
+										</>
 									)}
 								</button>
 
-								<div className="h-4 w-px bg-slate-200 mx-1" />
+								<div className="mx-1 h-4 w-px bg-slate-200" />
 
 								{/* Faculty Actions */}
-								{(resume.reviewStatus === "SUBMITTED_TO_FACULTY" || resume.reviewStatus === "FACULTY_REVISION_REQUESTED") && (
+								{(resume.reviewStatus === "SUBMITTED_TO_FACULTY" ||
+									resume.reviewStatus === "FACULTY_REVISION_REQUESTED") && (
 									<>
 										<button
-											onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "FACULTY_REVISION_REQUESTED" })}
+											onClick={() =>
+												updateResumeStatusMutation.mutate({
+													resumeId,
+													studentId: engLabsStudentId,
+													tenantId: tenantId!,
+													status: "FACULTY_REVISION_REQUESTED",
+												})
+											}
 											disabled={updateResumeStatusMutation.isPending}
 											className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 font-bold text-slate-600 text-xs transition-all hover:bg-slate-50 disabled:opacity-50"
 										>
 											{t`Request Revision`}
 										</button>
 										<button
-											onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "FACULTY_VERIFIED" })}
+											onClick={() =>
+												updateResumeStatusMutation.mutate({
+													resumeId,
+													studentId: engLabsStudentId,
+													tenantId: tenantId!,
+													status: "FACULTY_VERIFIED",
+												})
+											}
 											disabled={updateResumeStatusMutation.isPending}
-											className="rounded-xl bg-emerald-600 px-3 py-1.5 font-bold text-white text-xs transition-all hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+											className="rounded-xl bg-emerald-600 px-3 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
 										>
 											{t`Verify Individual`}
 										</button>
 									</>
 								)}
 
-								{/* PO Actions */}
-								{(resume.reviewStatus === "FINALIZED_BY_FACULTY" || resume.reviewStatus === "RESUBMITTED_TO_PO" || resume.reviewStatus === "PO_REVISION_REQUESTED" || resume.reviewStatus === "APPROVED") && (
-									<>
-										<button
-											onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "PO_REVISION_REQUESTED" })}
-											disabled={updateResumeStatusMutation.isPending}
-											className="rounded-xl border border-rose-200 bg-white px-3 py-1.5 font-bold text-rose-600 text-xs transition-all hover:bg-rose-50 disabled:opacity-50"
-										>
-											{t`PO: Request Revision`}
-										</button>
-										{resume.reviewStatus !== "APPROVED" && (
+								{/* PO Actions — PO scope only; faculty sees the status badge but no action buttons */}
+								{scope === "po" &&
+									(resume.reviewStatus === "SUBMITTED_TO_PO" ||
+										resume.reviewStatus === "FINALIZED_BY_FACULTY" ||
+										resume.reviewStatus === "RESUBMITTED_TO_PO" ||
+										resume.reviewStatus === "PO_REVISION_REQUESTED" ||
+										resume.reviewStatus === "APPROVED") && (
+										<>
 											<button
-												onClick={() => updateResumeStatusMutation.mutate({ resumeId, studentId: engLabsStudentId, tenantId: tenantId!, status: "APPROVED" })}
+												onClick={() =>
+													updateResumeStatusMutation.mutate({
+														resumeId,
+														studentId: engLabsStudentId,
+														tenantId: tenantId!,
+														status: "PO_REVISION_REQUESTED",
+													})
+												}
 												disabled={updateResumeStatusMutation.isPending}
-												className="rounded-xl bg-teal-600 px-3 py-1.5 font-bold text-white text-xs transition-all hover:bg-teal-700 shadow-sm disabled:opacity-50"
+												className="rounded-xl border border-rose-200 bg-white px-3 py-1.5 font-bold text-rose-600 text-xs transition-all hover:bg-rose-50 disabled:opacity-50"
 											>
-												{t`Final Approve`}
+												{t`PO: Request Revision`}
 											</button>
-										)}
-									</>
-								)}
+											{resume.reviewStatus !== "APPROVED" && (
+												<button
+													onClick={() =>
+														updateResumeStatusMutation.mutate({
+															resumeId,
+															studentId: engLabsStudentId,
+															tenantId: tenantId!,
+															status: "APPROVED",
+														})
+													}
+													disabled={updateResumeStatusMutation.isPending}
+													className="rounded-xl bg-teal-600 px-3 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-teal-700 disabled:opacity-50"
+												>
+													{t`Final Approve`}
+												</button>
+											)}
+										</>
+									)}
 							</div>
 						</div>
 					</div>
@@ -470,10 +508,7 @@ function ReviewPage() {
 											{replyTo ? t`Reply to Thread` : t`Add Feedback Comment`}
 										</p>
 										{replyTo && (
-											<button
-												onClick={() => setReplyTo(null)}
-												className="text-indigo-600 text-xs hover:underline"
-											>
+											<button onClick={() => setReplyTo(null)} className="text-indigo-600 text-xs hover:underline">
 												{t`Cancel Reply`}
 											</button>
 										)}
@@ -481,7 +516,9 @@ function ReviewPage() {
 									<textarea
 										value={newComment}
 										onChange={(e) => setNewComment(e.target.value)}
-										placeholder={replyTo ? t`Write your reply...` : t`Write specific, actionable feedback for the student...`}
+										placeholder={
+											replyTo ? t`Write your reply...` : t`Write specific, actionable feedback for the student...`
+										}
 										rows={4}
 										className="mb-3 w-full resize-none rounded-xl border-0 bg-white px-4 py-3 text-slate-900 text-sm outline-none ring-1 ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
 									/>
@@ -512,134 +549,173 @@ function ReviewPage() {
 									</div>
 								) : (
 									<div className="space-y-4">
-										{comments.filter(c => !c.parentId).reverse().map((c) => {
-											const replies = comments.filter(r => r.parentId === c.id);
-											return (
-												<div key={c.id} className="space-y-2">
-													<div className={cn(
-														"rounded-2xl border p-4 transition-all shadow-sm",
-														c.status === "RESOLVED" ? "bg-emerald-50/20 border-emerald-100" : "bg-white border-slate-100"
-													)}>
-														<p className={cn(
-															"text-slate-800 text-sm leading-relaxed",
-															c.status === "RESOLVED" && "text-slate-400 line-through"
-														)}>{c.content}</p>
-														<div className="mt-3 flex items-center justify-between">
-															<div className="flex items-center gap-3">
-																<p className="text-slate-400 text-[10px]">
-																	{new Date(c.createdAt).toLocaleDateString()}
-																</p>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setReplyTo(c.id);
-																		// Focus textarea
-																		window.scrollTo({ top: 0, behavior: 'smooth' });
-																	}}
-																	className="text-indigo-600 text-[10px] font-bold hover:underline"
-																>
-																	{t`Reply`}
-																</button>
-															</div>
-															<div className="flex items-center gap-2">
-																{c.status === "OPEN" && (
+										{comments
+											.filter((c) => !c.parentId)
+											.reverse()
+											.map((c) => {
+												const replies = comments.filter((r) => r.parentId === c.id);
+												return (
+													<div key={c.id} className="space-y-2">
+														<div
+															className={cn(
+																"rounded-2xl border p-4 shadow-sm transition-all",
+																c.status === "RESOLVED"
+																	? "border-emerald-100 bg-emerald-50/20"
+																	: "border-slate-100 bg-white",
+															)}
+														>
+															<p
+																className={cn(
+																	"text-slate-800 text-sm leading-relaxed",
+																	c.status === "RESOLVED" && "text-slate-400 line-through",
+																)}
+															>
+																{c.content}
+															</p>
+															<div className="mt-3 flex items-center justify-between">
+																<div className="flex items-center gap-3">
+																	<p className="text-[10px] text-slate-400">
+																		{new Date(c.createdAt).toLocaleDateString()}
+																	</p>
 																	<button
 																		type="button"
-																		onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "ADDRESSED" })}
-																		className="rounded-lg bg-white px-2 py-1 text-[10px] font-semibold text-amber-600 shadow-sm ring-1 ring-amber-200 hover:bg-amber-50"
+																		onClick={() => {
+																			setReplyTo(c.id);
+																			// Focus textarea
+																			window.scrollTo({ top: 0, behavior: "smooth" });
+																		}}
+																		className="font-bold text-[10px] text-indigo-600 hover:underline"
 																	>
-																		{t`Mark Addressed`}
+																		{t`Reply`}
 																	</button>
-																)}
-																{c.status === "ADDRESSED" && (
-																	<button
-																		type="button"
-																		onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "RESOLVED" })}
-																		className="rounded-lg bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow-sm hover:bg-emerald-700"
-																	>
-																		{t`Approve`}
-																	</button>
-																)}
-																{c.status === "RESOLVED" && (
-																	<button
-																		type="button"
-																		onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "OPEN" })}
-																		className="text-[10px] font-medium text-slate-400 hover:text-slate-600 underline"
-																	>
-																		{t`Re-open`}
-																	</button>
-																)}
-																<span
-																	className={cn(
-																		"rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-tight",
-																		c.status === "RESOLVED"
-																			? "bg-emerald-50 text-emerald-700"
-																			: c.status === "ADDRESSED" ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700",
+																</div>
+																<div className="flex items-center gap-2">
+																	{c.status === "OPEN" && (
+																		<button
+																			type="button"
+																			onClick={() =>
+																				updateCommentStatusMutation.mutate({ id: c.id, status: "ADDRESSED" })
+																			}
+																			className="rounded-lg bg-white px-2 py-1 font-semibold text-[10px] text-amber-600 shadow-sm ring-1 ring-amber-200 hover:bg-amber-50"
+																		>
+																			{t`Mark Addressed`}
+																		</button>
 																	)}
-																>
-																	{c.status}
-																</span>
+																	{c.status === "ADDRESSED" && (
+																		<button
+																			type="button"
+																			onClick={() =>
+																				updateCommentStatusMutation.mutate({ id: c.id, status: "RESOLVED" })
+																			}
+																			className="rounded-lg bg-emerald-600 px-2 py-1 font-semibold text-[10px] text-white shadow-sm hover:bg-emerald-700"
+																		>
+																			{t`Approve`}
+																		</button>
+																	)}
+																	{c.status === "RESOLVED" && (
+																		<button
+																			type="button"
+																			onClick={() => updateCommentStatusMutation.mutate({ id: c.id, status: "OPEN" })}
+																			className="font-medium text-[10px] text-slate-400 underline hover:text-slate-600"
+																		>
+																			{t`Re-open`}
+																		</button>
+																	)}
+																	<span
+																		className={cn(
+																			"rounded-full px-2 py-0.5 font-semibold text-[10px] uppercase tracking-tight",
+																			c.status === "RESOLVED"
+																				? "bg-emerald-50 text-emerald-700"
+																				: c.status === "ADDRESSED"
+																					? "bg-amber-50 text-amber-700"
+																					: "bg-blue-50 text-blue-700",
+																		)}
+																	>
+																		{c.status}
+																	</span>
+																</div>
 															</div>
 														</div>
-													</div>
 
-													{/* Replies */}
-													{replies.length > 0 && (
-														<div className="ml-8 space-y-2 border-slate-100 border-l pl-4">
-															{replies.map((reply) => (
-																<div key={reply.id} className="rounded-xl bg-slate-50 p-3 text-xs border border-slate-100 space-y-2">
-																	<div className="flex items-center justify-between">
-																		<div className="flex items-center gap-2 opacity-60">
-																			<span className="font-bold uppercase text-[9px] tracking-tight">{t`Reply`}</span>
-																			<span className="text-[9px]">{new Date(reply.createdAt).toLocaleDateString()}</span>
-																		</div>
-																		
-																		<div className="flex items-center gap-1.5">
-																			{reply.status === "OPEN" && (
-																				<button
-																					type="button"
-																					onClick={() => updateCommentStatusMutation.mutate({ id: reply.id, status: "ADDRESSED" })}
-																					className="rounded-md border border-amber-200 bg-white px-1.5 py-0.5 text-[9px] font-bold text-amber-600 hover:bg-amber-50"
+														{/* Replies */}
+														{replies.length > 0 && (
+															<div className="ml-8 space-y-2 border-slate-100 border-l pl-4">
+																{replies.map((reply) => (
+																	<div
+																		key={reply.id}
+																		className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs"
+																	>
+																		<div className="flex items-center justify-between">
+																			<div className="flex items-center gap-2 opacity-60">
+																				<span className="font-bold text-[9px] uppercase tracking-tight">{t`Reply`}</span>
+																				<span className="text-[9px]">
+																					{new Date(reply.createdAt).toLocaleDateString()}
+																				</span>
+																			</div>
+
+																			<div className="flex items-center gap-1.5">
+																				{reply.status === "OPEN" && (
+																					<button
+																						type="button"
+																						onClick={() =>
+																							updateCommentStatusMutation.mutate({ id: reply.id, status: "ADDRESSED" })
+																						}
+																						className="rounded-md border border-amber-200 bg-white px-1.5 py-0.5 font-bold text-[9px] text-amber-600 hover:bg-amber-50"
+																					>
+																						{t`Mark Addressed`}
+																					</button>
+																				)}
+																				{reply.status === "ADDRESSED" && (
+																					<button
+																						type="button"
+																						onClick={() =>
+																							updateCommentStatusMutation.mutate({ id: reply.id, status: "RESOLVED" })
+																						}
+																						className="rounded-md bg-emerald-600 px-1.5 py-0.5 font-bold text-[9px] text-white hover:bg-emerald-700"
+																					>
+																						{t`Resolve`}
+																					</button>
+																				)}
+																				{reply.status === "RESOLVED" && (
+																					<button
+																						type="button"
+																						onClick={() =>
+																							updateCommentStatusMutation.mutate({ id: reply.id, status: "OPEN" })
+																						}
+																						className="font-medium text-[9px] text-slate-400 underline hover:text-slate-600"
+																					>
+																						{t`Re-open`}
+																					</button>
+																				)}
+																				<div
+																					className={cn(
+																						"rounded-full border px-1.5 py-0.5 font-bold text-[8px] uppercase tracking-wider shadow-sm",
+																						reply.status === "RESOLVED"
+																							? "border-emerald-200 bg-emerald-100 text-emerald-700"
+																							: reply.status === "ADDRESSED"
+																								? "border-amber-200 bg-amber-100 text-amber-700"
+																								: "border-blue-200 bg-blue-100 text-blue-700",
+																					)}
 																				>
-																					{t`Mark Addressed`}
-																				</button>
-																			)}
-																			{reply.status === "ADDRESSED" && (
-																				<button
-																					type="button"
-																					onClick={() => updateCommentStatusMutation.mutate({ id: reply.id, status: "RESOLVED" })}
-																					className="rounded-md bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white hover:bg-emerald-700"
-																				>
-																					{t`Resolve`}
-																				</button>
-																			)}
-																			{reply.status === "RESOLVED" && (
-																				<button
-																					type="button"
-																					onClick={() => updateCommentStatusMutation.mutate({ id: reply.id, status: "OPEN" })}
-																					className="text-[9px] font-medium text-slate-400 hover:text-slate-600 underline"
-																				>
-																					{t`Re-open`}
-																				</button>
-																			)}
-																			<div className={cn(
-																				"px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-sm border",
-																				reply.status === "RESOLVED" ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
-																				reply.status === "ADDRESSED" ? "bg-amber-100 text-amber-700 border-amber-200" :
-																				"bg-blue-100 text-blue-700 border-blue-200"
-																			)}>
-																				{reply.status === "PUBLISHED" ? "OPEN" : reply.status}
+																					{reply.status === "PUBLISHED" ? "OPEN" : reply.status}
+																				</div>
 																			</div>
 																		</div>
+																		<p
+																			className={cn(
+																				"text-slate-700 leading-relaxed",
+																				reply.status === "RESOLVED" && "text-slate-400 line-through",
+																			)}
+																		>
+																			{reply.content}
+																		</p>
 																	</div>
-																	<p className={cn("text-slate-700 leading-relaxed", reply.status === "RESOLVED" && "text-slate-400 line-through")}>{reply.content}</p>
-																</div>
-															))}
-														</div>
-													)}
-												</div>
-											);
-										})}
+																))}
+															</div>
+														)}
+													</div>
+												);
+											})}
 									</div>
 								)}
 							</div>
@@ -741,8 +817,7 @@ function EvaluatePanel({
 		},
 	});
 
-	const getItemResult = (itemId: string) =>
-		itemResults[itemId] ?? { passed: false, score: 3, notes: "" };
+	const getItemResult = (itemId: string) => itemResults[itemId] ?? { passed: false, score: 3, notes: "" };
 
 	const setItemResult = (itemId: string, update: Partial<{ passed: boolean; score: number; notes: string }>) => {
 		setItemResults((prev) => ({ ...prev, [itemId]: { ...getItemResult(itemId), ...update } }));
@@ -753,9 +828,7 @@ function EvaluatePanel({
 			<div className="flex flex-col items-center justify-center py-12 text-center">
 				<ListChecksIcon weight="duotone" className="mb-3 size-10 text-slate-300" />
 				<p className="font-semibold text-slate-600">No checklists available</p>
-				<p className="mt-1 text-slate-400 text-sm">
-					Go to the Checklists tab to create an evaluation checklist first.
-				</p>
+				<p className="mt-1 text-slate-400 text-sm">Go to the Checklists tab to create an evaluation checklist first.</p>
 			</div>
 		);
 	}
@@ -810,9 +883,7 @@ function EvaluatePanel({
 										onClick={() => setItemResult(item.id, { passed: !result.passed })}
 										className={cn(
 											"rounded-xl px-3 py-1.5 font-semibold text-xs transition-all",
-											result.passed
-												? "bg-emerald-600 text-white"
-												: "bg-slate-200 text-slate-600 hover:bg-slate-300",
+											result.passed ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600 hover:bg-slate-300",
 										)}
 									>
 										{result.passed ? "✓ Passed" : "✗ Not Passed"}
@@ -893,7 +964,6 @@ function getValueAtPath(obj: any, path: string): unknown {
 	return current;
 }
 
-
 function toPlainText(val: unknown): string {
 	if (val == null) return "";
 	if (typeof val !== "string") return JSON.stringify(val);
@@ -915,7 +985,8 @@ function computeWordDiff(oldText: string, newText: string): WordToken[] {
 	const tok = (s: string) => s.split(/(\s+)/);
 	const a = tok(oldText);
 	const b = tok(newText);
-	const m = a.length, n = b.length;
+	const m = a.length,
+		n = b.length;
 
 	const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
 	for (let i = m - 1; i >= 0; i--) {
@@ -925,11 +996,20 @@ function computeWordDiff(oldText: string, newText: string): WordToken[] {
 	}
 
 	const out: WordToken[] = [];
-	let i = 0, j = 0;
+	let i = 0,
+		j = 0;
 	while (i < m && j < n) {
-		if (a[i] === b[j]) { out.push({ type: "same", text: a[i]! }); i++; j++; }
-		else if (dp[i + 1]![j]! >= dp[i]![j + 1]!) { out.push({ type: "remove", text: a[i]! }); i++; }
-		else { out.push({ type: "add", text: b[j]! }); j++; }
+		if (a[i] === b[j]) {
+			out.push({ type: "same", text: a[i]! });
+			i++;
+			j++;
+		} else if (dp[i + 1]![j]! >= dp[i]![j + 1]!) {
+			out.push({ type: "remove", text: a[i]! });
+			i++;
+		} else {
+			out.push({ type: "add", text: b[j]! });
+			j++;
+		}
 	}
 	while (i < m) out.push({ type: "remove", text: a[i++]! });
 	while (j < n) out.push({ type: "add", text: b[j++]! });
@@ -989,7 +1069,8 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 
 	// 3. Shared inline styles
 	const ST = {
-		sectionTitle: "font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;display:block;margin:0 0 12px;padding-bottom:6px;border-bottom:2px solid #f1f5f9;",
+		sectionTitle:
+			"font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#94a3b8;display:block;margin:0 0 12px;padding-bottom:6px;border-bottom:2px solid #f1f5f9;",
 		primaryRow: "font-size:14px;font-weight:600;color:#0f172a;line-height:1.3;",
 		secondaryRow: "font-size:12px;color:#64748b;margin-top:3px;",
 		metaRow: "font-size:11px;color:#94a3b8;margin-top:2px;",
@@ -1014,7 +1095,8 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 			if (b.phone) contacts.push(field("/basics/phone", b.phone));
 			if (b.location) contacts.push(field("/basics/location", b.location));
 			const filteredContacts = contacts.filter(Boolean);
-			if (filteredContacts.length) html += `<div style="font-size:12px;color:#94a3b8;margin-top:5px;">${filteredContacts.join(" · ")}</div>`;
+			if (filteredContacts.length)
+				html += `<div style="font-size:12px;color:#94a3b8;margin-top:5px;">${filteredContacts.join(" · ")}</div>`;
 			// website
 			if (b.website?.url) {
 				const wH = field("/basics/website/url", b.website.url);
@@ -1028,9 +1110,19 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 	// layout is string[][][] (pages → columns → section keys).
 	// "summary" is the top-level summary field; all others are in data.sections or data.customSections.
 	const FALLBACK_ORDER = [
-		"summary", "profiles", "experience", "education", "projects", "skills",
-		"languages", "interests", "awards", "certifications", "publications",
-		"volunteer", "references",
+		"summary",
+		"profiles",
+		"experience",
+		"education",
+		"projects",
+		"skills",
+		"languages",
+		"interests",
+		"awards",
+		"certifications",
+		"publications",
+		"volunteer",
+		"references",
 	];
 	const layoutPages = currentData?.metadata?.layout?.pages;
 	const orderedKeys: string[] = Array.isArray(layoutPages)
@@ -1070,10 +1162,22 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 						if (item?.hidden) continue;
 						const base = `/customSections/${csIdx}/items/${idx}`;
 						html += idx > 0 ? `<div style="${ST.itemDivider}">` : `<div>`;
-						if (item.name) { const h = field(`${base}/name`, item.name); if (h) html += `<div style="${ST.primaryRow}">${h}</div>`; }
-						if (item.title) { const h = field(`${base}/title`, item.title); if (h) html += `<div style="${ST.primaryRow}">${h}</div>`; }
-						if (item.content) { const h = field(`${base}/content`, item.content); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-						if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
+						if (item.name) {
+							const h = field(`${base}/name`, item.name);
+							if (h) html += `<div style="${ST.primaryRow}">${h}</div>`;
+						}
+						if (item.title) {
+							const h = field(`${base}/title`, item.title);
+							if (h) html += `<div style="${ST.primaryRow}">${h}</div>`;
+						}
+						if (item.content) {
+							const h = field(`${base}/content`, item.content);
+							if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+						}
+						if (item.description) {
+							const h = field(`${base}/description`, item.description);
+							if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+						}
 						html += `</div>`;
 					}
 					html += `</div>`;
@@ -1084,142 +1188,188 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 
 		// ── Fixed section ──
 		{
-		const section = currentData?.sections?.[key];
-		if (!section?.items?.length) continue;
+			const section = currentData?.sections?.[key];
+			if (!section?.items?.length) continue;
 
-		html += `<div style="margin-bottom:24px;">`;
-		html += `<span style="${ST.sectionTitle}">${esc(section.title || key)}</span>`;
+			html += `<div style="margin-bottom:24px;">`;
+			html += `<span style="${ST.sectionTitle}">${esc(section.title || key)}</span>`;
 
-		for (let idx = 0; idx < section.items.length; idx++) {
-			const item = section.items[idx];
-			if (item?.hidden) continue;
-			const base = `/sections/${key}/items/${idx}`;
+			for (let idx = 0; idx < section.items.length; idx++) {
+				const item = section.items[idx];
+				if (item?.hidden) continue;
+				const base = `/sections/${key}/items/${idx}`;
 
-			html += idx > 0 ? `<div style="${ST.itemDivider}">` : `<div>`;
+				html += idx > 0 ? `<div style="${ST.itemDivider}">` : `<div>`;
 
-			if (key === "experience") {
-				// company (string), position (string), location (string), period (string), website, description
-				const company = field(`${base}/company`, item.company);
-				const position = field(`${base}/position`, item.position);
-				const parts = [position, company].filter(Boolean);
-				if (parts.length) html += `<div style="${ST.primaryRow}">${parts.join(" @ ")}</div>`;
-				const period = field(`${base}/period`, item.period);
-				const location = field(`${base}/location`, item.location);
-				const meta = [period, location].filter(Boolean);
-				if (meta.length) html += `<div style="${ST.metaRow}">${meta.join(" · ")}</div>`;
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-				if (item.website?.url) { const h = field(`${base}/website/url`, item.website.url); if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`; }
+				if (key === "experience") {
+					// company (string), position (string), location (string), period (string), website, description
+					const company = field(`${base}/company`, item.company);
+					const position = field(`${base}/position`, item.position);
+					const parts = [position, company].filter(Boolean);
+					if (parts.length) html += `<div style="${ST.primaryRow}">${parts.join(" @ ")}</div>`;
+					const period = field(`${base}/period`, item.period);
+					const location = field(`${base}/location`, item.location);
+					const meta = [period, location].filter(Boolean);
+					if (meta.length) html += `<div style="${ST.metaRow}">${meta.join(" · ")}</div>`;
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+					if (item.website?.url) {
+						const h = field(`${base}/website/url`, item.website.url);
+						if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`;
+					}
+				} else if (key === "education") {
+					// school (string), degree (string), area (string), grade (string), location (string), period (string), website, description
+					const school = field(`${base}/school`, item.school);
+					if (school) html += `<div style="${ST.primaryRow}">${school}</div>`;
+					const degree = field(`${base}/degree`, item.degree);
+					const area = field(`${base}/area`, item.area);
+					const degreeArea = [degree, area].filter(Boolean).join(", ");
+					if (degreeArea) html += `<div style="${ST.secondaryRow}">${degreeArea}</div>`;
+					const period = field(`${base}/period`, item.period);
+					const grade = field(`${base}/grade`, item.grade);
+					const location = field(`${base}/location`, item.location);
+					const meta = [period, grade, location].filter(Boolean);
+					if (meta.length) html += `<div style="${ST.metaRow}">${meta.join(" · ")}</div>`;
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+				} else if (key === "profiles") {
+					// network (string), username (string), website
+					const network = field(`${base}/network`, item.network);
+					const username = field(`${base}/username`, item.username);
+					if (network) html += `<div style="${ST.primaryRow}">${network}</div>`;
+					if (username) html += `<div style="${ST.secondaryRow}">${username}</div>`;
+					if (item.website?.url) {
+						const h = field(`${base}/website/url`, item.website.url);
+						if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`;
+					}
+				} else if (key === "skills") {
+					// name (string), proficiency (string), level (numeric — hidden), keywords[]
+					const name = field(`${base}/name`, item.name);
+					const proficiency = field(`${base}/proficiency`, item.proficiency);
+					if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
+					if (proficiency) html += `<div style="${ST.secondaryRow}">${proficiency}</div>`;
+					const kw = (item.keywords as string[] | undefined)?.filter(Boolean);
+					if (kw?.length) html += `<div style="${ST.metaRow}">${esc(kw.join(", "))}</div>`;
+				} else if (key === "languages") {
+					// language (string), fluency (string), level (numeric — hidden)
+					const language = field(`${base}/language`, item.language);
+					const fluency = field(`${base}/fluency`, item.fluency);
+					if (language) html += `<div style="${ST.primaryRow}">${language}</div>`;
+					if (fluency) html += `<div style="${ST.secondaryRow}">${fluency}</div>`;
+				} else if (key === "interests") {
+					// name (string), keywords[]
+					const name = field(`${base}/name`, item.name);
+					if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
+					const kw = (item.keywords as string[] | undefined)?.filter(Boolean);
+					if (kw?.length) html += `<div style="${ST.metaRow}">${esc(kw.join(", "))}</div>`;
+				} else if (key === "projects") {
+					// name (string), period (string), website, description
+					const name = field(`${base}/name`, item.name);
+					if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
+					const period = field(`${base}/period`, item.period);
+					if (period) html += `<div style="${ST.metaRow}">${period}</div>`;
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+					if (item.website?.url) {
+						const h = field(`${base}/website/url`, item.website.url);
+						if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`;
+					}
+				} else if (key === "awards") {
+					// title (string), awarder (string), date (string), website, description
+					const title = field(`${base}/title`, item.title);
+					const awarder = field(`${base}/awarder`, item.awarder);
+					if (title) html += `<div style="${ST.primaryRow}">${title}</div>`;
+					if (awarder) html += `<div style="${ST.secondaryRow}">${awarder}</div>`;
+					if (item.date) {
+						const h = field(`${base}/date`, item.date);
+						if (h) html += `<div style="${ST.metaRow}">${h}</div>`;
+					}
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+				} else if (key === "certifications") {
+					// title (string), issuer (string), date (string), website, description
+					const title = field(`${base}/title`, item.title);
+					const issuer = field(`${base}/issuer`, item.issuer);
+					if (title) html += `<div style="${ST.primaryRow}">${title}</div>`;
+					if (issuer) html += `<div style="${ST.secondaryRow}">${issuer}</div>`;
+					if (item.date) {
+						const h = field(`${base}/date`, item.date);
+						if (h) html += `<div style="${ST.metaRow}">${h}</div>`;
+					}
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+					if (item.website?.url) {
+						const h = field(`${base}/website/url`, item.website.url);
+						if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`;
+					}
+				} else if (key === "publications") {
+					// title (string), publisher (string), date (string), website, description
+					const title = field(`${base}/title`, item.title);
+					const publisher = field(`${base}/publisher`, item.publisher);
+					if (title) html += `<div style="${ST.primaryRow}">${title}</div>`;
+					if (publisher) html += `<div style="${ST.secondaryRow}">${publisher}</div>`;
+					if (item.date) {
+						const h = field(`${base}/date`, item.date);
+						if (h) html += `<div style="${ST.metaRow}">${h}</div>`;
+					}
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+					if (item.website?.url) {
+						const h = field(`${base}/website/url`, item.website.url);
+						if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`;
+					}
+				} else if (key === "volunteer") {
+					// organization (string), location (string), period (string), website, description
+					const org = field(`${base}/organization`, item.organization);
+					if (org) html += `<div style="${ST.primaryRow}">${org}</div>`;
+					const period = field(`${base}/period`, item.period);
+					const location = field(`${base}/location`, item.location);
+					const meta = [period, location].filter(Boolean);
+					if (meta.length) html += `<div style="${ST.metaRow}">${meta.join(" · ")}</div>`;
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+					if (item.website?.url) {
+						const h = field(`${base}/website/url`, item.website.url);
+						if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`;
+					}
+				} else if (key === "references") {
+					// name (string), position (string), phone (string), website, description
+					const name = field(`${base}/name`, item.name);
+					const position = field(`${base}/position`, item.position);
+					if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
+					if (position) html += `<div style="${ST.secondaryRow}">${position}</div>`;
+					if (item.phone) {
+						const h = field(`${base}/phone`, item.phone);
+						if (h) html += `<div style="${ST.metaRow}">${h}</div>`;
+					}
+					if (item.description) {
+						const h = field(`${base}/description`, item.description);
+						if (h) html += `<p style="${ST.bodyText}">${h}</p>`;
+					}
+					if (item.website?.url) {
+						const h = field(`${base}/website/url`, item.website.url);
+						if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`;
+					}
+				}
 
-			} else if (key === "education") {
-				// school (string), degree (string), area (string), grade (string), location (string), period (string), website, description
-				const school = field(`${base}/school`, item.school);
-				if (school) html += `<div style="${ST.primaryRow}">${school}</div>`;
-				const degree = field(`${base}/degree`, item.degree);
-				const area = field(`${base}/area`, item.area);
-				const degreeArea = [degree, area].filter(Boolean).join(", ");
-				if (degreeArea) html += `<div style="${ST.secondaryRow}">${degreeArea}</div>`;
-				const period = field(`${base}/period`, item.period);
-				const grade = field(`${base}/grade`, item.grade);
-				const location = field(`${base}/location`, item.location);
-				const meta = [period, grade, location].filter(Boolean);
-				if (meta.length) html += `<div style="${ST.metaRow}">${meta.join(" · ")}</div>`;
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-
-			} else if (key === "profiles") {
-				// network (string), username (string), website
-				const network = field(`${base}/network`, item.network);
-				const username = field(`${base}/username`, item.username);
-				if (network) html += `<div style="${ST.primaryRow}">${network}</div>`;
-				if (username) html += `<div style="${ST.secondaryRow}">${username}</div>`;
-				if (item.website?.url) { const h = field(`${base}/website/url`, item.website.url); if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`; }
-
-			} else if (key === "skills") {
-				// name (string), proficiency (string), level (numeric — hidden), keywords[]
-				const name = field(`${base}/name`, item.name);
-				const proficiency = field(`${base}/proficiency`, item.proficiency);
-				if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
-				if (proficiency) html += `<div style="${ST.secondaryRow}">${proficiency}</div>`;
-				const kw = (item.keywords as string[] | undefined)?.filter(Boolean);
-				if (kw?.length) html += `<div style="${ST.metaRow}">${esc(kw.join(", "))}</div>`;
-
-			} else if (key === "languages") {
-				// language (string), fluency (string), level (numeric — hidden)
-				const language = field(`${base}/language`, item.language);
-				const fluency = field(`${base}/fluency`, item.fluency);
-				if (language) html += `<div style="${ST.primaryRow}">${language}</div>`;
-				if (fluency) html += `<div style="${ST.secondaryRow}">${fluency}</div>`;
-
-			} else if (key === "interests") {
-				// name (string), keywords[]
-				const name = field(`${base}/name`, item.name);
-				if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
-				const kw = (item.keywords as string[] | undefined)?.filter(Boolean);
-				if (kw?.length) html += `<div style="${ST.metaRow}">${esc(kw.join(", "))}</div>`;
-
-			} else if (key === "projects") {
-				// name (string), period (string), website, description
-				const name = field(`${base}/name`, item.name);
-				if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
-				const period = field(`${base}/period`, item.period);
-				if (period) html += `<div style="${ST.metaRow}">${period}</div>`;
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-				if (item.website?.url) { const h = field(`${base}/website/url`, item.website.url); if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`; }
-
-			} else if (key === "awards") {
-				// title (string), awarder (string), date (string), website, description
-				const title = field(`${base}/title`, item.title);
-				const awarder = field(`${base}/awarder`, item.awarder);
-				if (title) html += `<div style="${ST.primaryRow}">${title}</div>`;
-				if (awarder) html += `<div style="${ST.secondaryRow}">${awarder}</div>`;
-				if (item.date) { const h = field(`${base}/date`, item.date); if (h) html += `<div style="${ST.metaRow}">${h}</div>`; }
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-
-			} else if (key === "certifications") {
-				// title (string), issuer (string), date (string), website, description
-				const title = field(`${base}/title`, item.title);
-				const issuer = field(`${base}/issuer`, item.issuer);
-				if (title) html += `<div style="${ST.primaryRow}">${title}</div>`;
-				if (issuer) html += `<div style="${ST.secondaryRow}">${issuer}</div>`;
-				if (item.date) { const h = field(`${base}/date`, item.date); if (h) html += `<div style="${ST.metaRow}">${h}</div>`; }
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-				if (item.website?.url) { const h = field(`${base}/website/url`, item.website.url); if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`; }
-
-			} else if (key === "publications") {
-				// title (string), publisher (string), date (string), website, description
-				const title = field(`${base}/title`, item.title);
-				const publisher = field(`${base}/publisher`, item.publisher);
-				if (title) html += `<div style="${ST.primaryRow}">${title}</div>`;
-				if (publisher) html += `<div style="${ST.secondaryRow}">${publisher}</div>`;
-				if (item.date) { const h = field(`${base}/date`, item.date); if (h) html += `<div style="${ST.metaRow}">${h}</div>`; }
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-				if (item.website?.url) { const h = field(`${base}/website/url`, item.website.url); if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`; }
-
-			} else if (key === "volunteer") {
-				// organization (string), location (string), period (string), website, description
-				const org = field(`${base}/organization`, item.organization);
-				if (org) html += `<div style="${ST.primaryRow}">${org}</div>`;
-				const period = field(`${base}/period`, item.period);
-				const location = field(`${base}/location`, item.location);
-				const meta = [period, location].filter(Boolean);
-				if (meta.length) html += `<div style="${ST.metaRow}">${meta.join(" · ")}</div>`;
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-				if (item.website?.url) { const h = field(`${base}/website/url`, item.website.url); if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`; }
-
-			} else if (key === "references") {
-				// name (string), position (string), phone (string), website, description
-				const name = field(`${base}/name`, item.name);
-				const position = field(`${base}/position`, item.position);
-				if (name) html += `<div style="${ST.primaryRow}">${name}</div>`;
-				if (position) html += `<div style="${ST.secondaryRow}">${position}</div>`;
-				if (item.phone) { const h = field(`${base}/phone`, item.phone); if (h) html += `<div style="${ST.metaRow}">${h}</div>`; }
-				if (item.description) { const h = field(`${base}/description`, item.description); if (h) html += `<p style="${ST.bodyText}">${h}</p>`; }
-				if (item.website?.url) { const h = field(`${base}/website/url`, item.website.url); if (h) html += `<div style="${ST.metaRow}">↗ ${h}</div>`; }
+				html += `</div>`; // item
 			}
 
-			html += `</div>`; // item
-		}
-
-		html += `</div>`; // section
+			html += `</div>`; // section
 		} // end fixed section block
 	} // end layout loop
 
@@ -1229,7 +1379,12 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 
 // ---------------------------------------------------------------------------
 
-function ChangesPanel({ currentData, evaluations, showHighlights, onToggleHighlights }: {
+function ChangesPanel({
+	currentData,
+	evaluations,
+	showHighlights,
+	onToggleHighlights,
+}: {
 	currentData: any;
 	evaluations: any[];
 	showHighlights: boolean;
@@ -1253,9 +1408,7 @@ function ChangesPanel({ currentData, evaluations, showHighlights, onToggleHighli
 			<div className="flex flex-col items-center justify-center py-12 text-center">
 				<ShootingStarIcon weight="duotone" className="mb-3 size-10 text-slate-300" />
 				<p className="font-semibold text-slate-600">{t`No comparison available`}</p>
-				<p className="mt-1 text-slate-400 text-sm">
-					{t`Complete at least one evaluation to start tracking changes.`}
-				</p>
+				<p className="mt-1 text-slate-400 text-sm">{t`Complete at least one evaluation to start tracking changes.`}</p>
 			</div>
 		);
 	}
@@ -1278,7 +1431,7 @@ function ChangesPanel({ currentData, evaluations, showHighlights, onToggleHighli
 			<div className="flex items-center justify-between">
 				<span className="font-semibold text-slate-700 text-sm">{t`Changes Summary`}</span>
 				<label className="flex cursor-pointer items-center gap-2">
-					<span className="text-[10px] uppercase tracking-wider text-slate-400">Show in Resume</span>
+					<span className="text-[10px] text-slate-400 uppercase tracking-wider">Show in Resume</span>
 					<input
 						type="checkbox"
 						checked={showHighlights}
@@ -1294,7 +1447,9 @@ function ChangesPanel({ currentData, evaluations, showHighlights, onToggleHighli
 					<ShootingStarIcon className="size-4" />
 					Snapshot from {new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()}
 				</p>
-				<p className="opacity-80">{diff.length} change{diff.length !== 1 ? "s" : ""} detected since that evaluation.</p>
+				<p className="opacity-80">
+					{diff.length} change{diff.length !== 1 ? "s" : ""} detected since that evaluation.
+				</p>
 			</div>
 
 			{/* Legend */}
@@ -1321,8 +1476,16 @@ function ChangesPanel({ currentData, evaluations, showHighlights, onToggleHighli
 	);
 }
 
-function ComparisonOverlay({ evaluations, currentData, onTabChange }: { evaluations: any[], currentData: any, onTabChange: (tab: ReviewTab) => void }) {
-	const latestEvalWithSnapshot = useMemo(() => evaluations.find(e => e.snapshot), [evaluations]);
+function ComparisonOverlay({
+	evaluations,
+	currentData,
+	onTabChange,
+}: {
+	evaluations: any[];
+	currentData: any;
+	onTabChange: (tab: ReviewTab) => void;
+}) {
+	const latestEvalWithSnapshot = useMemo(() => evaluations.find((e) => e.snapshot), [evaluations]);
 	const diff = useMemo(() => {
 		if (!latestEvalWithSnapshot?.snapshot || !currentData) return [];
 		return compare(latestEvalWithSnapshot.snapshot, currentData);
@@ -1336,11 +1499,7 @@ function ComparisonOverlay({ evaluations, currentData, onTabChange }: { evaluati
 				<PlusMinusIcon weight="bold" className="size-4" />
 				<span>{diff.length} changes detected since last evaluation</span>
 			</div>
-			<button
-				type="button"
-				onClick={() => onTabChange("changes")}
-				className="font-bold hover:underline"
-			>
+			<button type="button" onClick={() => onTabChange("changes")} className="font-bold hover:underline">
 				Review Changes →
 			</button>
 		</div>
@@ -1385,13 +1544,25 @@ function extractResumeLines(data: any): string[] {
 	// Summary — top-level data.summary (NOT in basics)
 	if (data?.summary?.content) {
 		const t = stripHtml(data.summary.content);
-		if (t) { lines.push("─── Summary ───"); lines.push(t); }
+		if (t) {
+			lines.push("─── Summary ───");
+			lines.push(t);
+		}
 	}
 
 	const sectionKeys = [
-		"profiles", "experience", "education", "projects", "skills",
-		"languages", "interests", "awards", "certifications", "publications",
-		"volunteer", "references",
+		"profiles",
+		"experience",
+		"education",
+		"projects",
+		"skills",
+		"languages",
+		"interests",
+		"awards",
+		"certifications",
+		"publications",
+		"volunteer",
+		"references",
 	];
 
 	for (const key of sectionKeys) {
@@ -1484,19 +1655,18 @@ function computeLineDiff(oldLines: string[], newLines: string[]): DiffLine[] {
 	const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
 	for (let i = m - 1; i >= 0; i--) {
 		for (let j = n - 1; j >= 0; j--) {
-			dp[i][j] =
-				oldLines[i] === newLines[j]
-					? 1 + dp[i + 1][j + 1]
-					: Math.max(dp[i + 1][j], dp[i][j + 1]);
+			dp[i][j] = oldLines[i] === newLines[j] ? 1 + dp[i + 1][j + 1] : Math.max(dp[i + 1][j], dp[i][j + 1]);
 		}
 	}
 
 	const result: DiffLine[] = [];
-	let i = 0, j = 0;
+	let i = 0,
+		j = 0;
 	while (i < m && j < n) {
 		if (oldLines[i] === newLines[j]) {
 			result.push({ type: "same", text: oldLines[i]! });
-			i++; j++;
+			i++;
+			j++;
 		} else if (dp[i + 1]![j]! >= dp[i]![j + 1]!) {
 			result.push({ type: "remove", text: oldLines[i]! });
 			i++;
@@ -1535,7 +1705,7 @@ function RevisionDiffOverlay({
 	return (
 		<div className="absolute inset-0 z-50 flex flex-col bg-white">
 			{/* Header */}
-			<div className="flex shrink-0 items-center gap-4 border-b border-slate-100 px-6 py-3">
+			<div className="flex shrink-0 items-center gap-4 border-slate-100 border-b px-6 py-3">
 				<div className="flex items-center gap-2 text-violet-700">
 					<GitDiffIcon weight="duotone" className="size-5" />
 					<h2 className="font-bold text-slate-900">Before &amp; After</h2>
@@ -1563,7 +1733,7 @@ function RevisionDiffOverlay({
 			</div>
 
 			{/* Legend */}
-			<div className="flex shrink-0 items-center gap-6 border-b border-slate-100 bg-slate-50 px-6 py-2">
+			<div className="flex shrink-0 items-center gap-6 border-slate-100 border-b bg-slate-50 px-6 py-2">
 				<div className="flex items-center gap-2 text-xs">
 					<span className="inline-block h-3 w-3 rounded-sm bg-emerald-100 ring-1 ring-emerald-300" />
 					<span className="text-slate-500">Added in current version</span>
@@ -1595,7 +1765,7 @@ function RevisionDiffOverlay({
 									<div
 										key={i}
 										className={cn(
-											"flex items-baseline gap-3 border-b border-slate-50 px-4 py-1.5 last:border-b-0",
+											"flex items-baseline gap-3 border-slate-50 border-b px-4 py-1.5 last:border-b-0",
 											line.type === "add" && "bg-emerald-50",
 											line.type === "remove" && "bg-red-50",
 											line.type === "same" && "bg-white",
@@ -1617,10 +1787,11 @@ function RevisionDiffOverlay({
 										{/* Content */}
 										<span
 											className={cn(
-												"flex-1 leading-relaxed whitespace-pre-wrap break-words",
+												"flex-1 whitespace-pre-wrap break-words leading-relaxed",
 												line.type === "add" && "text-emerald-800",
 												line.type === "remove" && "text-red-700 line-through opacity-75",
-												line.type === "same" && (isHeader ? "font-bold text-slate-500 uppercase tracking-widest text-xs" : "text-slate-600"),
+												line.type === "same" &&
+													(isHeader ? "font-bold text-slate-500 text-xs uppercase tracking-widest" : "text-slate-600"),
 											)}
 										>
 											{line.text}

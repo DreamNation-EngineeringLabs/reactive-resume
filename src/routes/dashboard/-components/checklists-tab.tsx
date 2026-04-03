@@ -14,9 +14,7 @@ type ChecklistsTabProps = {
 export function ChecklistsTab({ tenantId, onCreateNew }: ChecklistsTabProps) {
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 
-	const { data: checklists, isLoading } = useQuery(
-		orpc.resume.checklists.list.queryOptions({ input: { tenantId } }),
-	);
+	const { data: checklists, isLoading } = useQuery(orpc.resume.checklists.list.queryOptions({ input: { tenantId } }));
 
 	if (isLoading) {
 		return (
@@ -30,7 +28,7 @@ export function ChecklistsTab({ tenantId, onCreateNew }: ChecklistsTabProps) {
 
 	if (!checklists || checklists.length === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+			<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-16 text-center">
 				<ListChecksIcon weight="duotone" className="mb-4 size-12 text-slate-300" />
 				<p className="font-semibold text-slate-600">{t`No checklists yet`}</p>
 				<p className="mt-1 mb-4 max-w-sm text-slate-400 text-sm">
@@ -105,7 +103,7 @@ function ChecklistRow({
 
 			{/* Expanded items */}
 			{isExpanded && (
-				<div className="border-t border-slate-100 bg-slate-50/50 px-5 pb-4 pt-3">
+				<div className="border-slate-100 border-t bg-slate-50/50 px-5 pt-3 pb-4">
 					{isLoading ? (
 						<div className="space-y-2">
 							{[...Array(3)].map((_, i) => (
@@ -115,18 +113,13 @@ function ChecklistRow({
 					) : detail?.items && detail.items.length > 0 ? (
 						<div className="space-y-2">
 							{detail.items.map((item, idx) => (
-								<div
-									key={item.id}
-									className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm"
-								>
+								<div key={item.id} className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
 									<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-50 font-bold text-indigo-600 text-xs">
 										{idx + 1}
 									</span>
 									<div className="min-w-0 flex-1">
 										<p className="font-medium text-slate-800 text-sm">{item.title}</p>
-										{item.description && (
-											<p className="mt-0.5 text-slate-400 text-xs">{item.description}</p>
-										)}
+										{item.description && <p className="mt-0.5 text-slate-400 text-xs">{item.description}</p>}
 									</div>
 									<span className="shrink-0 rounded-lg bg-slate-100 px-2 py-0.5 font-mono text-slate-500 text-xs">
 										×{item.weight}

@@ -7,11 +7,14 @@ type PanelImperativeHandle = ReturnType<typeof usePanelRef>;
 interface BuilderSidebarState {
 	leftSidebar: PanelImperativeHandle | null;
 	rightSidebar: PanelImperativeHandle | null;
+	/** When true the right sidebar is in wide-inline ATS mode (≈38% width). */
+	atsInlineExpanded: boolean;
 }
 
 interface BuilderSidebarActions {
 	setLeftSidebar: (ref: PanelImperativeHandle | null) => void;
 	setRightSidebar: (ref: PanelImperativeHandle | null) => void;
+	setAtsInlineExpanded: (v: boolean) => void;
 }
 
 type BuilderSidebar = BuilderSidebarState & BuilderSidebarActions;
@@ -19,8 +22,10 @@ type BuilderSidebar = BuilderSidebarState & BuilderSidebarActions;
 export const useBuilderSidebarStore = create<BuilderSidebar>((set) => ({
 	leftSidebar: null,
 	rightSidebar: null,
+	atsInlineExpanded: false,
 	setLeftSidebar: (ref) => set({ leftSidebar: ref }),
 	setRightSidebar: (ref) => set({ rightSidebar: ref }),
+	setAtsInlineExpanded: (v) => set({ atsInlineExpanded: v }),
 }));
 
 type UseBuilderSidebarReturn = {

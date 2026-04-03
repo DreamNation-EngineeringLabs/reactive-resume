@@ -148,7 +148,7 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			search: { tab: "checklists" },
 			iconBg: "bg-amber-50",
 			iconColor: "text-amber-600",
-		}
+		},
 	);
 
 	return items;
@@ -185,13 +185,13 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 							asChild
 							isActive={isActive}
 							title={i18n.t(item.label)}
-							className="h-11 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary/90 data-[active=true]:focus-visible:bg-primary/90"
+							className="h-11 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:focus-visible:bg-primary/90 data-[active=true]:hover:bg-primary/90"
 						>
 							<Link
 								to={item.href}
 								// biome-ignore lint: search params vary per route
 								search={item.search as any}
-								className="group/navitem flex items-center gap-x-3 rounded-xl px-2 py-2 transition-all duration-300 active:scale-[0.98] tap-active outline-none"
+								className="group/navitem tap-active flex items-center gap-x-3 rounded-xl px-2 py-2 outline-none transition-all duration-300 active:scale-[0.98]"
 								activeProps={{
 									className: "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20",
 								}}
@@ -201,28 +201,19 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 									className={cn(
 										"flex shrink-0 items-center justify-center transition-all duration-300",
 										"group-active/navitem:scale-90",
-										!isCollapsed && cn(
-											"h-9 w-9 rounded-xl",
-											item.iconBg,
-											item.iconColor,
-											isActive && "bg-white/20 text-white",
-										),
-										isCollapsed && cn(
-											"size-4",
-											isActive ? item.iconColor : "text-slate-400",
-										),
+										!isCollapsed &&
+											cn("h-9 w-9 rounded-xl", item.iconBg, item.iconColor, isActive && "bg-white/20 text-white"),
+										isCollapsed && cn("size-4", isActive ? item.iconColor : "text-slate-400"),
 									)}
 								>
-									<div className={cn(isCollapsed ? "size-full" : "size-5", "[&_svg]:size-full")}>
-										{item.icon}
-									</div>
+									<div className={cn(isCollapsed ? "size-full" : "size-5", "[&_svg]:size-full")}>{item.icon}</div>
 								</div>
 
 								<span
 									className={cn(
-										"shrink-0 text-sm transition-[margin,opacity] duration-300 ease-in-out font-medium",
+										"shrink-0 font-medium text-sm transition-[margin,opacity] duration-300 ease-in-out",
 										isCollapsed && "sr-only",
-										isActive ? "text-white font-bold" : "text-slate-600",
+										isActive ? "font-bold text-white" : "text-slate-600",
 									)}
 								>
 									{i18n.t(item.label)}
@@ -282,7 +273,7 @@ function OrgUnitSwitcher({
 	return (
 		<div className="space-y-3 py-2">
 			<div className="px-2">
-				<p className="font-semibold text-slate-400 text-[10px] uppercase tracking-widest">{t`Entity`}</p>
+				<p className="font-semibold text-[10px] text-slate-400 uppercase tracking-widest">{t`Entity`}</p>
 			</div>
 			<div className="space-y-1">
 				{groupedSections.map((group) => (
@@ -293,7 +284,7 @@ function OrgUnitSwitcher({
 								type="button"
 								onClick={() => onUnitChange(section.id)}
 								className={cn(
-									"group flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-300 tap-active",
+									"group tap-active flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-300",
 									activeUnitId === section.id
 										? "bg-primary font-bold text-white shadow-md shadow-primary/20"
 										: "text-slate-600 hover:bg-white/50",
@@ -419,21 +410,19 @@ export function DashboardSidebar() {
 									<button
 										type="button"
 										onClick={handleBackClick}
-										className="flex w-full items-center gap-x-3 rounded-xl px-2 py-2 transition-all duration-300 hover:bg-white/50 active:scale-[0.98] tap-active"
+										className="tap-active flex w-full items-center gap-x-3 rounded-xl px-2 py-2 transition-all duration-300 hover:bg-white/50 active:scale-[0.98]"
 									>
 										<div
 											className={cn(
 												"flex shrink-0 items-center justify-center transition-all duration-200",
-												isCollapsed
-													? "size-4 text-slate-400"
-													: "h-8 w-8 rounded-xl bg-primary/10 text-primary",
+												isCollapsed ? "size-4 text-slate-400" : "h-8 w-8 rounded-xl bg-primary/10 text-primary",
 											)}
 										>
 											<ArrowLeftIcon weight="duotone" className={isCollapsed ? "size-full" : "size-4"} />
 										</div>
 										<span
 											className={cn(
-												"shrink-0 text-slate-700 text-sm transition-[margin,opacity] duration-300 ease-in-out font-medium",
+												"shrink-0 font-medium text-slate-700 text-sm transition-[margin,opacity] duration-300 ease-in-out",
 												isCollapsed && "sr-only",
 											)}
 										>
@@ -455,7 +444,7 @@ export function DashboardSidebar() {
 						{session?.user && (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton className="h-auto gap-x-3 rounded-xl bg-white/50 border border-black/5 p-2 hover:bg-white transition-all duration-300 group-data-[collapsible=icon]:p-1! tap-active">
+									<SidebarMenuButton className="tap-active h-auto gap-x-3 rounded-xl border border-black/5 bg-white/50 p-2 transition-all duration-300 hover:bg-white group-data-[collapsible=icon]:p-1!">
 										<Avatar className="size-8 shrink-0 transition-all group-data-[collapsible=icon]:size-7">
 											<AvatarImage src={session.user.image ?? undefined} />
 											<AvatarFallback className="rounded-xl bg-primary/10 font-bold text-primary text-xs group-data-[collapsible=icon]:text-[0.5rem]">
@@ -465,7 +454,7 @@ export function DashboardSidebar() {
 
 										<div
 											className={cn(
-												"min-w-0 flex-1 transition-[margin,opacity] duration-300 ease-in-out text-left",
+												"min-w-0 flex-1 text-left transition-[margin,opacity] duration-300 ease-in-out",
 												isCollapsed && "-ms-8 opacity-0",
 											)}
 										>
@@ -497,10 +486,7 @@ export function DashboardSidebar() {
 									</div>
 
 									<div className="border-slate-100 border-b p-2">
-										<OrgUnitSwitcher
-											activeUnitId={getOrganisationUnits()[0] ?? null}
-											onUnitChange={() => {}}
-										/>
+										<OrgUnitSwitcher activeUnitId={getOrganisationUnits()[0] ?? null} onUnitChange={() => {}} />
 									</div>
 
 									<div className="p-2">

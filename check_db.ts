@@ -1,5 +1,5 @@
-import { db } from "./src/integrations/drizzle/client";
 import { sql } from "drizzle-orm";
+import { db } from "./src/integrations/drizzle/client";
 
 async function check() {
 	try {

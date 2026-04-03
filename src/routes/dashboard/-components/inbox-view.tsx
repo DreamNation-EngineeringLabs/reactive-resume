@@ -1,11 +1,5 @@
 import { t } from "@lingui/core/macro";
-import {
-	ArrowClockwiseIcon,
-	ArrowRightIcon,
-	CheckCircleIcon,
-	ClockIcon,
-	TrayIcon,
-} from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, ArrowRightIcon, ClockIcon, TrayIcon } from "@phosphor-icons/react";
 import { cn } from "@/utils/style";
 import type { StudentWithResumes } from "./student-resume-table";
 
@@ -76,9 +70,7 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 	);
 
 	// Sort newest-first within each group
-	const sorted = [...allItems].sort(
-		(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-	);
+	const sorted = [...allItems].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
 	const groups: InboxGroup[] =
 		scope === "faculty"
@@ -95,18 +87,18 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 				]
 			: [
 					{
-						id: "from_faculty",
-						label: t`Faculty Finalized`,
-						description: t`Sections completed by faculty and ready for your review`,
-						iconBg: "bg-indigo-50",
-						iconColor: "text-indigo-600",
-						icon: <CheckCircleIcon weight="duotone" className="size-5" />,
-						items: sorted.filter((i) => i.reviewStatus === "FINALIZED_BY_FACULTY"),
+						id: "submitted_to_po",
+						label: t`Submitted to PO`,
+						description: t`Sections submitted by faculty awaiting your review`,
+						iconBg: "bg-orange-50",
+						iconColor: "text-orange-600",
+						icon: <TrayIcon weight="duotone" className="size-5" />,
+						items: sorted.filter((i) => i.reviewStatus === "SUBMITTED_TO_PO"),
 					},
 					{
 						id: "resubmissions",
-						label: t`Student Resubmissions`,
-						description: t`Resumes resubmitted by students after your revision request`,
+						label: t`Resubmitted to PO`,
+						description: t`Sections resubmitted by faculty after your feedback`,
 						iconBg: "bg-amber-50",
 						iconColor: "text-amber-600",
 						icon: <ArrowClockwiseIcon weight="duotone" className="size-5" />,
@@ -118,11 +110,11 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 
 	if (totalCount === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+			<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-16 text-center">
 				<div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
 					<TrayIcon weight="duotone" className="size-7 text-slate-400" />
 				</div>
-				<p className="font-bold text-slate-700 text-base">{t`Inbox is empty`}</p>
+				<p className="font-bold text-base text-slate-700">{t`Inbox is empty`}</p>
 				<p className="mt-1 max-w-xs text-slate-400 text-sm">
 					{scope === "faculty"
 						? t`No student submissions are waiting for your review.`
@@ -152,7 +144,7 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2">
 									<span className="font-bold text-slate-900 text-sm">{group.label}</span>
-									<span className="rounded-full bg-slate-900 px-2 py-0.5 font-bold text-white text-[10px]">
+									<span className="rounded-full bg-slate-900 px-2 py-0.5 font-bold text-[10px] text-white">
 										{group.items.length}
 									</span>
 								</div>
@@ -182,6 +174,7 @@ function InboxCard({
 	const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
 		SUBMITTED_TO_FACULTY: { bg: "bg-blue-50", text: "text-blue-700", label: t`Submitted` },
 		FINALIZED_BY_FACULTY: { bg: "bg-indigo-50", text: "text-indigo-700", label: t`Faculty Finalized` },
+		SUBMITTED_TO_PO: { bg: "bg-orange-50", text: "text-orange-700", label: t`Submitted to PO` },
 		RESUBMITTED_TO_PO: { bg: "bg-amber-50", text: "text-amber-700", label: t`Resubmitted` },
 	};
 	const badge = statusConfig[item.reviewStatus] ?? {
@@ -200,12 +193,12 @@ function InboxCard({
 			{/* Main content */}
 			<div className="min-w-0 flex-1">
 				<div className="flex items-center gap-2">
-					<span className="font-semibold text-slate-900 text-sm truncate">{item.student.name}</span>
+					<span className="truncate font-semibold text-slate-900 text-sm">{item.student.name}</span>
 					{item.student.rollNumber && (
 						<span className="shrink-0 text-slate-400 text-xs">· {item.student.rollNumber}</span>
 					)}
 				</div>
-				<div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+				<div className="mt-0.5 flex flex-wrap items-center gap-2 text-slate-500 text-xs">
 					<span className="truncate">{item.resumeName}</span>
 					{item.student.sectionName && (
 						<>

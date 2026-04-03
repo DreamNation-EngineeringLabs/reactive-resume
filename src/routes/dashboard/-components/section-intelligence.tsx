@@ -11,8 +11,8 @@ import {
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { cn } from "@/utils/style";
-import type { StudentWithResumes } from "./student-resume-table";
 import type { DashboardTab } from "./section-metrics-view";
+import type { StudentWithResumes } from "./student-resume-table";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,9 +84,7 @@ const healthConfig: Record<HealthStatus, { label: string; dot: string; badge: st
  * Leaf = a type whose units never appear as anyone's parentId.
  */
 function sortedUnitTypes(allOrgUnits: OrgUnit[], availableSections: UnitStat[]): string[] {
-	const parentIds = new Set(
-		allOrgUnits.map((u) => u.parentId).filter(Boolean) as string[],
-	);
+	const parentIds = new Set(allOrgUnits.map((u) => u.parentId).filter(Boolean) as string[]);
 	const leafIds = new Set(allOrgUnits.filter((u) => !parentIds.has(u.id)).map((u) => u.id));
 	const leafTypes = new Set(allOrgUnits.filter((u) => leafIds.has(u.id)).map((u) => u.type));
 
@@ -118,7 +116,10 @@ function deriveLowestLevelType(allOrgUnits: OrgUnit[]): string | null {
 	let bestType = leafUnits[0].type;
 	let bestCount = 0;
 	for (const [type, count] of typeCount) {
-		if (count > bestCount) { bestCount = count; bestType = type; }
+		if (count > bestCount) {
+			bestCount = count;
+			bestType = type;
+		}
 	}
 	return bestType;
 }
@@ -175,9 +176,7 @@ function UnitTypeSelector({
 
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white px-5 py-3 shadow-sm">
-			<span className="text-slate-500 text-xs font-semibold uppercase tracking-wider shrink-0">
-				{t`View by unit`}
-			</span>
+			<span className="shrink-0 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`View by unit`}</span>
 			<div className="flex flex-wrap gap-1.5">
 				{types.map((type) => {
 					const isSelected = type === selectedType;
@@ -188,9 +187,7 @@ function UnitTypeSelector({
 							onClick={() => onSelect(type)}
 							className={cn(
 								"rounded-lg px-3 py-1.5 font-bold text-xs uppercase tracking-wide transition-all active:scale-[0.97]",
-								isSelected
-									? "bg-indigo-600 text-white shadow-sm"
-									: "bg-slate-100 text-slate-500 hover:bg-slate-200",
+								isSelected ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-100 text-slate-500 hover:bg-slate-200",
 							)}
 						>
 							{type}
@@ -220,9 +217,7 @@ function ActionAlerts({
 	const pendingPO = allResumes.filter((r) => r.reviewStatus === "FINALIZED_BY_FACULTY").length;
 	const resubmitted = allResumes.filter((r) => r.reviewStatus === "RESUBMITTED_TO_PO").length;
 	const noResume = students.filter((s) => s.resumes.length === 0).length;
-	const noSubmission = sections.filter(
-		(s) => s.stats.totalStudents > 0 && s.stats.submittedResumes === 0,
-	).length;
+	const noSubmission = sections.filter((s) => s.stats.totalStudents > 0 && s.stats.submittedResumes === 0).length;
 	const fullyApproved = sections.filter(
 		(s) => s.stats.totalResumes > 0 && s.stats.approvedResumes === s.stats.totalResumes,
 	).length;
@@ -297,10 +292,10 @@ function ActionAlerts({
 	if (alerts.length === 0) return null;
 
 	return (
-		<div className="rounded-2xl bg-white p-5 shadow-sm space-y-3">
-			<div className="flex items-center gap-2 mb-1">
+		<div className="space-y-3 rounded-2xl bg-white p-5 shadow-sm">
+			<div className="mb-1 flex items-center gap-2">
 				<BellRingingIcon weight="duotone" className="size-4 text-slate-500" />
-				<h3 className="font-bold text-slate-900 text-base">{t`Action Alerts`}</h3>
+				<h3 className="font-bold text-base text-slate-900">{t`Action Alerts`}</h3>
 			</div>
 			<div className="space-y-2">
 				{alerts.map((alert) => (
@@ -347,15 +342,13 @@ function PipelineFunnel({ students }: { students: StudentWithResumes[] }) {
 		]),
 	);
 
-	const stagesWithCount = PIPELINE_STAGES.map((s) => ({ ...s, count: counts[s.key] ?? 0 })).filter(
-		(s) => s.count > 0,
-	);
+	const stagesWithCount = PIPELINE_STAGES.map((s) => ({ ...s, count: counts[s.key] ?? 0 })).filter((s) => s.count > 0);
 
 	return (
 		<div className="rounded-2xl bg-white p-5 shadow-sm">
-			<div className="flex items-center gap-2 mb-5">
-				<h3 className="font-bold text-slate-900 text-base">{t`Resume Pipeline`}</h3>
-				<span className="text-slate-400 text-xs font-medium">{t`${total} total`}</span>
+			<div className="mb-5 flex items-center gap-2">
+				<h3 className="font-bold text-base text-slate-900">{t`Resume Pipeline`}</h3>
+				<span className="font-medium text-slate-400 text-xs">{t`${total} total`}</span>
 			</div>
 
 			<div className="mb-5 flex h-3 w-full overflow-hidden rounded-full bg-slate-100">
@@ -375,7 +368,7 @@ function PipelineFunnel({ students }: { students: StudentWithResumes[] }) {
 						<div className={cn("h-2.5 w-2.5 shrink-0 rounded-full", stage.color)} />
 						<div className="min-w-0">
 							<p className="truncate font-semibold text-slate-900 text-xs">{stage.count}</p>
-							<p className="truncate text-slate-400 text-[10px]">{stage.label}</p>
+							<p className="truncate text-[10px] text-slate-400">{stage.label}</p>
 						</div>
 					</div>
 				))}
@@ -405,9 +398,9 @@ function TopPerformingSections({ sections }: { sections: UnitStat[] }) {
 
 	return (
 		<div className="rounded-2xl bg-white p-5 shadow-sm">
-			<div className="flex items-center gap-2 mb-4">
+			<div className="mb-4 flex items-center gap-2">
 				<MedalIcon weight="duotone" className="size-4 text-amber-500" />
-				<h3 className="font-bold text-slate-900 text-base">{t`Top Performing`}</h3>
+				<h3 className="font-bold text-base text-slate-900">{t`Top Performing`}</h3>
 			</div>
 			<div className="grid gap-3 sm:grid-cols-3">
 				{ranked.map((section, i) => {
@@ -424,10 +417,12 @@ function TopPerformingSections({ sections }: { sections: UnitStat[] }) {
 									{score.toFixed(1)}/5
 								</span>
 							</div>
-							<p className="font-semibold text-slate-900 text-sm leading-snug line-clamp-2">{section.name}</p>
+							<p className="line-clamp-2 font-semibold text-slate-900 text-sm leading-snug">{section.name}</p>
 							<div className="flex items-center gap-1 text-slate-500 text-xs">
 								<UsersIcon weight="duotone" className="size-3" />
-								<span>{section.stats.totalStudents} {t`students`}</span>
+								<span>
+									{section.stats.totalStudents} {t`students`}
+								</span>
 							</div>
 						</div>
 					);
@@ -460,24 +455,22 @@ function SectionHealthTable({
 	});
 
 	return (
-		<div className="rounded-2xl bg-white shadow-sm overflow-hidden">
+		<div className="overflow-hidden rounded-2xl bg-white shadow-sm">
 			<div className="flex items-center gap-2 px-5 pt-5 pb-4">
-				<h3 className="font-bold text-slate-900 text-base">{t`Section Health`}</h3>
-				<span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-500 text-xs">
-					{active.length}
-				</span>
+				<h3 className="font-bold text-base text-slate-900">{t`Section Health`}</h3>
+				<span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-500 text-xs">{active.length}</span>
 			</div>
 
 			{/* Desktop table */}
-			<div className="hidden md:block overflow-x-auto">
+			<div className="hidden overflow-x-auto md:block">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="border-t border-slate-100 bg-slate-50/60 text-left">
+						<tr className="border-slate-100 border-t bg-slate-50/60 text-left">
 							<th className="px-5 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Section`}</th>
-							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider text-center">{t`Students`}</th>
-							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider text-center">{t`Resumes`}</th>
-							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider w-48">{t`Pipeline`}</th>
-							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider text-center">{t`Avg Score`}</th>
+							<th className="px-4 py-2.5 text-center font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Students`}</th>
+							<th className="px-4 py-2.5 text-center font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Resumes`}</th>
+							<th className="w-48 px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Pipeline`}</th>
+							<th className="px-4 py-2.5 text-center font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Avg Score`}</th>
 							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Stage`}</th>
 							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Health`}</th>
 						</tr>
@@ -490,9 +483,10 @@ function SectionHealthTable({
 							const total = st.totalResumes;
 							const approved = st.approvedResumes;
 
-							const withFaculty = st.evaluatedResumes > 0
-								? Math.max(0, st.submittedResumes - st.passedFaculty)
-								: Math.max(0, total - approved - st.passedFaculty);
+							const withFaculty =
+								st.evaluatedResumes > 0
+									? Math.max(0, st.submittedResumes - st.passedFaculty)
+									: Math.max(0, total - approved - st.passedFaculty);
 							const pendingPO = Math.max(0, st.passedFaculty - approved);
 
 							const bands = [
@@ -510,9 +504,9 @@ function SectionHealthTable({
 							else stageText = t`${total} in Draft`;
 
 							return (
-								<tr key={section.id} className="hover:bg-slate-50/50 transition-colors">
+								<tr key={section.id} className="transition-colors hover:bg-slate-50/50">
 									<td className="px-5 py-3">
-										<p className="font-semibold text-slate-900 text-sm line-clamp-1">{section.name}</p>
+										<p className="line-clamp-1 font-semibold text-slate-900 text-sm">{section.name}</p>
 										<p className="text-slate-400 text-xs">{section.unitType}</p>
 									</td>
 									<td className="px-4 py-3 text-center font-semibold text-slate-900 text-sm">{st.totalStudents}</td>
@@ -522,18 +516,30 @@ function SectionHealthTable({
 											<div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
 												{bands.map((band, i) =>
 													band.w > 0 ? (
-														<div key={i} className={cn("h-full", band.color)} style={{ width: `${(band.w / total) * 100}%` }} />
+														<div
+															key={i}
+															className={cn("h-full", band.color)}
+															style={{ width: `${(band.w / total) * 100}%` }}
+														/>
 													) : null,
 												)}
 											</div>
 										) : (
 											<div className="h-2 w-full rounded-full bg-slate-100" />
 										)}
-										<p className="mt-1 text-slate-400 text-[10px]">{approved}/{total} {t`approved`}</p>
+										<p className="mt-1 text-[10px] text-slate-400">
+											{approved}/{total} {t`approved`}
+										</p>
 									</td>
 									<td className="px-4 py-3 text-center">
 										{st.averageScore !== null ? (
-											<span className={cn("rounded-full px-2.5 py-0.5 font-semibold text-xs", scoreColor(st.averageScore).bg, scoreColor(st.averageScore).text)}>
+											<span
+												className={cn(
+													"rounded-full px-2.5 py-0.5 font-semibold text-xs",
+													scoreColor(st.averageScore).bg,
+													scoreColor(st.averageScore).text,
+												)}
+											>
 												{st.averageScore.toFixed(1)}/5
 											</span>
 										) : (
@@ -559,7 +565,7 @@ function SectionHealthTable({
 			</div>
 
 			{/* Mobile cards */}
-			<div className="md:hidden divide-y divide-slate-100">
+			<div className="divide-y divide-slate-100 md:hidden">
 				{sorted.map((section) => {
 					const st = section.stats;
 					const health = sectionHealth(st);
@@ -567,22 +573,26 @@ function SectionHealthTable({
 					const total = st.totalResumes;
 					const approved = st.approvedResumes;
 					return (
-						<div key={section.id} className="px-5 py-4 space-y-2">
+						<div key={section.id} className="space-y-2 px-5 py-4">
 							<div className="flex items-start justify-between gap-2">
 								<div>
 									<p className="font-semibold text-slate-900 text-sm">{section.name}</p>
 									<p className="text-slate-400 text-xs">{section.unitType}</p>
 								</div>
-								<div className="flex items-center gap-1.5 shrink-0">
+								<div className="flex shrink-0 items-center gap-1.5">
 									<div className={cn("h-2 w-2 rounded-full", hc.dot)} />
 									<span className={cn("rounded-full px-2 py-0.5 font-medium text-[10px]", hc.badge, hc.text)}>
 										{hc.label}
 									</span>
 								</div>
 							</div>
-							<div className="flex items-center gap-4 text-xs text-slate-500">
-								<span>{st.totalStudents} {t`students`}</span>
-								<span>{total} {t`resumes`}</span>
+							<div className="flex items-center gap-4 text-slate-500 text-xs">
+								<span>
+									{st.totalStudents} {t`students`}
+								</span>
+								<span>
+									{total} {t`resumes`}
+								</span>
 								{st.averageScore !== null && (
 									<span className={cn("font-semibold", scoreColor(st.averageScore).text)}>
 										{st.averageScore.toFixed(1)}/5
@@ -596,7 +606,9 @@ function SectionHealthTable({
 											<div className="h-full bg-emerald-500" style={{ width: `${(approved / total) * 100}%` }} />
 										)}
 									</div>
-									<p className="text-slate-400 text-[10px]">{approved}/{total} {t`approved`}</p>
+									<p className="text-[10px] text-slate-400">
+										{approved}/{total} {t`approved`}
+									</p>
 								</>
 							)}
 						</div>
@@ -604,11 +616,11 @@ function SectionHealthTable({
 				})}
 			</div>
 
-			<div className="border-t border-slate-100 px-5 py-3">
+			<div className="border-slate-100 border-t px-5 py-3">
 				<button
 					type="button"
 					onClick={() => onNavigateToTab("sections")}
-					className="flex items-center gap-1.5 font-semibold text-indigo-600 text-xs hover:text-indigo-700 transition-colors"
+					className="flex items-center gap-1.5 font-semibold text-indigo-600 text-xs transition-colors hover:text-indigo-700"
 				>
 					{t`View all sections`}
 					<ArrowRightIcon weight="bold" className="size-3" />
@@ -625,10 +637,7 @@ function SectionHealthTable({
 export function SectionIntelligence({ sections, students, allOrgUnits, onNavigateToTab }: SectionIntelligenceProps) {
 	const lowestLevelType = useMemo(() => deriveLowestLevelType(allOrgUnits), [allOrgUnits]);
 
-	const availableTypes = useMemo(
-		() => sortedUnitTypes(allOrgUnits, sections),
-		[allOrgUnits, sections],
-	);
+	const availableTypes = useMemo(() => sortedUnitTypes(allOrgUnits, sections), [allOrgUnits, sections]);
 
 	// Default to lowest level (leaf); user can override
 	const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -641,10 +650,7 @@ export function SectionIntelligence({ sections, students, allOrgUnits, onNavigat
 	);
 
 	const activeStudents = useMemo(
-		() =>
-			effectiveType
-				? filterStudentsByUnitType(students, effectiveType, lowestLevelType, allOrgUnits)
-				: students,
+		() => (effectiveType ? filterStudentsByUnitType(students, effectiveType, lowestLevelType, allOrgUnits) : students),
 		[students, effectiveType, lowestLevelType, allOrgUnits],
 	);
 
@@ -656,18 +662,14 @@ export function SectionIntelligence({ sections, students, allOrgUnits, onNavigat
 			{/* Section label */}
 			<div className="flex items-center gap-3">
 				<div className="h-px flex-1 bg-slate-200" />
-				<span className="font-bold text-slate-400 text-[10px] uppercase tracking-widest">
+				<span className="font-bold text-[10px] text-slate-400 uppercase tracking-widest">
 					{t`Section Intelligence`}
 				</span>
 				<div className="h-px flex-1 bg-slate-200" />
 			</div>
 
 			{/* Unit type selector — controls ALL blocks below */}
-			<UnitTypeSelector
-				types={availableTypes}
-				selectedType={effectiveType}
-				onSelect={setSelectedType}
-			/>
+			<UnitTypeSelector types={availableTypes} selectedType={effectiveType} onSelect={setSelectedType} />
 
 			<ActionAlerts sections={activeSections} students={activeStudents} onNavigateToTab={onNavigateToTab} />
 			<PipelineFunnel students={activeStudents} />

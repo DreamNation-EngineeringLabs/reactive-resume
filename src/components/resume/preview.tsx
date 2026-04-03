@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useCSSVariables } from "./hooks/use-css-variables";
 import { useWebfonts } from "./hooks/use-webfonts";
 import styles from "./preview.module.css";
-import { useResumeStore, type Resume } from "./store/resume";
+import { type Resume, useResumeStore } from "./store/resume";
 import { AzurillTemplate } from "./templates/azurill";
 import { BronzorTemplate } from "./templates/bronzor";
 import { ChikoritaTemplate } from "./templates/chikorita";

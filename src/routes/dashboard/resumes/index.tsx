@@ -68,9 +68,9 @@ function RouteComponent() {
 
 	return (
 		<div className="space-y-6">
-			<DashboardHeader 
-				icon={ReadCvLogoIcon} 
-				title={t`Resumes`} 
+			<DashboardHeader
+				icon={ReadCvLogoIcon}
+				title={t`Resumes`}
 				description={t`Manage and build professional, ATS-friendly resumes.`}
 			/>
 
@@ -95,7 +95,7 @@ function RouteComponent() {
 					}}
 				/>
 
-				<div className="h-6 w-px bg-border mx-2" />
+				<div className="mx-2 h-6 w-px bg-border" />
 
 				<MultipleCombobox
 					value={tags}
@@ -106,7 +106,7 @@ function RouteComponent() {
 					buttonProps={{
 						variant: "ghost",
 						title: t`Filter by`,
-						className: cn("rounded-xl text-slate-600 hover:bg-primary/5 hover:text-primary transition-all tap-active", {
+						className: cn("tap-active rounded-xl text-slate-600 transition-all hover:bg-primary/5 hover:text-primary", {
 							hidden: tagOptions.length === 0,
 						}),
 						children: (_, options) => (
@@ -116,7 +116,11 @@ function RouteComponent() {
 								{options.length > 0 && (
 									<div className="flex gap-1">
 										{options.map((option) => (
-											<Badge key={option.value} variant="secondary" className="rounded-lg bg-primary/10 text-primary border-none text-[10px] font-bold uppercase transition-all">
+											<Badge
+												key={option.value}
+												variant="secondary"
+												className="rounded-lg border-none bg-primary/10 font-bold text-[10px] text-primary uppercase transition-all"
+											>
 												{option.label}
 											</Badge>
 										))}
@@ -128,13 +132,19 @@ function RouteComponent() {
 				/>
 
 				<Tabs className="ltr:ms-auto rtl:me-auto" value={view} onValueChange={onViewChange}>
-					<TabsList className="h-11 rounded-xl bg-slate-50 p-1 border border-border">
-						<TabsTrigger value="grid" className="rounded-lg px-4 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all tap-active">
+					<TabsList className="h-11 rounded-xl border border-border bg-slate-50 p-1">
+						<TabsTrigger
+							value="grid"
+							className="tap-active rounded-lg px-4 font-bold transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md"
+						>
 							<GridFourIcon weight="duotone" className="size-4" />
 							<Trans>Grid</Trans>
 						</TabsTrigger>
 
-						<TabsTrigger value="list" className="rounded-lg px-4 font-bold data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md transition-all tap-active">
+						<TabsTrigger
+							value="list"
+							className="tap-active rounded-lg px-4 font-bold transition-all data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-md"
+						>
 							<ListIcon weight="duotone" className="size-4" />
 							<Trans>List</Trans>
 						</TabsTrigger>

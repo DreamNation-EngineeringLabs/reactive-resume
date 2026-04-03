@@ -84,12 +84,13 @@ Score:
 
 		const scoring = result.output;
 
+		const jdTitleDisplay = jdAnalysis.jobTitle.trim() || "not specified";
 		details.push({
 			ruleId: "TR-1",
 			ruleName: "Title alignment",
 			score: scoring.titleMatch,
 			maxScore: 3,
-			details: `Headline "${headline}" vs JD title "${jdAnalysis.jobTitle}" — match: ${scoring.titleMatch}/3.`,
+			details: `Headline "${headline}" vs JD title "${jdTitleDisplay}" — match: ${scoring.titleMatch}/3.`,
 		});
 		details.push({
 			ruleId: "TR-2",
@@ -126,11 +127,17 @@ Score:
 		const jdKeyTerms = [...jdAnalysis.hardSkills, ...jdAnalysis.tools].map((s) => s.toLowerCase());
 
 		// TR-1: title match
-		const titleMatch = headline.includes(jobTitle)
-			? 3
-			: jobTitle.split(" ").some((w) => w.length > 3 && headline.includes(w))
-				? 1
-				: 0;
+		// Guard against empty jobTitle — "" matches every string, so we can't use includes() blindly.
+		const jdTitleDisplay = jdAnalysis.jobTitle.trim() || "not specified";
+		const titleMatch =
+			!jobTitle.trim()
+				? // No title extracted — give partial credit rather than a false perfect match
+					1
+				: headline.includes(jobTitle)
+					? 3
+					: jobTitle.split(" ").some((w) => w.length > 3 && headline.includes(w))
+						? 1
+						: 0;
 
 		details.push({
 			ruleId: "TR-1",
@@ -138,9 +145,11 @@ Score:
 			score: titleMatch,
 			maxScore: 3,
 			details:
-				titleMatch === 3
-					? `Headline matches JD title "${jdAnalysis.jobTitle}".`
-					: `Headline "${data.basics.headline}" doesn't match JD title "${jdAnalysis.jobTitle}".`,
+				!jobTitle.trim()
+					? `Job title could not be extracted from the JD — headline alignment scored heuristically.`
+					: titleMatch === 3
+						? `Headline matches JD title "${jdTitleDisplay}".`
+						: `Headline "${data.basics.headline}" doesn't match JD title "${jdTitleDisplay}".`,
 		});
 
 		// TR-2: summary relevance — check actual summary content

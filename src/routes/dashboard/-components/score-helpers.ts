@@ -23,6 +23,8 @@ export function getStatusBadgeClass(status: string): { bg: string; text: string;
 			return { bg: "bg-amber-50", text: "text-amber-700", label: "Revision Requested" };
 		case "FINALIZED_BY_FACULTY":
 			return { bg: "bg-indigo-50", text: "text-indigo-700", label: "Finalized / Pending PO" };
+		case "SUBMITTED_TO_PO":
+			return { bg: "bg-orange-50", text: "text-orange-700", label: "Submitted to PO" };
 		case "PO_REVISION_REQUESTED":
 			return { bg: "bg-rose-50", text: "text-rose-700", label: "PO: Revision Requested" };
 		case "RESUBMITTED_TO_PO":

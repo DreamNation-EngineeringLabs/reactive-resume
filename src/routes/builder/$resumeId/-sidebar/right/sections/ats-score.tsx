@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
 	ArrowCounterClockwiseIcon,
+	ArrowsInIcon,
 	ArrowsOutIcon,
 	CheckCircleIcon,
 	CircleNotchIcon,
@@ -12,18 +13,17 @@ import {
 	WarningIcon,
 	XCircleIcon,
 } from "@phosphor-icons/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AtsScoreHistoryChart } from "@/components/ats/score-history-chart";
+import { KeywordCurveChart } from "@/components/ats/keyword-curve-chart";
 import { AtsSuggestionDescription } from "@/components/ats/suggestion-description";
 import { flushResumeSync, useResumeStore } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { orpc } from "@/integrations/orpc/client";
@@ -31,67 +31,66 @@ import type { CategoryScore, JsonPatchOp, ScoringResult, Suggestion } from "@/in
 import { removeBulletFromHtml, replaceBulletInHtml } from "@/integrations/orpc/services/ats/html-utils";
 import { cn } from "@/utils/style";
 import { useSectionStore } from "../../../-store/section";
-import { useBuilderSidebar } from "../../../-store/sidebar";
+import { useBuilderSidebar, useBuilderSidebarStore } from "../../../-store/sidebar";
 import { SectionBase } from "../shared/section-base";
 
 export function ATSScoreSectionBuilder() {
-	const [sheetOpen, setSheetOpen] = useState(false);
 	const panelState = useATSPanelState();
 	const { openAts } = useSearch({ from: "/builder/$resumeId" });
+	const { resumeId } = useParams({ from: "/builder/$resumeId" });
 	const navigate = useNavigate();
 	const { toggleSidebar, isCollapsed } = useBuilderSidebar();
 	const setCollapsed = useSectionStore((s) => s.setCollapsed);
+	const atsInlineExpanded = useBuilderSidebarStore((s) => s.atsInlineExpanded);
+	const setAtsInlineExpanded = useBuilderSidebarStore((s) => s.setAtsInlineExpanded);
 
-	// Auto-open ATS sheet when navigated with openAts=true (e.g. from dashboard)
-	useEffect(() => {
-		if (!openAts) return;
+	const handleExpand = useCallback(() => {
 		if (isCollapsed("right")) toggleSidebar("right", true);
 		setCollapsed("ats-score", false);
-		setSheetOpen(true);
+		setAtsInlineExpanded(true);
+	}, [isCollapsed, toggleSidebar, setCollapsed, setAtsInlineExpanded]);
+
+	const handleCollapse = useCallback(() => {
+		setAtsInlineExpanded(false);
+	}, [setAtsInlineExpanded]);
+
+	// Auto-open inline panel when navigated with openAts=true (e.g. from dashboard)
+	useEffect(() => {
+		if (!openAts) return;
+		handleExpand();
 		navigate({ to: ".", search: { openAts: false }, replace: true });
-	}, [openAts, navigate, toggleSidebar, isCollapsed, setCollapsed]);
+	}, [openAts, navigate, handleExpand]);
 
 	return (
-		<>
-			<SectionBase
-				type="ats-score"
-				extra={
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button size="icon" variant="ghost" className="size-8" onClick={() => setSheetOpen(true)}>
+		<SectionBase
+			type="ats-score"
+			extra={
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							{atsInlineExpanded ? (
+								<Button size="icon" variant="ghost" className="size-8" onClick={handleCollapse}>
+									<ArrowsInIcon className="size-4" />
+								</Button>
+							) : (
+								<Button size="icon" variant="ghost" className="size-8" onClick={handleExpand}>
 									<ArrowsOutIcon className="size-4" />
 								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								<Trans>Expand</Trans>
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				}
-			>
-				<ATSScorePanel state={panelState} />
-			</SectionBase>
-
-			<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-				<SheetContent
-					side="right"
-					style={{ maxWidth: "none", width: "60vw" }}
-					className="flex flex-col gap-0 overflow-hidden p-0 max-sm:w-full sm:my-3 sm:me-3 sm:h-[calc(100%-1.5rem)] sm:rounded-2xl sm:border"
-				>
-					<SheetHeader className="border-b px-6 py-4">
-						<SheetTitle className="flex items-center gap-2 text-lg">
-							<TargetIcon className="size-5" />
-							<Trans>ATS Score Analysis</Trans>
-						</SheetTitle>
-						<SheetDescription>
-							<Trans>Score your resume for ATS compatibility and get detailed feedback by category.</Trans>
-						</SheetDescription>
-					</SheetHeader>
-					<ATSScoreSheetBody state={panelState} />
-				</SheetContent>
-			</Sheet>
-		</>
+							)}
+						</TooltipTrigger>
+						<TooltipContent>
+							{atsInlineExpanded ? <Trans>Collapse</Trans> : <Trans>Expand inline</Trans>}
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			}
+		>
+			{atsInlineExpanded ? (
+				<ATSScoreInlineBody state={panelState} resumeId={resumeId} />
+			) : (
+				<ATSScorePanel state={panelState} onExpand={handleExpand} />
+			)}
+		</SectionBase>
 	);
 }
 
@@ -116,6 +115,7 @@ interface ATSPanelState {
 function useATSPanelState(): ATSPanelState {
 	const params = useParams({ from: "/builder/$resumeId" });
 	const updateResumeData = useResumeStore((state) => state.updateResumeData);
+	const queryClient = useQueryClient();
 
 	const storageKey = `ats-score-${params.resumeId}`;
 
@@ -185,6 +185,10 @@ function useATSPanelState(): ATSPanelState {
 				setResult(data as ScoringResult);
 				setAppliedIds(new Set());
 				setDismissedIds(new Set());
+				// Refresh history chart so new entry (with delta) appears immediately
+				queryClient.invalidateQueries({
+					queryKey: orpc.ats.getHistory.queryOptions({ input: { resumeId: params.resumeId } }).queryKey,
+				});
 			},
 			onError: (error) => {
 				toast.error(error.message || t`Failed to score resume. Please try again.`);
@@ -304,35 +308,37 @@ function useATSPanelState(): ATSPanelState {
 	};
 }
 
-function ATSScorePanel({ state }: { state: ATSPanelState }) {
-	const { jobDescription, setJobDescription, result, isPending, handleScore } = state;
+function ATSScorePanel({ state, onExpand }: { state: ATSPanelState; onExpand: () => void }) {
+	const { jobDescription, setJobDescription, result, isPending, handleScore, pendingSuggestions } = state;
+
+	const criticalCount = pendingSuggestions.filter((s) => s.severity === "critical").length;
+	const warningCount = pendingSuggestions.filter((s) => s.severity === "warning").length;
+	const autoCount = pendingSuggestions.filter((s) => s.autoApplicable && s.patches?.length).length;
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-3">
 			<div className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					<Trans>
-						Paste a job description to score your resume against it, or score without one for general ATS checks.
-					</Trans>
+				<p className="text-muted-foreground text-xs">
+					<Trans>Paste a job description to score vs. a specific role, or score without one for general ATS checks.</Trans>
 				</p>
 				<Textarea
 					value={jobDescription}
 					onChange={(e) => setJobDescription(e.target.value)}
 					placeholder={t`Paste job description here (optional)...`}
-					rows={4}
-					className="resize-none text-sm"
+					rows={3}
+					className="resize-none text-xs"
 				/>
 			</div>
 
-			<Button onClick={handleScore} disabled={isPending} className="w-full">
+			<Button onClick={handleScore} disabled={isPending} className="w-full" size="sm">
 				{isPending ? (
 					<>
-						<CircleNotchIcon className="mr-2 size-4 animate-spin" />
+						<CircleNotchIcon className="mr-2 size-3.5 animate-spin" />
 						<Trans>Scoring...</Trans>
 					</>
 				) : (
 					<>
-						<MagnifyingGlassIcon className="mr-2 size-4" />
+						<MagnifyingGlassIcon className="mr-2 size-3.5" />
 						<Trans>Score My Resume</Trans>
 					</>
 				)}
@@ -342,6 +348,42 @@ function ATSScorePanel({ state }: { state: ATSPanelState }) {
 				<>
 					<Separator />
 					<ScoreOverview result={result} />
+
+					{/* Suggestion summary + CTA */}
+					{pendingSuggestions.length > 0 && (
+						<div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+							<div className="flex flex-wrap gap-1.5">
+								{criticalCount > 0 && (
+									<span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+										<XCircleIcon className="size-3" />
+										{criticalCount} critical
+									</span>
+								)}
+								{warningCount > 0 && (
+									<span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+										<WarningIcon className="size-3" />
+										{warningCount} warnings
+									</span>
+								)}
+								{autoCount > 0 && (
+									<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:bg-green-950/40 dark:text-green-300">
+										<LightningIcon className="size-3" />
+										{autoCount} auto-fix
+									</span>
+								)}
+							</div>
+							<Button onClick={onExpand} className="w-full" size="sm">
+								<ArrowsOutIcon className="mr-1.5 size-3.5" />
+								<Trans>View & Apply Suggestions ({pendingSuggestions.length})</Trans>
+							</Button>
+						</div>
+					)}
+
+					{pendingSuggestions.length === 0 && result && (
+						<p className="text-center text-muted-foreground text-xs">
+							<Trans>All suggestions applied or dismissed. Re-score to refresh.</Trans>
+						</p>
+					)}
 				</>
 			)}
 		</div>
@@ -349,10 +391,10 @@ function ATSScorePanel({ state }: { state: ATSPanelState }) {
 }
 
 // ---------------------------------------------------------------------------
-// Sheet body — the expanded ATS panel
+// Inline body — full ATS panel shown inside the right sidebar when expanded
 // ---------------------------------------------------------------------------
 
-function ATSScoreSheetBody({ state }: { state: ATSPanelState }) {
+function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeId: string }) {
 	const {
 		jobDescription,
 		setJobDescription,
@@ -367,167 +409,234 @@ function ATSScoreSheetBody({ state }: { state: ATSPanelState }) {
 		applicablePendingCount,
 	} = state;
 
+	// Fetch history to get delta + improvements for the latest run
+	const { data: history } = useQuery(orpc.ats.getHistory.queryOptions({ input: { resumeId } }));
+	const latestEntry = history && history.length > 0 ? history[history.length - 1] : null;
+	// Only show delta when result is fresh (overall score matches latest history entry)
+	const deltaEntry = latestEntry && result && latestEntry.overallScore === result.overall ? latestEntry : null;
+
 	const categories = useMemo(() => getCategories(result), [result]);
+	const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+	// Default to the lowest-scoring category when results arrive
+	useEffect(() => {
+		if (!categories.length) return;
+		const worst = [...categories].sort((a, b) => {
+			const pa = a.score.max > 0 ? a.score.score / a.score.max : 1;
+			const pb = b.score.max > 0 ? b.score.score / b.score.max : 1;
+			return pa - pb;
+		})[0];
+		setActiveCategory(worst?.key ?? categories[0]?.key ?? null);
+	}, [categories]);
+
+	const activeCat = categories.find((c) => c.key === activeCategory) ?? categories[0] ?? null;
+	const activeSuggestions = result?.suggestions.filter((s) => s.category === activeCategory) ?? [];
 
 	return (
-		<ScrollArea className="min-h-0 flex-1">
-			<div className="space-y-6 p-6">
-				{/* Job description input */}
-				<div className="space-y-2">
-					<p className="text-muted-foreground text-sm">
-						<Trans>
-							Paste a job description to score your resume against it, or score without one for general ATS checks.
-						</Trans>
-					</p>
-					<Textarea
-						value={jobDescription}
-						onChange={(e) => setJobDescription(e.target.value)}
-						placeholder={t`Paste job description here (optional)...`}
-						rows={3}
-						className="resize-none text-sm"
-					/>
-				</div>
-
-				<Button onClick={handleScore} disabled={isPending} className="w-full">
+		<div className="space-y-4">
+			{/* ── Job description + score button ── */}
+			<div className="space-y-2">
+				<Textarea
+					value={jobDescription}
+					onChange={(e) => setJobDescription(e.target.value)}
+					placeholder={t`Paste job description here (optional)...`}
+					rows={2}
+					className="resize-none text-xs"
+				/>
+				<Button onClick={handleScore} disabled={isPending} className="w-full" size="sm">
 					{isPending ? (
 						<>
-							<CircleNotchIcon className="mr-2 size-4 animate-spin" />
+							<CircleNotchIcon className="mr-1.5 size-3.5 animate-spin" />
 							<Trans>Scoring...</Trans>
 						</>
 					) : (
 						<>
-							<MagnifyingGlassIcon className="mr-2 size-4" />
+							<MagnifyingGlassIcon className="mr-1.5 size-3.5" />
 							<Trans>Score My Resume</Trans>
 						</>
 					)}
 				</Button>
+			</div>
 
-				{result && (
-					<>
-						{result.metadata.aiRewriteUnavailable ? (
-							<p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950 text-xs dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-								<Trans>
-									Some AI rewrites could not be generated. Manual suggestions and scores still apply — check your AI
-									configuration or try re-scoring.
-								</Trans>
-							</p>
-						) : null}
-						{/* Overall score ring + summary bar */}
-						<div className="flex flex-col items-center gap-6 rounded-xl border bg-muted/30 p-6 sm:flex-row">
-							<ScoreRing score={result.overall} />
-							<div className="w-full flex-1 space-y-3">
-								<p className="text-center text-muted-foreground text-sm sm:text-left">
-									{result.metadata.jdProvided ? (
-										<Trans>Scored against your job description</Trans>
-									) : (
-										<Trans>General ATS compatibility score</Trans>
+			{result && (
+				<>
+					{result.metadata.aiRewriteUnavailable && (
+						<p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-amber-900 text-xs dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+							<Trans>
+								Some AI rewrites could not be generated. Manual suggestions and scores still apply — check your AI
+								configuration or try re-scoring.
+							</Trans>
+						</p>
+					)}
+
+					{/* ── Overall score + mode ── */}
+					<div className="rounded-xl border bg-muted/30 px-4 py-3 space-y-2">
+						<div className="flex items-center gap-3">
+							<ScoreRingSmall score={result.overall} />
+							<div className="min-w-0 flex-1">
+								<div className="flex items-center gap-2">
+									<p className={cn("font-bold text-2xl tabular-nums leading-none", getScoreColor(result.overall).text)}>
+										{result.overall}
+										<span className="ml-1 font-normal text-sm">/100</span>
+									</p>
+									{/* Delta badge — shown when history is loaded and delta exists */}
+									{deltaEntry?.deltaScore != null && deltaEntry.deltaScore !== 0 && (
+										<span className={cn(
+											"flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold text-[10px]",
+											deltaEntry.deltaScore > 0
+												? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+												: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
+										)}>
+											{deltaEntry.deltaScore > 0 ? "↑" : "↓"}
+											{deltaEntry.deltaScore > 0 ? "+" : ""}{deltaEntry.deltaScore} vs last
+										</span>
 									)}
-								</p>
-								{/* Mini category bars */}
-								<div className="grid grid-cols-2 gap-x-4 gap-y-2">
-									{categories.map((cat) => {
-										const pct = cat.score.max > 0 ? Math.round((cat.score.score / cat.score.max) * 100) : 0;
-										const color = getScoreColor(pct);
-										return (
-											<div key={cat.key} className="space-y-0.5">
-												<div className="flex items-center justify-between text-xs">
-													<span className="truncate">{cat.label}</span>
-													<span className={cn("font-medium tabular-nums", color.text)}>
-														{cat.score.score}/{cat.score.max}
-													</span>
-												</div>
-												<div className="h-1.5 w-full rounded-full bg-muted">
-													<div
-														className={cn("h-full rounded-full transition-all", color.bg)}
-														style={{ width: `${pct}%` }}
-													/>
-												</div>
-											</div>
-										);
-									})}
+									{deltaEntry?.deltaScore === 0 && (
+										<span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+											= no change
+										</span>
+									)}
+									{deltaEntry?.deltaScore == null && history && history.length === 1 && (
+										<span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] text-blue-700 dark:bg-blue-950/40">
+											<Trans>First check</Trans>
+										</span>
+									)}
 								</div>
+								<p className={cn("mt-0.5 text-xs font-medium", getScoreColor(result.overall).text)}>
+									{getScoreLabel(result.overall)}
+								</p>
+								<span
+									className={cn(
+										"mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+										result.metadata.jdProvided
+											? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+											: "bg-muted text-muted-foreground",
+									)}
+								>
+									{result.metadata.jdProvided ? t`Job Match` : t`General ATS`}
+								</span>
 							</div>
-						</div>
-
-						{/* Missing keywords (JD) */}
-						{result.metadata.jdProvided && result.metadata.keywordsMissing.length > 0 && (
-							<MissingKeywords keywords={result.metadata.keywordsMissing} matched={result.metadata.keywordsMatched} />
-						)}
-
-						{/* Tabbed category sections */}
-						<Tabs defaultValue={categories[0]?.key ?? "keywordMatch"}>
-							<TabsList className="w-full flex-wrap lg:w-auto lg:flex-nowrap">
-								{categories.map((cat) => {
-									const pct = cat.score.max > 0 ? Math.round((cat.score.score / cat.score.max) * 100) : 0;
-									const color = getScoreColor(pct);
-									return (
-										<TabsTrigger key={cat.key} value={cat.key} className="gap-1.5">
-											<span>{cat.label}</span>
-											<Badge variant="outline" className={cn("px-1.5 py-0 text-[10px]", color.text)}>
-												{cat.score.score}/{cat.score.max}
-											</Badge>
-										</TabsTrigger>
-									);
-								})}
-							</TabsList>
-
-							{categories.map((cat) => {
-								const categorySuggestions = result.suggestions.filter((s) => s.category === cat.key);
-								return (
-									<TabsContent key={cat.key} value={cat.key}>
-										<CategoryDetailPanel
-											category={cat}
-											suggestions={categorySuggestions}
-											appliedIds={appliedIds}
-											dismissedIds={dismissedIds}
-											onApply={handleApply}
-											onDismiss={handleDismiss}
-											jdProvided={result.metadata.jdProvided}
-										/>
-									</TabsContent>
-								);
-							})}
-						</Tabs>
-
-						{/* Apply all + re-score */}
-						<div className="flex flex-col items-center gap-2 sm:flex-row">
-							{applicablePendingCount > 1 && (
-								<Button variant="default" onClick={handleApplyAll} className="w-full sm:w-auto">
-									<LightningIcon className="mr-1.5 size-4" />
-									<Trans>Apply All Suggestions ({applicablePendingCount})</Trans>
+							{applicablePendingCount > 0 && (
+								<Button size="sm" variant="default" onClick={handleApplyAll} className="shrink-0 text-xs">
+									<LightningIcon className="mr-1 size-3" />
+									<Trans>Apply {applicablePendingCount}</Trans>
 								</Button>
 							)}
-							<Button variant="outline" onClick={handleScore} disabled={isPending} className="w-full sm:w-auto">
-								<ArrowCounterClockwiseIcon className="mr-1.5 size-4" />
-								<Trans>Re-score Resume</Trans>
-							</Button>
 						</div>
-					</>
-				)}
-			</div>
-		</ScrollArea>
+						{/* Major improvements row */}
+						{deltaEntry && deltaEntry.majorImprovements.length > 0 && (
+							<div className="flex flex-wrap gap-1.5 border-t pt-2">
+								{deltaEntry.majorImprovements.map((imp) => (
+									<span key={imp.category} className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-950/40 dark:text-green-400">
+										↑ {imp.label} <span className="opacity-70">+{imp.delta}%</span>
+									</span>
+								))}
+							</div>
+						)}
+					</div>
+
+					{/* ── 2-column category grid (click to select) ── */}
+					<div className="grid grid-cols-2 gap-2">
+						{categories.map((cat) => {
+							const pct = cat.score.max > 0 ? Math.round((cat.score.score / cat.score.max) * 100) : 0;
+							const color = getScoreColor(pct);
+							const catSuggestions = result.suggestions.filter(
+								(s) => s.category === cat.key && !appliedIds.has(s.id) && !dismissedIds.has(s.id),
+							);
+							const isActive = activeCategory === cat.key;
+							return (
+								<button
+									key={cat.key}
+									type="button"
+									onClick={() => setActiveCategory(cat.key)}
+									className={cn(
+										"group flex flex-col gap-1.5 rounded-lg border p-2.5 text-left transition-all hover:border-primary/40 hover:bg-muted/60",
+										isActive ? "border-primary/60 bg-primary/5 ring-1 ring-primary/20" : "bg-card",
+									)}
+								>
+									<div className="flex items-center justify-between gap-1">
+										<span className="truncate text-[11px] font-medium leading-tight">{cat.label}</span>
+										{catSuggestions.length > 0 && (
+											<span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+												{catSuggestions.length}
+											</span>
+										)}
+									</div>
+									<div className="flex items-center justify-between">
+										<div className="h-1.5 flex-1 rounded-full bg-muted">
+											<div
+												className={cn("h-full rounded-full transition-all", color.bg)}
+												style={{ width: `${pct}%` }}
+											/>
+										</div>
+										<span className={cn("ml-2 shrink-0 font-bold tabular-nums text-[11px]", color.text)}>
+											{cat.score.score}/{cat.score.max}
+										</span>
+									</div>
+								</button>
+							);
+						})}
+					</div>
+
+					{/* ── Missing keywords chip row (JD mode only) ── */}
+					{result.metadata.jdProvided && result.metadata.keywordsMissing.length > 0 && (
+						<MissingKeywords keywords={result.metadata.keywordsMissing} matched={result.metadata.keywordsMatched} />
+					)}
+
+					{/* ── Selected category detail ── */}
+					{activeCat && (
+						<div className="space-y-3">
+							<div className="flex items-center gap-2">
+								<div className={cn("h-3 w-1 rounded-full", getScoreColor(activeCat.score.max > 0 ? Math.round((activeCat.score.score / activeCat.score.max) * 100) : 0).bg)} />
+								<p className="font-semibold text-sm">{activeCat.label}</p>
+								<span className={cn("ml-auto font-bold tabular-nums text-sm", getScoreColor(activeCat.score.max > 0 ? Math.round((activeCat.score.score / activeCat.score.max) * 100) : 0).text)}>
+									{activeCat.score.score}/{activeCat.score.max}
+								</span>
+							</div>
+							<CategoryDetailPanel
+								category={activeCat}
+								suggestions={activeSuggestions}
+								appliedIds={appliedIds}
+								dismissedIds={dismissedIds}
+								onApply={handleApply}
+								onDismiss={handleDismiss}
+								jdProvided={result.metadata.jdProvided}
+								taxonomyMatchCount={result.metadata.taxonomyMatchCount}
+							/>
+						</div>
+					)}
+
+					{/* ── Score history + re-score ── */}
+					<div className="space-y-2 border-t pt-3">
+						<p className="font-semibold text-xs text-muted-foreground uppercase tracking-wide">
+							<Trans>Score History</Trans>
+						</p>
+						<AtsScoreHistoryChart resumeId={resumeId} />
+						<Button variant="outline" size="sm" onClick={handleScore} disabled={isPending} className="w-full">
+							<ArrowCounterClockwiseIcon className="mr-1.5 size-3.5" />
+							<Trans>Re-score Resume</Trans>
+						</Button>
+					</div>
+				</>
+			)}
+		</div>
 	);
 }
 
-// ---------------------------------------------------------------------------
-// Score ring (large)
-// ---------------------------------------------------------------------------
-
-function ScoreRing({ score }: { score: number }) {
-	const color = getScoreColor(score);
-	const circumference = 2 * Math.PI * 54; // r=54
+// Small score ring used inside the inline panel header
+function ScoreRingSmall({ score }: { score: number }) {
+	const circumference = 2 * Math.PI * 20;
 	const offset = circumference - (score / 100) * circumference;
-
 	return (
-		<div className="relative flex size-28 shrink-0 items-center justify-center">
-			<svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120">
-				<circle cx="60" cy="60" r="54" fill="none" strokeWidth="8" className="stroke-muted" />
+		<div className="relative flex size-12 shrink-0 items-center justify-center">
+			<svg className="absolute inset-0 -rotate-90" viewBox="0 0 48 48">
+				<circle cx="24" cy="24" r="20" fill="none" strokeWidth="4" className="stroke-muted" />
 				<circle
-					cx="60"
-					cy="60"
-					r="54"
+					cx="24"
+					cy="24"
+					r="20"
 					fill="none"
-					strokeWidth="8"
+					strokeWidth="4"
 					strokeDasharray={circumference}
 					strokeDashoffset={offset}
 					strokeLinecap="round"
@@ -537,13 +646,10 @@ function ScoreRing({ score }: { score: number }) {
 					)}
 				/>
 			</svg>
-			<div className="text-center">
-				<span className={cn("font-bold text-3xl tabular-nums", color.text)}>{score}</span>
-				<p className={cn("font-medium text-xs", color.text)}>{getScoreLabel(score)}</p>
-			</div>
 		</div>
 	);
 }
+
 
 // ---------------------------------------------------------------------------
 // Score overview (sidebar compact)
@@ -564,13 +670,16 @@ function ScoreOverview({ result }: { result: ScoringResult }) {
 				{result.overall}
 			</div>
 			<p className={cn("font-medium text-sm", color.text)}>{getScoreLabel(result.overall)}</p>
-			<p className="text-center text-muted-foreground text-xs">
-				{result.metadata.jdProvided ? (
-					<Trans>Scored against your job description</Trans>
-				) : (
-					<Trans>General ATS compatibility score</Trans>
+			<span
+				className={cn(
+					"rounded-full px-2 py-0.5 font-medium text-[10px]",
+					result.metadata.jdProvided
+						? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+						: "bg-muted text-muted-foreground",
 				)}
-			</p>
+			>
+				{result.metadata.jdProvided ? <Trans>Job Match</Trans> : <Trans>General ATS</Trans>}
+			</span>
 		</div>
 	);
 }
@@ -593,6 +702,7 @@ function CategoryDetailPanel({
 	onApply,
 	onDismiss,
 	jdProvided,
+	taxonomyMatchCount,
 }: {
 	category: CategoryInfo;
 	suggestions: Suggestion[];
@@ -601,6 +711,7 @@ function CategoryDetailPanel({
 	onApply: (s: Suggestion) => void;
 	onDismiss: (id: string) => void;
 	jdProvided: boolean;
+	taxonomyMatchCount?: number;
 }) {
 	const passedRules = category.score.details.filter((r) => r.score >= r.maxScore);
 	const deductedRules = category.score.details.filter((r) => r.score < r.maxScore);
@@ -609,6 +720,11 @@ function CategoryDetailPanel({
 
 	return (
 		<div className="space-y-5 pt-4">
+			{/* Keyword scoring curve — only in no-JD mode for the keywordMatch tab */}
+			{category.key === "keywordMatch" && !jdProvided && taxonomyMatchCount !== undefined && (
+				<KeywordCurveChart currentCount={taxonomyMatchCount} />
+			)}
+
 			{/* What's Good */}
 			{passedRules.length > 0 && (
 				<div className="space-y-2">

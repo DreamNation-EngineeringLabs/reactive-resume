@@ -11,12 +11,8 @@ import {
 	TrashSimpleIcon,
 } from "@phosphor-icons/react";
 
-const PO_LOCKED_STATUSES = new Set([
-	"FINALIZED_BY_FACULTY",
-	"RESUBMITTED_TO_PO",
-	"PO_VERIFIED",
-	"APPROVED",
-]);
+const PO_LOCKED_STATUSES = new Set(["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]);
+
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";

@@ -8,7 +8,7 @@ import { BrandIcon } from "../ui/brand-icon";
 export function ErrorScreen({ error, reset }: ErrorComponentProps) {
 	return (
 		<div className="mx-auto flex h-svh max-w-md flex-col items-center justify-center gap-y-4">
-			<BrandIcon variant="logo" className="size-12" />
+			<BrandIcon variant="logo" className="h-10 w-auto" />
 
 			<Alert>
 				<WarningIcon />

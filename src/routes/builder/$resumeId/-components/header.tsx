@@ -12,12 +12,8 @@ import {
 	TrashSimpleIcon,
 } from "@phosphor-icons/react";
 
-const PO_LOCKED_STATUSES = new Set([
-	"FINALIZED_BY_FACULTY",
-	"RESUBMITTED_TO_PO",
-	"PO_VERIFIED",
-	"APPROVED",
-]);
+const PO_LOCKED_STATUSES = new Set(["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]);
+
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -55,7 +51,7 @@ export function BuilderHeader() {
 				<span className="me-2.5 text-muted-foreground">/</span>
 				<h2 className="flex-1 truncate font-medium">{name}</h2>
 				{isLocked && (
-					<span className="ms-2 flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+					<span className="ms-2 flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-semibold text-[11px] text-amber-700">
 						<LockSimpleIcon className="size-3 shrink-0" />
 						<Trans>View Only</Trans>
 					</span>

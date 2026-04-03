@@ -44,17 +44,24 @@ async function handler({ request }: { request: Request }) {
 			organisationUnits?: string[];
 		};
 
-		console.log("[SSO] Decoded JWT payload:", JSON.stringify({
-			email: decoded.email,
-			name: decoded.name,
-			username: decoded.username,
-			userId: decoded.userId,
-			role: decoded.role ?? "NOT_SET",
-			tenantId: decoded.tenantId ?? "NOT_SET",
-			organisationId: decoded.organisationId ?? "NOT_SET",
-			organisationUnits: decoded.organisationUnits ?? "NOT_SET",
-			source_url: decoded.source_url ?? "NOT_SET",
-		}, null, 2));
+		console.log(
+			"[SSO] Decoded JWT payload:",
+			JSON.stringify(
+				{
+					email: decoded.email,
+					name: decoded.name,
+					username: decoded.username,
+					userId: decoded.userId,
+					role: decoded.role ?? "NOT_SET",
+					tenantId: decoded.tenantId ?? "NOT_SET",
+					organisationId: decoded.organisationId ?? "NOT_SET",
+					organisationUnits: decoded.organisationUnits ?? "NOT_SET",
+					source_url: decoded.source_url ?? "NOT_SET",
+				},
+				null,
+				2,
+			),
+		);
 
 		if (!decoded.email) {
 			return errorRedirect("invalid_token_payload");

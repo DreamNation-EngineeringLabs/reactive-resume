@@ -72,7 +72,7 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 			{/* Slide-in panel */}
 			<div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col bg-white shadow-2xl">
 				{/* Header */}
-				<div className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
+				<div className="flex items-start justify-between border-slate-100 border-b px-6 py-5">
 					<div className="flex items-center gap-4">
 						<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 font-bold text-indigo-600">
 							{student.name.charAt(0).toUpperCase()}
@@ -95,19 +95,19 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 				</div>
 
 				{/* Stats row */}
-				<div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/60">
+				<div className="grid grid-cols-3 divide-x divide-slate-100 border-slate-100 border-b bg-slate-50/60">
 					<div className="px-5 py-3">
-						<p className="font-semibold text-slate-400 text-[10px] uppercase tracking-widest">Resumes</p>
+						<p className="font-semibold text-[10px] text-slate-400 uppercase tracking-widest">Resumes</p>
 						<p className="mt-0.5 font-bold text-2xl text-slate-900">{student.resumes.length}</p>
 					</div>
 					<div className="px-5 py-3">
-						<p className="font-semibold text-slate-400 text-[10px] uppercase tracking-widest">Comments</p>
+						<p className="font-semibold text-[10px] text-slate-400 uppercase tracking-widest">Comments</p>
 						<p className="mt-0.5 font-bold text-2xl text-slate-900">
 							{student.resumes.reduce((s, r) => s + r.commentCount, 0)}
 						</p>
 					</div>
 					<div className="px-5 py-3">
-						<p className="font-semibold text-slate-400 text-[10px] uppercase tracking-widest">Avg Score</p>
+						<p className="font-semibold text-[10px] text-slate-400 uppercase tracking-widest">Avg Score</p>
 						<p className="mt-0.5 font-bold text-2xl text-slate-900">
 							{(() => {
 								const scored = student.resumes.filter((r) => r.evaluationScore !== null);
@@ -120,7 +120,7 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 				</div>
 
 				{/* Tabs */}
-				<div className="flex border-b border-slate-100">
+				<div className="flex border-slate-100 border-b">
 					{(["resumes", "timeline"] as const).map((tab) => (
 						<button
 							key={tab}
@@ -129,7 +129,7 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 							className={cn(
 								"flex items-center gap-2 px-5 py-3 font-medium text-sm transition-all",
 								activeTab === tab
-									? "border-b-2 border-indigo-600 text-indigo-600"
+									? "border-indigo-600 border-b-2 text-indigo-600"
 									: "text-slate-500 hover:text-slate-700",
 							)}
 						>
@@ -165,7 +165,7 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 					) : activeTab === "resumes" ? (
 						<div className="space-y-3">
 							{(detail?.resumes ?? []).length === 0 ? (
-								<div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center">
+								<div className="rounded-2xl border border-slate-200 border-dashed p-10 text-center">
 									<FileTextIcon weight="duotone" className="mx-auto mb-3 size-8 text-slate-300" />
 									<p className="font-medium text-slate-400 text-sm">No resumes created yet</p>
 								</div>
@@ -244,7 +244,7 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 
 											{/* Comments thread — expanded */}
 											{isExpanded && (
-												<div className="border-t border-slate-100 bg-slate-50/60 px-5 pb-4 pt-3">
+												<div className="border-slate-100 border-t bg-slate-50/60 px-5 pt-3 pb-4">
 													<p className="mb-3 font-semibold text-slate-500 text-xs uppercase tracking-widest">
 														Comments ({resume.comments.length})
 													</p>
@@ -275,9 +275,7 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 															type="text"
 															placeholder="Add a comment..."
 															value={commentInputs[resume.id] ?? ""}
-															onChange={(e) =>
-																setCommentInputs((prev) => ({ ...prev, [resume.id]: e.target.value }))
-															}
+															onChange={(e) => setCommentInputs((prev) => ({ ...prev, [resume.id]: e.target.value }))}
 															onKeyDown={(e) => {
 																if (e.key === "Enter" && !e.shiftKey) {
 																	e.preventDefault();
@@ -320,10 +318,7 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 						</div>
 					) : (
 						/* Timeline tab */
-						<StudentTimeline
-							entries={(detail?.resumes ?? []).flatMap((r) => r.history)}
-							studentName={student.name}
-						/>
+						<StudentTimeline entries={(detail?.resumes ?? []).flatMap((r) => r.history)} studentName={student.name} />
 					)}
 				</div>
 			</div>

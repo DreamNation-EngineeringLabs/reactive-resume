@@ -19,7 +19,7 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
 		"db:pull": "drizzle-kit pull",
-		"db:push": "drizzle-kit push",
+		"db:push": "tsx scripts/database/crdb-push.ts",
 		"db:studio": "drizzle-kit studio",
 		"dev": "vite dev",
 		"preview": "vite preview",

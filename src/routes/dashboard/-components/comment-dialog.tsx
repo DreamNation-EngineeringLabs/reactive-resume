@@ -39,7 +39,14 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 
 	const handleSubmit = () => {
 		if (!content.trim()) return;
-		createMutation.mutate({ resumeId, studentId, tenantId, content: content.trim(), scope, parentId: replyTo ?? undefined });
+		createMutation.mutate({
+			resumeId,
+			studentId,
+			tenantId,
+			content: content.trim(),
+			scope,
+			parentId: replyTo ?? undefined,
+		});
 	};
 
 	const topLevelComments = comments.filter((c) => !c.parentId);
@@ -82,20 +89,24 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 											<span
 												className={cn(
 													"rounded-full px-2 py-0.5 font-medium text-[10px] uppercase tracking-wider",
-													comment.status === "ADDRESSED" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700",
+													comment.status === "ADDRESSED"
+														? "bg-emerald-50 text-emerald-700"
+														: "bg-blue-50 text-blue-700",
 												)}
 											>
 												{comment.status}
 											</span>
 										</div>
-										<span className="text-slate-400 text-[10px]">{new Date(comment.createdAt).toLocaleDateString()}</span>
+										<span className="text-[10px] text-slate-400">
+											{new Date(comment.createdAt).toLocaleDateString()}
+										</span>
 									</div>
 									<p className="mb-2 text-slate-700 text-sm leading-relaxed">{comment.content}</p>
 									<div className="flex justify-end">
 										<button
 											type="button"
 											onClick={() => setReplyTo(comment.id)}
-											className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800"
+											className="font-bold text-[11px] text-indigo-600 hover:text-indigo-800"
 										>
 											{t`Reply`}
 										</button>
@@ -108,8 +119,10 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 										{replies.map((reply) => (
 											<div key={reply.id} className="rounded-xl bg-slate-50 p-3 text-sm">
 												<div className="mb-1 flex items-center justify-between">
-													<span className="font-semibold text-slate-500 text-[10px] uppercase">{t`Reply`}</span>
-													<span className="text-slate-400 text-[10px]">{new Date(reply.createdAt).toLocaleDateString()}</span>
+													<span className="font-semibold text-[10px] text-slate-500 uppercase">{t`Reply`}</span>
+													<span className="text-[10px] text-slate-400">
+														{new Date(reply.createdAt).toLocaleDateString()}
+													</span>
 												</div>
 												<p className="text-slate-600 text-xs leading-relaxed">{reply.content}</p>
 											</div>
@@ -132,8 +145,10 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 									onClick={() => setScope(s)}
 									className={cn(
 										"rounded-xl px-3 py-1.5 font-semibold text-[11px] uppercase transition-all active:scale-[0.97]",
-										scope === s && !replyTo ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-										replyTo && "opacity-50 pointer-events-none",
+										scope === s && !replyTo
+											? "bg-indigo-600 text-white"
+											: "bg-slate-100 text-slate-600 hover:bg-slate-200",
+										replyTo && "pointer-events-none opacity-50",
 									)}
 								>
 									{s === "INDIVIDUAL" ? "Individual" : "Entire Section"}

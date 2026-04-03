@@ -24,8 +24,7 @@ function RouteComponent() {
 
 	// Collapse sidebar automatically in review/ats-score-detail mode to maximise preview space
 	const isFullBleedPage =
-		location.pathname.includes("/dashboard/review/") ||
-		/\/dashboard\/ats-score\/[^/]+/.test(location.pathname);
+		location.pathname.includes("/dashboard/review/") || /\/dashboard\/ats-score\/[^/]+/.test(location.pathname);
 
 	const isReviewPage = isFullBleedPage;
 

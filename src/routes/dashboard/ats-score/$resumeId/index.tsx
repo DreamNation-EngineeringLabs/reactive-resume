@@ -18,6 +18,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
+import { AtsScoreHistoryChart } from "@/components/ats/score-history-chart";
 import { AtsSuggestionDescription } from "@/components/ats/suggestion-description";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,7 @@ function ATSResultPage() {
 				setAppliedIds(new Set());
 				setDismissedIds(new Set());
 				setSelectedCategory("keywordMatch");
+				queryClient.invalidateQueries(orpc.ats.getHistory.queryOptions({ input: { resumeId: params.resumeId } }));
 			},
 			onError: (error) => toast.error(error.message || t`Failed to score resume. Please try again.`),
 		}),
@@ -278,6 +280,14 @@ function ATSResultPage() {
 								{result.metadata.jdProvided ? <Trans>vs. job description</Trans> : <Trans>general ATS</Trans>}
 							</p>
 						)}
+					</div>
+
+					{/* Score history */}
+					<div className="border-b px-4 py-4">
+						<p className="mb-3 font-semibold text-[10px] text-muted-foreground uppercase tracking-widest">
+							<Trans>History</Trans>
+						</p>
+						<AtsScoreHistoryChart resumeId={params.resumeId} />
 					</div>
 
 					{result ? (

@@ -1,7 +1,7 @@
 import type { ResumeData } from "@/schema/resume/data";
 import type { CategoryScore, RuleResult } from "../index";
 import { estimatePageCount, getAllBullets, stripHtml } from "../index";
-import { countFillerWords } from "./impact-metrics";
+import { countFillerWords, getFillerWords } from "./impact-metrics";
 
 const MAX_SCORE = 10;
 
@@ -126,14 +126,18 @@ export async function scoreBrevity(data: ResumeData): Promise<CategoryScore> {
 	const allFillers = totalFillers + summaryFillers;
 	const br4Score = allFillers === 0 ? 1 : 0;
 
+	// Collect the distinct filler words/phrases found across all content
+	const allContent = [...bullets.map((b) => b.text), stripHtml(data.summary.content)].join(" ");
+	const foundFillerTerms = getFillerWords(allContent);
+
 	details.push({
 		ruleId: "BR-4",
 		ruleName: "No filler words",
 		score: br4Score,
 		maxScore: 1,
 		details:
-			allFillers > 0
-				? `Detected ${allFillers} filler words/phrases. Be more direct.`
+			foundFillerTerms.length > 0
+				? `Detected ${allFillers} filler word${allFillers !== 1 ? "s" : ""}/phrase${allFillers !== 1 ? "s" : ""}: "${foundFillerTerms.slice(0, 6).join('", "')}". Replace with direct, concrete language.`
 				: "No unnecessary filler language detected.",
 	});
 

@@ -405,12 +405,7 @@ export const resumeService = {
 		// If trying to unlock, check whether the resume is in a PO-controlled state.
 		// Students are not permitted to unlock resumes that the placement officer owns.
 		if (!input.isLocked) {
-			const PO_LOCKED_STATUSES = new Set([
-				"FINALIZED_BY_FACULTY",
-				"RESUBMITTED_TO_PO",
-				"PO_VERIFIED",
-				"APPROVED",
-			]);
+			const PO_LOCKED_STATUSES = new Set(["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]);
 
 			const [current] = await db
 				.select({ reviewStatus: schema.resume.reviewStatus })

@@ -183,10 +183,7 @@ export const resume = pg.pgTable(
 			.uuid("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		reviewStatus: pg
-			.text("review_status")
-			.notNull()
-			.default("DRAFT"), // DRAFT | SUBMITTED_TO_FACULTY | FACULTY_REVISION_REQUESTED | FACULTY_VERIFIED | FINALIZED_BY_FACULTY | PO_REVISION_REQUESTED | RESUBMITTED_TO_PO | APPROVED
+		reviewStatus: pg.text("review_status").notNull().default("DRAFT"), // DRAFT | SUBMITTED_TO_FACULTY | FACULTY_REVISION_REQUESTED | FACULTY_VERIFIED | FINALIZED_BY_FACULTY | SUBMITTED_TO_PO | PO_REVISION_REQUESTED | RESUBMITTED_TO_PO | APPROVED
 		locked: pg.boolean("locked").notNull().default(false),
 		unlockReason: pg.text("unlock_reason"),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -250,7 +247,6 @@ export const userInfo = pg.pgTable(
 			.defaultNow()
 			.$onUpdate(() => /* @__PURE__ */ new Date()),
 	},
-	(t) => [pg.index().on(t.userId)],
 );
 
 export const apikey = pg.pgTable(
@@ -466,4 +462,103 @@ export const resumeHistory = pg.pgTable(
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [pg.index().on(t.resumeId), pg.index().on(t.studentId), pg.index().on(t.tenantId)],
+);
+
+export const poSectionReview = pg.pgTable(
+	"po_section_review",
+	{
+		id: pg
+			.uuid("id")
+			.notNull()
+			.primaryKey()
+			.$defaultFn(() => generateId()),
+		/** eng-labs section / org-unit ID */
+		sectionId: pg.text("section_id").notNull(),
+		tenantId: pg.text("tenant_id").notNull(),
+		/** eng-labs ID of the faculty member who submitted the section (optional — query by sectionId instead) */
+		facultyId: pg.text("faculty_id"),
+		/** eng-labs ID of the PO who is sending the review back */
+		poId: pg.text("po_id").notNull(),
+		reviewNotes: pg.text("review_notes").notNull(),
+		/** URL of voice note recorded/uploaded by PO (optional) */
+		voiceNoteUrl: pg.text("voice_note_url"),
+		/** Snapshot of resume IDs that were part of this submission batch */
+		resumeIds: pg.text("resume_ids").array().notNull().default([]),
+		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [
+		pg.index().on(t.sectionId),
+		pg.index().on(t.tenantId),
+		pg.index().on(t.facultyId),
+		// Most queries fetch latest review for a section
+		pg.index().on(t.sectionId, t.createdAt.desc()),
+	],
+);
+
+// ─── ATS Score History ───────────────────────────────────────────────────────
+
+/** Snapshot of one ATS scoring run — stored so we can show score progression over time. */
+export type AtsCategorySnapshot = {
+	score: number;
+	max: number;
+};
+
+export type AtsMajorImprovement = {
+	/** Category key, e.g. "keywordMatch" */
+	category: string;
+	/** Human-readable label, e.g. "Keyword Match" */
+	label: string;
+	/** Points gained in this category vs previous run (positive = improvement) */
+	delta: number;
+};
+
+export const atsScoreHistory = pg.pgTable(
+	"ats_score_history",
+	{
+		id: pg
+			.uuid("id")
+			.notNull()
+			.primaryKey()
+			.$defaultFn(() => generateId()),
+
+		resumeId: pg
+			.uuid("resume_id")
+			.notNull()
+			.references(() => resume.id, { onDelete: "cascade" }),
+
+		userId: pg
+			.uuid("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+
+		/** 0-100 overall ATS score for this run */
+		overallScore: pg.integer("overall_score").notNull(),
+
+		/** Per-category scores as a JSON map keyed by category name */
+		categoryScores: pg.jsonb("category_scores").notNull().$type<Record<string, AtsCategorySnapshot>>(),
+
+		/**
+		 * Point change vs the immediately previous run for this resume.
+		 * Null if this is the first recorded score.
+		 */
+		deltaScore: pg.integer("delta_score"),
+
+		/**
+		 * Top improvements compared to the previous run (categories that gained ≥ 1 pt).
+		 * Empty array if this is the first run or scores did not improve.
+		 */
+		majorImprovements: pg.jsonb("major_improvements").notNull().$type<AtsMajorImprovement[]>().default([]),
+
+		/** Whether a job description was provided for this scoring run */
+		jobDescriptionProvided: pg.boolean("job_description_provided").notNull().default(false),
+
+		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [
+		pg.index().on(t.resumeId),
+		pg.index().on(t.userId),
+		// Most queries fetch history ordered by time
+		pg.index().on(t.resumeId, t.createdAt.asc()),
+		pg.index().on(t.userId, t.createdAt.desc()),
+	],
 );

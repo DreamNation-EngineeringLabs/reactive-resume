@@ -21,8 +21,8 @@ export function DashboardHeader({ title, description, icon: IconComponent, class
 					</div>
 				)}
 				<div className="flex flex-col">
-					<h1 className="font-black text-slate-900 text-3xl tracking-tight">{title}</h1>
-					{description && <p className="text-slate-500 font-medium text-sm mt-1">{description}</p>}
+					<h1 className="font-black text-3xl text-slate-900 tracking-tight">{title}</h1>
+					{description && <p className="mt-1 font-medium text-slate-500 text-sm">{description}</p>}
 				</div>
 			</div>
 			{children && <div className="flex items-center gap-x-2">{children}</div>}

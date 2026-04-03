@@ -18,7 +18,7 @@ function RouteComponent() {
 				className="mx-auto flex h-svh w-dvw max-w-sm flex-col justify-center space-y-6 px-4 xs:px-0"
 				style={isChildLoading ? { visibility: "hidden", position: "absolute" } : undefined}
 			>
-				<BrandIcon className="mb-4 size-20 self-center" />
+				<BrandIcon className="mb-4 h-14 w-auto self-center" />
 				<Outlet />
 			</div>
 		</AuthLayoutContext.Provider>

@@ -90,6 +90,55 @@ function containsWeakPhrase(bullet: string): string | null {
 	return null;
 }
 
+/**
+ * Find bullets that start with the same first word (action verb or otherwise).
+ * Returns a map of firstWord → count, filtered to those appearing ≥ threshold times.
+ */
+export function findRepetitiveOpeners(bullets: string[], threshold = 3): Map<string, number> {
+	const counts = new Map<string, number>();
+	for (const b of bullets) {
+		const first = b.trim().split(/\s+/)[0]?.toLowerCase();
+		if (!first || first.length < 3) continue;
+		counts.set(first, (counts.get(first) ?? 0) + 1);
+	}
+	const repeated = new Map<string, number>();
+	for (const [word, count] of counts) {
+		if (count >= threshold) repeated.set(word, count);
+	}
+	return repeated;
+}
+
+/**
+ * Compute Jaccard similarity between two strings (bag of words).
+ * Returns a value 0–1 where 1 = identical word sets.
+ */
+function jaccardSimilarity(a: string, b: string): number {
+	const setA = new Set(a.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
+	const setB = new Set(b.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
+	if (setA.size === 0 || setB.size === 0) return 0;
+	let intersection = 0;
+	for (const w of setA) {
+		if (setB.has(w)) intersection++;
+	}
+	return intersection / (setA.size + setB.size - intersection);
+}
+
+/**
+ * Find pairs of bullets with Jaccard similarity above the given threshold.
+ * Returns the indices of the near-duplicate pairs.
+ */
+export function findNearDuplicateBullets(bullets: string[], threshold = 0.65): Array<[number, number]> {
+	const pairs: Array<[number, number]> = [];
+	for (let i = 0; i < bullets.length; i++) {
+		for (let j = i + 1; j < bullets.length; j++) {
+			if (jaccardSimilarity(bullets[i], bullets[j]) >= threshold) {
+				pairs.push([i, j]);
+			}
+		}
+	}
+	return pairs;
+}
+
 /** Check for filler words */
 function countFillerWords(bullet: string): number {
 	const lower = bullet.toLowerCase();
@@ -108,8 +157,44 @@ function countFillerWords(bullet: string): number {
 	return count;
 }
 
+/**
+ * Return the distinct filler words/phrases found in the given text.
+ * Deduplicates — each term appears at most once regardless of how many times it occurs.
+ */
+export function getFillerWords(text: string): string[] {
+	const lower = text.toLowerCase();
+	const found: string[] = [];
+
+	for (const word of fillerData.words) {
+		const regex = new RegExp(`\\b${word}\\b`, "gi");
+		if (regex.test(lower)) found.push(word);
+	}
+
+	for (const phrase of fillerData.phrases) {
+		if (lower.includes(phrase)) found.push(phrase);
+	}
+
+	return [...new Set(found)];
+}
+
 const MIN_EXPECTED_BULLETS = 6;
-const MINIMUM_EVALUABLE_BULLETS = 4;
+
+/**
+ * Single graduated quality cap based on bullet count.
+ * Replaces the previous dual-penalty (thinBulletCap × contentPenalty) which double-penalized
+ * resumes with < 5 bullets. Now uses one transparent cap:
+ *
+ * 0 bullets → 0/20  |  1 → 2/20  |  2 → 5/20  |  3 → 9/20  |  4 → 13/20  |  5 → 17/20  |  6+ → 20/20
+ */
+function getBulletCountCap(count: number): number {
+	if (count === 0) return 0;
+	if (count === 1) return 0.1;
+	if (count === 2) return 0.25;
+	if (count === 3) return 0.45;
+	if (count === 4) return 0.65;
+	if (count === 5) return 0.85;
+	return 1.0;
+}
 
 export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
@@ -126,20 +211,17 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 		return { score: 0, max: MAX_SCORE, details };
 	}
 
-	/** Below 4 bullets, cap the maximum category score proportionally (still evaluate quality of what exists). */
-	const thinBulletCap = bullets.length < MINIMUM_EVALUABLE_BULLETS ? bullets.length / MINIMUM_EVALUABLE_BULLETS : 1;
-
-	// Penalize proportionally if content is thin (4-5 bullets)
-	const contentPenalty = bullets.length < MIN_EXPECTED_BULLETS ? bullets.length / MIN_EXPECTED_BULLETS : 1;
+	const bulletCap = getBulletCountCap(bullets.length);
+	const maxScoreForBullets = Math.round(MAX_SCORE * bulletCap);
 
 	// IM-1: Action verb usage (5 pts)
 	const bulletsWithVerbs = bullets.filter((b) => startsWithActionVerb(b.text));
 	const verbRatio = bulletsWithVerbs.length / bullets.length;
 	const im1Score = Math.round(verbRatio * 5);
 
-	const thinNote =
-		thinBulletCap < 1
-			? `Only ${bullets.length} bullet(s) — max impact score is scaled until you reach ${MINIMUM_EVALUABLE_BULLETS}+. `
+	const capNote =
+		bulletCap < 1
+			? `Only ${bullets.length} bullet${bullets.length !== 1 ? "s" : ""} found — max Impact score is ${maxScoreForBullets}/${MAX_SCORE} until you reach ${MIN_EXPECTED_BULLETS}+ bullets. `
 			: "";
 
 	details.push({
@@ -147,7 +229,7 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 		ruleName: "Action verb usage",
 		score: im1Score,
 		maxScore: 5,
-		details: `${thinNote}${bulletsWithVerbs.length}/${bullets.length} bullets start with action verbs (${Math.round(verbRatio * 100)}%).`,
+		details: `${capNote}${bulletsWithVerbs.length}/${bullets.length} bullets start with action verbs (${Math.round(verbRatio * 100)}%).`,
 	});
 
 	// IM-2: Quantified metrics (5 pts)
@@ -163,17 +245,17 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 		details: `${bulletsWithMetrics.length}/${bullets.length} bullets contain quantified metrics (${Math.round(metricRatio * 100)}%).`,
 	});
 
-	// IM-3: XYZ formula compliance (5 pts)
+	// IM-3: XYZ formula compliance (3 pts — reallocated 2pts to IM-6 Content Variety)
 	const xyzBullets = bullets.filter((b) => isXYZCompliant(b.text));
 	const xyzRatio = xyzBullets.length / bullets.length;
-	const im3Score = Math.round(xyzRatio * 5);
+	const im3Score = Math.round(xyzRatio * 3);
 
 	details.push({
 		ruleId: "IM-3",
 		ruleName: "XYZ formula compliance",
 		score: im3Score,
-		maxScore: 5,
-		details: `${xyzBullets.length}/${bullets.length} bullets follow the XYZ formula (${Math.round(xyzRatio * 100)}%).`,
+		maxScore: 3,
+		details: `${xyzBullets.length}/${bullets.length} bullets follow the XYZ formula (action verb + metric + method) (${Math.round(xyzRatio * 100)}%).`,
 	});
 
 	// IM-4: No weak phrases (3 pts) — deduct per weak phrase found
@@ -215,8 +297,41 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 				: "All bullets have specific, concrete content.",
 	});
 
-	const rawWeighted = (im1Score + im2Score + im3Score + im4Score + im5Score) * contentPenalty;
-	const totalScore = Math.round(Math.min(MAX_SCORE * thinBulletCap, rawWeighted));
+	// IM-6: Content variety (2 pts)
+	// Checks for (a) repetitive openers — same first word ≥3 bullets — and (b) near-duplicate bullets (Jaccard ≥0.65)
+	const bulletTexts = bullets.map((b) => b.text);
+	const repeatedOpeners = findRepetitiveOpeners(bulletTexts, 3);
+	const duplicatePairs = findNearDuplicateBullets(bulletTexts, 0.65);
+
+	const openerPenalty = repeatedOpeners.size > 0 ? 1 : 0;
+	const duplicatePenalty = duplicatePairs.length > 0 ? 1 : 0;
+	const im6Score = Math.max(0, 2 - openerPenalty - duplicatePenalty);
+
+	const im6Issues: string[] = [];
+	if (repeatedOpeners.size > 0) {
+		const examples = [...repeatedOpeners.entries()]
+			.map(([word, count]) => `"${word}" (${count}×)`)
+			.join(", ");
+		im6Issues.push(`Repetitive openers: ${examples} — vary your starting verb to show breadth`);
+	}
+	if (duplicatePairs.length > 0) {
+		im6Issues.push(
+			`${duplicatePairs.length} near-duplicate bullet${duplicatePairs.length > 1 ? "s" : ""} detected — each bullet should describe a distinct accomplishment`,
+		);
+	}
+
+	details.push({
+		ruleId: "IM-6",
+		ruleName: "Content variety",
+		score: im6Score,
+		maxScore: 2,
+		details:
+			im6Issues.length > 0
+				? im6Issues.join(". ")
+				: "Good variety — no repetitive openers or near-duplicate bullets found.",
+	});
+
+	const totalScore = Math.round(Math.min(maxScoreForBullets, im1Score + im2Score + im3Score + im4Score + im5Score + im6Score));
 	return { score: totalScore, max: MAX_SCORE, details };
 }
 

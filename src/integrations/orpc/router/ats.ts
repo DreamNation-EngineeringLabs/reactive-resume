@@ -4,6 +4,7 @@ import type { ResumeData } from "@/schema/resume/data";
 import { protectedProcedure } from "../context";
 import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
 import { scoreResume } from "../services/ats";
+import { getAtsAdminStats, getAtsScoreHistory, saveAtsScoreEntry } from "../services/ats/history";
 import { editSection } from "../services/ats/section-editor";
 
 export const atsRouter = {
@@ -61,6 +62,11 @@ export const atsRouter = {
 				// Consume credit after successful scoring
 				await consumePlacementCredit(context.user.email, "ATS_SCORE");
 
+				// Persist to history (fire-and-forget — don't fail the response if this errors)
+				saveAtsScoreEntry(input.resumeId, context.user.id, result).catch((err) => {
+					console.error("[ATS History] Failed to save score entry:", err);
+				});
+
 				return result;
 			} catch (error) {
 				if (error instanceof Error && error.message.includes("OPENAI_API_KEY")) {
@@ -68,6 +74,49 @@ export const atsRouter = {
 				}
 				throw error;
 			}
+		}),
+
+	getHistory: protectedProcedure
+		.route({
+			method: "GET",
+			path: "/ats/score/{resumeId}/history",
+			tags: ["ATS"],
+			operationId: "getAtsScoreHistory",
+			summary: "Get ATS score history for a resume",
+			description:
+				"Returns all recorded ATS scoring runs for the given resume, oldest first, with delta scores and major improvements vs the previous run.",
+			successDescription: "Ordered list of ATS scoring history entries.",
+		})
+		.input(
+			z.object({
+				resumeId: z.string().describe("The ID of the resume."),
+			}),
+		)
+		.errors({
+			NOT_FOUND: { message: "Resume not found.", status: 404 },
+		})
+		.handler(async ({ context, input }) => {
+			// Verify resume ownership
+			const { resumeService } = await import("../services/resume");
+			await resumeService.getById({ id: input.resumeId, userId: context.user.id });
+
+			return getAtsScoreHistory(input.resumeId, context.user.id);
+		}),
+
+	adminStats: protectedProcedure
+		.route({
+			method: "GET",
+			path: "/ats/admin/stats",
+			tags: ["ATS"],
+			operationId: "getAtsAdminStats",
+			summary: "Get aggregate ATS improvement statistics (admin)",
+			description:
+				"Returns platform-wide ATS scoring statistics: total checks, average improvement, score distribution, top improved categories, and daily activity.",
+			successDescription: "Aggregate ATS statistics for the admin dashboard.",
+		})
+		.input(z.object({}))
+		.handler(async () => {
+			return getAtsAdminStats();
 		}),
 
 	edit: protectedProcedure

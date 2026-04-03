@@ -14,8 +14,8 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
-import { cn } from "@/utils/style";
 import { getEngLabsUserId, getTenantId } from "@/utils/sso-context";
+import { cn } from "@/utils/style";
 import { ChecklistsTab } from "../-components/checklists-tab";
 import { DashboardHeader } from "../-components/header";
 import { getEvaluationBadgeClass } from "../-components/score-helpers";
@@ -57,7 +57,6 @@ function RouteComponent() {
 		return dashboard.stats;
 	}, [dashboard]);
 
-
 	if (isLoading) {
 		return (
 			<div className="space-y-8">
@@ -86,7 +85,7 @@ function RouteComponent() {
 			<DashboardHeader icon={ChartLineIcon} title={t`Feedback Summary`} />
 
 			{/* Tab bar */}
-			<div className="flex gap-1 border-b border-slate-100">
+			<div className="flex gap-1 border-slate-100 border-b">
 				{tabs.map((tab) => (
 					<button
 						key={tab.id}
@@ -105,85 +104,83 @@ function RouteComponent() {
 				))}
 			</div>
 
-			{activeTab === "checklists" && (
-				<ChecklistsTab tenantId={tenantId} onCreateNew={() => {}} />
-			)}
+			{activeTab === "checklists" && <ChecklistsTab tenantId={tenantId} onCreateNew={() => {}} />}
 
-			{activeTab === "overview" && (<div className="space-y-8">
+			{activeTab === "overview" && (
+				<div className="space-y-8">
+					{/* Enrollment context banner */}
+					{enrollment && (
+						<div className="flex flex-wrap items-center gap-3 rounded-2xl bg-indigo-50 px-5 py-3">
+							<BookOpenIcon weight="duotone" className="size-5 shrink-0 text-indigo-500" />
+							<div className="flex flex-wrap gap-2">
+								{enrollment.parentName && (
+									<span className="flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 font-semibold text-indigo-800 text-xs">
+										<span className="text-[10px] text-indigo-400 uppercase tracking-widest">Package</span>
+										{enrollment.parentName}
+									</span>
+								)}
+								<span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 font-semibold text-indigo-700 text-xs shadow-sm">
+									<span className="text-[10px] text-indigo-400 uppercase tracking-widest">
+										{enrollment.unitType.charAt(0) + enrollment.unitType.slice(1).toLowerCase()}
+									</span>
+									{enrollment.unitName}
+								</span>
+							</div>
+						</div>
+					)}
 
-			{/* Enrollment context banner */}
-			{enrollment && (
-				<div className="flex flex-wrap items-center gap-3 rounded-2xl bg-indigo-50 px-5 py-3">
-					<BookOpenIcon weight="duotone" className="size-5 shrink-0 text-indigo-500" />
-					<div className="flex flex-wrap gap-2">
-						{enrollment.parentName && (
-							<span className="flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-indigo-800 text-xs font-semibold">
-								<span className="text-indigo-400 text-[10px] uppercase tracking-widest">Package</span>
-								{enrollment.parentName}
-							</span>
+					{/* Stats Cards */}
+					<div className="grid gap-4 md:grid-cols-3">
+						<StatCard
+							label={t`My Resumes`}
+							value={stats.totalResumes}
+							iconBg="bg-indigo-50"
+							iconColor="text-indigo-600"
+							icon={<FileTextIcon weight="duotone" className="size-5" />}
+						/>
+						<StatCard
+							label={t`Feedback Received`}
+							value={stats.totalComments}
+							iconBg="bg-sky-50"
+							iconColor="text-sky-600"
+							icon={<ChartLineIcon weight="duotone" className="size-5" />}
+						/>
+						<ScoreCard
+							label={t`Average Score`}
+							value={stats.averageScore}
+							iconBg="bg-emerald-50"
+							iconColor="text-emerald-600"
+							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
+						/>
+					</div>
+
+					{/* Resumes */}
+					<div className="space-y-4">
+						<h3 className="font-semibold text-lg text-slate-900">Your Resumes</h3>
+						{dashboard?.resumes && dashboard.resumes.length > 0 ? (
+							<div className="space-y-3">
+								{dashboard.resumes.map((resume) => (
+									<ResumeCard
+										key={resume.id}
+										resume={resume}
+										engLabsUserId={engLabsUserId}
+										tenantId={tenantId}
+										isExpanded={expandedResumeId === resume.id}
+										onToggle={() => setExpandedResumeId(expandedResumeId === resume.id ? null : resume.id)}
+									/>
+								))}
+							</div>
+						) : (
+							<div className="rounded-2xl bg-white p-10 text-center shadow-sm">
+								<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+									<FileTextIcon weight="duotone" className="size-7" />
+								</div>
+								<p className="font-medium text-slate-500">No resumes created yet</p>
+							</div>
 						)}
-						<span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-indigo-700 text-xs font-semibold shadow-sm">
-							<span className="text-indigo-400 text-[10px] uppercase tracking-widest">
-								{enrollment.unitType.charAt(0) + enrollment.unitType.slice(1).toLowerCase()}
-							</span>
-							{enrollment.unitName}
-						</span>
 					</div>
 				</div>
 			)}
-
-
-			{/* Stats Cards */}
-			<div className="grid gap-4 md:grid-cols-3">
-				<StatCard
-					label={t`My Resumes`}
-					value={stats.totalResumes}
-					iconBg="bg-indigo-50"
-					iconColor="text-indigo-600"
-					icon={<FileTextIcon weight="duotone" className="size-5" />}
-				/>
-				<StatCard
-					label={t`Feedback Received`}
-					value={stats.totalComments}
-					iconBg="bg-sky-50"
-					iconColor="text-sky-600"
-					icon={<ChartLineIcon weight="duotone" className="size-5" />}
-				/>
-				<ScoreCard
-					label={t`Average Score`}
-					value={stats.averageScore}
-					iconBg="bg-emerald-50"
-					iconColor="text-emerald-600"
-					icon={<CheckCircleIcon weight="duotone" className="size-5" />}
-				/>
-			</div>
-
-			{/* Resumes */}
-			<div className="space-y-4">
-				<h3 className="font-semibold text-lg text-slate-900">Your Resumes</h3>
-				{dashboard?.resumes && dashboard.resumes.length > 0 ? (
-					<div className="space-y-3">
-						{dashboard.resumes.map((resume) => (
-							<ResumeCard
-								key={resume.id}
-								resume={resume}
-								engLabsUserId={engLabsUserId}
-								tenantId={tenantId}
-								isExpanded={expandedResumeId === resume.id}
-								onToggle={() => setExpandedResumeId(expandedResumeId === resume.id ? null : resume.id)}
-							/>
-						))}
-					</div>
-				) : (
-					<div className="rounded-2xl bg-white p-10 text-center shadow-sm">
-						<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-							<FileTextIcon weight="duotone" className="size-7" />
-						</div>
-						<p className="font-medium text-slate-500">No resumes created yet</p>
-					</div>
-				)}
-			</div>
-			</div>)}
 		</div>
 	);
 }
@@ -242,9 +239,7 @@ function ResumeCard({
 	const submitMutation = useMutation({
 		...orpc.resume.dashboard.submitResume.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries(
-				orpc.resume.dashboard.student.queryOptions({ input: { userId: "" } }),
-			);
+			queryClient.invalidateQueries(orpc.resume.dashboard.student.queryOptions({ input: { userId: "" } }));
 		},
 	});
 
@@ -302,7 +297,7 @@ function ResumeCard({
 
 			{/* Expanded: Submit + Comments */}
 			{isExpanded && (
-				<div className="border-t border-slate-100 bg-slate-50/60 px-5 pb-5 pt-4">
+				<div className="border-slate-100 border-t bg-slate-50/60 px-5 pt-4 pb-5">
 					{canSubmit && (
 						<div className="mb-4 flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
 							<div>
