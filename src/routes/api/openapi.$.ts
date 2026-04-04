@@ -42,7 +42,7 @@ async function handler({ request }: { request: Request }) {
 				license: { name: "MIT", url: "https://github.com/amruthpillai/reactive-resume/blob/main/LICENSE" },
 				contact: { name: "Amruth Pillai", email: "hello@amruthpillai.com", url: "https://amruthpillai.com" },
 			},
-			servers: [{ url: `${env.APP_URL}/api/openapi` }],
+			servers: [{ url: `${env.APP_URL}/resume/api/openapi` }],
 			externalDocs: { url: "https://docs.rxresu.me", description: "Reactive Resume Documentation" },
 			commonSchemas: {
 				ResumeData: { schema: resumeDataSchema },
@@ -65,7 +65,7 @@ async function handler({ request }: { request: Request }) {
 	}
 
 	const { response } = await openAPIHandler.handle(request, {
-		prefix: "/api/openapi",
+		prefix: "/resume/api/openapi",
 		context: { locale, reqHeaders: request.headers },
 	});
 

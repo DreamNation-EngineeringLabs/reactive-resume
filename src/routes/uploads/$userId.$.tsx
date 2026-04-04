@@ -56,7 +56,8 @@ async function handler({ request }: { request: Request }) {
  */
 function parseRouteParams(url: string): { userId: string | undefined; filePath: string | undefined } {
 	const pathname = new URL(url).pathname;
-	const pathAfterUploads = pathname.replace("/uploads/", "");
+	const uploadsIndex = pathname.indexOf("/uploads/");
+	const pathAfterUploads = uploadsIndex !== -1 ? pathname.slice(uploadsIndex + "/uploads/".length) : pathname;
 	const firstSlashIndex = pathAfterUploads.indexOf("/");
 
 	if (firstSlashIndex === -1) {

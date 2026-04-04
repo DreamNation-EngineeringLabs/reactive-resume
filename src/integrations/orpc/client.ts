@@ -29,7 +29,7 @@ export const getORPCClient = createIsomorphicFn()
 	})
 	.client((): RouterClient<typeof router> => {
 		const link = new RPCLink({
-			url: `${window.location.origin}/api/rpc`,
+			url: `${window.location.origin}/resume/api/rpc`,
 			fetch: (request, init) => fetch(request, { ...init, credentials: "include" }),
 			plugins: [
 				new BatchLinkPlugin({

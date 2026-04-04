@@ -16,7 +16,7 @@ const rpcHandler = new RPCHandler(router, {
 
 async function handler({ request }: { request: Request }) {
 	const { response } = await rpcHandler.handle(request, {
-		prefix: "/api/rpc",
+		prefix: "/resume/api/rpc",
 		context: { locale: await getLocale() },
 	});
 

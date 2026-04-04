@@ -25,7 +25,7 @@ export function ThemeProvider({ children, theme }: Props) {
 		if (!playSound) return;
 
 		try {
-			const soundClip = value === "dark" ? "/sounds/switch-off.mp3" : "/sounds/switch-on.mp3";
+			const soundClip = value === "dark" ? "/resume/sounds/switch-off.mp3" : "/resume/sounds/switch-on.mp3";
 			const audio = new Audio(soundClip);
 			await audio.play();
 		} catch {

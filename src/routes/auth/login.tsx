@@ -17,6 +17,9 @@ import { useAuthLayout } from "./-components/auth-layout-context";
 export const Route = createFileRoute("/auth/login")({
 	component: RouteComponent,
 	beforeLoad: async ({ context }) => {
+		if (context.flags.ssoOnly) {
+			throw redirect({ href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`, replace: true });
+		}
 		if (context.session) throw redirect({ to: "/dashboard", replace: true });
 		return { session: null };
 	},

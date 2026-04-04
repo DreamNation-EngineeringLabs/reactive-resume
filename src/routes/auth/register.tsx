@@ -16,6 +16,9 @@ import { useSignalAuthReady } from "./-components/auth-layout-context";
 export const Route = createFileRoute("/auth/register")({
 	component: RouteComponent,
 	beforeLoad: async ({ context }) => {
+		if (context.flags.ssoOnly) {
+			throw redirect({ href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`, replace: true });
+		}
 		if (context.session) throw redirect({ to: "/dashboard", replace: true });
 		if (context.flags.disableSignups) throw redirect({ to: "/auth/login", replace: true });
 		return { session: null };

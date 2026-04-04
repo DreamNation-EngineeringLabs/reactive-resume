@@ -7,6 +7,8 @@ import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 const config = defineConfig({
+	base: "/resume/",
+
 	define: {
 		__APP_VERSION__: JSON.stringify(process.env.npm_package_version),
 	},
@@ -35,7 +37,7 @@ const config = defineConfig({
 	plugins: [
 		lingui(),
 		tailwindcss(),
-		nitro(),
+		nitro({ baseURL: "/resume" }),
 		tanstackStart({ router: { semicolons: true, quoteStyle: "double" } }),
 		viteReact({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }),
 		VitePWA({
@@ -55,8 +57,8 @@ const config = defineConfig({
 				name: "Resume Builder",
 				short_name: "Resume Builder",
 				description: "Create professional resumes with ease.",
-				id: "/?source=pwa",
-				start_url: "/?source=pwa",
+				id: "/resume/?source=pwa",
+				start_url: "/resume/?source=pwa",
 				display: "standalone",
 				orientation: "portrait",
 				theme_color: "#09090B",

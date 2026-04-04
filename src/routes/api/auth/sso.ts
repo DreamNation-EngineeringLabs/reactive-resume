@@ -14,7 +14,7 @@ async function handler({ request }: { request: Request }) {
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: `/auth/login?error=${error}&trace=${encodeURIComponent(traceId)}`,
+				Location: `/resume/auth/login?error=${error}&trace=${encodeURIComponent(traceId)}`,
 			},
 		});
 	};
@@ -123,12 +123,12 @@ async function handler({ request }: { request: Request }) {
 		const roleUpper = ssoContext.role?.toUpperCase();
 		const destination =
 			roleUpper === "INSTRUCTOR"
-				? "/dashboard/faculty?tab=overview"
+				? "/resume/dashboard/faculty?tab=overview"
 				: roleUpper === "PLACEMENT_OFFICER"
-					? "/dashboard/placement-officer?tab=overview"
+					? "/resume/dashboard/placement-officer?tab=overview"
 					: roleUpper === "ADMIN"
-						? "/dashboard/admin"
-						: "/dashboard/resumes?sort=lastUpdatedAt";
+						? "/resume/dashboard/admin"
+						: "/resume/dashboard/resumes?sort=lastUpdatedAt";
 
 		const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head><body>

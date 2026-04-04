@@ -34,7 +34,7 @@ const getAuthConfig = () => {
 			tokenUrl: env.OAUTH_TOKEN_URL,
 			userInfoUrl: env.OAUTH_USER_INFO_URL,
 			scopes: env.OAUTH_SCOPES,
-			redirectURI: `${env.APP_URL}/api/auth/oauth2/callback/custom`,
+			redirectURI: `${env.APP_URL}/resume/api/auth/oauth2/callback/custom`,
 			mapProfileToUser: async (profile) => {
 				if (!profile.email) {
 					throw new BetterAuthError(
@@ -64,6 +64,7 @@ const getAuthConfig = () => {
 		appName: "Resume Builder",
 
 		baseURL: env.APP_URL,
+		basePath: "/resume/api/auth",
 		secret: env.AUTH_SECRET,
 
 		database: drizzleAdapter(db, { schema, provider: "pg" }),

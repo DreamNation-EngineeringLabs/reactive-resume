@@ -83,6 +83,7 @@ export const env = createEnv({
 		FLAG_DISABLE_SIGNUPS: z.stringbool().default(false),
 		FLAG_DISABLE_EMAIL_AUTH: z.stringbool().default(false),
 		FLAG_DISABLE_IMAGE_PROCESSING: z.stringbool().default(false),
+		FLAG_SSO_ONLY: z.stringbool().default(false),
 
 		// AI Integration (OpenAI)
 		OPENAI_API_KEY: z.string().min(1).optional(),

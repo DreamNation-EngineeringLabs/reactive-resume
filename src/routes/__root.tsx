@@ -47,11 +47,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			links: [
 				{ rel: "stylesheet", href: appCss },
 				// Icons
-				{ rel: "icon", href: "/favicon.png?v=polymath", type: "image/png", sizes: "60x60" },
-				{ rel: "shortcut icon", href: "/favicon.png?v=polymath", type: "image/png" },
-				{ rel: "apple-touch-icon", href: "/favicon.png?v=polymath", type: "image/png" },
+				{ rel: "icon", href: "/resume/favicon.png?v=polymath", type: "image/png", sizes: "60x60" },
+				{ rel: "shortcut icon", href: "/resume/favicon.png?v=polymath", type: "image/png" },
+				{ rel: "apple-touch-icon", href: "/resume/favicon.png?v=polymath", type: "image/png" },
 				// Manifest
-				{ rel: "manifest", href: "/manifest.webmanifest", crossOrigin: "use-credentials" },
+				{ rel: "manifest", href: "/resume/manifest.webmanifest", crossOrigin: "use-credentials" },
 			],
 			meta: [
 				{ title },
@@ -76,7 +76,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 					children: `
 						if('serviceWorker' in navigator) {
 							window.addEventListener('load', () => {
-								navigator.serviceWorker.register('/sw.js', { scope: '/' })
+								navigator.serviceWorker.register('/resume/sw.js', { scope: '/resume/' })
 							})
 						}
 					`,

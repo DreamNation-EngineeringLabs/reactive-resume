@@ -72,7 +72,7 @@ function ATSResultPage() {
 
 	// Printer iframe URL — real resume rendered at /printer/:id?token=...
 	// Use relative URL (works in both dev and prod)
-	const iframeUrl = `/printer/${params.resumeId}?token=${printerToken}`;
+	const iframeUrl = `/resume/printer/${params.resumeId}?token=${printerToken}`;
 
 	const storageKey = `ats-score-${params.resumeId}`;
 

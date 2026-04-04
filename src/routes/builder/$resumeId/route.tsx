@@ -32,7 +32,12 @@ export const Route = createFileRoute("/builder/$resumeId")({
 		middlewares: [stripSearchParams({ openAts: false })],
 	},
 	beforeLoad: async ({ context }) => {
-		if (!context.session) throw redirect({ to: "/auth/login", replace: true });
+		if (!context.session) {
+			if (context.flags.ssoOnly) {
+				throw redirect({ href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`, replace: true });
+			}
+			throw redirect({ to: "/auth/login", replace: true });
+		}
 		return { session: context.session };
 	},
 	loader: async ({ params, context }) => {

@@ -97,7 +97,7 @@ export const printerService = {
 
 		// Generate a secure token to authenticate the printer request
 		const token = generatePrinterToken(id);
-		const url = `${baseUrl}/printer/${id}?token=${token}`;
+		const url = `${baseUrl}/resume/printer/${id}?token=${token}`;
 
 		// Step 3: Calculate PDF margins
 		// Some templates require margins to be applied via PDF (they use print:p-0 to remove CSS padding)
@@ -286,7 +286,7 @@ export const printerService = {
 		const locale = data.metadata.page.locale;
 
 		const token = generatePrinterToken(id);
-		const url = `${baseUrl}/printer/${id}?token=${token}`;
+		const url = `${baseUrl}/resume/printer/${id}?token=${token}`;
 
 		let browser: Browser | null = null;
 

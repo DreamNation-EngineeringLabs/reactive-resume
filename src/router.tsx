@@ -24,6 +24,7 @@ export const getRouter = async () => {
 
 	const router = createRouter({
 		routeTree,
+		basepath: "/resume",
 		scrollRestoration: true,
 		defaultPreload: "intent",
 		defaultViewTransition: true,

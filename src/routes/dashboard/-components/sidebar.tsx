@@ -362,7 +362,7 @@ export function DashboardSidebar() {
 						<img
 							className="my-3 w-40"
 							alt="Brand Logo"
-							src="/images/polymath_with_logo.png"
+							src={`${import.meta.env.BASE_URL}images/polymath_with_logo.png`}
 							style={{ objectFit: "contain" }}
 						/>
 					</button>
