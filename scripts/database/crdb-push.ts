@@ -82,9 +82,7 @@ try {
 		if (toSeed.length > 0) {
 			console.log(`\n⏩ Seeding ${toSeed.length} migration(s) as already applied (no SQL run):`);
 			for (const folder of toSeed) {
-				await client.query("INSERT INTO crdb_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING", [
-					folder,
-				]);
+				await client.query("INSERT INTO crdb_migrations (name) VALUES ($1) ON CONFLICT DO NOTHING", [folder]);
 				console.log(`   ✓ ${folder}`);
 				applied.add(folder);
 			}
@@ -118,15 +116,10 @@ try {
 		// Patch CockroachDB-incompatible statements
 		// CockroachDB rejects:  ALTER TABLE "t" DROP CONSTRAINT "idx_name";
 		// Replace with:         DROP INDEX IF EXISTS "idx_name" CASCADE;
-		const patched = sql.replace(
-			/ALTER TABLE "[^"]+" DROP CONSTRAINT "([^"]+)";/g,
-			(_match, indexName) => {
-				console.log(
-					`   🔧 Patching: ALTER TABLE DROP CONSTRAINT → DROP INDEX IF EXISTS "${indexName}" CASCADE`,
-				);
-				return `DROP INDEX IF EXISTS "${indexName}" CASCADE;`;
-			},
-		);
+		const patched = sql.replace(/ALTER TABLE "[^"]+" DROP CONSTRAINT "([^"]+)";/g, (_match, indexName) => {
+			console.log(`   🔧 Patching: ALTER TABLE DROP CONSTRAINT → DROP INDEX IF EXISTS "${indexName}" CASCADE`);
+			return `DROP INDEX IF EXISTS "${indexName}" CASCADE;`;
+		});
 
 		if (patched !== sql) {
 			sql = patched;

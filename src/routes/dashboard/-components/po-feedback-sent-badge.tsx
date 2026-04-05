@@ -55,7 +55,7 @@ export function POFeedbackSentBadge({ sectionId, sectionName, tenantId, resumes,
 					<button
 						type="button"
 						onClick={() => setEditOpen(true)}
-						className="ml-1 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 font-medium text-slate-600 text-xs hover:border-indigo-200 hover:text-indigo-600 transition-colors"
+						className="ml-1 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 font-medium text-slate-600 text-xs transition-colors hover:border-indigo-200 hover:text-indigo-600"
 					>
 						<PencilSimpleIcon className="size-3" />
 						{t`Edit`}
@@ -64,11 +64,9 @@ export function POFeedbackSentBadge({ sectionId, sectionName, tenantId, resumes,
 
 				{/* Expandable preview */}
 				{expanded && (
-					<div className="border-t border-slate-200 px-3 py-2 space-y-2">
-						<p className="leading-relaxed text-slate-600 whitespace-pre-wrap line-clamp-4">{latest.reviewNotes}</p>
-						{latest.voiceNoteUrl && (
-							<audio src={latest.voiceNoteUrl} controls className="h-7 w-full" />
-						)}
+					<div className="space-y-2 border-slate-200 border-t px-3 py-2">
+						<p className="line-clamp-4 whitespace-pre-wrap text-slate-600 leading-relaxed">{latest.reviewNotes}</p>
+						{latest.voiceNoteUrl && <audio src={latest.voiceNoteUrl} controls className="h-7 w-full" />}
 						{reviews && reviews.length > 1 && (
 							<p className="text-slate-400 italic">{t`+${reviews.length - 1} earlier round(s)`}</p>
 						)}

@@ -2,11 +2,11 @@ import { t } from "@lingui/core/macro";
 import {
 	ArrowRightIcon,
 	ChartBarIcon,
-	ChatCircleDotsIcon,
 	CheckCircleIcon,
 	FileTextIcon,
 	HourglassIcon,
 	ListChecksIcon,
+	TargetIcon,
 	UsersIcon,
 	WarningIcon,
 	XCircleIcon,
@@ -24,13 +24,12 @@ import { ChecklistsTab } from "./checklists-tab";
 import { InboxView } from "./inbox-view";
 import type { OrgUnitFilterValue } from "./org-unit-filter";
 import { OrgUnitFilter } from "./org-unit-filter";
-import { POFeedbackSentBadge } from "./po-feedback-sent-badge";
 import { POSectionCardActions } from "./po-section-card-actions";
 import { POSectionFeedbackBanner } from "./po-section-feedback-banner";
 import { POSectionReviewDialog } from "./po-section-review-dialog";
 import { RecentActivity } from "./recent-activity";
 import { SectionIntelligence } from "./section-intelligence";
-import { CompletionRateCard, ScoreCard, StatCard } from "./stat-card";
+import { DetailStatCard, RateCard, ScoreCard, StatCard } from "./stat-card";
 import { StudentDetailPanel } from "./student-detail-panel";
 import type { StudentWithResumes } from "./student-resume-table";
 import { StudentResumeTable } from "./student-resume-table";
@@ -212,8 +211,8 @@ export function SectionMetricsView({
 						</div>
 					)}
 
-					{/* Primary stat row */}
-					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+					{/* ── Key Metrics ── */}
+					<div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
 						<StatCard
 							icon={<UsersIcon weight="duotone" className="size-5" />}
 							iconBg="bg-violet-50"
@@ -227,13 +226,23 @@ export function SectionMetricsView({
 							iconColor="text-indigo-600"
 							label={t`Total Resumes`}
 							value={stats.totalResumes}
+							tooltip="Total number of students who submitted resumes"
 						/>
-						<CompletionRateCard
+						<RateCard
 							icon={<ChartBarIcon weight="duotone" className="size-5" />}
 							iconBg="bg-blue-50"
 							iconColor="text-blue-600"
-							label={t`Completion Rate`}
-							value={stats.completionRate}
+							label={t`Submission Rate`}
+							value={stats.totalStudents > 0 ? (detailedStats.withResumes / stats.totalStudents) * 100 : 0}
+							tooltip="Percentage of resume submissions from the total available resumes"
+						/>
+						<RateCard
+							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
+							iconBg="bg-emerald-50"
+							iconColor="text-emerald-600"
+							label={t`Evaluation Rate`}
+							value={detailedStats.withResumes > 0 ? (detailedStats.evaluated / detailedStats.withResumes) * 100 : 0}
+							tooltip="Percentage of resumes evaluated from the total submitted resumes"
 						/>
 						<ScoreCard
 							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
@@ -242,46 +251,49 @@ export function SectionMetricsView({
 							label={t`Avg Score`}
 							value={stats.averageScore}
 						/>
+						<AtsChecksCard />
 					</div>
 
-					{/* Submission breakdown */}
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						<div className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-								<FileTextIcon weight="duotone" className="size-5 text-emerald-600" />
-							</div>
-							<div>
-								<p className="font-bold text-slate-900 text-xl">{detailedStats.withResumes}</p>
-								<p className="text-slate-500 text-xs">{t`With Resumes`}</p>
-							</div>
+					{/* ── Breakdown + Charts ── */}
+					<div className="grid gap-6 lg:grid-cols-3">
+						{/* Left: compact breakdown counters */}
+						<div className="flex flex-col gap-3">
+							<h4 className="font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Submission Breakdown`}</h4>
+							<DetailStatCard
+								icon={<FileTextIcon weight="duotone" className="size-5 text-emerald-600" />}
+								iconBg="bg-emerald-50"
+								value={detailedStats.withResumes}
+								label={t`With Resumes`}
+							/>
+							<DetailStatCard
+								icon={<XCircleIcon weight="duotone" className="size-5 text-rose-500" />}
+								iconBg="bg-rose-50"
+								value={detailedStats.noResumes}
+								label={t`No Resume Yet`}
+							/>
+							<DetailStatCard
+								icon={<HourglassIcon weight="duotone" className="size-5 text-indigo-600" />}
+								iconBg="bg-indigo-50"
+								value={detailedStats.pendingReview}
+								label={t`Pending Review`}
+							/>
+							<DetailStatCard
+								icon={<CheckCircleIcon weight="duotone" className="size-5 text-emerald-600" />}
+								iconBg="bg-emerald-50"
+								value={detailedStats.evaluated}
+								label={t`Verified / Evaluated`}
+							/>
 						</div>
-						<div className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50">
-								<XCircleIcon weight="duotone" className="size-5 text-rose-500" />
-							</div>
-							<div>
-								<p className="font-bold text-slate-900 text-xl">{detailedStats.noResumes}</p>
-								<p className="text-slate-500 text-xs">{t`No Resume Yet`}</p>
-							</div>
-						</div>
-						<div className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50">
-								<HourglassIcon weight="duotone" className="size-5 text-indigo-600" />
-							</div>
-							<div>
-								<p className="font-bold text-slate-900 text-xl">{detailedStats.pendingReview}</p>
-								<p className="text-slate-500 text-xs">{t`Pending Review`}</p>
-							</div>
-						</div>
-						<div className="flex items-center gap-4 rounded-2xl bg-white px-5 py-4 shadow-sm">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-								<CheckCircleIcon weight="duotone" className="size-5 text-emerald-600" />
-							</div>
-							<div>
-								<p className="font-bold text-slate-900 text-xl">{detailedStats.evaluated}</p>
-								<p className="text-slate-500 text-xs">{t`Verified / Evaluated`}</p>
-							</div>
-						</div>
+
+						{/* Center: Donut chart */}
+						<SubmissionDonutChart
+							submitted={detailedStats.withResumes}
+							notSubmitted={detailedStats.noResumes}
+							total={stats.totalStudents}
+						/>
+
+						{/* Right: Score distribution */}
+						<ScoreDistributionChart students={filteredStudents} evaluatedCount={detailedStats.evaluated} />
 					</div>
 
 					{/* Empty state */}
@@ -309,6 +321,9 @@ export function SectionMetricsView({
 						/>
 					)}
 
+					{/* ATS Score Improvements (admin/PO only) */}
+					{scope !== "faculty" && <AtsImprovementsSection />}
+
 					{/* Recent Activity */}
 					{dashboard?.recentActivity && (
 						<RecentActivity
@@ -316,9 +331,6 @@ export function SectionMetricsView({
 							recentComments={dashboard.recentActivity.recentComments}
 						/>
 					)}
-
-					{/* ATS Score Improvements (admin/PO only) */}
-					{scope !== "faculty" && <AtsImprovementsSection />}
 				</div>
 			)}
 
@@ -401,15 +413,18 @@ export function SectionMetricsView({
 								// Faculty: resumes eligible to submit to PO (FACULTY_VERIFIED or FINALIZED_BY_FACULTY for re-submission after PO feedback)
 								const pendingResumesList = sectionStudents.flatMap((s) =>
 									s.resumes
-										.filter(
-											(r) =>
-												r.reviewStatus === "FACULTY_VERIFIED" || r.reviewStatus === "FINALIZED_BY_FACULTY",
-										)
+										.filter((r) => r.reviewStatus === "FACULTY_VERIFIED" || r.reviewStatus === "FINALIZED_BY_FACULTY")
 										.map((r) => ({ id: r.id, studentId: s.engLabsId })),
 								);
 
 								// States that are "in PO hands" — faculty cannot submit or change these
-								const PO_MANAGED = ["SUBMITTED_TO_PO", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"];
+								const PO_MANAGED = [
+									"SUBMITTED_TO_PO",
+									"PO_REVISION_REQUESTED",
+									"RESUBMITTED_TO_PO",
+									"PO_VERIFIED",
+									"APPROVED",
+								];
 
 								// Resumes currently in PO-managed states
 								const resumesInPOHands = sectionStudents.flatMap((s) =>
@@ -420,21 +435,18 @@ export function SectionMetricsView({
 								// PO: all resumes that are in any active PO-managed state (excluding APPROVED — those are done)
 								const poSubmittedResumes = sectionStudents.flatMap((s) =>
 									s.resumes
-										.filter(
-											(r) =>
-												PO_MANAGED.includes(r.reviewStatus ?? "") && r.reviewStatus !== "APPROVED",
-										)
+										.filter((r) => PO_MANAGED.includes(r.reviewStatus ?? "") && r.reviewStatus !== "APPROVED")
 										.map((r) => ({ id: r.id, studentId: s.engLabsId })),
 								);
 
 								// Summary label for faculty when section is in PO hands
 								const poHandsStatusLabel = (() => {
 									if (resumesInPOHands.every((r) => r.reviewStatus === "APPROVED")) return "Approved";
-									if (resumesInPOHands.some((r) => r.reviewStatus === "PO_REVISION_REQUESTED")) return "PO: Revision Requested";
+									if (resumesInPOHands.some((r) => r.reviewStatus === "PO_REVISION_REQUESTED"))
+										return "PO: Revision Requested";
 									if (resumesInPOHands.some((r) => r.reviewStatus === "SUBMITTED_TO_PO")) return "Awaiting PO Review";
 									return "With PO";
 								})();
-
 
 								return (
 									<div
@@ -688,6 +700,203 @@ export function SectionMetricsView({
 				/>
 			)}
 		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Submission Donut Chart (SVG)
+// ---------------------------------------------------------------------------
+
+function SubmissionDonutChart({
+	submitted,
+	notSubmitted,
+	total,
+}: {
+	submitted: number;
+	notSubmitted: number;
+	total: number;
+}) {
+	const [hovered, setHovered] = useState<"submitted" | "notSubmitted" | null>(null);
+
+	if (total === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm">
+				<h4 className="font-semibold text-slate-500 text-xs uppercase tracking-wider">Resume Submission</h4>
+				<p className="mt-6 text-slate-400 text-sm">No data available yet</p>
+			</div>
+		);
+	}
+
+	const submittedPct = (submitted / total) * 100;
+	const notSubmittedPct = (notSubmitted / total) * 100;
+
+	const R = 64;
+	const STROKE = 20;
+	const C = 2 * Math.PI * R;
+	const submittedArc = (submitted / total) * C;
+	const notSubmittedArc = C - submittedArc;
+
+	return (
+		<div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm">
+			<h4 className="mb-2 font-semibold text-slate-500 text-xs uppercase tracking-wider">Resume Submission</h4>
+			<div className="flex flex-1 flex-col items-center justify-center">
+				<div className="relative">
+					<svg width="170" height="170" viewBox="0 0 170 170">
+						<circle
+							cx="85"
+							cy="85"
+							r={R}
+							fill="none"
+							stroke="#E24B4A"
+							strokeWidth={STROKE}
+							strokeDasharray={`${notSubmittedArc} ${C}`}
+							strokeDashoffset={0}
+							transform="rotate(-90 85 85)"
+							opacity={hovered === "submitted" ? 0.35 : 1}
+							onMouseEnter={() => setHovered("notSubmitted")}
+							onMouseLeave={() => setHovered(null)}
+							style={{ transition: "opacity 0.3s" }}
+						/>
+						<circle
+							cx="85"
+							cy="85"
+							r={R}
+							fill="none"
+							stroke="#1D9E75"
+							strokeWidth={STROKE}
+							strokeDasharray={`${submittedArc} ${C}`}
+							strokeDashoffset={-notSubmittedArc}
+							transform="rotate(-90 85 85)"
+							opacity={hovered === "notSubmitted" ? 0.35 : 1}
+							onMouseEnter={() => setHovered("submitted")}
+							onMouseLeave={() => setHovered(null)}
+							style={{ transition: "opacity 0.3s" }}
+						/>
+						<text x="85" y="80" textAnchor="middle" className="fill-slate-900" fontSize="26" fontWeight="700">
+							{total}
+						</text>
+						<text x="85" y="98" textAnchor="middle" className="fill-slate-400" fontSize="11">
+							students
+						</text>
+					</svg>
+
+					{hovered && (
+						<div
+							className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md px-2.5 py-1 text-white text-xs shadow-lg"
+							style={{ backgroundColor: "#1a3a5c", marginTop: -48 }}
+						>
+							{hovered === "submitted"
+								? `Submitted: ${submitted} (${submittedPct.toFixed(1)}%)`
+								: `Not submitted: ${notSubmitted} (${notSubmittedPct.toFixed(1)}%)`}
+						</div>
+					)}
+				</div>
+			</div>
+			<div className="mt-auto flex items-center justify-center gap-5 pt-3 text-xs">
+				<div className="flex items-center gap-1.5">
+					<div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#1D9E75" }} />
+					<span className="text-slate-600">Submitted ({submitted})</span>
+				</div>
+				<div className="flex items-center gap-1.5">
+					<div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#E24B4A" }} />
+					<span className="text-slate-600">Not Submitted ({notSubmitted})</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Score Distribution Bar Chart (SVG)
+// ---------------------------------------------------------------------------
+
+function ScoreDistributionChart({
+	students,
+	evaluatedCount,
+}: {
+	students: StudentWithResumes[];
+	evaluatedCount: number;
+}) {
+	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+
+	const buckets = [
+		{ label: "0-1", color: "#E24B4A", min: 0, max: 1 },
+		{ label: "1-2", color: "#EF9F27", min: 1, max: 2 },
+		{ label: "2-3", color: "#FAC775", min: 2, max: 3 },
+		{ label: "3-4", color: "#9FE1CB", min: 3, max: 4 },
+		{ label: "4-5", color: "#1D9E75", min: 4, max: 5 },
+	];
+
+	const scores = students.flatMap((s) =>
+		s.resumes.filter((r) => r.evaluationScore !== null).map((r) => r.evaluationScore as number),
+	);
+
+	const counts = buckets.map((b) => scores.filter((s) => s >= b.min && (b.max === 5 ? s <= b.max : s < b.max)).length);
+	const max = Math.max(...counts, 1);
+
+	if (evaluatedCount === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm">
+				<h4 className="font-semibold text-slate-500 text-xs uppercase tracking-wider">Score Distribution</h4>
+				<p className="mt-6 text-slate-400 text-sm">No data available yet</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm">
+			<h4 className="mb-2 font-semibold text-slate-500 text-xs uppercase tracking-wider">Score Distribution</h4>
+			<div className="flex flex-1 items-end justify-center gap-2 pt-4 pb-2">
+				{buckets.map((b, i) => {
+					const heightPct = Math.max(6, (counts[i] / max) * 100);
+					return (
+						<div
+							key={b.label}
+							className="flex flex-1 flex-col items-center gap-1"
+							onMouseEnter={() => setHoveredIdx(i)}
+							onMouseLeave={() => setHoveredIdx(null)}
+						>
+							<span className="font-semibold text-[11px] text-slate-500 tabular-nums">
+								{counts[i] > 0 ? counts[i] : ""}
+							</span>
+							<div className="flex w-full justify-center" style={{ height: 110 }}>
+								<div
+									className="w-full max-w-[36px] self-end rounded-t-md transition-all"
+									style={{
+										height: `${heightPct}%`,
+										backgroundColor: b.color,
+										opacity: hoveredIdx !== null && hoveredIdx !== i ? 0.35 : 1,
+									}}
+								/>
+							</div>
+							<span className="font-medium text-[11px] text-slate-500">{b.label}</span>
+						</div>
+					);
+				})}
+			</div>
+			<p className="mt-auto pt-2 text-center text-slate-400 text-xs">
+				Based on {evaluatedCount} evaluated resume{evaluatedCount !== 1 ? "s" : ""}
+			</p>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// ATS Checks Card — queries ATS admin stats for the total checks count
+// ---------------------------------------------------------------------------
+
+function AtsChecksCard() {
+	const { data: atsStats } = useQuery(orpc.ats.adminStats.queryOptions({ input: {} }));
+
+	return (
+		<StatCard
+			icon={<TargetIcon weight="duotone" className="size-5" />}
+			iconBg="bg-blue-50"
+			iconColor="text-blue-600"
+			label={t`ATS Checks`}
+			value={atsStats?.totalChecks ?? 0}
+			tooltip="Total number of ATS checks done by the students"
+		/>
 	);
 }
 

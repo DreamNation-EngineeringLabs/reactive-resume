@@ -226,28 +226,25 @@ export const resumeStatistics = pg.pgTable("resume_statistics", {
 		.$onUpdate(() => /* @__PURE__ */ new Date()),
 });
 
-export const userInfo = pg.pgTable(
-	"user_info",
-	{
-		id: pg
-			.uuid("id")
-			.notNull()
-			.primaryKey()
-			.$defaultFn(() => generateId()),
-		data: pg.jsonb("data").notNull().$type<UserInfoData>(),
-		userId: pg
-			.uuid("user_id")
-			.notNull()
-			.unique()
-			.references(() => user.id, { onDelete: "cascade" }),
-		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-		updatedAt: pg
-			.timestamp("updated_at", { withTimezone: true })
-			.notNull()
-			.defaultNow()
-			.$onUpdate(() => /* @__PURE__ */ new Date()),
-	},
-);
+export const userInfo = pg.pgTable("user_info", {
+	id: pg
+		.uuid("id")
+		.notNull()
+		.primaryKey()
+		.$defaultFn(() => generateId()),
+	data: pg.jsonb("data").notNull().$type<UserInfoData>(),
+	userId: pg
+		.uuid("user_id")
+		.notNull()
+		.unique()
+		.references(() => user.id, { onDelete: "cascade" }),
+	createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: pg
+		.timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow()
+		.$onUpdate(() => /* @__PURE__ */ new Date()),
+});
 
 export const apikey = pg.pgTable(
 	"apikey",

@@ -81,9 +81,7 @@ export function POSectionCardActions({
 				>
 					<ChatCircleDotsIcon weight="duotone" className="size-4" />
 					{t`Review & Send Feedback`}
-					<span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px]">
-						{poSubmittedResumes.length}
-					</span>
+					<span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px]">{poSubmittedResumes.length}</span>
 				</button>
 			)}
 

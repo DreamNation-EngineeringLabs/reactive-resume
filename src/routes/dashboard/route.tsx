@@ -11,7 +11,10 @@ export const Route = createFileRoute("/dashboard")({
 		if (!context.session) {
 			// In SSO-only mode, redirect back to the main application instead of the login page
 			if (context.flags.ssoOnly) {
-				throw redirect({ href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`, replace: true });
+				throw redirect({
+					href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`,
+					replace: true,
+				});
 			}
 			throw redirect({ to: "/auth/login", replace: true });
 		}

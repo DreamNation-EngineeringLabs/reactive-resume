@@ -7,8 +7,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { orpc, type RouterOutput } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
-import { BaseCard } from "../resumes/-components/cards/base-card";
 import { DashboardHeader } from "../-components/header";
+import { BaseCard } from "../resumes/-components/cards/base-card";
 
 type Resume = RouterOutput["resume"]["list"][number];
 
@@ -118,7 +118,7 @@ function ResumePickerCard({ resume, onSelect }: ResumePickerCardProps) {
 				<TargetIcon
 					weight="duotone"
 					className={cn(
-						"absolute -right-10 -bottom-10 size-52 rotate-12 transition-transform duration-700 group-hover:rotate-0 group-hover:scale-110 opacity-5",
+						"absolute -right-10 -bottom-10 size-52 rotate-12 opacity-5 transition-transform duration-700 group-hover:rotate-0 group-hover:scale-110",
 						palette.iconColor,
 					)}
 				/>

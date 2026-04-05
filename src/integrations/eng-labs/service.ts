@@ -16,14 +16,12 @@ export async function getStudentsBySection(sectionId: string, tenantId: string):
 		roll_number: string | null;
 		unit_id: string;
 	}>(
-		`SELECT u.id, u.name, u.email, u.roll_number, um.unit_id
+		`SELECT DISTINCT u.id, u.name, u.email, u.roll_number, um.unit_id
 		 FROM user_mappings um
 		 JOIN users u ON um.user_id = u.id
-		 JOIN package_enrollments pe ON pe.user_id = u.id
-		 WHERE um.unit_id = $1 
-		   AND u.type = 'LEARNER' 
+		 WHERE um.unit_id = $1
+		   AND u.type = 'LEARNER'
 		   AND um.tenant_id = $2
-		 GROUP BY u.id, u.name, u.email, u.roll_number, um.unit_id
 		 ORDER BY u.roll_number, u.name`,
 		[sectionId, tenantId],
 	);
@@ -54,16 +52,14 @@ export async function getStudentsBySections(sectionIds: string[], tenantId: stri
 		section_name: string;
 		section_code: string | null;
 	}>(
-		`SELECT u.id, u.name, u.email, u.roll_number, um.unit_id,
+		`SELECT DISTINCT u.id, u.name, u.email, u.roll_number, um.unit_id,
 		        ou.name AS section_name, ou.code AS section_code
 		 FROM user_mappings um
 		 JOIN users u ON um.user_id = u.id
 		 JOIN organisation_units ou ON um.unit_id = ou.id
-		 JOIN package_enrollments pe ON pe.user_id = u.id
-		 WHERE um.unit_id = ANY($1) 
-		   AND u.type = 'LEARNER' 
+		 WHERE um.unit_id = ANY($1)
+		   AND u.type = 'LEARNER'
 		   AND um.tenant_id = $2
-		 GROUP BY u.id, u.name, u.email, u.roll_number, um.unit_id, ou.name, ou.code
 		 ORDER BY ou.name, u.roll_number, u.name`,
 		[sectionIds, tenantId],
 	);
@@ -358,12 +354,11 @@ export async function getInstructorSections(userId: string): Promise<Section[]> 
 		        p.id   AS package_id,
 		        p.name AS package_name,
 		        parent.code AS package_code
-		 FROM placement_instructor_assignments pia
-		 JOIN placement_instructor_unit_assignments piua ON pia.id = piua.assignment_id
+		 FROM placement_instructor_unit_assignments piua
 		 JOIN organisation_units ou ON piua.unit_id = ou.id
-		 LEFT JOIN placement_packages p ON pia.package_id = p.id
+		 LEFT JOIN placement_packages p ON piua.package_id = p.id
 		 LEFT JOIN organisation_units parent ON ou.parent_unit_id = parent.id
-		 WHERE pia.user_id = $1
+		 WHERE piua.user_id = $1
 		 ORDER BY p.name NULLS LAST, ou.name`,
 		[userId],
 	);
@@ -410,10 +405,10 @@ export async function getInstructorPackages(userId: string): Promise<PlacementPa
 	if (!pool) return [];
 
 	const { rows } = await pool.query<{ id: string; name: string; organisation_id: string }>(
-		`SELECT pp.id, pp.name, pp.organisation_id
-		 FROM placement_instructor_assignments pia
-		 JOIN placement_packages pp ON pp.id = pia.package_id
-		 WHERE pia.user_id = $1
+		`SELECT DISTINCT pp.id, pp.name, pp.organisation_id
+		 FROM placement_instructor_unit_assignments piua
+		 JOIN placement_packages pp ON pp.id = piua.package_id
+		 WHERE piua.user_id = $1 AND piua.package_id IS NOT NULL
 		 ORDER BY pp.name`,
 		[userId],
 	);
@@ -497,9 +492,8 @@ export async function getInstructorsForUnits(unitIds: string[]): Promise<string[
 	if (!pool || unitIds.length === 0) return [];
 
 	const { rows } = await pool.query<{ user_id: string }>(
-		`SELECT DISTINCT pia.user_id
-         FROM placement_instructor_assignments pia
-         JOIN placement_instructor_unit_assignments piua ON pia.id = piua.assignment_id
+		`SELECT DISTINCT piua.user_id
+         FROM placement_instructor_unit_assignments piua
          WHERE piua.unit_id = ANY($1)`,
 		[unitIds],
 	);

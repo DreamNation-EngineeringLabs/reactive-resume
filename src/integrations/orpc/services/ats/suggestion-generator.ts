@@ -13,7 +13,14 @@ import {
 	isProfilePictureDisplayedOnResume,
 	isStandardDateFormat,
 } from "./rules/formatting";
-import { containsWeakPhrase, findNearDuplicateBullets, findRepetitiveOpeners, hasQuantifiedMetric, isXYZCompliant, startsWithActionVerb } from "./rules/impact-metrics";
+import {
+	containsWeakPhrase,
+	findNearDuplicateBullets,
+	findRepetitiveOpeners,
+	hasQuantifiedMetric,
+	isXYZCompliant,
+	startsWithActionVerb,
+} from "./rules/impact-metrics";
 import { getIndustryTaxonomyMatchCount, getJdKeywordsNotInBulletText } from "./rules/keyword-match";
 import { extractLatestYear, isReverseChronological } from "./rules/structure";
 
@@ -562,9 +569,8 @@ export async function generateSuggestions(
 
 				// Detect entry-level role
 				const isFallbackEntryLevel =
-					/\b(trainee|intern|fresher|graduate|entry|junior|associate|apprentice|campus)\b/i.test(
-						jdAnalysis.jobTitle,
-					) || jdAnalysis.experienceLevel === "entry";
+					/\b(trainee|intern|fresher|graduate|entry|junior|associate|apprentice|campus)\b/i.test(jdAnalysis.jobTitle) ||
+					jdAnalysis.experienceLevel === "entry";
 
 				// Build a concise template from available resume data
 				// Prefer technical skills (languages, frameworks, tools) over soft skills
@@ -1651,9 +1657,7 @@ export async function generateSuggestions(
 	// Repetitive openers
 	const repeatedOpeners = findRepetitiveOpeners(bulletTexts, 3);
 	if (repeatedOpeners.size > 0 && !suggestions.some((s) => s.id === "IM-6-openers")) {
-		const examples = [...repeatedOpeners.entries()]
-			.map(([word, count]) => `"${word}" (${count}×)`)
-			.join(", ");
+		const examples = [...repeatedOpeners.entries()].map(([word, count]) => `"${word}" (${count}×)`).join(", ");
 		const offendingWords = [...repeatedOpeners.keys()];
 		suggestions.push({
 			id: "IM-6-openers",
@@ -2022,7 +2026,7 @@ Keywords to add (pick the best item for each):
 ${keywordsNotInBullets.map((kw) => `- "${kw}"`).join("\n")}
 
 Available items:
-${contextItems.map((c) => `[${c.sectionKey}][${c.itemIndex}] ${c.label}${c.bullets.length > 0 ? `\n  Existing bullets: ${c.bullets.map((b) => `"${b.slice(0, 80)}"`)  .join("; ")}` : "\n  (no bullets yet)"}`).join("\n")}`);
+${contextItems.map((c) => `[${c.sectionKey}][${c.itemIndex}] ${c.label}${c.bullets.length > 0 ? `\n  Existing bullets: ${c.bullets.map((b) => `"${b.slice(0, 80)}"`).join("; ")}` : "\n  (no bullets yet)"}`).join("\n")}`);
 		}
 
 		const result = await generateText({
@@ -2066,10 +2070,7 @@ ${promptParts.join("\n\n")}`,
  * Otherwise wraps in a new <ul>.
  */
 function insertBulletIntoHtml(html: string, newBullet: string): string {
-	const escapedBullet = newBullet
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;");
+	const escapedBullet = newBullet.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 	const newLi = `<li>${escapedBullet}</li>`;
 
 	if (/<ul[^>]*>/i.test(html)) {

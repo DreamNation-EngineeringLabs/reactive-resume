@@ -26,6 +26,7 @@ import { Route as AuthRegisterRouteImport } from "./routes/auth/register";
 import { Route as AuthLoginRouteImport } from "./routes/auth/login";
 import { Route as AuthForgotPasswordRouteImport } from "./routes/auth/forgot-password";
 import { Route as ApiHealthRouteImport } from "./routes/api/health";
+import { Route as ApiDashboardStatsRouteImport } from "./routes/api/dashboard-stats";
 import { Route as UsernameSlugRouteImport } from "./routes/$username/$slug";
 import { Route as BuilderResumeIdRouteRouteImport } from "./routes/builder/$resumeId/route";
 import { Route as DashboardResumesIndexRouteImport } from "./routes/dashboard/resumes/index";
@@ -132,6 +133,11 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: "/api/health",
   path: "/api/health",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ApiDashboardStatsRoute = ApiDashboardStatsRouteImport.update({
+  id: "/api/dashboard-stats",
+  path: "/api/dashboard-stats",
   getParentRoute: () => rootRouteImport,
 } as any);
 const UsernameSlugRoute = UsernameSlugRouteImport.update({
@@ -265,6 +271,7 @@ export interface FileRoutesByFullPath {
   "/schema.json": typeof SchemaDotjsonRoute;
   "/builder/$resumeId": typeof BuilderResumeIdRouteRouteWithChildren;
   "/$username/$slug": typeof UsernameSlugRoute;
+  "/api/dashboard-stats": typeof ApiDashboardStatsRoute;
   "/api/health": typeof ApiHealthRoute;
   "/auth/forgot-password": typeof AuthForgotPasswordRoute;
   "/auth/login": typeof AuthLoginRoute;
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/schema.json": typeof SchemaDotjsonRoute;
   "/$username/$slug": typeof UsernameSlugRoute;
+  "/api/dashboard-stats": typeof ApiDashboardStatsRoute;
   "/api/health": typeof ApiHealthRoute;
   "/auth/forgot-password": typeof AuthForgotPasswordRoute;
   "/auth/login": typeof AuthLoginRoute;
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   "/schema.json": typeof SchemaDotjsonRoute;
   "/builder/$resumeId": typeof BuilderResumeIdRouteRouteWithChildren;
   "/$username/$slug": typeof UsernameSlugRoute;
+  "/api/dashboard-stats": typeof ApiDashboardStatsRoute;
   "/api/health": typeof ApiHealthRoute;
   "/auth/forgot-password": typeof AuthForgotPasswordRoute;
   "/auth/login": typeof AuthLoginRoute;
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | "/schema.json"
     | "/builder/$resumeId"
     | "/$username/$slug"
+    | "/api/dashboard-stats"
     | "/api/health"
     | "/auth/forgot-password"
     | "/auth/login"
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
   to:
     | "/schema.json"
     | "/$username/$slug"
+    | "/api/dashboard-stats"
     | "/api/health"
     | "/auth/forgot-password"
     | "/auth/login"
@@ -468,6 +479,7 @@ export interface FileRouteTypes {
     | "/schema.json"
     | "/builder/$resumeId"
     | "/$username/$slug"
+    | "/api/dashboard-stats"
     | "/api/health"
     | "/auth/forgot-password"
     | "/auth/login"
@@ -511,6 +523,7 @@ export interface RootRouteChildren {
   SchemaDotjsonRoute: typeof SchemaDotjsonRoute;
   BuilderResumeIdRouteRoute: typeof BuilderResumeIdRouteRouteWithChildren;
   UsernameSlugRoute: typeof UsernameSlugRoute;
+  ApiDashboardStatsRoute: typeof ApiDashboardStatsRoute;
   ApiHealthRoute: typeof ApiHealthRoute;
   PrinterResumeIdRoute: typeof PrinterResumeIdRoute;
   McpIndexRoute: typeof McpIndexRoute;
@@ -640,6 +653,13 @@ declare module "@tanstack/react-router" {
       path: "/api/health";
       fullPath: "/api/health";
       preLoaderRoute: typeof ApiHealthRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/api/dashboard-stats": {
+      id: "/api/dashboard-stats";
+      path: "/api/dashboard-stats";
+      fullPath: "/api/dashboard-stats";
+      preLoaderRoute: typeof ApiDashboardStatsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/$username/$slug": {
@@ -905,6 +925,7 @@ const rootRouteChildren: RootRouteChildren = {
   SchemaDotjsonRoute: SchemaDotjsonRoute,
   BuilderResumeIdRouteRoute: BuilderResumeIdRouteRouteWithChildren,
   UsernameSlugRoute: UsernameSlugRoute,
+  ApiDashboardStatsRoute: ApiDashboardStatsRoute,
   ApiHealthRoute: ApiHealthRoute,
   PrinterResumeIdRoute: PrinterResumeIdRoute,
   McpIndexRoute: McpIndexRoute,

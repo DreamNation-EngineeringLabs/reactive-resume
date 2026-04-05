@@ -42,19 +42,6 @@ type SectionIntelligenceProps = {
 	onNavigateToTab: (tab: DashboardTab, search?: Record<string, string>) => void;
 };
 
-// ─── Pipeline stage definitions ──────────────────────────────────────────────
-
-const PIPELINE_STAGES = [
-	{ key: "DRAFT", label: t`Draft`, color: "bg-slate-300" },
-	{ key: "SUBMITTED_TO_FACULTY", label: t`With Faculty`, color: "bg-blue-400" },
-	{ key: "FACULTY_REVISION_REQUESTED", label: t`Revision Req.`, color: "bg-amber-400" },
-	{ key: "FACULTY_VERIFIED", label: t`Faculty Verified`, color: "bg-violet-400" },
-	{ key: "FINALIZED_BY_FACULTY", label: t`Pending PO`, color: "bg-indigo-400" },
-	{ key: "RESUBMITTED_TO_PO", label: t`Resubmitted`, color: "bg-orange-400" },
-	{ key: "PO_REVISION_REQUESTED", label: t`PO Revision`, color: "bg-rose-400" },
-	{ key: "APPROVED", label: t`Approved`, color: "bg-emerald-500" },
-] as const;
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number) {
@@ -62,22 +49,6 @@ function scoreColor(score: number) {
 	if (score >= 2.5) return { bg: "bg-amber-50", text: "text-amber-700" };
 	return { bg: "bg-rose-50", text: "text-rose-700" };
 }
-
-type HealthStatus = "on_track" | "needs_attention" | "no_submissions";
-
-function sectionHealth(s: UnitStat["stats"]): HealthStatus {
-	if (s.totalResumes === 0 || s.submittedResumes === 0) return "no_submissions";
-	if (s.approvedResumes > 0 && s.approvedResumes / Math.max(s.totalResumes, 1) >= 0.5) return "on_track";
-	if (s.passedFaculty / Math.max(s.totalResumes, 1) >= 0.5) return "on_track";
-	if (s.submittedResumes > 0) return "needs_attention";
-	return "no_submissions";
-}
-
-const healthConfig: Record<HealthStatus, { label: string; dot: string; badge: string; text: string }> = {
-	on_track: { label: t`On Track`, dot: "bg-emerald-500", badge: "bg-emerald-50", text: "text-emerald-700" },
-	needs_attention: { label: t`Needs Attention`, dot: "bg-amber-500", badge: "bg-amber-50", text: "text-amber-700" },
-	no_submissions: { label: t`No Submissions`, dot: "bg-rose-500", badge: "bg-rose-50", text: "text-rose-700" },
-};
 
 /**
  * Returns unit types sorted from highest level to lowest (leaf types last).
@@ -326,58 +297,6 @@ function ActionAlerts({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Block 1: Pipeline Funnel
-// ─────────────────────────────────────────────────────────────────────────────
-
-function PipelineFunnel({ students }: { students: StudentWithResumes[] }) {
-	const allResumes = students.flatMap((s) => s.resumes);
-	const total = allResumes.length;
-
-	if (total === 0) return null;
-
-	const counts = Object.fromEntries(
-		PIPELINE_STAGES.map((stage) => [
-			stage.key,
-			allResumes.filter((r) => (r.reviewStatus ?? "DRAFT") === stage.key).length,
-		]),
-	);
-
-	const stagesWithCount = PIPELINE_STAGES.map((s) => ({ ...s, count: counts[s.key] ?? 0 })).filter((s) => s.count > 0);
-
-	return (
-		<div className="rounded-2xl bg-white p-5 shadow-sm">
-			<div className="mb-5 flex items-center gap-2">
-				<h3 className="font-bold text-base text-slate-900">{t`Resume Pipeline`}</h3>
-				<span className="font-medium text-slate-400 text-xs">{t`${total} total`}</span>
-			</div>
-
-			<div className="mb-5 flex h-3 w-full overflow-hidden rounded-full bg-slate-100">
-				{stagesWithCount.map((stage) => (
-					<div
-						key={stage.key}
-						className={cn("h-full transition-all", stage.color)}
-						style={{ width: `${(stage.count / total) * 100}%` }}
-						title={`${stage.label}: ${stage.count}`}
-					/>
-				))}
-			</div>
-
-			<div className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-4">
-				{stagesWithCount.map((stage) => (
-					<div key={stage.key} className="flex items-center gap-2">
-						<div className={cn("h-2.5 w-2.5 shrink-0 rounded-full", stage.color)} />
-						<div className="min-w-0">
-							<p className="truncate font-semibold text-slate-900 text-xs">{stage.count}</p>
-							<p className="truncate text-[10px] text-slate-400">{stage.label}</p>
-						</div>
-					</div>
-				))}
-			</div>
-		</div>
-	);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Block 3: Top Performing Sections
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -446,13 +365,7 @@ function SectionHealthTable({
 	const active = sections.filter((s) => s.stats.totalStudents > 0);
 	if (active.length === 0) return null;
 
-	const healthOrder: Record<HealthStatus, number> = { needs_attention: 0, no_submissions: 1, on_track: 2 };
-	const sorted = [...active].sort((a, b) => {
-		const ha = sectionHealth(a.stats);
-		const hb = sectionHealth(b.stats);
-		if (ha !== hb) return healthOrder[ha] - healthOrder[hb];
-		return b.stats.totalStudents - a.stats.totalStudents;
-	});
+	const sorted = [...active].sort((a, b) => b.stats.totalStudents - a.stats.totalStudents);
 
 	return (
 		<div className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -472,29 +385,14 @@ function SectionHealthTable({
 							<th className="w-48 px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Pipeline`}</th>
 							<th className="px-4 py-2.5 text-center font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Avg Score`}</th>
 							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Stage`}</th>
-							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Health`}</th>
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-slate-100">
 						{sorted.map((section) => {
 							const st = section.stats;
-							const health = sectionHealth(st);
-							const hc = healthConfig[health];
 							const total = st.totalResumes;
 							const approved = st.approvedResumes;
-
-							const withFaculty =
-								st.evaluatedResumes > 0
-									? Math.max(0, st.submittedResumes - st.passedFaculty)
-									: Math.max(0, total - approved - st.passedFaculty);
-							const pendingPO = Math.max(0, st.passedFaculty - approved);
-
-							const bands = [
-								{ w: Math.max(0, total - st.submittedResumes), color: "bg-slate-200" },
-								{ w: withFaculty, color: "bg-blue-400" },
-								{ w: pendingPO, color: "bg-indigo-400" },
-								{ w: approved, color: "bg-emerald-500" },
-							];
+							const remaining = Math.max(0, total - approved);
 
 							let stageText = "";
 							if (total === 0) stageText = t`No resumes`;
@@ -514,14 +412,11 @@ function SectionHealthTable({
 									<td className="px-4 py-3">
 										{total > 0 ? (
 											<div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
-												{bands.map((band, i) =>
-													band.w > 0 ? (
-														<div
-															key={i}
-															className={cn("h-full", band.color)}
-															style={{ width: `${(band.w / total) * 100}%` }}
-														/>
-													) : null,
+												{approved > 0 && (
+													<div className="h-full bg-emerald-500" style={{ width: `${(approved / total) * 100}%` }} />
+												)}
+												{remaining > 0 && (
+													<div className="h-full bg-slate-300" style={{ width: `${(remaining / total) * 100}%` }} />
 												)}
 											</div>
 										) : (
@@ -549,14 +444,6 @@ function SectionHealthTable({
 									<td className="px-4 py-3">
 										<span className="text-slate-600 text-xs">{stageText}</span>
 									</td>
-									<td className="px-4 py-3">
-										<div className="flex items-center gap-1.5">
-											<div className={cn("h-2 w-2 shrink-0 rounded-full", hc.dot)} />
-											<span className={cn("rounded-full px-2 py-0.5 font-medium text-[10px]", hc.badge, hc.text)}>
-												{hc.label}
-											</span>
-										</div>
-									</td>
 								</tr>
 							);
 						})}
@@ -568,8 +455,6 @@ function SectionHealthTable({
 			<div className="divide-y divide-slate-100 md:hidden">
 				{sorted.map((section) => {
 					const st = section.stats;
-					const health = sectionHealth(st);
-					const hc = healthConfig[health];
 					const total = st.totalResumes;
 					const approved = st.approvedResumes;
 					return (
@@ -578,12 +463,6 @@ function SectionHealthTable({
 								<div>
 									<p className="font-semibold text-slate-900 text-sm">{section.name}</p>
 									<p className="text-slate-400 text-xs">{section.unitType}</p>
-								</div>
-								<div className="flex shrink-0 items-center gap-1.5">
-									<div className={cn("h-2 w-2 rounded-full", hc.dot)} />
-									<span className={cn("rounded-full px-2 py-0.5 font-medium text-[10px]", hc.badge, hc.text)}>
-										{hc.label}
-									</span>
 								</div>
 							</div>
 							<div className="flex items-center gap-4 text-slate-500 text-xs">
@@ -672,7 +551,6 @@ export function SectionIntelligence({ sections, students, allOrgUnits, onNavigat
 			<UnitTypeSelector types={availableTypes} selectedType={effectiveType} onSelect={setSelectedType} />
 
 			<ActionAlerts sections={activeSections} students={activeStudents} onNavigateToTab={onNavigateToTab} />
-			<PipelineFunnel students={activeStudents} />
 
 			<div className="grid gap-4 lg:grid-cols-2">
 				<TopPerformingSections sections={activeSections} />

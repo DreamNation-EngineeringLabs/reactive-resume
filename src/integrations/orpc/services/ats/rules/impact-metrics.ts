@@ -113,8 +113,18 @@ export function findRepetitiveOpeners(bullets: string[], threshold = 3): Map<str
  * Returns a value 0–1 where 1 = identical word sets.
  */
 function jaccardSimilarity(a: string, b: string): number {
-	const setA = new Set(a.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
-	const setB = new Set(b.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
+	const setA = new Set(
+		a
+			.toLowerCase()
+			.split(/\s+/)
+			.filter((w) => w.length > 2),
+	);
+	const setB = new Set(
+		b
+			.toLowerCase()
+			.split(/\s+/)
+			.filter((w) => w.length > 2),
+	);
 	if (setA.size === 0 || setB.size === 0) return 0;
 	let intersection = 0;
 	for (const w of setA) {
@@ -309,9 +319,7 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 
 	const im6Issues: string[] = [];
 	if (repeatedOpeners.size > 0) {
-		const examples = [...repeatedOpeners.entries()]
-			.map(([word, count]) => `"${word}" (${count}×)`)
-			.join(", ");
+		const examples = [...repeatedOpeners.entries()].map(([word, count]) => `"${word}" (${count}×)`).join(", ");
 		im6Issues.push(`Repetitive openers: ${examples} — vary your starting verb to show breadth`);
 	}
 	if (duplicatePairs.length > 0) {
@@ -331,7 +339,9 @@ export async function scoreImpactMetrics(data: ResumeData): Promise<CategoryScor
 				: "Good variety — no repetitive openers or near-duplicate bullets found.",
 	});
 
-	const totalScore = Math.round(Math.min(maxScoreForBullets, im1Score + im2Score + im3Score + im4Score + im5Score + im6Score));
+	const totalScore = Math.round(
+		Math.min(maxScoreForBullets, im1Score + im2Score + im3Score + im4Score + im5Score + im6Score),
+	);
 	return { score: totalScore, max: MAX_SCORE, details };
 }
 

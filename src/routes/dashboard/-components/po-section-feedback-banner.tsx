@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { ChatTeardropTextIcon, MicrophoneIcon, XIcon } from "@phosphor-icons/react";
+import { ChatTeardropTextIcon, MicrophoneIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -58,10 +58,8 @@ export function POSectionFeedbackBanner({ sectionId, tenantId }: Props) {
 								key={review.id}
 								className={`rounded-xl border p-4 text-sm ${i === 0 ? "border-indigo-100 bg-indigo-50" : "border-slate-100 bg-slate-50"}`}
 							>
-								<div className="mb-2 flex items-center gap-2 text-xs text-slate-400">
-									<span className="font-semibold text-slate-600">
-										{i === 0 ? t`Latest` : `#${reviews.length - i}`}
-									</span>
+								<div className="mb-2 flex items-center gap-2 text-slate-400 text-xs">
+									<span className="font-semibold text-slate-600">{i === 0 ? t`Latest` : `#${reviews.length - i}`}</span>
 									<span className="ml-auto">
 										{new Date(review.createdAt).toLocaleDateString(undefined, {
 											month: "short",
@@ -71,7 +69,7 @@ export function POSectionFeedbackBanner({ sectionId, tenantId }: Props) {
 										})}
 									</span>
 								</div>
-								<p className="whitespace-pre-wrap leading-relaxed text-slate-700">{review.reviewNotes}</p>
+								<p className="whitespace-pre-wrap text-slate-700 leading-relaxed">{review.reviewNotes}</p>
 								{review.voiceNoteUrl && (
 									<div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2">
 										<MicrophoneIcon weight="duotone" className="size-4 shrink-0 text-indigo-400" />

@@ -17,8 +17,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AtsScoreHistoryChart } from "@/components/ats/score-history-chart";
 import { KeywordCurveChart } from "@/components/ats/keyword-curve-chart";
+import { AtsScoreHistoryChart } from "@/components/ats/score-history-chart";
 import { AtsSuggestionDescription } from "@/components/ats/suggestion-description";
 import { flushResumeSync, useResumeStore } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
@@ -319,7 +319,9 @@ function ATSScorePanel({ state, onExpand }: { state: ATSPanelState; onExpand: ()
 		<div className="space-y-3">
 			<div className="space-y-2">
 				<p className="text-muted-foreground text-xs">
-					<Trans>Paste a job description to score vs. a specific role, or score without one for general ATS checks.</Trans>
+					<Trans>
+						Paste a job description to score vs. a specific role, or score without one for general ATS checks.
+					</Trans>
 				</p>
 				<Textarea
 					value={jobDescription}
@@ -354,19 +356,19 @@ function ATSScorePanel({ state, onExpand }: { state: ATSPanelState; onExpand: ()
 						<div className="space-y-2 rounded-lg border bg-muted/30 p-3">
 							<div className="flex flex-wrap gap-1.5">
 								{criticalCount > 0 && (
-									<span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+									<span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 font-medium text-[11px] text-red-700 dark:bg-red-950/40 dark:text-red-300">
 										<XCircleIcon className="size-3" />
 										{criticalCount} critical
 									</span>
 								)}
 								{warningCount > 0 && (
-									<span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+									<span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-[11px] text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
 										<WarningIcon className="size-3" />
 										{warningCount} warnings
 									</span>
 								)}
 								{autoCount > 0 && (
-									<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:bg-green-950/40 dark:text-green-300">
+									<span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 font-medium text-[11px] text-green-700 dark:bg-green-950/40 dark:text-green-300">
 										<LightningIcon className="size-3" />
 										{autoCount} auto-fix
 									</span>
@@ -470,7 +472,7 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 					)}
 
 					{/* ── Overall score + mode ── */}
-					<div className="rounded-xl border bg-muted/30 px-4 py-3 space-y-2">
+					<div className="space-y-2 rounded-xl border bg-muted/30 px-4 py-3">
 						<div className="flex items-center gap-3">
 							<ScoreRingSmall score={result.overall} />
 							<div className="min-w-0 flex-1">
@@ -481,14 +483,17 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 									</p>
 									{/* Delta badge — shown when history is loaded and delta exists */}
 									{deltaEntry?.deltaScore != null && deltaEntry.deltaScore !== 0 && (
-										<span className={cn(
-											"flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold text-[10px]",
-											deltaEntry.deltaScore > 0
-												? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
-												: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
-										)}>
+										<span
+											className={cn(
+												"flex items-center gap-0.5 rounded-full px-2 py-0.5 font-semibold text-[10px]",
+												deltaEntry.deltaScore > 0
+													? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+													: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400",
+											)}
+										>
 											{deltaEntry.deltaScore > 0 ? "↑" : "↓"}
-											{deltaEntry.deltaScore > 0 ? "+" : ""}{deltaEntry.deltaScore} vs last
+											{deltaEntry.deltaScore > 0 ? "+" : ""}
+											{deltaEntry.deltaScore} vs last
 										</span>
 									)}
 									{deltaEntry?.deltaScore === 0 && (
@@ -502,12 +507,12 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 										</span>
 									)}
 								</div>
-								<p className={cn("mt-0.5 text-xs font-medium", getScoreColor(result.overall).text)}>
+								<p className={cn("mt-0.5 font-medium text-xs", getScoreColor(result.overall).text)}>
 									{getScoreLabel(result.overall)}
 								</p>
 								<span
 									className={cn(
-										"mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+										"mt-1 inline-block rounded-full px-2 py-0.5 font-medium text-[10px]",
 										result.metadata.jdProvided
 											? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
 											: "bg-muted text-muted-foreground",
@@ -527,7 +532,10 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 						{deltaEntry && deltaEntry.majorImprovements.length > 0 && (
 							<div className="flex flex-wrap gap-1.5 border-t pt-2">
 								{deltaEntry.majorImprovements.map((imp) => (
-									<span key={imp.category} className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700 dark:bg-green-950/40 dark:text-green-400">
+									<span
+										key={imp.category}
+										className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 font-semibold text-[10px] text-green-700 dark:bg-green-950/40 dark:text-green-400"
+									>
 										↑ {imp.label} <span className="opacity-70">+{imp.delta}%</span>
 									</span>
 								))}
@@ -555,9 +563,9 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 									)}
 								>
 									<div className="flex items-center justify-between gap-1">
-										<span className="truncate text-[11px] font-medium leading-tight">{cat.label}</span>
+										<span className="truncate font-medium text-[11px] leading-tight">{cat.label}</span>
 										{catSuggestions.length > 0 && (
-											<span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+											<span className="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 font-bold text-[9px] text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
 												{catSuggestions.length}
 											</span>
 										)}
@@ -569,7 +577,7 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 												style={{ width: `${pct}%` }}
 											/>
 										</div>
-										<span className={cn("ml-2 shrink-0 font-bold tabular-nums text-[11px]", color.text)}>
+										<span className={cn("ml-2 shrink-0 font-bold text-[11px] tabular-nums", color.text)}>
 											{cat.score.score}/{cat.score.max}
 										</span>
 									</div>
@@ -587,9 +595,23 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 					{activeCat && (
 						<div className="space-y-3">
 							<div className="flex items-center gap-2">
-								<div className={cn("h-3 w-1 rounded-full", getScoreColor(activeCat.score.max > 0 ? Math.round((activeCat.score.score / activeCat.score.max) * 100) : 0).bg)} />
+								<div
+									className={cn(
+										"h-3 w-1 rounded-full",
+										getScoreColor(
+											activeCat.score.max > 0 ? Math.round((activeCat.score.score / activeCat.score.max) * 100) : 0,
+										).bg,
+									)}
+								/>
 								<p className="font-semibold text-sm">{activeCat.label}</p>
-								<span className={cn("ml-auto font-bold tabular-nums text-sm", getScoreColor(activeCat.score.max > 0 ? Math.round((activeCat.score.score / activeCat.score.max) * 100) : 0).text)}>
+								<span
+									className={cn(
+										"ml-auto font-bold text-sm tabular-nums",
+										getScoreColor(
+											activeCat.score.max > 0 ? Math.round((activeCat.score.score / activeCat.score.max) * 100) : 0,
+										).text,
+									)}
+								>
 									{activeCat.score.score}/{activeCat.score.max}
 								</span>
 							</div>
@@ -608,7 +630,7 @@ function ATSScoreInlineBody({ state, resumeId }: { state: ATSPanelState; resumeI
 
 					{/* ── Score history + re-score ── */}
 					<div className="space-y-2 border-t pt-3">
-						<p className="font-semibold text-xs text-muted-foreground uppercase tracking-wide">
+						<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
 							<Trans>Score History</Trans>
 						</p>
 						<AtsScoreHistoryChart resumeId={resumeId} />
@@ -649,7 +671,6 @@ function ScoreRingSmall({ score }: { score: number }) {
 		</div>
 	);
 }
-
 
 // ---------------------------------------------------------------------------
 // Score overview (sidebar compact)

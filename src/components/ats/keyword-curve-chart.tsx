@@ -31,9 +31,10 @@ function toY(score: number): number {
 }
 
 // Precompute polyline points for the curve
-const curvePoints: string = Array.from({ length: CURVE_MAX_COUNT + 1 }, (_, i) => `${toX(i)},${toY(curveScore(i))}`).join(
-	" ",
-);
+const curvePoints: string = Array.from(
+	{ length: CURVE_MAX_COUNT + 1 },
+	(_, i) => `${toX(i)},${toY(curveScore(i))}`,
+).join(" ");
 
 // Area fill path: curve + close back along bottom
 const areaPath: string =
@@ -78,7 +79,7 @@ export function KeywordCurveChart({ currentCount }: KeywordCurveChartProps) {
 
 	return (
 		<div className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-700 dark:bg-zinc-800/40">
-			<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+			<p className="mb-2 font-semibold text-xs text-zinc-500 uppercase tracking-wide dark:text-zinc-400">
 				<Trans>Keyword Scoring Curve</Trans>
 			</p>
 
@@ -153,7 +154,15 @@ export function KeywordCurveChart({ currentCount }: KeywordCurveChartProps) {
 
 				{/* Y-axis labels */}
 				{Y_TICKS.map((v) => (
-					<text key={v} x={PAD_L - 4} y={toY(v) + 3} fontSize="9" fill="currentColor" className="text-zinc-400" textAnchor="end">
+					<text
+						key={v}
+						x={PAD_L - 4}
+						y={toY(v) + 3}
+						fontSize="9"
+						fill="currentColor"
+						className="text-zinc-400"
+						textAnchor="end"
+					>
 						{v}
 					</text>
 				))}
@@ -194,7 +203,14 @@ export function KeywordCurveChart({ currentCount }: KeywordCurveChartProps) {
 				/>
 
 				{/* Axis titles */}
-				<text x={PAD_L + INNER_W / 2} y={CHART_H - 2} fontSize="9" fill="currentColor" className="text-zinc-400" textAnchor="middle">
+				<text
+					x={PAD_L + INNER_W / 2}
+					y={CHART_H - 2}
+					fontSize="9"
+					fill="currentColor"
+					className="text-zinc-400"
+					textAnchor="middle"
+				>
 					<Trans>Tech terms detected</Trans>
 				</text>
 				<text
@@ -224,8 +240,7 @@ export function KeywordCurveChart({ currentCount }: KeywordCurveChartProps) {
 				</span>
 				{nextThreshold !== null && (
 					<span className="text-zinc-400 dark:text-zinc-500">
-						<Trans>Next milestone:</Trans>{" "}
-						<span className="font-medium text-indigo-500">{nextThreshold} terms</span>{" "}
+						<Trans>Next milestone:</Trans> <span className="font-medium text-indigo-500">{nextThreshold} terms</span>{" "}
 						<span className="text-zinc-400">(~{curveScore(nextThreshold)}/25)</span>
 					</span>
 				)}

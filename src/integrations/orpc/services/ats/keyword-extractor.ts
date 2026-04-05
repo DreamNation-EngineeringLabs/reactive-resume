@@ -96,14 +96,16 @@ const SECTION_HEADER_RE =
  * "Software Engineer - 2026 Freshers" → "Software Engineer"
  */
 function cleanJobTitle(raw: string): string {
-	return raw
-		// Remove parenthetical batch/cohort/year info
-		.replace(/\s*\((?:batch|class|cohort|intake|fresher|graduate|hiring|fy|cy|q\d)[\s\w]*\d{2,4}[^)]*\)/gi, "")
-		.replace(/\s*\(\d{4}[\s\w]*\)/gi, "") // e.g. "(2026)"
-		// Remove trailing " - 2026 Freshers" style suffixes
-		.replace(/\s*[-–]\s*\d{4}[\w\s]*/g, "")
-		.replace(/\s*[-–]\s*(?:batch|class|cohort|fresher|graduate|new grad|campus hire)[\w\s]*/gi, "")
-		.trim();
+	return (
+		raw
+			// Remove parenthetical batch/cohort/year info
+			.replace(/\s*\((?:batch|class|cohort|intake|fresher|graduate|hiring|fy|cy|q\d)[\s\w]*\d{2,4}[^)]*\)/gi, "")
+			.replace(/\s*\(\d{4}[\s\w]*\)/gi, "") // e.g. "(2026)"
+			// Remove trailing " - 2026 Freshers" style suffixes
+			.replace(/\s*[-–]\s*\d{4}[\w\s]*/g, "")
+			.replace(/\s*[-–]\s*(?:batch|class|cohort|fresher|graduate|new grad|campus hire)[\w\s]*/gi, "")
+			.trim()
+	);
 }
 
 function getATSModel() {
@@ -122,8 +124,7 @@ function getATSModel() {
  */
 function extractJobTitleFallback(text: string): string {
 	// Pattern 1: "Role: Senior Engineer" style — REQUIRES a colon so "Role Overview" is excluded
-	const colonPattern =
-		/(?:role|position|job title|title|opening|opportunity)\s*:\s*([A-Za-z][^\n.:,]{3,60})/i;
+	const colonPattern = /(?:role|position|job title|title|opening|opportunity)\s*:\s*([A-Za-z][^\n.:,]{3,60})/i;
 	const colonMatch = text.match(colonPattern);
 	if (colonMatch?.[1]) {
 		const candidate = cleanJobTitle(colonMatch[1].trim().replace(/\s+/g, " "));
@@ -148,7 +149,10 @@ function extractJobTitleFallback(text: string): string {
 	}
 
 	// Pattern 3 (last resort): first non-empty line — JDs typically start with the role name
-	const lines = text.split("\n").map((l) => l.trim()).filter((l) => l.length > 3 && l.length < 100);
+	const lines = text
+		.split("\n")
+		.map((l) => l.trim())
+		.filter((l) => l.length > 3 && l.length < 100);
 	for (const line of lines) {
 		// Skip lines that look like section headers or metadata
 		if (SECTION_HEADER_RE.test(line)) continue;
@@ -167,7 +171,10 @@ function extractJobTitleFallback(text: string): string {
  * Lowercase + replace non-alphanumeric (except +, #, .) with spaces.
  */
 function normalizeTerm(term: string): string {
-	return term.toLowerCase().replace(/[^a-z0-9+#.]/g, " ").trim();
+	return term
+		.toLowerCase()
+		.replace(/[^a-z0-9+#.]/g, " ")
+		.trim();
 }
 
 /**
@@ -253,9 +260,7 @@ export async function extractKeywords(jobDescription: string): Promise<JDAnalysi
 		// Supplement hard skills with taxonomy scan for any explicitly present terms the LLM missed.
 		// Word-boundary matching prevents "C" from being extracted from "C++" etc.
 		const taxonomyKeywords = extractFromTaxonomy(jobDescription);
-		const existingTechKeywords = new Set(
-			[...analysis.hardSkills, ...analysis.tools].map((k) => k.toLowerCase()),
-		);
+		const existingTechKeywords = new Set([...analysis.hardSkills, ...analysis.tools].map((k) => k.toLowerCase()));
 		for (const kw of taxonomyKeywords) {
 			if (!existingTechKeywords.has(kw.toLowerCase())) {
 				analysis.hardSkills.push(kw);

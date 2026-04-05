@@ -192,7 +192,8 @@ export function POSectionReviewDialog({
 	const isSubmitting = uploadMutation.isPending || reviewMutation.isPending || updateMutation.isPending;
 	const canSubmit = notes.trim().length > 0 && !isSubmitting;
 
-	const formatSeconds = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+	const formatSeconds = (s: number) =>
+		`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -234,8 +235,7 @@ export function POSectionReviewDialog({
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
 							<label className="font-semibold text-slate-700 text-sm">
-								{t`Voice Note`}{" "}
-								<span className="font-normal text-slate-400">{t`(optional)`}</span>
+								{t`Voice Note`} <span className="font-normal text-slate-400">{t`(optional)`}</span>
 							</label>
 							{recordingState === "recorded" && audioUrl && (
 								<button
@@ -267,7 +267,7 @@ export function POSectionReviewDialog({
 							<button
 								type="button"
 								onClick={startRecording}
-								className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-3 text-slate-500 text-sm transition-all hover:border-indigo-300 hover:text-indigo-600"
+								className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-200 border-dashed py-3 text-slate-500 text-sm transition-all hover:border-indigo-300 hover:text-indigo-600"
 							>
 								<MicrophoneIcon weight="duotone" className="size-4" />
 								{isEditMode ? t`Record a new voice note` : t`Click to record a voice note`}
