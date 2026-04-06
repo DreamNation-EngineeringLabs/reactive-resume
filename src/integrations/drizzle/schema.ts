@@ -21,6 +21,8 @@ export const user = pg.pgTable(
 		username: pg.text("username").notNull().unique(),
 		displayUsername: pg.text("display_username").notNull().unique(),
 		twoFactorEnabled: pg.boolean("two_factor_enabled").notNull().default(false),
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"),
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: pg
 			.timestamp("updated_at", { withTimezone: true })
@@ -185,6 +187,8 @@ export const resume = pg.pgTable(
 			.references(() => user.id, { onDelete: "cascade" }),
 		reviewStatus: pg.text("review_status").notNull().default("DRAFT"), // DRAFT | SUBMITTED_TO_FACULTY | FACULTY_REVISION_REQUESTED | FACULTY_VERIFIED | FINALIZED_BY_FACULTY | SUBMITTED_TO_PO | PO_REVISION_REQUESTED | RESUBMITTED_TO_PO | APPROVED
 		locked: pg.boolean("locked").notNull().default(false),
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"),
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 		unlockReason: pg.text("unlock_reason"),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: pg
@@ -238,6 +242,8 @@ export const userInfo = pg.pgTable("user_info", {
 		.notNull()
 		.unique()
 		.references(() => user.id, { onDelete: "cascade" }),
+	tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"),
+	organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 	createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	updatedAt: pg
 		.timestamp("updated_at", { withTimezone: true })
@@ -301,7 +307,8 @@ export const resumeComment = pg.pgTable(
 			.uuid("resume_id")
 			.notNull()
 			.references(() => resume.id, { onDelete: "cascade" }),
-		tenantId: pg.text("tenant_id").notNull(), // Reference to eng-labs tenant
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"), // Reference to eng-labs tenant
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 		authorId: pg.text("author_id").notNull(), // eng-labs user ID (faculty/PO)
 		studentId: pg.text("student_id").notNull(), // eng-labs user ID (student)
 		parentId: pg.uuid("parent_id"), // Support for nested replies
@@ -334,7 +341,8 @@ export const resumeChecklist = pg.pgTable(
 			.primaryKey()
 			.$defaultFn(() => generateId()),
 		facultyId: pg.text("faculty_id").notNull(), // eng-labs faculty user ID
-		tenantId: pg.text("tenant_id").notNull(), // Reference to eng-labs tenant
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"), // Reference to eng-labs tenant
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 		courseId: pg.text("course_id"), // eng-labs course ID
 		title: pg.text("title").notNull(),
 		description: pg.text("description"),
@@ -388,7 +396,8 @@ export const resumeEvaluation = pg.pgTable(
 			.notNull()
 			.references(() => resume.id, { onDelete: "cascade" }),
 		studentId: pg.text("student_id").notNull(), // eng-labs user ID
-		tenantId: pg.text("tenant_id").notNull(), // Reference to eng-labs tenant
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"), // Reference to eng-labs tenant
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 		checklistId: pg
 			.uuid("checklist_id")
 			.notNull()
@@ -450,7 +459,8 @@ export const resumeHistory = pg.pgTable(
 			.notNull()
 			.references(() => resume.id, { onDelete: "cascade" }),
 		studentId: pg.text("student_id").notNull(), // eng-labs user ID
-		tenantId: pg.text("tenant_id").notNull(), // Reference to eng-labs tenant
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"), // Reference to eng-labs tenant
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 		action: pg.text("action").notNull(), // CREATED | UPDATED | COMMENTED | EVALUATED | FORWARDED
 		previousData: pg.jsonb("previous_data"),
 		currentData: pg.jsonb("current_data"),
@@ -471,7 +481,8 @@ export const poSectionReview = pg.pgTable(
 			.$defaultFn(() => generateId()),
 		/** eng-labs section / org-unit ID */
 		sectionId: pg.text("section_id").notNull(),
-		tenantId: pg.text("tenant_id").notNull(),
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"),
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 		/** eng-labs ID of the faculty member who submitted the section (optional — query by sectionId instead) */
 		facultyId: pg.text("faculty_id"),
 		/** eng-labs ID of the PO who is sending the review back */
@@ -548,6 +559,9 @@ export const atsScoreHistory = pg.pgTable(
 
 		/** Whether a job description was provided for this scoring run */
 		jobDescriptionProvided: pg.boolean("job_description_provided").notNull().default(false),
+
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"),
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
 
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
