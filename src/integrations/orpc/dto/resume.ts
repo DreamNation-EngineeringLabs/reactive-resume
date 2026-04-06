@@ -18,6 +18,8 @@ const resumeSchema = createSelectSchema(schema.resume, {
 	userId: z.string().describe("The ID of the user who owns the resume."),
 	reviewStatus: z.string().optional().describe("The current review status of the resume."),
 	unlockReason: z.string().nullable().optional().describe("The reason the resume was unlocked, if any."),
+	tenantId: z.string().optional().describe("The tenant ID."),
+	organisationId: z.string().optional().describe("The organisation ID."),
 	createdAt: z.date().describe("The date and time the resume was created."),
 	updatedAt: z.date().describe("The date and time the resume was last updated."),
 });
