@@ -15,6 +15,7 @@ import { MultipleCombobox } from "@/components/ui/multiple-combobox";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { orpc } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
+import { CreditUsageBanner } from "../-components/credit-usage-banner";
 import { DashboardHeader } from "../-components/header";
 import { GridView } from "./-components/grid-view";
 import { ListView } from "./-components/list-view";
@@ -73,6 +74,8 @@ function RouteComponent() {
 				title={t`Resumes`}
 				description={t`Manage and build professional, ATS-friendly resumes.`}
 			/>
+
+			<CreditUsageBanner />
 
 			<div className="flex items-center gap-x-3 rounded-[1.5rem] border border-border bg-white p-3 shadow-sm transition-all duration-300 hover:shadow-md">
 				<Combobox

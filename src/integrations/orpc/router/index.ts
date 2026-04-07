@@ -3,6 +3,7 @@ import { atsRouter } from "./ats";
 import { authRouter } from "./auth";
 import { flagsRouter } from "./flags";
 import { printerRouter } from "./printer";
+import { quotaRouter } from "./quota";
 import { resumeRouter } from "./resume";
 import { statisticsRouter } from "./statistics";
 import { storageRouter } from "./storage";
@@ -13,6 +14,7 @@ export default {
 	ats: atsRouter,
 	auth: authRouter,
 	flags: flagsRouter,
+	quota: quotaRouter,
 	resume: resumeRouter,
 	storage: storageRouter,
 	printer: printerRouter,

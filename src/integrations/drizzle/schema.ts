@@ -503,6 +503,75 @@ export const poSectionReview = pg.pgTable(
 	],
 );
 
+// ─── Quota / Credit Tracking ─────────────────────────────────────────────────
+
+export type QuotaServiceType = "RESUME_CREATE" | "ATS_SCORE";
+
+/**
+ * Per-user credit allocation per service type.
+ * totalCredits = -1 means unlimited.
+ * If no row exists for a (userId, serviceType) pair the user is treated as unlimited.
+ */
+export const userQuota = pg.pgTable(
+	"user_quota",
+	{
+		id: pg
+			.uuid("id")
+			.notNull()
+			.primaryKey()
+			.$defaultFn(() => generateId()),
+		userId: pg
+			.uuid("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		serviceType: pg.text("service_type").notNull().$type<QuotaServiceType>(),
+		/** Total credits allocated. -1 = unlimited. */
+		totalCredits: pg.integer("total_credits").notNull().default(-1),
+		usedCredits: pg.integer("used_credits").notNull().default(0),
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"),
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
+		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: pg
+			.timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow()
+			.$onUpdate(() => /* @__PURE__ */ new Date()),
+	},
+	(t) => [
+		pg.unique().on(t.userId, t.serviceType),
+		pg.index().on(t.userId),
+		pg.index().on(t.tenantId),
+	],
+);
+
+/** Append-only log of every credit consumption event. */
+export const creditUsageLog = pg.pgTable(
+	"credit_usage_log",
+	{
+		id: pg
+			.uuid("id")
+			.notNull()
+			.primaryKey()
+			.$defaultFn(() => generateId()),
+		userId: pg
+			.uuid("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		serviceType: pg.text("service_type").notNull().$type<QuotaServiceType>(),
+		/** Optional: the resume involved in this action. */
+		resumeId: pg.uuid("resume_id").references(() => resume.id, { onDelete: "set null" }),
+		tenantId: pg.text("tenant_id").notNull().default("yCXkn-v4fkLZw9FKXOAg8"),
+		organisationId: pg.text("organisation_id").notNull().default("kAvyiiLGzMFOyOeVkcm5o"),
+		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [
+		pg.index().on(t.userId),
+		pg.index().on(t.userId, t.serviceType),
+		pg.index().on(t.userId, t.createdAt.desc()),
+		pg.index().on(t.tenantId),
+	],
+);
+
 // ─── ATS Score History ───────────────────────────────────────────────────────
 
 /** Snapshot of one ATS scoring run — stored so we can show score progression over time. */
