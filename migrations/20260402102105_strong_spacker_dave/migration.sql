@@ -1,5 +1,7 @@
-CREATE TYPE "crdb_internal_region" AS ENUM('aws-ap-south-1');--> statement-breakpoint
-CREATE TABLE "ats_score_history" (
+-- crdb_internal_region is a CockroachDB built-in type for multi-region clusters; do not create.
+-- CREATE TYPE "crdb_internal_region" AS ENUM('aws-ap-south-1');
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "ats_score_history" (
 	"id" uuid PRIMARY KEY,
 	"resume_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -11,11 +13,18 @@ CREATE TABLE "ats_score_history" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "resume" ADD COLUMN "review_status" text DEFAULT 'DRAFT' NOT NULL;--> statement-breakpoint
-ALTER TABLE "resume" ADD COLUMN "locked" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "resume" ADD COLUMN "unlock_reason" text;--> statement-breakpoint
-ALTER TABLE "resume_comment" ADD COLUMN "parent_id" uuid;--> statement-breakpoint
-ALTER TABLE "resume_evaluation" ADD COLUMN "snapshot" jsonb;--> statement-breakpoint
+ALTER TABLE "resume" ADD COLUMN IF NOT EXISTS "review_status" text DEFAULT 'DRAFT' NOT NULL;--> statement-breakpoint
+ALTER TABLE "resume" ADD COLUMN IF NOT EXISTS "locked" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "resume" ADD COLUMN IF NOT EXISTS "unlock_reason" text;--> statement-breakpoint
+ALTER TABLE "resume_comment" ADD COLUMN IF NOT EXISTS "parent_id" uuid;--> statement-breakpoint
+ALTER TABLE "resume_evaluation" ADD COLUMN IF NOT EXISTS "snapshot" jsonb;--> statement-breakpoint
+-- CockroachDB cannot ALTER COLUMN TYPE while an index references the column.
+-- Drop indexes first; recreated below after the type change.
+DROP INDEX IF EXISTS "resume_checklist_faculty_id_index" CASCADE;--> statement-breakpoint
+DROP INDEX IF EXISTS "resume_comment_author_id_index" CASCADE;--> statement-breakpoint
+DROP INDEX IF EXISTS "resume_comment_student_id_index" CASCADE;--> statement-breakpoint
+DROP INDEX IF EXISTS "resume_evaluation_student_id_index" CASCADE;--> statement-breakpoint
+DROP INDEX IF EXISTS "resume_history_student_id_index" CASCADE;--> statement-breakpoint
 ALTER TABLE "resume_checklist" ALTER COLUMN "faculty_id" SET DATA TYPE text USING "faculty_id"::text;--> statement-breakpoint
 ALTER TABLE "resume_comment" ALTER COLUMN "author_id" SET DATA TYPE text USING "author_id"::text;--> statement-breakpoint
 ALTER TABLE "resume_comment" ALTER COLUMN "student_id" SET DATA TYPE text USING "student_id"::text;--> statement-breakpoint
@@ -24,11 +33,17 @@ ALTER TABLE "resume_evaluation" ALTER COLUMN "student_id" SET DATA TYPE text USI
 ALTER TABLE "resume_evaluation" ALTER COLUMN "evaluated_by" SET DATA TYPE text USING "evaluated_by"::text;--> statement-breakpoint
 ALTER TABLE "resume_history" ALTER COLUMN "student_id" SET DATA TYPE text USING "student_id"::text;--> statement-breakpoint
 ALTER TABLE "resume_history" ALTER COLUMN "changed_by" SET DATA TYPE text USING "changed_by"::text;--> statement-breakpoint
-CREATE INDEX "ats_score_history_resume_id_index" ON "ats_score_history" ("resume_id");--> statement-breakpoint
-CREATE INDEX "ats_score_history_user_id_index" ON "ats_score_history" ("user_id");--> statement-breakpoint
-CREATE INDEX "ats_score_history_resume_id_created_at_index" ON "ats_score_history" ("resume_id","created_at");--> statement-breakpoint
-CREATE INDEX "ats_score_history_user_id_created_at_index" ON "ats_score_history" ("user_id","created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "resume_review_status_index" ON "resume" ("review_status");--> statement-breakpoint
-CREATE INDEX "resume_comment_parent_id_index" ON "resume_comment" ("parent_id");--> statement-breakpoint
+-- Recreate indexes that were dropped above.
+CREATE INDEX IF NOT EXISTS "resume_checklist_faculty_id_index" ON "resume_checklist" ("faculty_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resume_comment_author_id_index" ON "resume_comment" ("author_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resume_comment_student_id_index" ON "resume_comment" ("student_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resume_evaluation_student_id_index" ON "resume_evaluation" ("student_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resume_history_student_id_index" ON "resume_history" ("student_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ats_score_history_resume_id_index" ON "ats_score_history" ("resume_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ats_score_history_user_id_index" ON "ats_score_history" ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ats_score_history_resume_id_created_at_index" ON "ats_score_history" ("resume_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ats_score_history_user_id_created_at_index" ON "ats_score_history" ("user_id","created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resume_review_status_index" ON "resume" ("review_status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "resume_comment_parent_id_index" ON "resume_comment" ("parent_id");--> statement-breakpoint
 ALTER TABLE "ats_score_history" ADD CONSTRAINT "ats_score_history_resume_id_resume_id_fkey" FOREIGN KEY ("resume_id") REFERENCES "resume"("id") ON DELETE CASCADE;--> statement-breakpoint
 ALTER TABLE "ats_score_history" ADD CONSTRAINT "ats_score_history_user_id_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE;
