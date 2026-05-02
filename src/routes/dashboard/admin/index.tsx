@@ -1,11 +1,8 @@
-import { t } from "@lingui/core/macro";
-import { ChartBarIcon } from "@phosphor-icons/react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { getTenantId } from "@/utils/sso-context";
-import { DashboardHeader } from "../-components/header";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
 
@@ -17,6 +14,7 @@ export const Route = createFileRoute("/dashboard/admin/")({
 			packageId: z.string().optional(),
 			unitType: z.string().optional(),
 			unitId: z.string().optional(),
+			sectionId: z.string().optional(),
 		}),
 	),
 	beforeLoad: async ({ context }) => {
@@ -25,7 +23,7 @@ export const Route = createFileRoute("/dashboard/admin/")({
 });
 
 function RouteComponent() {
-	const { tab, packageId, unitType, unitId } = Route.useSearch();
+	const { tab, packageId, unitType, unitId, sectionId } = Route.useSearch();
 	const [tenantId, setTenantId] = useState<string>("default");
 
 	useEffect(() => {
@@ -33,16 +31,13 @@ function RouteComponent() {
 	}, []);
 
 	return (
-		<div className="space-y-6">
-			<DashboardHeader icon={ChartBarIcon} title={t`Admin Metrics Dashboard`} />
-			<SectionMetricsView
-				scope="admin"
-				sectionIds={[]}
-				tenantId={tenantId}
-				title=""
-				initialTab={tab as DashboardTab}
-				initialFilter={{ packageId, unitType, unitId }}
-			/>
-		</div>
+		<SectionMetricsView
+			scope="admin"
+			sectionIds={[]}
+			tenantId={tenantId}
+			initialTab={tab as DashboardTab}
+			initialFilter={{ packageId, unitType, unitId }}
+			sectionId={sectionId}
+		/>
 	);
 }

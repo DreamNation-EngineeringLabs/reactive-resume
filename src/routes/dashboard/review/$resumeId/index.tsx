@@ -35,6 +35,7 @@ const searchSchema = z.object({
 	packageId: z.string().optional(),
 	unitType: z.string().optional(),
 	unitId: z.string().optional(),
+	sectionId: z.string().optional(),
 	scope: z.enum(["faculty", "po", "admin"]).optional().default("faculty"),
 });
 
@@ -51,7 +52,7 @@ type ReviewTab = "comments" | "evaluate" | "changes" | "timeline";
 
 function ReviewPage() {
 	const { resumeId } = Route.useParams();
-	const { engLabsStudentId, tenantId, packageId, unitType, unitId, scope } = Route.useSearch();
+	const { engLabsStudentId, tenantId, packageId, unitType, unitId, sectionId, scope } = Route.useSearch();
 
 	const [activeTab, setActiveTab] = useState<ReviewTab>("comments");
 	const [showHighlights, setShowHighlights] = useState(true);
@@ -98,6 +99,7 @@ function ReviewPage() {
 				packageId,
 				unitType: unitType as any,
 				unitId,
+				sectionId,
 				scope,
 			},
 		});
@@ -221,7 +223,11 @@ function ReviewPage() {
 			<div className="flex shrink-0 items-center gap-4 border-slate-100 border-b bg-white px-6 py-3">
 				<Link
 					to={scope === "po" || scope === "admin" ? "/dashboard/placement-officer" : "/dashboard/faculty"}
-					search={{ tab: "students", packageId, unitType, unitId }}
+					search={
+						sectionId
+							? { tab: "sections", sectionId, packageId, unitType, unitId }
+							: { tab: "students", packageId, unitType, unitId }
+					}
 					className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-slate-200"
 				>
 					<ArrowLeftIcon weight="bold" className="size-4" />
@@ -822,6 +828,14 @@ function EvaluatePanel({
 	const setItemResult = (itemId: string, update: Partial<{ passed: boolean; score: number; notes: string }>) => {
 		setItemResults((prev) => ({ ...prev, [itemId]: { ...getItemResult(itemId), ...update } }));
 	};
+	const totalChecklistWeight = checklist?.items?.reduce((sum, item) => sum + (item.weight ?? 1), 0) ?? 0;
+	const getScoreShare = (weight: number) => (totalChecklistWeight > 0 ? (weight / totalChecklistWeight) * 100 : 0);
+	const formatPercent = (value: number) => `${Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1)}%`;
+	const getScoreShareBadgeClass = (share: number) => {
+		if (share >= 20) return "bg-rose-100 text-rose-700";
+		if (share >= 10) return "bg-amber-100 text-amber-700";
+		return "bg-emerald-100 text-emerald-700";
+	};
 
 	if (!checklists || checklists.length === 0) {
 		return (
@@ -864,6 +878,10 @@ function EvaluatePanel({
 			{checklist?.items && checklist.items.length > 0 && (
 				<div className="space-y-3">
 					<p className="font-semibold text-slate-500 text-xs uppercase tracking-widest">Evaluation Criteria</p>
+					<p className="-mt-1 text-slate-500 text-xs">
+						Each item contributes a share of the final score based on its weight. Higher weight means a
+						higher score share.
+					</p>
 					{checklist.items.map((item) => {
 						const result = getItemResult(item.id);
 						return (
@@ -873,8 +891,14 @@ function EvaluatePanel({
 										<p className="font-semibold text-slate-800 text-sm">{item.title}</p>
 										{item.description && <p className="text-slate-500 text-xs">{item.description}</p>}
 									</div>
-									<span className="shrink-0 rounded-lg bg-slate-200 px-2 py-0.5 font-mono text-slate-500 text-xs">
-										×{item.weight}
+									<span
+										className={cn(
+											"shrink-0 rounded-lg px-2 py-0.5 text-xs",
+											getScoreShareBadgeClass(getScoreShare(item.weight ?? 1)),
+										)}
+										title={`This item contributes ${formatPercent(getScoreShare(item.weight ?? 1))} of the final score.`}
+									>
+										Score Share {formatPercent(getScoreShare(item.weight ?? 1))}
 									</span>
 								</div>
 								<div className="flex items-center gap-3">

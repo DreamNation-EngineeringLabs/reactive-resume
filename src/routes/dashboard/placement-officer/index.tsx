@@ -1,10 +1,8 @@
-import { t } from "@lingui/core/macro";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { getTenantId } from "@/utils/sso-context";
-import { DashboardHeader } from "../-components/header";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
 
@@ -16,6 +14,7 @@ export const Route = createFileRoute("/dashboard/placement-officer/")({
 			packageId: z.string().optional(),
 			unitType: z.string().optional(),
 			unitId: z.string().optional(),
+			sectionId: z.string().optional(),
 		}),
 	),
 	beforeLoad: async ({ context }) => {
@@ -24,7 +23,7 @@ export const Route = createFileRoute("/dashboard/placement-officer/")({
 });
 
 function RouteComponent() {
-	const { tab, packageId, unitType, unitId } = Route.useSearch();
+	const { tab, packageId, unitType, unitId, sectionId } = Route.useSearch();
 	const [tenantId, setTenantId] = useState<string>("default");
 
 	useEffect(() => {
@@ -32,16 +31,13 @@ function RouteComponent() {
 	}, []);
 
 	return (
-		<div className="space-y-6">
-			<DashboardHeader title={t`Placement Officer Dashboard`} />
-			<SectionMetricsView
-				scope="po"
-				sectionIds={[]}
-				tenantId={tenantId}
-				title=""
-				initialTab={tab as DashboardTab}
-				initialFilter={{ packageId, unitType, unitId }}
-			/>
-		</div>
+		<SectionMetricsView
+			scope="po"
+			sectionIds={[]}
+			tenantId={tenantId}
+			initialTab={tab as DashboardTab}
+			initialFilter={{ packageId, unitType, unitId }}
+			sectionId={sectionId}
+		/>
 	);
 }

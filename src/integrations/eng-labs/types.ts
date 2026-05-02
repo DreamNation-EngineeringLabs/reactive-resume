@@ -38,6 +38,16 @@ export interface StudentInfo {
 	sectionCode?: string;
 }
 
+/** Learner row plus every org unit they are tied to (enrollment + mappings), tenant-scoped. */
+export interface EngLabsLearnerProfile {
+	id: string;
+	name: string;
+	email: string;
+	rollNumber: string | null;
+	enrollmentUnitId: string | null;
+	unitIds: string[];
+}
+
 export interface FacultyInfo {
 	id: string;
 	name: string;

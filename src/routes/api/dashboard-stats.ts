@@ -12,23 +12,22 @@ import { schema } from "@/integrations/drizzle";
 import { db } from "@/integrations/drizzle/client";
 import {
 	getAllOrgUnits,
-	getAllSections,
+	getDescendantOrgUnitIds,
+	getEngLabsLearnerProfilesByEmails,
 	getEngLabsUserByEmail,
 	getInstructorPackages,
 	getInstructorSections,
 	getPlacementPackages,
+	getPlacementScopedSections,
+	getPlacementSubtreeOrgUnitIds,
 	getSectionsByIds,
-	getStudentsBySections,
+	getTenantIdForOrgUnits,
 	getUnitSchemaTypes,
 } from "@/integrations/eng-labs";
+import type { EngLabsLearnerProfile } from "@/integrations/eng-labs/types";
 import { env } from "@/utils/env";
 
 // ── Helper functions (same as dashboard.ts oRPC procedure) ──
-
-async function getLocalUsersByEmails(emails: string[]) {
-	if (emails.length === 0) return [];
-	return db.select().from(schema.user).where(inArray(schema.user.email, emails));
-}
 
 async function getResumesForUsers(userIds: string[]) {
 	if (userIds.length === 0) return [];
@@ -93,19 +92,37 @@ async function handler({ request }: { request: Request }) {
 	}
 
 	const url = new URL(request.url);
-	const tenantId = url.searchParams.get("tenantId");
+	const tenantIdFromQuery = url.searchParams.get("tenantId");
 	const scope = url.searchParams.get("scope") || "po";
 	const sectionIdsParam = url.searchParams.get("sectionIds") || "";
 	const activeUnitId = url.searchParams.get("activeUnitId") || undefined;
 	const email = url.searchParams.get("email") || undefined;
 
-	if (!tenantId) {
+	if (!tenantIdFromQuery) {
 		return Response.json({ error: "tenantId is required" }, { status: 400 });
 	}
 
 	try {
+		let tenantId = tenantIdFromQuery;
 		const sectionIds = sectionIdsParam ? sectionIdsParam.split(",").filter(Boolean) : [];
 		const engLabsUser = email ? await getEngLabsUserByEmail(email) : null;
+		if ((!tenantId || tenantId === "default") && engLabsUser?.tenantId) {
+			tenantId = engLabsUser.tenantId;
+		}
+
+		let sectionRows: any[] = [];
+		if (scope === "faculty" && engLabsUser?.id) {
+			sectionRows = await getInstructorSections(engLabsUser.id);
+		}
+		if (sectionRows.length === 0 && sectionIds.length > 0) {
+			sectionRows = await getSectionsByIds(sectionIds);
+		}
+		if (sectionRows.length > 0) {
+			const ouTenant = await getTenantIdForOrgUnits(sectionRows.map((s: any) => s.id));
+			if (ouTenant && (!tenantId || tenantId === "default")) {
+				tenantId = ouTenant;
+			}
+		}
 
 		// 1. Resolve packages + organisation
 		let filterPackages: any[] = [];
@@ -147,49 +164,101 @@ async function handler({ request }: { request: Request }) {
 				: Promise.resolve([]),
 		]);
 
-		// 3. Resolve sections
-		let sections: any[] = [];
-		if (scope === "faculty" && engLabsUser?.id) {
-			sections = await getInstructorSections(engLabsUser.id);
-		}
-		if (sections.length === 0 && sectionIds.length > 0) {
-			sections = await getSectionsByIds(sectionIds);
-		}
-		if (sections.length === 0 && tenantId !== "default") {
-			sections = await getAllSections(tenantId);
+		if (sectionRows.length === 0 && tenantId !== "default") {
+			sectionRows = scope === "po" ? await getPlacementScopedSections(tenantId) : [];
 		}
 
 		// Scope for faculty
 		let scopedOrgUnits = allOrgUnits;
-		if (scope === "faculty" && sections.length > 0) {
-			const relevantIds = new Set(sections.map((s: any) => s.id));
+		if (scope === "faculty" && sectionRows.length > 0) {
+			const relevantIds = new Set(sectionRows.map((s: any) => s.id));
 			scopedOrgUnits = allOrgUnits.filter((u: any) => relevantIds.has(u.id));
 		}
 
-		// 4. Filter by activeUnitId
-		let effectiveSectionIds = sections.map((s: any) => s.id);
+		const normEmail = (e: string) => e.trim().toLowerCase();
+
+		let activeDescendantSet: Set<string> | null = null;
 		if (activeUnitId) {
-			const childIds = new Set<string>();
-			const queue = [activeUnitId];
-			while (queue.length > 0) {
-				const current = queue.shift()!;
-				childIds.add(current);
-				for (const u of scopedOrgUnits as any[]) {
-					if (u.parentId === current) queue.push(u.id);
+			if (tenantId !== "default") {
+				activeDescendantSet = new Set(await getDescendantOrgUnitIds([activeUnitId], tenantId));
+			} else {
+				const childIds = new Set<string>();
+				const queue = [activeUnitId];
+				while (queue.length > 0) {
+					const current = queue.shift()!;
+					childIds.add(current);
+					for (const u of scopedOrgUnits as any[]) {
+						if (u.parentId === current) queue.push(u.id);
+					}
 				}
-			}
-			effectiveSectionIds = effectiveSectionIds.filter((id: string) => childIds.has(id));
-			if (effectiveSectionIds.length === 0 && childIds.has(activeUnitId)) {
-				effectiveSectionIds = [activeUnitId];
+				activeDescendantSet = childIds;
 			}
 		}
 
-		// 5. Get students → match to resume app users → get resumes
-		const engLabsStudents = await getStudentsBySections(effectiveSectionIds, tenantId);
-		const studentEmails = engLabsStudents.map((s) => s.email);
-		const localUsers = await getLocalUsersByEmails(studentEmails);
-		const emailToLocalUser = new Map(localUsers.map((u) => [u.email, u]));
-		const localUserIds = localUsers.map((u) => u.id);
+		let placementBoundarySet: Set<string> | null = null;
+		if (scope === "po" && tenantId !== "default") {
+			const pIds = await getPlacementSubtreeOrgUnitIds(tenantId);
+			placementBoundarySet = pIds.length > 0 ? new Set(pIds) : null;
+		}
+
+		let instructorSubtreeSet: Set<string> | null = null;
+		if (scope === "faculty") {
+			if (sectionRows.length === 0) {
+				instructorSubtreeSet = new Set();
+			} else if (tenantId !== "default") {
+				instructorSubtreeSet = new Set(await getDescendantOrgUnitIds(sectionRows.map((s: any) => s.id), tenantId));
+			} else {
+				instructorSubtreeSet = new Set(sectionRows.map((s: any) => s.id));
+			}
+		}
+
+		function profilePassesFilters(p: EngLabsLearnerProfile): boolean {
+			if (placementBoundarySet && !p.unitIds.some((id) => placementBoundarySet.has(id))) return false;
+			if (instructorSubtreeSet !== null && !p.unitIds.some((id) => instructorSubtreeSet.has(id)))
+				return false;
+			if (activeDescendantSet && !p.unitIds.some((id) => activeDescendantSet.has(id))) return false;
+			return true;
+		}
+
+		const resumeUsers =
+			tenantId !== "default"
+				? await db.select().from(schema.user).where(eq(schema.user.tenantId, tenantId))
+				: [];
+
+		const profiles = await getEngLabsLearnerProfilesByEmails(
+			resumeUsers.map((u) => normEmail(u.email)),
+			tenantId,
+		);
+		const profileByEmail = new Map<string, EngLabsLearnerProfile>(profiles.map((p) => [normEmail(p.email), p]));
+
+		const emailToLocalUser = new Map<string, (typeof resumeUsers)[number]>();
+		const engLabsStudents: Array<{
+			id: string;
+			name: string;
+			email: string;
+			rollNumber: string | null;
+			sectionId: string;
+			sectionName?: string;
+		}> = [];
+
+		for (const ru of resumeUsers) {
+			const p = profileByEmail.get(normEmail(ru.email));
+			if (!p || !profilePassesFilters(p)) continue;
+			emailToLocalUser.set(normEmail(ru.email), ru);
+			const primarySection = p.enrollmentUnitId ?? p.unitIds[0] ?? "";
+			engLabsStudents.push({
+				id: p.id,
+				name: p.name,
+				email: p.email,
+				rollNumber: p.rollNumber,
+				sectionId: primarySection,
+			});
+		}
+
+		const localUserIds = engLabsStudents.flatMap((s) => {
+			const u = emailToLocalUser.get(normEmail(s.email));
+			return u ? [u.id] : [];
+		});
 
 		const resumes = await getResumesForUsers(localUserIds);
 		const resumeIds = resumes.map((r) => r.id);
@@ -210,8 +279,10 @@ async function handler({ request }: { request: Request }) {
 		}
 
 		const students = engLabsStudents.map((student) => {
-			const localUser = emailToLocalUser.get(student.email);
+			const localUser = emailToLocalUser.get(normEmail(student.email));
+			const p = profileByEmail.get(normEmail(student.email));
 			const userResumes = localUser ? (resumesByUserId.get(localUser.id) ?? []) : [];
+			const engLabsUnitIds = p?.unitIds?.length ? p.unitIds : student.sectionId ? [student.sectionId] : [];
 			return {
 				engLabsId: student.id,
 				name: student.name,
@@ -219,6 +290,7 @@ async function handler({ request }: { request: Request }) {
 				rollNumber: student.rollNumber,
 				sectionId: student.sectionId,
 				sectionName: student.sectionName ?? null,
+				engLabsUnitIds,
 				resumeAppUserId: localUser?.id ?? null,
 				resumes: userResumes.map((r) => {
 					const score = latestScores.get(r.id) ?? null;
@@ -252,12 +324,15 @@ async function handler({ request }: { request: Request }) {
 				const currentId = queue.shift()!;
 				if (processed.has(currentId)) continue;
 				processed.add(currentId);
-				if (sections.some((s: any) => s.id === currentId)) descendantSectionIds.add(currentId);
+				if (sectionRows.some((s: any) => s.id === currentId)) descendantSectionIds.add(currentId);
 				for (const u of allOrgUnits as any[]) {
 					if (u.parentId === currentId) queue.push(u.id);
 				}
 			}
-			const unitStudents = students.filter((s) => descendantSectionIds.has(s.sectionId));
+			const unitStudents = students.filter((s) => {
+				const ids = s.engLabsUnitIds.length > 0 ? s.engLabsUnitIds : [s.sectionId];
+				return ids.some((id) => descendantSectionIds.has(id));
+			});
 			const unitResumes = unitStudents.flatMap((s) => s.resumes);
 
 			const byStatus = (statuses: string[]) => unitResumes.filter((r) => statuses.includes(r.reviewStatus)).length;
@@ -315,12 +390,18 @@ async function handler({ request }: { request: Request }) {
 
 		// ── Derived stats matching the TPO overview UI exactly ──
 
-		// Card 1-2: Total Students, Total Resumes
+		// Card 1-2: cohort = eng-labs learners in scope ∩ Polymath `user` (resume builder enrolled)
 		const totalStudents = students.length;
+		const enrolledInResumeBuilder = totalStudents;
 		const totalResumes = allResumes.length;
+		const withPrimaryResume = students.filter((s) => s.resumes.length > 0).length;
+		const primaryResumeRate =
+			enrolledInResumeBuilder > 0
+				? Math.round((withPrimaryResume / enrolledInResumeBuilder) * 1000) / 10
+				: 0;
 
 		// Submission Breakdown (left column of charts)
-		const withResumes = students.filter((s) => s.resumes.length > 0).length;
+		const withResumes = withPrimaryResume;
 		const noResumes = totalStudents - withResumes;
 		const pendingReview = students.filter((s) =>
 			s.resumes.some((r) => r.isSubmitted && r.evaluationScore === null),
@@ -367,6 +448,9 @@ async function handler({ request }: { request: Request }) {
 			overviewStats: {
 				// Row 1: 6 stat cards
 				totalStudents,
+				enrolledInResumeBuilder,
+				withPrimaryResume,
+				primaryResumeRate,
 				totalResumes,
 				submissionRate,          // % — "0.2%" in the UI
 				evaluationRate,          // % — "100.0%" in the UI
@@ -395,6 +479,9 @@ async function handler({ request }: { request: Request }) {
 			students,
 			aggregateStats: {
 				totalStudents,
+				enrolledInResumeBuilder,
+				withPrimaryResume,
+				primaryResumeRate,
 				totalResumes,
 				totalEvaluations: allEvaluated.length,
 				totalSubmitted: allResumes.filter((r) => r.isSubmitted).length,
@@ -415,7 +502,7 @@ async function handler({ request }: { request: Request }) {
 				}),
 			},
 			packages: filterPackages,
-			unitTypes: scope === "faculty" && sections.length > 0 ? [...new Set(scopedOrgUnits.map((u: any) => u.type))].sort() : unitTypes,
+			unitTypes: scope === "faculty" && sectionRows.length > 0 ? [...new Set(scopedOrgUnits.map((u: any) => u.type))].sort() : unitTypes,
 			allOrgUnits: scopedOrgUnits,
 		});
 	} catch (error) {

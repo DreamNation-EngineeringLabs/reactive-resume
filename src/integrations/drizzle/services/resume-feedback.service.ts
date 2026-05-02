@@ -292,9 +292,31 @@ export async function createEvaluation({
 		score?: number;
 	}>;
 }) {
-	// Calculate overall score (average of item scores)
-	const totalScore = items.reduce((sum, item) => sum + (item.score ?? 0), 0);
-	const overallScore = items.length > 0 ? totalScore / items.length : null;
+	// Calculate overall score as weighted average:
+	// overall = sum(itemScore * itemWeight) / sum(itemWeight)
+	const checklistItemIds = [...new Set(items.map((item) => item.checklistItemId))];
+	const checklistWeights =
+		checklistItemIds.length > 0
+			? await db
+					.select({ id: resumeChecklistItem.id, weight: resumeChecklistItem.weight })
+					.from(resumeChecklistItem)
+					.where(
+						and(
+							eq(resumeChecklistItem.checklistId, checklistId),
+							inArray(resumeChecklistItem.id, checklistItemIds),
+						),
+					)
+			: [];
+	const weightByItemId = new Map(checklistWeights.map((row) => [row.id, row.weight ?? 1]));
+	let weightedScoreSum = 0;
+	let totalWeight = 0;
+	for (const item of items) {
+		const weight = weightByItemId.get(item.checklistItemId) ?? 1;
+		const score = item.score ?? 0;
+		weightedScoreSum += score * weight;
+		totalWeight += weight;
+	}
+	const overallScore = totalWeight > 0 ? weightedScoreSum / totalWeight : null;
 
 	// Check if evaluation already exists for (resumeId, checklistId)
 	const existing = await db

@@ -1,11 +1,8 @@
-import { t } from "@lingui/core/macro";
-import { ClipboardTextIcon } from "@phosphor-icons/react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { getOrganisationUnits, getTenantId } from "@/utils/sso-context";
-import { DashboardHeader } from "../-components/header";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
 
@@ -17,6 +14,7 @@ export const Route = createFileRoute("/dashboard/faculty/")({
 			packageId: z.string().optional(),
 			unitType: z.string().optional(),
 			unitId: z.string().optional(),
+			sectionId: z.string().optional(),
 		}),
 	),
 	beforeLoad: async ({ context }) => {
@@ -25,7 +23,7 @@ export const Route = createFileRoute("/dashboard/faculty/")({
 });
 
 function RouteComponent() {
-	const { tab, packageId, unitType, unitId } = Route.useSearch();
+	const { tab, packageId, unitType, unitId, sectionId } = Route.useSearch();
 	const [orgUnits, setOrgUnits] = useState<string[]>([]);
 	const [tenantId, setTenantId] = useState<string>("default");
 
@@ -35,16 +33,13 @@ function RouteComponent() {
 	}, []);
 
 	return (
-		<div className="space-y-6">
-			<DashboardHeader icon={ClipboardTextIcon} title={t`Faculty Review Dashboard`} />
-			<SectionMetricsView
-				scope="faculty"
-				sectionIds={orgUnits}
-				tenantId={tenantId}
-				title=""
-				initialTab={tab as DashboardTab}
-				initialFilter={{ packageId, unitType, unitId }}
-			/>
-		</div>
+		<SectionMetricsView
+			scope="faculty"
+			sectionIds={orgUnits}
+			tenantId={tenantId}
+			initialTab={tab as DashboardTab}
+			initialFilter={{ packageId, unitType, unitId }}
+			sectionId={sectionId}
+		/>
 	);
 }

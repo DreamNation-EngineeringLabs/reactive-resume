@@ -1,9 +1,11 @@
 import { getEngLabsPool } from "./client";
-import type { FacultyInfo, OrgUnitRow, PlacementPackage, Section, StudentInfo } from "./types";
+import type { EngLabsLearnerProfile, FacultyInfo, OrgUnitRow, PlacementPackage, Section, StudentInfo } from "./types";
 
 /**
  * Get students enrolled in a specific section (organisation unit).
- * Uses user_mappings as the authoritative enrollment source.
+ * Includes learners from `user_mappings` and from `users.enrollment_unit_id` when no mapping row exists.
+ * Tenant is enforced via `organisation_units.tenant_id` (not `user_mappings.tenant_id`), which avoids empty
+ * results when mappings omit or mismatch tenant.
  */
 export async function getStudentsBySection(sectionId: string, tenantId: string): Promise<StudentInfo[]> {
 	const pool = getEngLabsPool();
@@ -16,13 +18,24 @@ export async function getStudentsBySection(sectionId: string, tenantId: string):
 		roll_number: string | null;
 		unit_id: string;
 	}>(
-		`SELECT DISTINCT u.id, u.name, u.email, u.roll_number, um.unit_id
-		 FROM user_mappings um
-		 JOIN users u ON um.user_id = u.id
-		 WHERE um.unit_id = $1
-		   AND u.type = 'LEARNER'
-		   AND um.tenant_id = $2
-		 ORDER BY u.roll_number, u.name`,
+		`SELECT DISTINCT q.id, q.name, q.email, q.roll_number, q.unit_id
+		 FROM (
+			 SELECT u.id, u.name, u.email, u.roll_number, um.unit_id
+			 FROM user_mappings um
+			 JOIN users u ON um.user_id = u.id
+			 JOIN organisation_units ou ON um.unit_id = ou.id
+			 WHERE um.unit_id = $1
+			   AND u.type = 'LEARNER'
+			   AND ou.tenant_id = $2
+			 UNION
+			 SELECT u.id, u.name, u.email, u.roll_number, u.enrollment_unit_id AS unit_id
+			 FROM users u
+			 JOIN organisation_units ou ON u.enrollment_unit_id = ou.id
+			 WHERE u.enrollment_unit_id = $1
+			   AND u.type = 'LEARNER'
+			   AND ou.tenant_id = $2
+		 ) q
+		 ORDER BY q.roll_number, q.name`,
 		[sectionId, tenantId],
 	);
 
@@ -37,7 +50,7 @@ export async function getStudentsBySection(sectionId: string, tenantId: string):
 
 /**
  * Get students across multiple sections, with section name/code enriched.
- * Uses user_mappings as the authoritative enrollment source.
+ * Same enrollment rules as {@link getStudentsBySection}: mappings + `enrollment_unit_id`, scoped by org unit tenant.
  */
 export async function getStudentsBySections(sectionIds: string[], tenantId: string): Promise<StudentInfo[]> {
 	const pool = getEngLabsPool();
@@ -52,15 +65,26 @@ export async function getStudentsBySections(sectionIds: string[], tenantId: stri
 		section_name: string;
 		section_code: string | null;
 	}>(
-		`SELECT DISTINCT u.id, u.name, u.email, u.roll_number, um.unit_id,
-		        ou.name AS section_name, ou.code AS section_code
-		 FROM user_mappings um
-		 JOIN users u ON um.user_id = u.id
-		 JOIN organisation_units ou ON um.unit_id = ou.id
-		 WHERE um.unit_id = ANY($1)
-		   AND u.type = 'LEARNER'
-		   AND um.tenant_id = $2
-		 ORDER BY ou.name, u.roll_number, u.name`,
+		`SELECT DISTINCT q.id, q.name, q.email, q.roll_number, q.unit_id, q.section_name, q.section_code
+		 FROM (
+			 SELECT u.id, u.name, u.email, u.roll_number, um.unit_id,
+			        ou.name AS section_name, ou.code AS section_code
+			 FROM user_mappings um
+			 JOIN users u ON um.user_id = u.id
+			 JOIN organisation_units ou ON um.unit_id = ou.id
+			 WHERE um.unit_id = ANY($1)
+			   AND u.type = 'LEARNER'
+			   AND ou.tenant_id = $2
+			 UNION
+			 SELECT u.id, u.name, u.email, u.roll_number, u.enrollment_unit_id AS unit_id,
+			        ou.name AS section_name, ou.code AS section_code
+			 FROM users u
+			 JOIN organisation_units ou ON u.enrollment_unit_id = ou.id
+			 WHERE u.enrollment_unit_id = ANY($1)
+			   AND u.type = 'LEARNER'
+			   AND ou.tenant_id = $2
+		 ) q
+		 ORDER BY q.section_name, q.roll_number, q.name`,
 		[sectionIds, tenantId],
 	);
 
@@ -73,6 +97,51 @@ export async function getStudentsBySections(sectionIds: string[], tenantId: stri
 		sectionName: r.section_name,
 		sectionCode: r.section_code ?? undefined,
 	}));
+}
+
+/**
+ * All org unit IDs in the subtree under any of `rootIds` (including each root), for one tenant.
+ * Instructor assignments often reference a parent (batch/stream) while `user_mappings` rows point at
+ * descendant class units — expanding roots before {@link getStudentsBySections} fixes zero-student counts.
+ */
+export async function getDescendantOrgUnitIds(rootIds: string[], tenantId: string): Promise<string[]> {
+	const pool = getEngLabsPool();
+	if (!pool || rootIds.length === 0 || !tenantId || tenantId === "default") return rootIds;
+
+	const { rows } = await pool.query<{ id: string }>(
+		`WITH RECURSIVE subtree AS (
+			SELECT id FROM organisation_units
+			WHERE id = ANY($1) AND tenant_id = $2
+			UNION
+			SELECT ou.id
+			FROM organisation_units ou
+			INNER JOIN subtree st ON ou.parent_unit_id = st.id
+			WHERE ou.tenant_id = $2
+		)
+		SELECT id FROM subtree`,
+		[rootIds, tenantId],
+	);
+
+	const ids = rows.map((r) => r.id);
+	return ids.length > 0 ? ids : rootIds;
+}
+
+/**
+ * Tenant id from organisation_units for the given unit ids (faculty SSO often omits tenant in cookies).
+ */
+export async function getTenantIdForOrgUnits(unitIds: string[]): Promise<string | null> {
+	const pool = getEngLabsPool();
+	if (!pool || unitIds.length === 0) return null;
+
+	const { rows } = await pool.query<{ tenant_id: string }>(
+		`SELECT DISTINCT tenant_id::text AS tenant_id
+		 FROM organisation_units
+		 WHERE id = ANY($1)
+		 LIMIT 1`,
+		[unitIds],
+	);
+
+	return rows[0]?.tenant_id ?? null;
 }
 
 /**
@@ -118,6 +187,208 @@ export async function getAllSections(tenantId: string): Promise<Section[]> {
 		packageId: r.package_id,
 		packageName: r.package_name,
 		packageCode: r.package_code,
+	}));
+}
+
+const sectionRowSelect = `ou.id, ou.name, ou.code, ou.type, ou.parent_unit_id,
+		        parent.id   AS package_id,
+		        parent.name AS package_name,
+		        parent.code AS package_code`;
+
+function mapSectionRows(
+	rows: Array<{
+		id: string;
+		name: string;
+		code: string | null;
+		type: string;
+		parent_unit_id: string | null;
+		package_id: string | null;
+		package_name: string | null;
+		package_code: string | null;
+	}>,
+): Section[] {
+	return rows.map((r) => ({
+		id: r.id,
+		name: r.name,
+		code: r.code,
+		type: r.type,
+		parentUnitId: r.parent_unit_id,
+		packageId: r.package_id,
+		packageName: r.package_name,
+		packageCode: r.package_code,
+	}));
+}
+
+/**
+ * Sections with learners, limited to org units under `placement_instructor_unit_assignments`
+ * (package-linked roots + descendants). Falls back to "any org that owns a placement package"
+ * when there are no assignment rows yet.
+ */
+export async function getPlacementScopedSections(tenantId: string): Promise<Section[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
+	const { rows: assignedRows } = await pool.query<{
+		id: string;
+		name: string;
+		code: string | null;
+		type: string;
+		parent_unit_id: string | null;
+		package_id: string | null;
+		package_name: string | null;
+		package_code: string | null;
+	}>(
+		`WITH RECURSIVE subtree AS (
+			SELECT DISTINCT piua.unit_id AS id
+			FROM placement_instructor_unit_assignments piua
+			INNER JOIN placement_packages pp ON pp.id = piua.package_id AND pp.tenant_id = $1
+			UNION
+			SELECT ou.id
+			FROM organisation_units ou
+			INNER JOIN subtree st ON ou.parent_unit_id = st.id
+			WHERE ou.tenant_id = $1
+		)
+		SELECT ${sectionRowSelect}
+		 FROM organisation_units ou
+		 LEFT JOIN organisation_units parent ON ou.parent_unit_id = parent.id
+		 WHERE ou.tenant_id = $1
+		   AND ou.id IN (SELECT id FROM subtree)
+		   AND EXISTS (
+		       SELECT 1 FROM user_mappings um
+		       JOIN users lrn ON lrn.id = um.user_id AND lrn.type = 'LEARNER'
+		       WHERE um.unit_id = ou.id
+		   )
+		 ORDER BY parent.name NULLS LAST, ou.name`,
+		[tenantId],
+	);
+
+	if (assignedRows.length > 0) {
+		return mapSectionRows(assignedRows);
+	}
+
+	const { rows } = await pool.query<{
+		id: string;
+		name: string;
+		code: string | null;
+		type: string;
+		parent_unit_id: string | null;
+		package_id: string | null;
+		package_name: string | null;
+		package_code: string | null;
+	}>(
+		`SELECT ${sectionRowSelect}
+		 FROM organisation_units ou
+		 LEFT JOIN organisation_units parent ON ou.parent_unit_id = parent.id
+		 WHERE ou.tenant_id = $1
+		   AND ou.organisation_id IN (
+		       SELECT DISTINCT organisation_id FROM placement_packages WHERE tenant_id = $1
+		   )
+		   AND EXISTS (
+		       SELECT 1 FROM user_mappings um
+		       JOIN users lrn ON lrn.id = um.user_id AND lrn.type = 'LEARNER'
+		       WHERE um.unit_id = ou.id
+		   )
+		 ORDER BY parent.name NULLS LAST, ou.name`,
+		[tenantId],
+	);
+
+	return mapSectionRows(rows);
+}
+
+/**
+ * All organisation unit IDs in the placement subtree for a tenant (PIUA roots + descendants,
+ * or fallback: all units under orgs that own a placement package).
+ */
+export async function getPlacementSubtreeOrgUnitIds(tenantId: string): Promise<string[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
+	const { rows: assignedRows } = await pool.query<{ id: string }>(
+		`WITH RECURSIVE subtree AS (
+			SELECT DISTINCT piua.unit_id AS id
+			FROM placement_instructor_unit_assignments piua
+			INNER JOIN placement_packages pp ON pp.id = piua.package_id AND pp.tenant_id = $1
+			UNION
+			SELECT ou.id
+			FROM organisation_units ou
+			INNER JOIN subtree st ON ou.parent_unit_id = st.id
+			WHERE ou.tenant_id = $1
+		)
+		SELECT id FROM subtree`,
+		[tenantId],
+	);
+
+	if (assignedRows.length > 0) {
+		return [...new Set(assignedRows.map((r) => r.id))];
+	}
+
+	const { rows } = await pool.query<{ id: string }>(
+		`SELECT ou.id
+		 FROM organisation_units ou
+		 WHERE ou.tenant_id = $1
+		   AND ou.organisation_id IN (
+		       SELECT DISTINCT organisation_id FROM placement_packages WHERE tenant_id = $1
+		   )`,
+		[tenantId],
+	);
+
+	return [...new Set(rows.map((r) => r.id))];
+}
+
+/**
+ * For resume-app emails: full eng-labs learner profile including every org unit (enrollment +
+ * user_mappings), scoped to tenant. Used to cohort from resume DB first, then filter by placement /
+ * instructor subtree / department filters without missing department-only or class-only links.
+ */
+export async function getEngLabsLearnerProfilesByEmails(
+	normalizedEmails: string[],
+	tenantId: string,
+): Promise<EngLabsLearnerProfile[]> {
+	const pool = getEngLabsPool();
+	if (!pool || normalizedEmails.length === 0 || !tenantId || tenantId === "default") return [];
+
+	const unique = [...new Set(normalizedEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+	if (unique.length === 0) return [];
+
+	const { rows } = await pool.query<{
+		id: string;
+		name: string;
+		email: string;
+		roll_number: string | null;
+		enrollment_unit_id: string | null;
+		unit_ids: string[] | null;
+	}>(
+		`SELECT u.id,
+		        u.name,
+		        u.email,
+		        u.roll_number,
+		        u.enrollment_unit_id,
+		        COALESCE((
+		          SELECT array_agg(DISTINCT q.unit_id)
+		          FROM (
+		            SELECT u.enrollment_unit_id::text AS unit_id
+		            WHERE u.enrollment_unit_id IS NOT NULL
+		            UNION
+		            SELECT um.unit_id::text AS unit_id
+		            FROM user_mappings um
+		            INNER JOIN organisation_units ou ON ou.id = um.unit_id AND ou.tenant_id = $2
+		            WHERE um.user_id = u.id
+		          ) q
+		        ), ARRAY[]::text[]) AS unit_ids
+		 FROM users u
+		 WHERE u.type = 'LEARNER'
+		   AND u.tenant_id = $2
+		   AND LOWER(TRIM(u.email)) = ANY($1::text[])`,
+		[unique, tenantId],
+	);
+
+	return rows.map((r) => ({
+		id: r.id,
+		name: r.name,
+		email: r.email,
+		rollNumber: r.roll_number,
+		enrollmentUnitId: r.enrollment_unit_id,
+		unitIds: r.unit_ids ?? [],
 	}));
 }
 
@@ -269,9 +540,18 @@ export async function getEngLabsUserByEmail(email: string): Promise<(StudentInfo
 		enrollment_unit_id: string | null;
 		tenant_id: string | null;
 	}>(
-		`SELECT id, name, email, roll_number, enrollment_unit_id, tenant_id
-		 FROM users
-		 WHERE email = $1`,
+		`SELECT u.id, u.name, u.email, u.roll_number, u.enrollment_unit_id, u.tenant_id
+		 FROM users u
+		 WHERE LOWER(TRIM(u.email)) = LOWER(TRIM($1))
+		 ORDER BY CASE UPPER(u.type::text)
+		   WHEN 'INSTRUCTOR' THEN 0
+		   WHEN 'FACULTY' THEN 0
+		   WHEN 'PLACEMENT_OFFICER' THEN 0
+		   WHEN 'ADMIN' THEN 0
+		   ELSE 1
+		 END,
+		 u.id
+		 LIMIT 1`,
 		[email],
 	);
 

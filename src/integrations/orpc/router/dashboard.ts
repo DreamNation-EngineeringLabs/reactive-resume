@@ -16,28 +16,26 @@ import { db } from "@/integrations/drizzle/client";
 import {
 	enrichByEmails,
 	getAllOrgUnits,
-	getAllSections,
+	getDescendantOrgUnitIds,
+	getEngLabsLearnerProfilesByEmails,
+	getPlacementScopedSections,
+	getPlacementSubtreeOrgUnitIds,
 	getEngLabsUserByEmail,
+	getTenantIdForOrgUnits,
 	getFacultyList,
 	getInstructorPackages,
 	getInstructorSections,
 	getPlacementPackages,
 	getSectionsByIds,
 	getStudentEnrollmentInfo,
-	getStudentsBySections,
 	getUnitSchemaTypes,
 } from "@/integrations/eng-labs";
-import type { OrgUnitRow, PlacementPackage, Section } from "@/integrations/eng-labs/types";
+import type { EngLabsLearnerProfile, OrgUnitRow, PlacementPackage, Section } from "@/integrations/eng-labs/types";
 import { protectedProcedure } from "../context";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-async function getLocalUsersByEmails(emails: string[]) {
-	if (emails.length === 0) return [];
-	return db.select().from(schema.user).where(inArray(schema.user.email, emails));
-}
 
 async function getResumesForUsers(userIds: string[]) {
 	if (userIds.length === 0) return [];
@@ -171,6 +169,92 @@ export const studentDashboard = protectedProcedure
 		};
 	});
 
+type SectionsDashboardStudent = {
+	sectionId: string;
+	/** Every eng-labs org unit this learner is tied to (enrollment + mappings). */
+	engLabsUnitIds: string[];
+	resumes: Array<{ evaluationScore: number | null; reviewStatus?: string }>;
+};
+
+/** Placement package for a dashboard row — from instructor assignment or org parent. */
+function resolveSectionPackageMeta(
+	unitId: string,
+	descendantSectionIds: Set<string>,
+	sectionRows: Section[],
+): { packageId: string | null; packageName: string | null } {
+	const direct = sectionRows.find((s) => s.id === unitId);
+	if (direct?.packageId) {
+		return { packageId: direct.packageId, packageName: direct.packageName };
+	}
+	for (const s of sectionRows) {
+		if (descendantSectionIds.has(s.id) && s.packageId) {
+			return { packageId: s.packageId, packageName: s.packageName };
+		}
+	}
+	return { packageId: null, packageName: null };
+}
+
+function computeUnitStatsRow(
+	unit: { id: string; name: string; type: string },
+	descendantSectionIds: Set<string>,
+	students: SectionsDashboardStudent[],
+	packageMeta: { packageId: string | null; packageName: string | null },
+) {
+	const unitStudents = students.filter((s) => {
+		const ids = s.engLabsUnitIds.length > 0 ? s.engLabsUnitIds : [s.sectionId];
+		return ids.some((id) => descendantSectionIds.has(id));
+	});
+	const unitResumes = unitStudents.flatMap((s) => s.resumes);
+
+	const verified = unitResumes.filter((r) =>
+		[
+			"FACULTY_VERIFIED",
+			"FINALIZED_BY_FACULTY",
+			"PO_REVISION_REQUESTED",
+			"RESUBMITTED_TO_PO",
+			"PO_VERIFIED",
+			"APPROVED",
+		].includes((r as { reviewStatus?: string }).reviewStatus ?? "DRAFT"),
+	);
+
+	const finalized = unitResumes.filter((r) =>
+		["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "APPROVED"].includes(
+			(r as { reviewStatus?: string }).reviewStatus ?? "DRAFT",
+		),
+	);
+
+	const clearedFaculty = unitResumes.filter((r) =>
+		["FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"].includes(
+			(r as { reviewStatus?: string }).reviewStatus ?? "DRAFT",
+		),
+	);
+
+	const poVerified = unitResumes.filter((r) => (r as { reviewStatus?: string }).reviewStatus === "PO_VERIFIED");
+
+	const approved = unitResumes.filter((r) => (r as { reviewStatus?: string }).reviewStatus === "APPROVED");
+
+	const scores = unitResumes.filter((r) => r.evaluationScore !== null).map((r) => r.evaluationScore!);
+
+	return {
+		id: unit.id,
+		name: unit.name,
+		unitType: unit.type,
+		packageId: packageMeta.packageId,
+		packageName: packageMeta.packageName,
+		stats: {
+			totalStudents: unitStudents.length,
+			totalResumes: unitResumes.length,
+			evaluatedResumes: verified.length,
+			submittedResumes: finalized.length,
+			passedFaculty: clearedFaculty.length,
+			poVerifiedResumes: poVerified.length,
+			approvedResumes: approved.length,
+			completionRate: unitResumes.length > 0 ? Math.round((verified.length / unitResumes.length) * 100) : 0,
+			averageScore: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null,
+		},
+	};
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Unified Section-Scoped Dashboard (Faculty & PO)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -203,7 +287,23 @@ export const sectionsDashboard = protectedProcedure
 			tenantId = engLabsUser.tenantId;
 		}
 
-		// 2. Get placement packages for the filter UI
+		// 2. Resolve assigned sections BEFORE packages/org tree — faculty SSO often has tenantId "default"
+		//    and no org resolution until we know real tenant from organisation_units.
+		let sections: Section[] = [];
+		if (scope === "faculty" && engLabsUser?.id) {
+			sections = await getInstructorSections(engLabsUser.id);
+		}
+		if (sections.length === 0 && input.sectionIds.length > 0) {
+			sections = await getSectionsByIds(input.sectionIds);
+		}
+		if (sections.length > 0) {
+			const ouTenant = await getTenantIdForOrgUnits(sections.map((s) => s.id));
+			if (ouTenant && (!tenantId || tenantId === "default")) {
+				tenantId = ouTenant;
+			}
+		}
+
+		// 3. Get placement packages for the filter UI
 		let filterPackages: PlacementPackage[] = [];
 		let resolvedOrganisationId: string | null = null;
 
@@ -238,7 +338,7 @@ export const sectionsDashboard = protectedProcedure
 			resolvedOrganisationId = filterPackages[0].organisationId;
 		}
 
-		// 3. Get unit schema types + all org units for the filter UI
+		// 4. Get unit schema types + all org units for the filter UI
 		const [unitTypes, allOrgUnits] = await Promise.all([
 			resolvedOrganisationId && tenantId && tenantId !== "default"
 				? getUnitSchemaTypes(tenantId, resolvedOrganisationId)
@@ -248,62 +348,116 @@ export const sectionsDashboard = protectedProcedure
 				: Promise.resolve([] as OrgUnitRow[]),
 		]);
 
-		// 4. Resolve CLASS-level sections (leaf nodes with learners) for student queries
-		let sections: Section[] = [];
-		if (scope === "faculty" && engLabsUser?.id) {
-			sections = await getInstructorSections(engLabsUser.id);
-		}
-		if (sections.length === 0 && input.sectionIds.length > 0) {
-			sections = await getSectionsByIds(input.sectionIds);
-		}
-		if (sections.length === 0 && tenantId && tenantId !== "default") {
-			sections = await getAllSections(tenantId);
+		// 5. PO/admin: sections with learners under orgs that have placement packages (not whole tenant)
+		if (sections.length === 0 && scope === "po" && tenantId && tenantId !== "default") {
+			sections = await getPlacementScopedSections(tenantId);
 		}
 
-		// 4b. For faculty scope, restrict allOrgUnits to only units relevant to their assigned sections
-		//     (the sections themselves + their ancestors up the tree)
+		// 6. For faculty scope, restrict allOrgUnits to only units relevant to their assigned sections
 		let scopedOrgUnits = allOrgUnits;
 		if (scope === "faculty" && sections.length > 0) {
 			const relevantIds = new Set(sections.map((s) => s.id));
 			scopedOrgUnits = allOrgUnits.filter((u) => relevantIds.has(u.id));
 		}
 
-		// 4c. Derive unit types present in the scoped units (overrides full-org unitTypes for faculty)
+		// 7. Derive unit types present in the scoped units (overrides full-org unitTypes for faculty).
+		//     When allOrgUnits failed to load, scopedOrgUnits is empty — fall back to instructor sections' types
+		//     so the Sections tab filter matches real rows.
 		const scopedUnitTypes =
-			scope === "faculty" && sections.length > 0 ? [...new Set(scopedOrgUnits.map((u) => u.type))].sort() : unitTypes;
+			scope === "faculty" && sections.length > 0
+				? scopedOrgUnits.length > 0
+					? [...new Set(scopedOrgUnits.map((u) => u.type))].sort()
+					: [...new Set(sections.map((s) => s.type))].sort()
+				: unitTypes;
 
-		// 5. If a specific unit is selected in the filter, narrow sections to descendants of that unit
-		let effectiveSectionIds = sections.map((s) => s.id);
+		const normEmail = (e: string) => e.trim().toLowerCase();
+
+		// 8–9. Cohort (resume DB first): all `user` rows for this tenant → eng-labs LEARNER profiles with
+		//     every org link (enrollment + user_mappings). Filters:
+		//     • PO: optional placement subtree (skip if none configured).
+		//     • Faculty: instructor-assigned org units + all descendants in tenant.
+		//     • activeUnitId: subtree of selected department/stream/class.
+		//     This matches department-only and class-only enrollments for default overview and filters.
+		let activeDescendantSet: Set<string> | null = null;
 		if (activeUnitId) {
-			// Find all descendant CLASS-level section IDs of the selected unit using scoped units
-			const selectedUnit = scopedOrgUnits.find((u) => u.id === activeUnitId);
-			if (selectedUnit) {
-				const childIds = new Set<string>();
-				const queue = [activeUnitId];
-				while (queue.length > 0) {
-					const current = queue.shift()!;
-					childIds.add(current);
-					for (const u of scopedOrgUnits) {
-						if (u.parentId === current) queue.push(u.id);
+			if (tenantId && tenantId !== "default") {
+				activeDescendantSet = new Set(await getDescendantOrgUnitIds([activeUnitId], tenantId));
+			} else {
+				const selectedUnit = scopedOrgUnits.find((u) => u.id === activeUnitId);
+				if (selectedUnit) {
+					const childIds = new Set<string>();
+					const queue = [activeUnitId];
+					while (queue.length > 0) {
+						const current = queue.shift()!;
+						childIds.add(current);
+						for (const u of scopedOrgUnits) {
+							if (u.parentId === current) queue.push(u.id);
+						}
 					}
-				}
-				effectiveSectionIds = effectiveSectionIds.filter((id) => childIds.has(id));
-				if (effectiveSectionIds.length === 0 && childIds.has(activeUnitId)) {
-					effectiveSectionIds = [activeUnitId];
+					activeDescendantSet = childIds;
 				}
 			}
 		}
 
-		// 6. Get students for the effective sections
-		const engLabsStudents = await getStudentsBySections(effectiveSectionIds, tenantId);
-		const studentEmails = engLabsStudents.map((s) => s.email);
+		let placementBoundarySet: Set<string> | null = null;
+		if (scope === "po" && tenantId && tenantId !== "default") {
+			const pIds = await getPlacementSubtreeOrgUnitIds(tenantId);
+			placementBoundarySet = pIds.length > 0 ? new Set(pIds) : null;
+		}
 
-		// 7. Match to local resume app users by email
-		const localUsers = await getLocalUsersByEmails(studentEmails);
-		const emailToLocalUser = new Map(localUsers.map((u) => [u.email, u]));
-		const localUserIds = localUsers.map((u) => u.id);
+		let instructorSubtreeSet: Set<string> | null = null;
+		if (scope === "faculty") {
+			if (sections.length === 0) {
+				instructorSubtreeSet = new Set();
+			} else if (tenantId && tenantId !== "default") {
+				instructorSubtreeSet = new Set(await getDescendantOrgUnitIds(sections.map((s) => s.id), tenantId));
+			} else {
+				instructorSubtreeSet = new Set(sections.map((s) => s.id));
+			}
+		}
 
-		// 8. Get resumes for matched users
+		function profilePassesFilters(p: EngLabsLearnerProfile): boolean {
+			if (placementBoundarySet && !p.unitIds.some((id) => placementBoundarySet.has(id))) return false;
+			if (instructorSubtreeSet !== null && !p.unitIds.some((id) => instructorSubtreeSet.has(id)))
+				return false;
+			if (activeDescendantSet && !p.unitIds.some((id) => activeDescendantSet.has(id))) return false;
+			return true;
+		}
+
+		const resumeUsers =
+			tenantId && tenantId !== "default"
+				? await db.select().from(schema.user).where(eq(schema.user.tenantId, tenantId))
+				: [];
+
+		const profiles = await getEngLabsLearnerProfilesByEmails(
+			resumeUsers.map((u) => normEmail(u.email)),
+			tenantId,
+		);
+		const profileByEmail = new Map<string, EngLabsLearnerProfile>(profiles.map((p) => [normEmail(p.email), p]));
+
+		const emailToLocalUser = new Map<string, (typeof resumeUsers)[number]>();
+		const engLabsStudents: import("@/integrations/eng-labs/types").StudentInfo[] = [];
+
+		for (const ru of resumeUsers) {
+			const p = profileByEmail.get(normEmail(ru.email));
+			if (!p || !profilePassesFilters(p)) continue;
+			emailToLocalUser.set(normEmail(ru.email), ru);
+			const primarySection = p.enrollmentUnitId ?? p.unitIds[0] ?? "";
+			engLabsStudents.push({
+				id: p.id,
+				name: p.name,
+				email: p.email,
+				rollNumber: p.rollNumber,
+				sectionId: primarySection,
+			});
+		}
+
+		const localUserIds = engLabsStudents.flatMap((s) => {
+			const u = emailToLocalUser.get(normEmail(s.email));
+			return u ? [u.id] : [];
+		});
+
+		// 10. Get resumes for matched users
 		const resumes = await getResumesForUsers(localUserIds);
 		const resumeIds = resumes.map((r) => r.id);
 
@@ -323,8 +477,10 @@ export const sectionsDashboard = protectedProcedure
 		}
 
 		const students = engLabsStudents.map((student) => {
-			const localUser = emailToLocalUser.get(student.email);
+			const localUser = emailToLocalUser.get(normEmail(student.email));
+			const p = profileByEmail.get(normEmail(student.email));
 			const userResumes = localUser ? (resumesByUserId.get(localUser.id) ?? []) : [];
+			const engLabsUnitIds = p?.unitIds?.length ? p.unitIds : student.sectionId ? [student.sectionId] : [];
 
 			return {
 				engLabsId: student.id,
@@ -333,6 +489,7 @@ export const sectionsDashboard = protectedProcedure
 				rollNumber: student.rollNumber,
 				sectionId: student.sectionId,
 				sectionName: student.sectionName ?? null,
+				engLabsUnitIds,
 				resumeAppUserId: localUser?.id ?? null,
 				resumes: userResumes.map((r) => {
 					const score = latestScores.get(r.id) ?? null;
@@ -361,7 +518,7 @@ export const sectionsDashboard = protectedProcedure
 		});
 
 		// 11. Calculate stats for ALL org units (hierarchical aggregation)
-		const unitStats = scopedOrgUnits.map((unit) => {
+		let unitStats = scopedOrgUnits.map((unit) => {
 			// Find all descendant CLASS-level section IDs for this unit
 			const descendantSectionIds = new Set<string>();
 			const queue = [unit.id];
@@ -382,66 +539,35 @@ export const sectionsDashboard = protectedProcedure
 				}
 			}
 
-			const unitStudents = students.filter((s) => descendantSectionIds.has(s.sectionId));
-			const unitResumes = unitStudents.flatMap((s) => s.resumes);
-
-			// New logic:
-			// 1. Verified = Any progress from Faculty or PO
-			const verified = unitResumes.filter((r) =>
-				[
-					"FACULTY_VERIFIED",
-					"FINALIZED_BY_FACULTY",
-					"PO_REVISION_REQUESTED",
-					"RESUBMITTED_TO_PO",
-					"PO_VERIFIED",
-					"APPROVED",
-				].includes((r as any).reviewStatus ?? "DRAFT"),
+			return computeUnitStatsRow(
+				{ id: unit.id, name: unit.name, type: unit.type },
+				descendantSectionIds,
+				students,
+				resolveSectionPackageMeta(unit.id, descendantSectionIds, sections),
 			);
-
-			// 2. FinalizedByFaculty = Waiting in PO Inbox
-			const finalized = unitResumes.filter((r) =>
-				["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "APPROVED"].includes((r as any).reviewStatus ?? "DRAFT"),
-			);
-
-			// 3. PassedFaculty = Cleared faculty stage once (even if in PO revision)
-			const clearedFaculty = unitResumes.filter((r) =>
-				["FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"].includes(
-					(r as any).reviewStatus ?? "DRAFT",
-				),
-			);
-
-			// 4. PO Verified = Verified by PO but not yet approved section-wide
-			const poVerified = unitResumes.filter((r) => (r as any).reviewStatus === "PO_VERIFIED");
-
-			// 5. ApprovedOnly = Final Status
-			const approved = unitResumes.filter((r) => (r as any).reviewStatus === "APPROVED");
-
-			const scores = unitResumes.filter((r) => r.evaluationScore !== null).map((r) => r.evaluationScore!);
-
-			return {
-				id: unit.id,
-				name: unit.name,
-				unitType: unit.type,
-				stats: {
-					totalStudents: unitStudents.length,
-					totalResumes: unitResumes.length,
-					evaluatedResumes: verified.length,
-					submittedResumes: finalized.length,
-					passedFaculty: clearedFaculty.length,
-					poVerifiedResumes: poVerified.length,
-					approvedResumes: approved.length,
-					completionRate: unitResumes.length > 0 ? Math.round((verified.length / unitResumes.length) * 100) : 0,
-					averageScore: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null,
-				},
-			};
 		});
 
-		// 12. Aggregate stats
+		// Faculty: when org-unit tree never loaded (or IDs don't intersect), scopedOrgUnits is empty but
+		// getInstructorSections still returned rows — build one card per assigned section so the UI isn't blank.
+		if (unitStats.length === 0 && scope === "faculty" && sections.length > 0) {
+			unitStats = sections.map((sec) =>
+				computeUnitStatsRow(
+					{ id: sec.id, name: sec.name, type: sec.type },
+					new Set([sec.id]),
+					students,
+					{ packageId: sec.packageId, packageName: sec.packageName },
+				),
+			);
+		}
+
+		// 12. Aggregate stats (denominators: tenant resume users who pass eng-labs + scope filters)
 		const allResumes = students.flatMap((s) => s.resumes);
 		const allEvaluated = allResumes.filter((r) => r.evaluationScore !== null);
 		const allScores = allEvaluated.map((r) => r.evaluationScore!);
 		const totalComments = allResumes.reduce((sum, r) => sum + r.commentCount, 0);
 		const allSubmitted = allResumes.filter((r) => r.isSubmitted);
+		const enrolledInResumeBuilder = students.length;
+		const withPrimaryResume = students.filter((s) => s.resumes.length > 0).length;
 
 		// 13. Recent activity
 		const recentEvaluations = await db
@@ -500,6 +626,13 @@ export const sectionsDashboard = protectedProcedure
 			aggregateStats: {
 				totalStudents: students.length,
 				totalResumes: allResumes.length,
+				/** Learners in scope who have a Polymath `user` row (eng-labs ∩ resume DB). Same as totalStudents. */
+				enrolledInResumeBuilder,
+				/** How many of those have at least one primary resume document (`resume.is_primary`). */
+				withPrimaryResume,
+				/** % of resume-builder enrollees with a primary resume. */
+				primaryResumeRate:
+					enrolledInResumeBuilder > 0 ? Math.round((withPrimaryResume / enrolledInResumeBuilder) * 1000) / 10 : 0,
 				totalEvaluations: allEvaluated.length,
 				totalSubmitted: allSubmitted.length,
 				totalComments,
@@ -819,7 +952,10 @@ export const adminDashboard = protectedProcedure
 				? allEvaluations.reduce((sum, e) => sum + (e.overallScore || 0), 0) / allEvaluations.length
 				: null;
 
-		const [sections, facultyList] = await Promise.all([getAllSections(tenantId), getFacultyList(tenantId)]);
+		const [sections, facultyList] = await Promise.all([
+			getPlacementScopedSections(tenantId),
+			getFacultyList(tenantId),
+		]);
 
 		const facultyPerformance = facultyList.map((faculty) => {
 			const evalCount = allEvaluations.filter((e) => e.evaluatedBy === faculty.id).length;
@@ -952,10 +1088,8 @@ export const sectionsList = protectedProcedure
 	.handler(async ({ context, input }) => {
 		let sections: Section[] = [];
 
-		// Try to resolve from DB first (for Faculty)
 		const engLabsUser = await getEngLabsUserByEmail(context.user.email);
 
-		// Auto-resolve tenantId if client sent placeholder "default"
 		let tenantId = input.tenantId;
 		if ((!tenantId || tenantId === "default") && engLabsUser?.tenantId) {
 			tenantId = engLabsUser.tenantId;
@@ -964,10 +1098,18 @@ export const sectionsList = protectedProcedure
 		if (engLabsUser?.id) {
 			sections = await getInstructorSections(engLabsUser.id);
 		}
+		if (sections.length === 0 && input.sectionIds?.length) {
+			sections = await getSectionsByIds(input.sectionIds);
+		}
+		if (sections.length > 0) {
+			const ouTenant = await getTenantIdForOrgUnits(sections.map((s) => s.id));
+			if (ouTenant && (!tenantId || tenantId === "default")) {
+				tenantId = ouTenant;
+			}
+		}
 
-		// Fallback to inputs
-		if (sections.length === 0) {
-			sections = input.sectionIds?.length ? await getSectionsByIds(input.sectionIds) : await getAllSections(tenantId);
+		if (sections.length === 0 && tenantId && tenantId !== "default") {
+			sections = engLabsUser?.id ? [] : await getPlacementScopedSections(tenantId);
 		}
 
 		return { sections };

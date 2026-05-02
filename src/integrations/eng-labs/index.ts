@@ -3,7 +3,12 @@ export {
 	enrichByEmails,
 	getAllOrgUnits,
 	getAllSections,
+	getDescendantOrgUnitIds,
+	getEngLabsLearnerProfilesByEmails,
+	getPlacementScopedSections,
+	getPlacementSubtreeOrgUnitIds,
 	getEngLabsUserByEmail,
+	getTenantIdForOrgUnits,
 	getFacultyList,
 	getInstructorPackages,
 	getInstructorSections,
@@ -17,4 +22,11 @@ export {
 	getUnitAncestors,
 	getUnitSchemaTypes,
 } from "./service";
-export type { FacultyInfo, OrgUnitRow, PlacementPackage, Section, StudentInfo } from "./types";
+export type {
+	EngLabsLearnerProfile,
+	FacultyInfo,
+	OrgUnitRow,
+	PlacementPackage,
+	Section,
+	StudentInfo,
+} from "./types";

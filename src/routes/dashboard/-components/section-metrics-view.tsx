@@ -1,12 +1,17 @@
 import { t } from "@lingui/core/macro";
 import {
+	ArrowLeftIcon,
 	ArrowRightIcon,
+	BuildingsIcon,
 	ChartBarIcon,
 	CheckCircleIcon,
 	FileTextIcon,
+	FunnelSimpleIcon,
 	HourglassIcon,
 	ListChecksIcon,
+	MagnifyingGlassIcon,
 	TargetIcon,
+	TrayIcon,
 	UsersIcon,
 	WarningIcon,
 	XCircleIcon,
@@ -15,12 +20,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AdminAtsStats } from "@/components/ats/admin-ats-stats";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Combobox } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
 import { ChecklistCreator } from "./checklist-creator";
 import { ChecklistsTab } from "./checklists-tab";
+import { DashboardHeader } from "./header";
 import { InboxView } from "./inbox-view";
 import type { OrgUnitFilterValue } from "./org-unit-filter";
 import { OrgUnitFilter } from "./org-unit-filter";
@@ -34,24 +40,27 @@ import { StudentDetailPanel } from "./student-detail-panel";
 import type { StudentWithResumes } from "./student-resume-table";
 import { StudentResumeTable } from "./student-resume-table";
 
+const sectionsTabPackageDropdownClass =
+	"h-8 min-w-[160px] rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-50";
+
 export type DashboardTab = "overview" | "inbox" | "sections" | "students" | "checklists";
 
 type SectionMetricsViewProps = {
 	scope: "faculty" | "po" | "admin";
 	sectionIds: string[];
 	tenantId: string;
-	title: string;
 	initialTab?: DashboardTab;
 	initialFilter?: OrgUnitFilterValue;
+	sectionId?: string;
 };
 
 export function SectionMetricsView({
 	scope,
 	sectionIds,
 	tenantId,
-	title,
 	initialTab = "overview",
 	initialFilter = {},
+	sectionId,
 }: SectionMetricsViewProps) {
 	const navigate = useNavigate() as any;
 	const activeTab = initialTab;
@@ -64,7 +73,7 @@ export function SectionMetricsView({
 	const [selectedStudent, setSelectedStudent] = useState<StudentWithResumes | null>(null);
 	const [showChecklistCreator, setShowChecklistCreator] = useState(false);
 	const [viewLevel, setViewLevel] = useState<string | null>(null);
-	const [reviewSection, setReviewSection] = useState<{ id: string; name: string; unitType: string } | null>(null);
+	const [sectionsTabSearch, setSectionsTabSearch] = useState("");
 	const [poReviewDialog, setPoReviewDialog] = useState<{
 		sectionId: string;
 		sectionName: string;
@@ -106,8 +115,12 @@ export function SectionMetricsView({
 	const detailedStats = useMemo(() => {
 		if (!dashboard) return { withResumes: 0, noResumes: 0, pendingReview: 0, evaluated: 0, submitted: 0 };
 		const students = dashboard.students;
-		const withResumes = students.filter((s) => s.resumes.length > 0).length;
-		const noResumes = students.length - withResumes;
+		const withResumes =
+			dashboard.aggregateStats.withPrimaryResume ??
+			students.filter((s) => s.resumes.length > 0).length;
+		const enrolled =
+			dashboard.aggregateStats.enrolledInResumeBuilder ?? students.length;
+		const noResumes = enrolled - withResumes;
 		const pendingReview = students.filter((s) =>
 			s.resumes.some((r) => r.isSubmitted && r.evaluationScore === null),
 		).length;
@@ -124,11 +137,72 @@ export function SectionMetricsView({
 	// Students are already filtered server-side via activeUnitId
 	const filteredStudents = dashboard?.students ?? [];
 
+	// ── Section drill-down derived state ─────────────────────────────────────
+	const activeSection = useMemo(
+		() => (sectionId ? dashboard?.sections.find((s) => s.id === sectionId) : undefined),
+		[dashboard?.sections, sectionId],
+	);
+	const isSectionDetail = activeTab === "sections" && !!sectionId;
+
+	const sectionsTabPackageOptions = useMemo(() => {
+		if (filterPackages.length > 0) {
+			return filterPackages.map((p) => ({ value: p.id, label: p.name }));
+		}
+		const byId = new Map<string, string>();
+		for (const s of dashboard?.sections ?? []) {
+			if (s.packageId && s.packageName) byId.set(s.packageId, s.packageName);
+		}
+		return [...byId.entries()].map(([value, label]) => ({ value, label }));
+	}, [filterPackages, dashboard?.sections]);
+
+	const sectionsTabFilteredRows = useMemo(() => {
+		const rows = dashboard?.sections ?? [];
+		return rows.filter((s) => {
+			if (filter.packageId && s.packageId !== filter.packageId) return false;
+			const level = viewLevel || (filterUnitTypes.includes("CLASS") ? "CLASS" : filterUnitTypes[0]);
+			if (filterUnitTypes.length === 0) return true;
+			return s.unitType === level;
+		});
+	}, [dashboard?.sections, filter.packageId, filterUnitTypes, viewLevel]);
+
+	const sectionsTabDisplayRows = useMemo(() => {
+		const q = sectionsTabSearch.trim().toLowerCase();
+		if (!q) return sectionsTabFilteredRows;
+		return sectionsTabFilteredRows.filter((unit) => {
+			const name = unit.name.toLowerCase();
+			const pkg = unit.packageName?.toLowerCase() ?? "";
+			const ut = unit.unitType.toLowerCase();
+			return name.includes(q) || pkg.includes(q) || ut.includes(q);
+		});
+	}, [sectionsTabFilteredRows, sectionsTabSearch]);
+
+	// ── Header (title + icon) — driven by active tab and section drill-down ──
+	const header = (() => {
+		if (isSectionDetail) {
+			return {
+				title: activeSection?.name ?? t`Section`,
+				icon: BuildingsIcon,
+			};
+		}
+		switch (activeTab) {
+			case "overview":
+				return { title: t`Overview`, icon: ChartBarIcon };
+			case "inbox":
+				return { title: t`Inbox`, icon: TrayIcon };
+			case "sections":
+				return { title: t`Sections`, icon: BuildingsIcon };
+			case "students":
+				return { title: t`Students`, icon: UsersIcon };
+			case "checklists":
+				return { title: t`Checklists`, icon: ListChecksIcon };
+		}
+	})();
+
 	// ── Loading ────────────────────────────────────────────────────────────────
 	if (isLoading) {
 		return (
 			<div className="space-y-6">
-				{title && <h2 className="font-bold text-slate-900 text-xl">{title}</h2>}
+				<DashboardHeader icon={header.icon} title={header.title} />
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					{[...Array(4)].map((_, i) => (
 						<div key={i} className="rounded-2xl bg-white p-6 shadow-sm">
@@ -160,16 +234,7 @@ export function SectionMetricsView({
 
 	return (
 		<div className="space-y-6">
-			{title && (
-				<div className="flex items-center justify-between">
-					<h2 className="font-bold text-slate-900 text-xl">{title}</h2>
-				</div>
-			)}
-
-			{/* Layout adjusted to handle sidebar-only navigation */}
-			<div className="flex items-center justify-between">
-				<div />
-
+			<DashboardHeader icon={header.icon} title={header.title}>
 				{activeTab === "checklists" && (
 					<button
 						type="button"
@@ -180,7 +245,7 @@ export function SectionMetricsView({
 						{t`New Checklist`}
 					</button>
 				)}
-			</div>
+			</DashboardHeader>
 
 			{/* ══════════════════ OVERVIEW TAB ══════════════════ */}
 			{activeTab === "overview" && (
@@ -219,22 +284,26 @@ export function SectionMetricsView({
 							iconColor="text-violet-600"
 							label={t`Total Students`}
 							value={stats.totalStudents}
+							tooltip="Learners in your placement scope who also have a resume builder (Polymath) account — eng-labs and resume DB joined by email."
 						/>
 						<StatCard
 							icon={<FileTextIcon weight="duotone" className="size-5" />}
 							iconBg="bg-indigo-50"
 							iconColor="text-indigo-600"
-							label={t`Total Resumes`}
-							value={stats.totalResumes}
-							tooltip="Total number of students who submitted resumes"
+							label={t`With primary resume`}
+							value={dashboard.aggregateStats.withPrimaryResume ?? stats.totalResumes}
+							tooltip="How many enrolled students have created their primary resume document in the builder."
 						/>
 						<RateCard
 							icon={<ChartBarIcon weight="duotone" className="size-5" />}
 							iconBg="bg-blue-50"
 							iconColor="text-blue-600"
-							label={t`Submission Rate`}
-							value={stats.totalStudents > 0 ? (detailedStats.withResumes / stats.totalStudents) * 100 : 0}
-							tooltip="Percentage of resume submissions from the total available resumes"
+							label={t`Primary resume rate`}
+							value={
+								dashboard.aggregateStats.primaryResumeRate ??
+								(stats.totalStudents > 0 ? (detailedStats.withResumes / stats.totalStudents) * 100 : 0)
+							}
+							tooltip="Share of resume-builder enrollees who have a primary resume."
 						/>
 						<RateCard
 							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
@@ -371,9 +440,89 @@ export function SectionMetricsView({
 				/>
 			)}
 
-			{/* ══════════════════ SECTIONS TAB ══════════════════ */}
-			{activeTab === "sections" && (
+			{/* ══════════════════ SECTION DETAIL (drill-down) ══════════════════ */}
+			{activeTab === "sections" && sectionId && (
+				<SectionStudentsPage
+					section={activeSection}
+					students={filteredStudents.filter((s) => s.sectionId === sectionId)}
+					onBack={() => {
+						navigate({
+							search: (prev: any) => ({ ...prev, sectionId: undefined }),
+						});
+					}}
+					onReview={(resumeId, engLabsStudentId) => {
+						navigate({
+							to: "/dashboard/review/$resumeId",
+							params: { resumeId },
+							search: {
+								engLabsStudentId,
+								tenantId,
+								packageId: filter.packageId,
+								unitType: filter.unitType,
+								unitId: filter.unitId,
+								sectionId,
+								scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
+							},
+						});
+					}}
+					onStudentClick={(student) => setSelectedStudent(student)}
+				/>
+			)}
+
+			{/* ══════════════════ SECTIONS TAB (grid) ══════════════════ */}
+			{activeTab === "sections" && !sectionId && (
 				<div className="space-y-6">
+					{/* Package filter + search */}
+					<div className="rounded-2xl bg-white p-4 shadow-sm">
+						<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+							{sectionsTabPackageOptions.length > 0 ? (
+								<div className="flex flex-wrap items-center gap-3">
+									<div className="flex items-center gap-1.5 text-slate-400 text-xs">
+										<FunnelSimpleIcon weight="duotone" className="size-3.5" />
+										<span className="font-medium">{t`Filters`}</span>
+									</div>
+									<div className="flex items-center gap-2">
+										<span className="font-medium text-slate-500 text-xs">{t`Package`}</span>
+										<Combobox
+											options={sectionsTabPackageOptions}
+											value={filter.packageId ?? null}
+											placeholder={t`All packages`}
+											clearable={true}
+											buttonProps={{ className: sectionsTabPackageDropdownClass }}
+											onValueChange={(v) => {
+												const updatedFilter: OrgUnitFilterValue = {
+													packageId: v ?? undefined,
+													unitType: undefined,
+													unitId: undefined,
+												};
+												setFilter(updatedFilter);
+												navigate({
+													search: (prev: any) => ({ ...prev, ...updatedFilter }) as any,
+												});
+											}}
+										/>
+									</div>
+								</div>
+							) : null}
+							<div
+								className={cn(
+									"relative min-w-[200px] flex-1",
+									sectionsTabPackageOptions.length > 0 ? "lg:max-w-md" : "w-full",
+								)}
+							>
+								<MagnifyingGlassIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+								<input
+									type="search"
+									placeholder={t`Search sections by name, package, or type...`}
+									value={sectionsTabSearch}
+									onChange={(e) => setSectionsTabSearch(e.target.value)}
+									className="h-10 w-full rounded-xl border-0 bg-slate-50 pr-4 pl-9 text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
+									autoComplete="off"
+								/>
+							</div>
+						</div>
+					</div>
+
 					{/* Level Selector */}
 					{filterUnitTypes.length > 1 && (
 						<div className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm">
@@ -399,11 +548,7 @@ export function SectionMetricsView({
 					)}
 
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-						{(dashboard?.sections ?? [])
-							.filter(
-								(s) => s.unitType === (viewLevel || (filterUnitTypes.includes("CLASS") ? "CLASS" : filterUnitTypes[0])),
-							)
-							.map((unit) => {
+						{sectionsTabDisplayRows.map((unit) => {
 								const { stats } = unit;
 								const totalResumes = stats.totalResumes;
 								const verifiedResumes = stats.evaluatedResumes;
@@ -453,9 +598,14 @@ export function SectionMetricsView({
 										key={unit.id}
 										className="flex flex-col rounded-2xl bg-white p-5 shadow-sm transition-all hover:shadow-md"
 									>
-										<div className="mb-4 flex items-center justify-between">
-											<h3 className="line-clamp-1 font-bold text-lg text-slate-900">{unit.name}</h3>
-											<span className="rounded-lg bg-slate-100 px-2 py-1 font-bold text-[10px] text-slate-500 uppercase">
+										<div className="mb-4 flex items-start justify-between gap-2">
+											<div className="min-w-0 flex-1">
+												<h3 className="line-clamp-1 font-bold text-lg text-slate-900">{unit.name}</h3>
+												{unit.packageName ? (
+													<p className="mt-0.5 line-clamp-1 text-[11px] text-slate-400">{unit.packageName}</p>
+												) : null}
+											</div>
+											<span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 font-bold text-[10px] text-slate-500 uppercase">
 												{unit.unitType}
 											</span>
 										</div>
@@ -488,7 +638,11 @@ export function SectionMetricsView({
 										{/* Review button */}
 										<button
 											type="button"
-											onClick={() => setReviewSection({ id: unit.id, name: unit.name, unitType: unit.unitType })}
+											onClick={() => {
+												navigate({
+													search: (prev: any) => ({ ...prev, tab: "sections", sectionId: unit.id }),
+												});
+											}}
 											className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 py-2 font-semibold text-indigo-700 text-sm transition-all hover:bg-indigo-100 active:scale-[0.98]"
 										>
 											<UsersIcon weight="duotone" className="size-4" />
@@ -551,6 +705,26 @@ export function SectionMetricsView({
 								);
 							})}
 					</div>
+
+					{sectionsTabDisplayRows.length === 0 && sectionsTabFilteredRows.length > 0 && (
+						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+							<MagnifyingGlassIcon weight="duotone" className="mb-3 size-10 text-slate-300" />
+							<p className="font-semibold text-slate-600">{t`No sections match your search`}</p>
+							<p className="mt-1 max-w-sm text-slate-400 text-sm">
+								{t`Try a different keyword or clear the search box.`}
+							</p>
+						</div>
+					)}
+
+					{sectionsTabFilteredRows.length === 0 && (dashboard?.sections ?? []).length > 0 && (
+						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+							<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
+							<p className="font-semibold text-slate-600">{t`No sections match the current filters`}</p>
+							<p className="mt-1 max-w-sm text-slate-400 text-sm">
+								{t`Try clearing the package filter or pick a different unit type.`}
+							</p>
+						</div>
+					)}
 				</div>
 			)}
 
@@ -633,53 +807,6 @@ export function SectionMetricsView({
 				/>
 			)}
 			<ChecklistCreator tenantId={tenantId} open={showChecklistCreator} onOpenChange={setShowChecklistCreator} />
-
-			{/* ══════════════════ SECTION DRILL-DOWN PANEL ══════════════════ */}
-			<Sheet open={!!reviewSection} onOpenChange={(open) => !open && setReviewSection(null)}>
-				<SheetContent side="right" className="flex w-full max-w-2xl flex-col overflow-hidden p-0">
-					<SheetHeader className="border-b px-6 py-4">
-						<div className="flex items-center justify-between">
-							<div>
-								<SheetTitle className="font-bold text-lg text-slate-900">{reviewSection?.name}</SheetTitle>
-								<span className="font-semibold text-[11px] text-slate-400 uppercase tracking-wider">
-									{reviewSection?.unitType}
-								</span>
-							</div>
-							<span className="rounded-lg bg-indigo-50 px-3 py-1 font-bold text-indigo-600 text-xs">
-								{reviewSection ? filteredStudents.filter((s) => s.sectionId === reviewSection.id).length : 0}{" "}
-								{t`students`}
-							</span>
-						</div>
-					</SheetHeader>
-
-					<div className="flex-1 overflow-y-auto px-6 py-4">
-						{reviewSection && (
-							<StudentResumeTable
-								students={filteredStudents.filter((s) => s.sectionId === reviewSection.id)}
-								onReview={(resumeId, engLabsStudentId) => {
-									navigate({
-										to: "/dashboard/review/$resumeId",
-										params: { resumeId },
-										search: {
-											engLabsStudentId,
-											tenantId,
-											packageId: filter.packageId,
-											unitType: filter.unitType,
-											unitId: filter.unitId,
-											scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
-										},
-									});
-									setReviewSection(null);
-								}}
-								onStudentClick={(student) => {
-									setSelectedStudent(student);
-									setReviewSection(null);
-								}}
-							/>
-						)}
-					</div>
-				</SheetContent>
-			</Sheet>
 
 			{/* ══════════════════ PO SECTION REVIEW DIALOG ══════════════════ */}
 			{poReviewDialog && (
@@ -897,6 +1024,127 @@ function AtsChecksCard() {
 			value={atsStats?.totalChecks ?? 0}
 			tooltip="Total number of ATS checks done by the students"
 		/>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Section Students page — full-page drill-down for a single section
+// ---------------------------------------------------------------------------
+
+type SectionStudentsPageProps = {
+	section?: {
+		id: string;
+		name: string;
+		unitType: string;
+		stats: {
+			totalStudents: number;
+			totalResumes: number;
+			evaluatedResumes: number;
+			averageScore: number | null;
+		};
+	};
+	students: StudentWithResumes[];
+	onBack: () => void;
+	onReview: (resumeId: string, engLabsStudentId: string) => void;
+	onStudentClick: (student: StudentWithResumes) => void;
+};
+
+function SectionStudentsPage({ section, students, onBack, onReview, onStudentClick }: SectionStudentsPageProps) {
+	if (!section) {
+		return (
+			<div className="space-y-6">
+				<button
+					type="button"
+					onClick={onBack}
+					className="flex items-center gap-2 font-semibold text-slate-500 text-sm transition-colors hover:text-indigo-600"
+				>
+					<ArrowLeftIcon weight="bold" className="size-4" />
+					{t`Back to Sections`}
+				</button>
+				<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+					<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
+					<p className="font-semibold text-slate-600">{t`Section not found`}</p>
+				</div>
+			</div>
+		);
+	}
+
+	const { stats } = section;
+	const withResumes = students.filter((s) => s.resumes.length > 0).length;
+	const noResumes = students.length - withResumes;
+	const verifiedPct = stats.totalResumes > 0 ? (stats.evaluatedResumes / stats.totalResumes) * 100 : 0;
+
+	return (
+		<div className="space-y-6">
+			{/* Breadcrumb / back */}
+			<button
+				type="button"
+				onClick={onBack}
+				className="flex items-center gap-2 font-semibold text-slate-500 text-sm transition-colors hover:text-indigo-600"
+			>
+				<ArrowLeftIcon weight="bold" className="size-4" />
+				{t`Back to Sections`}
+			</button>
+
+			{/* Highlights */}
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<StatCard
+					icon={<UsersIcon weight="duotone" className="size-5" />}
+					iconBg="bg-violet-50"
+					iconColor="text-violet-600"
+					label={t`Total Students`}
+					value={stats.totalStudents}
+				/>
+				<StatCard
+					icon={<FileTextIcon weight="duotone" className="size-5" />}
+					iconBg="bg-emerald-50"
+					iconColor="text-emerald-600"
+					label={t`With Resumes`}
+					value={withResumes}
+					tooltip={t`Students who have created at least one resume`}
+				/>
+				<StatCard
+					icon={<XCircleIcon weight="duotone" className="size-5" />}
+					iconBg="bg-rose-50"
+					iconColor="text-rose-600"
+					label={t`No Resume Yet`}
+					value={noResumes}
+				/>
+				<ScoreCard
+					icon={<CheckCircleIcon weight="duotone" className="size-5" />}
+					iconBg="bg-amber-50"
+					iconColor="text-amber-600"
+					label={t`Avg Score`}
+					value={stats.averageScore}
+				/>
+			</div>
+
+			{/* Verified progress bar */}
+			<div className="rounded-2xl bg-white p-5 shadow-sm">
+				<div className="mb-2 flex items-center justify-between">
+					<div>
+						<p className="font-bold text-[10px] text-slate-400 uppercase tracking-widest">{t`Verified Progress`}</p>
+						<p className="mt-1 font-bold text-slate-900 text-sm">
+							{stats.evaluatedResumes} / {stats.totalResumes} {t`resumes verified`}
+						</p>
+					</div>
+					<span className="font-bold text-emerald-600 text-sm tabular-nums">{verifiedPct.toFixed(0)}%</span>
+				</div>
+				<div className="h-2 overflow-hidden rounded-full bg-slate-100">
+					<div className="h-full bg-emerald-500 transition-all" style={{ width: `${verifiedPct}%` }} />
+				</div>
+			</div>
+
+			{/* Students table */}
+			{students.length === 0 ? (
+				<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+					<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
+					<p className="font-semibold text-slate-600">{t`No students in this section`}</p>
+				</div>
+			) : (
+				<StudentResumeTable students={students} onReview={onReview} onStudentClick={onStudentClick} />
+			)}
+		</div>
 	);
 }
 

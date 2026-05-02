@@ -76,6 +76,14 @@ function ChecklistRow({
 		...orpc.resume.checklists.get.queryOptions({ input: { checklistId } }),
 		enabled: isExpanded,
 	});
+	const totalWeight = detail?.items?.reduce((sum, item) => sum + (item.weight ?? 1), 0) ?? 0;
+	const getScoreShare = (weight: number) => (totalWeight > 0 ? (weight / totalWeight) * 100 : 0);
+	const formatPercent = (value: number) => `${Number.isInteger(value) ? value.toFixed(0) : value.toFixed(1)}%`;
+	const getScoreShareBadgeClass = (share: number) => {
+		if (share >= 20) return "bg-rose-100 text-rose-700";
+		if (share >= 10) return "bg-amber-100 text-amber-700";
+		return "bg-emerald-100 text-emerald-700";
+	};
 
 	return (
 		<div className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -112,6 +120,9 @@ function ChecklistRow({
 						</div>
 					) : detail?.items && detail.items.length > 0 ? (
 						<div className="space-y-2">
+							<p className="px-1 text-slate-500 text-xs">
+								{t`Each item contributes a share of the final score based on its weight. Higher weight means a higher score share.`}
+							</p>
 							{detail.items.map((item, idx) => (
 								<div key={item.id} className="flex items-start gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
 									<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-50 font-bold text-indigo-600 text-xs">
@@ -121,8 +132,14 @@ function ChecklistRow({
 										<p className="font-medium text-slate-800 text-sm">{item.title}</p>
 										{item.description && <p className="mt-0.5 text-slate-400 text-xs">{item.description}</p>}
 									</div>
-									<span className="shrink-0 rounded-lg bg-slate-100 px-2 py-0.5 font-mono text-slate-500 text-xs">
-										×{item.weight}
+									<span
+										className={cn(
+											"shrink-0 rounded-lg px-2 py-0.5 text-xs",
+											getScoreShareBadgeClass(getScoreShare(item.weight ?? 1)),
+										)}
+										title={`This item contributes ${formatPercent(getScoreShare(item.weight ?? 1))} of the final score.`}
+									>
+										{t`Score Share`} {formatPercent(getScoreShare(item.weight ?? 1))}
 									</span>
 								</div>
 							))}
