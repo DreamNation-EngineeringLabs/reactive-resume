@@ -16,6 +16,7 @@ import { useResumeStore } from "@/components/resume/store/resume";
 import { ResizableGroup, ResizablePanel, ResizableSeparator } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { orpc } from "@/integrations/orpc/client";
+import { getPlacementsUrl } from "@/utils/source-url";
 import { BuilderHeader } from "./-components/header";
 import { BuilderSidebarLeft } from "./-sidebar/left";
 import { BuilderSidebarRight } from "./-sidebar/right";
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/builder/$resumeId")({
 		if (!context.session) {
 			if (context.flags.ssoOnly) {
 				throw redirect({
-					href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`,
+					href: getPlacementsUrl(),
 					replace: true,
 				});
 			}

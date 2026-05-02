@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { getSourceUrl } from "@/utils/source-url";
+import { getPlacementsUrl } from "@/utils/source-url";
 import { getDashboardSidebarServerFn, setDashboardSidebarServerFn } from "./-components/functions";
 import { DashboardSidebar } from "./-components/sidebar";
 
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/dashboard")({
 			// In SSO-only mode, redirect back to the main application instead of the login page
 			if (context.flags.ssoOnly) {
 				throw redirect({
-					href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`,
+					href: getPlacementsUrl(),
 					replace: true,
 				});
 			}
@@ -44,10 +44,10 @@ function RouteComponent() {
 	};
 
 	useEffect(() => {
-		const mainAppUrl = getSourceUrl();
+		const placementsUrl = getPlacementsUrl();
 		window.history.pushState({ resumeApp: true }, "");
 		const handlePopState = () => {
-			window.location.href = `${mainAppUrl}/placements`;
+			window.location.href = placementsUrl;
 		};
 		window.addEventListener("popstate", handlePopState);
 		return () => {

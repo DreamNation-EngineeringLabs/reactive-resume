@@ -11,13 +11,14 @@ import z from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
+import { getPlacementsUrl } from "@/utils/source-url";
 import { useSignalAuthReady } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/register")({
 	component: RouteComponent,
 	beforeLoad: async ({ context }) => {
 		if (context.flags.ssoOnly) {
-			throw redirect({ href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`, replace: true });
+			throw redirect({ href: getPlacementsUrl(), replace: true });
 		}
 		if (context.session) throw redirect({ to: "/dashboard", replace: true });
 		if (context.flags.disableSignups) throw redirect({ to: "/auth/login", replace: true });
@@ -90,7 +91,7 @@ function RouteComponent() {
 				<Trans>Please access via the main dashboard.</Trans>
 			</p>
 			<Button asChild className="w-full">
-				<a href="http://localhost:3000/placements">
+				<a href={getPlacementsUrl()}>
 					<Trans>Go to Dashboard</Trans>
 				</a>
 			</Button>

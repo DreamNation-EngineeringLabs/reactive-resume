@@ -44,7 +44,7 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authClient } from "@/integrations/auth/client";
 import { orpc } from "@/integrations/orpc/client";
-import { getSourceUrl } from "@/utils/source-url";
+import { getPlacementsUrl } from "@/utils/source-url";
 import { getOrganisationUnits, getTenantId, getUserRole } from "@/utils/sso-context";
 import { getInitials } from "@/utils/string";
 import { cn } from "@/utils/style";
@@ -159,71 +159,66 @@ type SidebarItemListProps = {
 };
 
 function SidebarItemList({ items }: SidebarItemListProps) {
+	return (
+		<SidebarMenu>
+			{items.map((item) => (
+				<SidebarItemRow key={`${item.href as string}-${item.search?.tab ?? ""}`} item={item} />
+			))}
+		</SidebarMenu>
+	);
+}
+
+function SidebarItemRow({ item }: { item: SidebarItem }) {
 	const { i18n } = useLingui();
 	const { state } = useSidebarState();
 	const isCollapsed = state === "collapsed";
 	const routerState = useRouterState();
 
+	const isPathMatch = routerState.location.pathname.startsWith(item.href as string);
+	const itemTab = item.search?.tab;
+	const currentTab = (routerState.location.search as any)?.tab;
+	const isActive = itemTab ? isPathMatch && itemTab === currentTab : isPathMatch;
+
 	return (
-		<SidebarMenu>
-			{items.map((item) => {
-				const isActive = useMemo(() => {
-					const isPathMatch = routerState.location.pathname.startsWith(item.href as string);
-					const itemTab = item.search?.tab;
-					const currentTab = (routerState.location.search as any)?.tab;
+		<SidebarMenuItem>
+			<SidebarMenuButton
+				asChild
+				title={i18n.t(item.label)}
+				className={cn(
+					"h-11",
+					isActive && "bg-primary font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 focus-visible:bg-primary/90",
+				)}
+			>
+				<Link
+					to={item.href}
+					// biome-ignore lint: search params vary per route
+					search={item.search as any}
+					className="group/navitem tap-active flex items-center gap-x-3 rounded-xl px-2 py-2 outline-none transition-all duration-300 active:scale-[0.98]"
+				>
+					<div
+						className={cn(
+							"flex shrink-0 items-center justify-center transition-all duration-300",
+							"group-active/navitem:scale-90",
+							!isCollapsed &&
+								cn("h-9 w-9 rounded-xl", item.iconBg, item.iconColor, isActive && "bg-white/20 text-white"),
+							isCollapsed && cn("size-4", isActive ? item.iconColor : "text-slate-400"),
+						)}
+					>
+						<div className={cn(isCollapsed ? "size-full" : "size-5", "[&_svg]:size-full")}>{item.icon}</div>
+					</div>
 
-					if (itemTab) {
-						return isPathMatch && itemTab === currentTab;
-					}
-
-					return isPathMatch;
-				}, [routerState.location.pathname, routerState.location.search, item.href, item.search]);
-
-				return (
-					<SidebarMenuItem key={`${item.href as string}-${item.search?.tab ?? ""}`}>
-						<SidebarMenuButton
-							asChild
-							isActive={isActive}
-							title={i18n.t(item.label)}
-							className="h-11 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:focus-visible:bg-primary/90 data-[active=true]:hover:bg-primary/90"
-						>
-							<Link
-								to={item.href}
-								// biome-ignore lint: search params vary per route
-								search={item.search as any}
-								className="group/navitem tap-active flex items-center gap-x-3 rounded-xl px-2 py-2 outline-none transition-all duration-300 active:scale-[0.98]"
-								activeProps={{
-									className: "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20",
-								}}
-							>
-								{/* Icon container — adapts between expanded and collapsed */}
-								<div
-									className={cn(
-										"flex shrink-0 items-center justify-center transition-all duration-300",
-										"group-active/navitem:scale-90",
-										!isCollapsed &&
-											cn("h-9 w-9 rounded-xl", item.iconBg, item.iconColor, isActive && "bg-white/20 text-white"),
-										isCollapsed && cn("size-4", isActive ? item.iconColor : "text-slate-400"),
-									)}
-								>
-									<div className={cn(isCollapsed ? "size-full" : "size-5", "[&_svg]:size-full")}>{item.icon}</div>
-								</div>
-
-								<span
-									className={cn(
-										"shrink-0 font-medium text-sm transition-[margin,opacity] duration-300 ease-in-out",
-										isCollapsed && "sr-only",
-										isActive ? "font-bold text-white" : "text-slate-600",
-									)}
-								>
-									{i18n.t(item.label)}
-								</span>
-							</Link>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				);
-			})}
-		</SidebarMenu>
+					<span
+						className={cn(
+							"shrink-0 font-medium text-sm transition-[margin,opacity] duration-300 ease-in-out",
+							isCollapsed && "sr-only",
+							isActive ? "font-bold text-white" : "text-slate-600",
+						)}
+					>
+						{i18n.t(item.label)}
+					</span>
+				</Link>
+			</SidebarMenuButton>
+		</SidebarMenuItem>
 	);
 }
 
@@ -343,13 +338,11 @@ export function DashboardSidebar() {
 	}, [role]);
 
 	const handleBackClick = () => {
-		const url = getSourceUrl();
-		window.location.href = `${url}/placements`;
+		window.location.href = getPlacementsUrl();
 	};
 
 	const handleLogoClick = () => {
-		const url = getSourceUrl();
-		window.location.href = `${url}/placements`;
+		window.location.href = getPlacementsUrl();
 	};
 
 	const showMySpace = role === "LEARNER" || !role;

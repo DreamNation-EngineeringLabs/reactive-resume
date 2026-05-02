@@ -18,6 +18,9 @@ export const flagsRouter = {
 			z.object({
 				disableSignups: z.boolean().describe("Whether new user signups are disabled on this instance."),
 				disableEmailAuth: z.boolean().describe("Whether email-based authentication is disabled on this instance."),
+				ssoOnly: z
+					.boolean()
+					.describe("Whether this instance only accepts SSO logins and redirects unauthenticated users back to the main app."),
 			}),
 		)
 		.handler((): FeatureFlags => flagsService.getFlags()),

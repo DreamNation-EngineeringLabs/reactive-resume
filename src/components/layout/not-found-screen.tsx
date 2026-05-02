@@ -1,7 +1,8 @@
 import { Trans } from "@lingui/react/macro";
 import { ArrowLeftIcon, WarningIcon } from "@phosphor-icons/react";
-import { Link, type NotFoundRouteProps } from "@tanstack/react-router";
+import type { NotFoundRouteProps } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { getPlacementsUrl } from "@/utils/source-url";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { BrandIcon } from "../ui/brand-icon";
 
@@ -19,10 +20,10 @@ export function NotFoundScreen({ routeId }: NotFoundRouteProps) {
 			</Alert>
 
 			<Button asChild>
-				<Link to="..">
+				<a href={getPlacementsUrl()}>
 					<ArrowLeftIcon />
-					<Trans>Go Back</Trans>
-				</Link>
+					<Trans>Go to Dashboard</Trans>
+				</a>
 			</Button>
 		</div>
 	);

@@ -127,7 +127,7 @@ async function handler({ request }: { request: Request }) {
 				: roleUpper === "PLACEMENT_OFFICER"
 					? "/resume/dashboard/placement-officer?tab=overview"
 					: roleUpper === "ADMIN"
-						? "/resume/dashboard/admin"
+						? "/resume/dashboard/admin?tab=overview"
 						: "/resume/dashboard/resumes?sort=lastUpdatedAt";
 
 		const html = `<!DOCTYPE html>

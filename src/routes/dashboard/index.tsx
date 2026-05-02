@@ -23,7 +23,7 @@ function DashboardIndex() {
 		} else if (role === "PLACEMENT_OFFICER") {
 			void navigate({ to: "/dashboard/placement-officer", search: { tab: "overview" } as any, replace: true });
 		} else if (role === "ADMIN") {
-			void navigate({ to: "/dashboard/admin" } as any);
+			void navigate({ to: "/dashboard/admin", search: { tab: "overview" } as any, replace: true });
 		} else {
 			void navigate({ to: "/dashboard/resumes", search: { sort: "lastUpdatedAt", tags: [] }, replace: true });
 		}

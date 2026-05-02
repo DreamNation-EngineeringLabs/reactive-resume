@@ -1,7 +1,8 @@
 import { Trans } from "@lingui/react/macro";
-import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, ArrowLeftIcon, WarningIcon } from "@phosphor-icons/react";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { getPlacementsUrl } from "@/utils/source-url";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { BrandIcon } from "../ui/brand-icon";
 
@@ -18,10 +19,18 @@ export function ErrorScreen({ error, reset }: ErrorComponentProps) {
 				<AlertDescription>{error.message}</AlertDescription>
 			</Alert>
 
-			<Button onClick={reset}>
-				<ArrowClockwiseIcon />
-				<Trans>Refresh</Trans>
-			</Button>
+			<div className="flex gap-2">
+				<Button variant="outline" onClick={reset}>
+					<ArrowClockwiseIcon />
+					<Trans>Refresh</Trans>
+				</Button>
+				<Button asChild>
+					<a href={getPlacementsUrl()}>
+						<ArrowLeftIcon />
+						<Trans>Go to Dashboard</Trans>
+					</a>
+				</Button>
+			</div>
 		</div>
 	);
 }

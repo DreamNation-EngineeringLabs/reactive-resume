@@ -11,14 +11,14 @@ import z from "zod";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
 import { client } from "@/integrations/orpc/client";
-import { getSourceUrl } from "@/utils/source-url";
+import { getPlacementsUrl } from "@/utils/source-url";
 import { useAuthLayout } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/login")({
 	component: RouteComponent,
 	beforeLoad: async ({ context }) => {
 		if (context.flags.ssoOnly) {
-			throw redirect({ href: `${process.env.VITE_MAIN_APP_URL ?? "http://localhost:3000"}/placements`, replace: true });
+			throw redirect({ href: getPlacementsUrl(), replace: true });
 		}
 		if (context.session) throw redirect({ to: "/dashboard", replace: true });
 		return { session: null };
@@ -37,7 +37,7 @@ function RouteComponent() {
 	const navigate = useNavigate();
 	const [showPassword, toggleShowPassword] = useToggle(false);
 	const { flags } = Route.useRouteContext();
-	const mainAppUrl = getSourceUrl();
+	const placementsUrl = getPlacementsUrl();
 	const [ssoError, setSsoError] = useState<string | null>(null);
 	const { setIsChildLoading } = useAuthLayout();
 
@@ -67,8 +67,13 @@ function RouteComponent() {
 					if (session) {
 						// Keep loading visible while navigation to /dashboard is in-flight.
 						shouldHideLoading = false;
-						router.invalidate();
-						navigate({ to: "/dashboard", replace: true });
+						// Await invalidate so the root context picks up the new session
+						// before navigate runs — otherwise the dashboard's beforeLoad still
+						// sees null session, redirects back here, and the in-flight transition
+						// gets aborted (AbortError: Transition was skipped), which cancels the
+						// dashboard loaders and leaves the page rendered with no data.
+						await router.invalidate();
+						await navigate({ to: "/dashboard", replace: true });
 						return;
 					}
 					if (attempt < maxAttempts) {
@@ -145,7 +150,7 @@ function RouteComponent() {
 				</p>
 			) : null}
 			<Button asChild className="w-full">
-				<a href={`${mainAppUrl}/placements`}>
+				<a href={placementsUrl}>
 					<Trans>Go to Dashboard</Trans>
 				</a>
 			</Button>
