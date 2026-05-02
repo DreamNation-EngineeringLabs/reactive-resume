@@ -37,18 +37,80 @@ msgstr "Nome"
 msgid "(opens in new tab)"
 msgstr "(abre num novo separador)"
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "(optional)"
+msgstr ""
+
 #. placeholder {0}: section.items.length
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom.tsx
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# item} other {# items}}"
+
+#. placeholder {0}: st.passedFaculty - approved
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{0} pending PO"
+msgstr ""
+
+#. placeholder {0}: st.submittedResumes
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{0} with Faculty"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/shared/section-menu.tsx
 msgid "{column, plural, one {# Column} other {# Columns}}"
 msgstr "{column, plural, one {# coluna} other {# colunas}}"
 
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "{days}d ago"
+msgstr ""
+
+#. placeholder {0}: fullyApproved !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{fullyApproved} section{0} are fully approved"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "{hours}h ago"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "{minutes}m ago"
+msgstr ""
+
+#. placeholder {0}: noResume !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{noResume} student{0} haven't created a resume yet"
+msgstr ""
+
+#. placeholder {0}: noSubmission !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{noSubmission} section{0} have no submissions yet"
+msgstr ""
+
+#. placeholder {0}: pendingPO !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{pendingPO} resume{0} finalized by faculty and waiting for your review"
+msgstr ""
+
+#. placeholder {0}: resubmitted !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{resubmitted} resume{0} resubmitted by students after your revision request"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{total} in Draft"
+msgstr ""
+
+#. placeholder {0}: reviews.length - 1
+#: src/routes/dashboard/-components/po-feedback-sent-badge.tsx
+msgid "+{0} earlier round(s)"
+msgstr ""
+
 #. placeholder {0}: keywords.length - 10
+#. placeholder {0}: missing.length - 8
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "+{0} more"
 msgstr ""
 
@@ -97,7 +159,7 @@ msgstr "Foi enviado um link de confirmação para o seu endereço de email atual
 msgid "A free and open-source resume builder that simplifies the process of creating, updating, and sharing your resume."
 msgstr "Um criador de currículos gratuito e de código aberto que simplifica o processo de criação, atualização e de partilha do seu currículo."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "A link to your resume has been copied to clipboard."
 msgstr "Um link para o seu currículo foi copiado para a área de transferência."
@@ -127,12 +189,20 @@ msgstr "A4"
 msgid "Absolutely! You can export your resume to PDF with a single click. The exported PDF maintains all your formatting and styling perfectly."
 msgstr "Claro! Pode exportar o seu currículo para PDF com um único clique. O PDF exportado mantém toda a sua formatação e estilo na perfeição."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Accept Change"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "Access your resumes and data programmatically using the API."
 msgstr "Aceda programaticamente aos seus currículos e dados utilizando a API."
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Achievements"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Action Alerts"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom-fields.tsx
@@ -224,6 +294,10 @@ msgstr ""
 msgid "Add Experience"
 msgstr ""
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Add Feedback Comment"
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 msgid "Add Interest"
 msgstr ""
@@ -276,6 +350,14 @@ msgstr ""
 msgid "Added"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Address All Fixes"
+msgstr ""
+
+#: src/routes/dashboard/admin/index.tsx
+msgid "Admin Metrics Dashboard"
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 msgid "Advanced"
 msgstr ""
@@ -291,6 +373,34 @@ msgstr ""
 #: src/utils/locale.ts
 msgid "Albanian"
 msgstr "Albanês"
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "All"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "All addressed!"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "All Approved"
+msgstr ""
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "All packages"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "All suggestions addressed!"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "All suggestions applied or dismissed. Re-score to refresh."
+msgstr ""
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "All types"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Allow Public Access"
@@ -308,6 +418,14 @@ msgstr "Ocorreu um erro ao carregar a página."
 #: src/dialogs/resume/import.tsx
 msgid "An unknown error occurred while importing your resume."
 msgstr "Ocorreu um erro desconhecido ao importar o seu currículo."
+
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "Analyze →"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Analyzing your resume..."
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "And many more..."
@@ -352,17 +470,49 @@ msgstr "Estatísticas da aplicação"
 msgid "Applied"
 msgstr ""
 
-#. placeholder {0}: toApply.length
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Applied {0} suggestions"
+#~ msgid "Applied {0} suggestions"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Applied {successCount} suggestions"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Apply"
+msgid "Applied {successCount} suggestions, {failCount} failed — re-score for fresh suggestions"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Apply All Suggestions ({applicablePendingCount})"
+#~ msgid "Apply"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply {applicablePendingCount}"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "Apply All Suggestions ({applicablePendingCount})"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply fix"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Approve"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Approve for Placement"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "approved"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Approved for Placement"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -416,15 +566,20 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "Proporção"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "ATS Checks"
+msgstr ""
+
 #: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 #: src/routes/dashboard/ats-score/index.tsx
 #: src/utils/resume/section.tsx
 msgid "ATS Score"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "ATS Score Analysis"
-msgstr ""
+#~ msgid "ATS Score Analysis"
+#~ msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -435,6 +590,25 @@ msgstr "Autenticação"
 #: src/routes/_home/-sections/features.tsx
 msgid "Available in multiple languages. If you would like to contribute, check out Crowdin."
 msgstr "Disponível em vários idiomas. Se quiser contribuir, consulte o Crowdin."
+
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Average Score"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Avg % gain per check"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Avg Improvement"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Avg Score"
+msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Awarder"
@@ -452,6 +626,15 @@ msgstr "Prémios"
 #: src/utils/locale.ts
 msgid "Azerbaijani"
 msgstr "Azerbaijano"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Back"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Back to App"
+msgstr ""
 
 #: src/routes/auth/verify-2fa.tsx
 msgid "Back to Login"
@@ -500,6 +683,7 @@ msgid "Border Width"
 msgstr "Largura da borda"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Brevity"
 msgstr ""
 
@@ -562,28 +746,45 @@ msgstr "Posso exportar o meu currículo para PDF?"
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/hooks/use-prompt.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
 #: src/routes/dashboard/settings/danger-zone.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Cancel"
 msgstr "Cancelar"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Cancel Reply"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Catalan"
 msgstr "Catalão"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Categories"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Category Improvement Breakdown"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Center Align"
 msgstr "Alinhar ao centro"
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Center view"
-msgstr "Centrar vista"
+#~ msgid "Center view"
+#~ msgstr "Centrar vista"
 
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Certifications"
 msgstr "Certificações"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Change Job Description"
+msgstr ""
 
 #: src/routes/_home/-sections/header.tsx
 msgid "Change language"
@@ -605,6 +806,14 @@ msgstr "Mudou de ideias? Renomeie o seu currículo com algo mais descritivo."
 msgid "Changelog"
 msgstr "Registro de alterações"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Changes"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Changes Summary"
+msgstr ""
+
 #: src/routes/auth/forgot-password.tsx
 msgid "Check your email for a link to reset your password."
 msgstr "Verifique o seu email para obter um link para repor a sua senha."
@@ -612,6 +821,11 @@ msgstr "Verifique o seu email para obter um link para repor a sua senha."
 #: src/routes/auth/register.tsx
 msgid "Check your email for a link to verify your account."
 msgstr "Verifique o seu email para obter um link para verificar a sua conta."
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Checklists"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Chinese (Simplified)"
@@ -637,14 +851,26 @@ msgstr "Limpar seleção"
 msgid "Click here to select a file to import"
 msgstr "Clique aqui para selecionar um ficheiro para importar"
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Click to record a voice note"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Code Block"
 msgstr "Bloco de código"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Collapse"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/shared/section-menu.tsx
 msgid "Columns"
 msgstr "Colunas"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Comments"
+msgstr ""
 
 #: src/routes/_home/-sections/footer.tsx
 msgid "Community"
@@ -654,6 +880,10 @@ msgstr "Comunidade"
 #: src/routes/dashboard/info/index.tsx
 msgid "Company"
 msgstr "Empresa"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Complete at least one evaluation to start tracking changes."
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Completely free, forever, no hidden costs."
@@ -675,6 +905,11 @@ msgstr "Ligar"
 msgid "Content"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Content Quality"
+msgstr ""
+
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/dialogs/auth/enable-two-factor.tsx
@@ -682,7 +917,6 @@ msgstr ""
 msgid "Continue"
 msgstr "Continuar"
 
-#: src/routes/dashboard/resumes/-components/cards/import-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Continue where you left off"
 msgstr "Continue de onde parou"
@@ -711,9 +945,14 @@ msgstr "Copiar códigos de backup"
 msgid "Copy this secret key and use it in your applications to access your data."
 msgstr "Copie esta chave secreta e utilize-a nas suas aplicações para aceder aos seus dados."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Copy URL"
 msgstr "Copiar URL"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Could not apply — re-score for fresh suggestions"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Cover Letter"
@@ -819,6 +1058,18 @@ msgstr "Criar currículo de exemplo"
 msgid "Create as many resumes as you want, without limits."
 msgstr "Crie quantos currículos quiser, sem limites."
 
+#: src/routes/dashboard/-components/checklist-creator.tsx
+msgid "Create Checklist"
+msgstr ""
+
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "Create checklists to standardize how you evaluate student resumes."
+msgstr ""
+
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "Create First Checklist"
+msgstr ""
+
 #: src/dialogs/api-key/create.tsx
 msgid "Creating your API key..."
 msgstr "A criar a sua chave API..."
@@ -832,6 +1083,10 @@ msgstr "A criar o seu currículo..."
 msgid "Current Password"
 msgstr "Senha atual"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Current Status"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 #: src/utils/resume/section.tsx
 msgid "Custom CSS"
@@ -844,6 +1099,10 @@ msgstr "Secções personalizadas"
 #: src/utils/locale.ts
 msgid "Czech"
 msgstr "Checo"
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Daily ATS Checks (14 days)"
+msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -924,6 +1183,10 @@ msgstr "A apagar a sua chave API..."
 msgid "Deleting your resume..."
 msgstr "A apagar o seu currículo..."
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Describe what needs to be improved across this section — e.g. \"Most resumes lack quantified metrics in the experience section. Please ensure every bullet uses the XYZ formula with numbers.\""
+msgstr ""
+
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/education.tsx
@@ -964,6 +1227,10 @@ msgstr "Desativado"
 msgid "Disabling two-factor authentication..."
 msgstr "A desativar a autenticação de dois factores..."
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Discard"
+msgstr ""
+
 #: src/routes/dashboard/settings/authentication/-components/social-provider.tsx
 msgid "Disconnect"
 msgstr "Desligar"
@@ -973,6 +1240,8 @@ msgid "Discord"
 msgstr "Discord"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Dismiss"
 msgstr ""
 
@@ -987,18 +1256,18 @@ msgid "Download"
 msgstr "Descarregar"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
-msgid "Download a copy of your resume in JSON format. Use this file for backup or to import your resume into other applications, including AI assistants."
-msgstr "Descarregue uma cópia do seu currículo em formato JSON. Utilize este ficheiro para backup ou para importar o seu currículo para outras aplicações, incluindo assistentes de IA."
+#~ msgid "Download a copy of your resume in JSON format. Use this file for backup or to import your resume into other applications, including AI assistants."
+#~ msgstr "Descarregue uma cópia do seu currículo em formato JSON. Utilize este ficheiro para backup ou para importar o seu currículo para outras aplicações, incluindo assistentes de IA."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "Download a copy of your resume in PDF format. Use this file for printing or to easily share your resume with recruiters."
 msgstr "Descarregue uma cópia do seu currículo em formato PDF. Utilize este ficheiro para impressão ou para partilhar facilmente o seu currículo com recrutadores."
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Download JSON"
-msgstr "Descarregar JSON"
+#~ msgid "Download JSON"
+#~ msgstr "Descarregar JSON"
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Download PDF"
 msgstr "Descarregar PDF"
 
@@ -1041,6 +1310,18 @@ msgstr "Neerlandês"
 
 #: src/components/ai/chat.tsx
 msgid "e.g. Change my name to..."
+msgstr ""
+
+#: src/routes/dashboard/-components/po-feedback-sent-badge.tsx
+msgid "Edit"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Edit Feedback: {sectionName}"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Edit in Builder"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
@@ -1119,6 +1400,26 @@ msgstr "Introduza a sua senha para confirmar a configuração da autenticação 
 msgid "Enter your password to disable two-factor authentication. Your account will be less secure without 2FA enabled."
 msgstr "Introduza a sua senha para desativar a autenticação de dois fatores. A sua conta ficará menos segura sem a 2FA ativada."
 
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Entity"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Evaluate"
+msgstr ""
+
+#: src/routes/dashboard/-components/evaluation-form.tsx
+msgid "Evaluate Resume"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Evaluated"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Evaluation Rate"
+msgstr ""
+
 #: src/routes/_home/-sections/donate.tsx
 msgid "Every contribution, big or small, makes a huge difference to the project.<0/>Thank you for your support!"
 msgstr "Cada contribuição, grande ou pequena, faz uma enorme diferença para o projeto.<0/>Obrigado pelo seu apoio!"
@@ -1132,6 +1433,7 @@ msgid "Everything you need to create, customize, and share professional resumes.
 msgstr "Tudo o que precisa para criar, personalizar e partilhar currículos profissionais. Criado com a privacidade em mente, alimentado por código aberto e completamente gratuito para sempre."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Excellent"
 msgstr ""
 
@@ -1140,7 +1442,11 @@ msgid "Exit Fullscreen"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Expand"
+#~ msgid "Expand"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Expand inline"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
@@ -1169,7 +1475,20 @@ msgstr ""
 msgid "Export"
 msgstr "Exportar"
 
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Faculty Finalized"
+msgstr ""
+
+#: src/routes/dashboard/faculty/index.tsx
+msgid "Faculty Review Dashboard"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Failed to save changes"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Failed to score resume. Please try again."
 msgstr ""
 
@@ -1181,13 +1500,41 @@ msgstr "Falha ao configurar a autenticação de dois fatores."
 msgid "Features"
 msgstr "Funcionalidades"
 
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Feedback Received"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-feedback-sent-badge.tsx
+msgid "Feedback sent — awaiting resubmission"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/feedback/index.tsx
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Feedback Summary"
+msgstr ""
+
 #: src/routes/dashboard/resumes/index.tsx
 msgid "Filter by"
 msgstr "Filtrar por"
 
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "Filters"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Final Approve"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Finnish"
 msgstr "Finlandês"
+
+#: src/components/ats/score-history-chart.tsx
+#: src/components/ats/score-history-chart.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "First check"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Flexibility"
@@ -1238,6 +1585,7 @@ msgid "Format"
 msgstr "Formato"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Formatting"
 msgstr ""
 
@@ -1265,10 +1613,24 @@ msgstr "Largura total"
 msgid "Fullscreen"
 msgstr ""
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "General ATS compatibility score"
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "General"
 msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "general ATS"
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "General ATS"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "General ATS compatibility score"
+#~ msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Generate a random name"
@@ -1294,7 +1656,6 @@ msgstr "Alemão"
 msgid "Get Started"
 msgstr "Começar"
 
-#: src/components/layout/not-found-screen.tsx
 #: src/routes/auth/verify-2fa-backup.tsx
 msgid "Go Back"
 msgstr "Voltar"
@@ -1303,9 +1664,16 @@ msgstr "Voltar"
 msgid "Go to dashboard"
 msgstr "Ir para o dashboard"
 
+#: src/components/layout/error-screen.tsx
+#: src/components/layout/not-found-screen.tsx
 #: src/routes/auth/login.tsx
 #: src/routes/auth/register.tsx
 msgid "Go to Dashboard"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Go to Inbox"
 msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
@@ -1313,6 +1681,7 @@ msgid "Go to..."
 msgstr "Ir para..."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Good"
 msgstr ""
 
@@ -1320,6 +1689,10 @@ msgstr ""
 #: src/routes/dashboard/info/index.tsx
 msgid "Grade"
 msgstr "Nota final"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Great job! Review the remaining suggestions to push it even higher."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Greek"
@@ -1332,6 +1705,10 @@ msgstr "Grelha"
 #: src/routes/_home/-sections/donate.tsx
 msgid "Grow the Team"
 msgstr "Fazer crescer a equipa"
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Has Comments"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/typography.tsx
 msgctxt "Headings or Titles (H1, H2, H3, H4, H5, H6)"
@@ -1411,10 +1788,18 @@ msgstr "Realce"
 msgid "Hindi"
 msgstr "Hindi"
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "History"
+msgstr ""
+
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 msgid "Home"
 msgstr "Início"
+
+#: src/components/ats/score-history-chart.tsx
+msgid "Hover a point to see what improved"
+msgstr ""
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "How do I share my resume?"
@@ -1429,6 +1814,7 @@ msgid "How is my data protected?"
 msgstr "Como é que os meus dados são protegidos?"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "How to Improve"
 msgstr ""
 
@@ -1442,6 +1828,7 @@ msgid "Icon"
 msgstr "Ícone"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Impact & Metrics"
 msgstr ""
 
@@ -1463,9 +1850,25 @@ msgstr "A importar o seu currículo..."
 msgid "Importing..."
 msgstr "A importar..."
 
+#: src/components/ats/score-history-chart.tsx
+msgid "Improvements vs previous"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Inbox"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Inbox is empty"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Indonesian"
 msgstr "Indonésio"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Initial Draft"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Inline Code"
@@ -1521,12 +1924,22 @@ msgstr ""
 msgid "Job Description"
 msgstr ""
 
+#: src/components/ats/score-history-chart.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Job Match"
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 msgid "John Doe"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
 msgid "johndoe"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "just now"
 msgstr ""
 
 #: src/components/input/rich-input.tsx
@@ -1538,7 +1951,12 @@ msgid "Kannada"
 msgstr "Canarim"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Keyword Match"
+msgstr ""
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Keyword Scoring Curve"
 msgstr ""
 
 #: src/dialogs/resume/sections/interest.tsx
@@ -1580,6 +1998,7 @@ msgstr "Idiomas"
 msgid "Last downloaded on {0}"
 msgstr "Último download em {0}"
 
+#: src/routes/dashboard/ats-score/index.tsx
 #: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Last updated on {updatedAt}"
@@ -1589,6 +2008,10 @@ msgstr "Última atualização em {updatedAt}"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/statistics.tsx
 msgid "Last viewed on {0}"
 msgstr "Última visualização em {0}"
+
+#: src/routes/dashboard/-components/po-section-feedback-banner.tsx
+msgid "Latest"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Latvian"
@@ -1690,8 +2113,22 @@ msgstr "Localização"
 msgid "Lock"
 msgstr "Bloquear"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Lock Resume"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/header.tsx
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+#: src/routes/dashboard/resumes/-components/menus/dropdown-menu.tsx
+msgid "Locked by Placement Officer"
+msgstr ""
+
 #: src/routes/auth/login.tsx
 msgid "Login Restricted"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Logout"
 msgstr ""
 
 #: src/routes/_home/-sections/donate.tsx
@@ -1718,6 +2155,14 @@ msgstr "Malaio"
 msgid "Malayalam"
 msgstr "Malaiala"
 
+#: src/routes/dashboard/resumes/index.tsx
+msgid "Manage and build professional, ATS-friendly resumes."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Manual fix needed"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Marathi"
 msgstr "Marata"
@@ -1730,17 +2175,38 @@ msgstr "Margem (horizontal)"
 msgid "Margin (Vertical)"
 msgstr "Margem (vertical)"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Matched Keywords"
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Mark Addressed"
+msgstr ""
+
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+msgid "Mark as Master"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Matched Keywords"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Menu"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Missing Keywords"
 msgstr ""
 
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Model"
 msgstr "Modelo"
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Most Improved Categories"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/shared/section-item.tsx
 msgid "Move to"
@@ -1754,6 +2220,14 @@ msgstr "Multilingue"
 #: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/info/index.tsx
 msgid "My Info"
+msgstr ""
+
+#: src/routes/dashboard/feedback/index.tsx
+msgid "My Resumes"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "My Space"
 msgstr ""
 
 #: src/dialogs/api-key/create.tsx
@@ -1778,10 +2252,12 @@ msgid "Need Help?"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Needs Improvement"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Needs Work"
 msgstr ""
 
@@ -1793,6 +2269,10 @@ msgstr "Nepalês"
 #: src/routes/dashboard/info/index.tsx
 msgid "Network"
 msgstr "Rede social"
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "New Checklist"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "New features are constantly being added and improved, so be sure to check back often."
@@ -1815,26 +2295,110 @@ msgstr "Nova senha"
 msgid "New Section"
 msgstr "Nova secção"
 
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Next milestone:"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "No Advertising, No Tracking"
 msgstr "Sem publicidade, sem rastreamento"
+
+#: src/components/ats/score-history-chart.tsx
+msgid "No change"
+msgstr ""
+
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "No checklists yet"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "No comments yet — add your feedback above"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "No comparison available"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "No improvement data yet"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "No new changes"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "No pending suggestion cards."
+msgstr ""
 
 #: src/components/ui/combobox.tsx
 #: src/components/ui/multiple-combobox.tsx
 msgid "No results found."
 msgstr "Nenhum resultado encontrado."
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "No Resume Yet"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "No resumes"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "No resumes created yet"
+msgstr ""
+
 #: src/routes/dashboard/ats-score/index.tsx
 msgid "No resumes found. Create a resume first to use ATS scoring."
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "No resumes from faculty or student resubmissions are pending your action."
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+msgid "No score history yet — run your first ATS check above."
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "No student data found"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "No student submissions are waiting for your review."
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "No students or resumes found"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "No suggestion cards in this category."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "No suggestion cards in this tab. Use “Needs Improvement” above, try other categories, or re-score after edits."
 msgstr ""
 
 #: src/utils/locale.ts
 msgid "Norwegian"
 msgstr "Norueguês"
 
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Not enough data yet"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Not Reviewed"
+msgstr ""
+
 #: src/utils/resume/section.tsx
 msgid "Notes"
 msgstr "Notas"
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Number of scoring runs by score range"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Odia"
@@ -1856,6 +2420,10 @@ msgstr "Abrir"
 #: src/routes/auth/forgot-password.tsx
 msgid "Open Email Client"
 msgstr "Abrir cliente de email"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Open in Builder"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Open Source"
@@ -1885,6 +2453,19 @@ msgstr "Lista ordenada"
 #: src/routes/dashboard/info/index.tsx
 msgid "Organization"
 msgstr "Organização"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Overall Review Status"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Overview"
+msgstr ""
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "Package"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Page"
@@ -1931,18 +2512,39 @@ msgstr "A proteção por senha foi desativada."
 msgid "Password protection has been enabled."
 msgstr "A proteção por senha foi ativada."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Paste a job description (optional)..."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Paste a job description to score against, or leave blank for a general ATS check."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
+msgid "Paste a job description to score vs. a specific role, or score without one for general ATS checks."
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Paste job description here (optional)..."
 msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Paste the job description here to tailor your resume for this role..."
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Pending PO Review"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Pending Review"
 msgstr ""
 
 #: src/dialogs/resume/sections/education.tsx
@@ -1975,6 +2577,19 @@ msgstr "Telefone"
 msgid "Picture"
 msgstr "Foto"
 
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Pipeline"
+msgstr ""
+
+#: src/routes/dashboard/placement-officer/index.tsx
+msgid "Placement Officer Dashboard"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-feedback-banner.tsx
+#: src/routes/dashboard/-components/po-section-feedback-banner.tsx
+msgid "Placement Officer Feedback"
+msgstr ""
+
 #: src/routes/auth/register.tsx
 msgid "Please access via the main dashboard."
 msgstr ""
@@ -1995,16 +2610,21 @@ msgstr "Introduza o URL para o qual pretende criar o link:"
 msgid "Please login via the main dashboard."
 msgstr ""
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "Please wait while your PDF is being generated..."
 msgstr "Aguarde enquanto o seu PDF está a ser gerado..."
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "PO: Request Revision"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Polish"
 msgstr "Polaco"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Poor"
 msgstr ""
 
@@ -2026,6 +2646,18 @@ msgstr "Português (Portugal)"
 #: src/routes/dashboard/info/index.tsx
 msgid "Position"
 msgstr "Cargo"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Post Comment"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Post Reply"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Posting…"
+msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -2093,7 +2725,17 @@ msgstr "Publicações"
 msgid "Publisher"
 msgstr "Editora"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Re-open"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Re-score"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Re-score Resume"
 msgstr ""
 
@@ -2117,8 +2759,24 @@ msgstr "O Reactive Resume está a ser lançado hoje no Product Hunt, vá lá mos
 msgid "Reactive Resume is open-source, privacy-focused, and completely free. Unlike other resume builders, it doesn't show ads, track your data, or limit your features behind a paywall."
 msgstr "O Reactive Resume é de código aberto, focado na privacidade e completamente gratuito. Ao contrário de outros criadores de currículos, não mostra anúncios, não rastreia os seus dados nem limita funcionalidades atrás de um paywall."
 
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Ready for PO Review"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Ready for review?"
+msgstr ""
+
 #: src/dialogs/resume/sections/cover-letter.tsx
 msgid "Recipient"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Record a new voice note"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Recording…"
 msgstr ""
 
 #: src/components/level/combobox.tsx
@@ -2129,10 +2787,14 @@ msgstr "Retângulo"
 msgid "Rectangle (Full Width)"
 msgstr "Retângulo (largura total)"
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
-msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Redo (Ctrl+Y)"
-msgstr "Refazer (Ctrl+Y)"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/dock.tsx
+#~ msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#~ msgid "Redo (Ctrl+Y)"
+#~ msgstr "Refazer (Ctrl+Y)"
 
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
@@ -2163,6 +2825,21 @@ msgstr "A remover a proteção por senha..."
 msgid "Rename"
 msgstr "Renomear"
 
+#: src/routes/dashboard/-components/comment-dialog.tsx
+#: src/routes/dashboard/-components/comment-dialog.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Reply"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Reply to Thread"
+msgstr ""
+
+#: src/routes/dashboard/-components/comment-dialog.tsx
+msgid "Replying to thread"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Report a Bug"
 msgstr "Reportar um bug"
@@ -2170,6 +2847,10 @@ msgstr "Reportar um bug"
 #: src/routes/_home/-sections/footer.tsx
 msgid "Report an issue"
 msgstr "Reportar um problema"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Request Revision"
+msgstr ""
 
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Resend verification email"
@@ -2195,12 +2876,52 @@ msgstr "Repor a sua senha"
 msgid "Resetting your password..."
 msgstr "A repor a sua senha..."
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Resolve"
+msgstr ""
+
 #: src/routes/_home/-sections/footer.tsx
 msgid "Resources"
 msgstr "Recursos"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Resubmit to Faculty"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Resubmit to PO"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Resubmitted"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Resubmitted to PO"
+msgstr ""
+
 #: src/routes/_home/-sections/header.tsx
 msgid "Resume Builder - Go to homepage"
+msgstr ""
+
+#: src/routes/dashboard/-components/comment-dialog.tsx
+msgid "Resume Feedback"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Resume not found"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Resume Preview"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "resume(s)"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "resumes"
 msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
@@ -2209,10 +2930,40 @@ msgstr ""
 #: src/components/command-palette/pages/resumes.tsx
 #: src/components/command-palette/pages/resumes.tsx
 #: src/routes/_home/-sections/statistics.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/resumes/index.tsx
 msgid "Resumes"
 msgstr "Currículos"
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Resumes submitted by students waiting for your review"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Review"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Review & Send Feedback"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Review Notes"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Review Section: {sectionName}"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Review Students"
+msgstr ""
+
+#: src/utils/resume/section.tsx
+msgid "Reviewer Feedback"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Right Align"
@@ -2254,6 +3005,7 @@ msgstr ""
 #: src/dialogs/resume/sections/skill.tsx
 #: src/dialogs/resume/sections/summary-item.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Save Changes"
 msgstr "Guardar alterações"
@@ -2271,23 +3023,61 @@ msgstr "Digitalize o código QR abaixo com a sua aplicação de autenticação p
 msgid "School"
 msgstr "Escola"
 
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Score"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Score Distribution"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Score History"
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+msgid "Score improved — check individual categories for details."
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+msgid "Score more to see progression over time."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Score My Resume"
 msgstr ""
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Score your resume for ATS compatibility and get detailed feedback by category."
+#: src/components/ats/score-history-chart.tsx
+msgid "Score Progression"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "Score your resume for ATS compatibility and get detailed feedback by category."
+#~ msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Score your resume to see feedback here"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Score your resume to see results"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Scored against your job description"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Scoring..."
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Search by name or roll number..."
 msgstr ""
 
 #: src/components/input/icon-picker.tsx
@@ -2308,12 +3098,44 @@ msgstr "Pesquisar..."
 msgid "Secret copied to clipboard."
 msgstr "Segredo copiado para a área de transferência."
 
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Section"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Section Health"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Section Intelligence"
+msgstr ""
+
 #: src/dialogs/resume/sections/custom.tsx
 msgid "Section Type"
 msgstr "Tipo de secção"
 
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Sections"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Sections resubmitted by faculty after your feedback"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Sections submitted by faculty awaiting your review"
+msgstr ""
+
 #: src/routes/dashboard/ats-score/index.tsx
 msgid "Select a resume to score"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Select another category for actionable items, or use “Needs Improvement” above."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Select another category to see more"
 msgstr ""
 
 #: src/components/ui/combobox.tsx
@@ -2325,9 +3147,17 @@ msgstr "Selecionar..."
 msgid "Self-Host with Docker"
 msgstr "Faça auto-hospedagem com o Docker"
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Send Feedback to Faculty"
+msgstr ""
+
 #: src/routes/auth/forgot-password.tsx
 msgid "Send Password Reset Email"
 msgstr "Enviar email para repor senha"
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Sending feedback for"
+msgstr ""
 
 #: src/routes/auth/forgot-password.tsx
 msgid "Sending password reset email..."
@@ -2346,6 +3176,10 @@ msgstr "Sérvio"
 #: src/routes/dashboard/settings/authentication/-components/password.tsx
 msgid "Set Password"
 msgstr "Definir senha"
+
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+msgid "Setting as Master Resume..."
+msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -2380,6 +3214,7 @@ msgid "Show"
 msgstr "Mostrar"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Show less"
 msgstr ""
 
@@ -2475,6 +3310,11 @@ msgstr "Slug"
 msgid "Software Engineer"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Some AI rewrites could not be generated. Manual suggestions and scores still apply — check your AI configuration or try re-scoring."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
@@ -2515,6 +3355,14 @@ msgstr "Patrocínios"
 msgid "Square"
 msgstr "Quadrado"
 
+#: src/routes/auth/login.tsx
+msgid "SSO failed ({ssoError}). Please return to dashboard and try again."
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Stage"
+msgstr ""
+
 #: src/components/input/github-stars-button.tsx
 msgid "Star us on GitHub (opens in new tab)"
 msgstr "Dê-nos uma estrela no GitHub (abre num novo separador)"
@@ -2528,10 +3376,13 @@ msgstr "Dê-nos uma estrela no GitHub, atualmente {0} estrelas (abre num novo se
 msgid "Start building your resume by giving it a name."
 msgstr "Comece a criar seu currículo dando um nome a ele."
 
-#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Start building your resume from scratch"
 msgstr "Comece a criar o seu currículo do zero"
+
+#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
+msgid "Start building your resume from scratch using our builder."
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Statistics"
@@ -2541,20 +3392,87 @@ msgstr "Estatísticas"
 msgid "Stay"
 msgstr ""
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Stop"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Strike"
 msgstr "Rasurar"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Structure"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Student Submissions"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "students"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Students"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Submission Breakdown"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Submission Rate"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submit for Faculty Review"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Submit Section to PO"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submit to notify faculty that your resume is ready for review."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submit your resume to notify faculty that it is ready for feedback."
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Submitted"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Submitted to PO"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submitting..."
 msgstr ""
 
 #: src/routes/_home/-sections/footer.tsx
 msgid "Subreddit"
 msgstr "Subreddit"
 
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+msgid "Successfully set as Master Resume."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Suggestion applied"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Suggestion applied to your resume"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
@@ -2583,6 +3501,7 @@ msgid "Table"
 msgstr "Tabela"
 
 #: src/dialogs/resume/index.tsx
+#: src/routes/dashboard/resumes/index.tsx
 msgid "Tags"
 msgstr "Etiquetas"
 
@@ -2591,12 +3510,17 @@ msgid "Tags can be used to categorize your resume by keywords."
 msgstr "As etiquetas podem ser usadas para categorizar o seu currículo por palavras-chave."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Tailoring"
 msgstr ""
 
 #: src/utils/locale.ts
 msgid "Tamil"
 msgstr "Tâmil"
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Tech terms detected"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Telugu"
@@ -2613,6 +3537,10 @@ msgstr "Galeria de modelos"
 #: src/routes/_home/-sections/templates.tsx
 msgid "Templates"
 msgstr "Modelos"
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "terms"
+msgstr ""
 
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Test Connection"
@@ -2658,6 +3586,11 @@ msgstr "A senha que introduziu está incorreta"
 msgid "The resume you are trying to access is password protected"
 msgstr "O currículo a que está a tentar aceder está protegido por senha"
 
+#. placeholder {0}: new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "The student hasn't made any changes since the evaluation on {0}."
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "The URL you entered is not valid."
 msgstr "O URL que introduziu não é válido."
@@ -2671,10 +3604,18 @@ msgstr "Tema"
 msgid "Then, enter the 6 digit code that the app provides to continue."
 msgstr "Em seguida, introduza o código de 6 dígitos fornecido pela aplicação para continuar."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "There was a problem while generating the PDF, please try again in some time."
 msgstr "Houve um problema ao gerar o PDF, tente novamente dentro de algum tempo."
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "There was an error fetching student data. This might be due to missing database columns. Please ensure 'npm run db:push' has been executed."
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "They will return to FINALIZED_BY_FACULTY state for faculty to address."
+msgstr ""
 
 #: src/components/ai/chat.tsx
 msgid "Thinking..."
@@ -2702,10 +3643,18 @@ msgstr "Este é um nome compatível com URL para o seu currículo."
 msgid "This may take a few minutes, depending on the response of the AI provider. Please do not close the window or refresh the page."
 msgstr "Isto pode demorar alguns minutos, dependendo da resposta do fornecedor de IA. Não feche a janela nem atualize a página."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "This may take a moment"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "This may take a while depending on the server capacity. Please do not close the window or refresh the page."
 msgstr "Isto pode demorar algum tempo, dependendo da capacidade do servidor. Não feche a janela nem atualize a página."
+
+#: src/routes/builder/$resumeId/route.tsx
+msgid "This resume is locked and cannot be edited."
+msgstr ""
 
 #: src/components/resume/store/resume.ts
 msgid "This resume is locked and cannot be updated."
@@ -2726,6 +3675,10 @@ msgstr ""
 #: src/routes/_home/-sections/hero.tsx
 msgid "Timelapse demonstration of building a resume with Reactive Resume"
 msgstr "Demonstração em time-lapse da criação de um currículo com o Reactive Resume"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Timeline"
+msgstr ""
 
 #: src/dialogs/api-key/create.tsx
 msgid "Tip: Give your API key a name, corresponding to the purpose of the key, to help you identify it later."
@@ -2748,6 +3701,31 @@ msgstr "Título"
 #: src/routes/dashboard/settings/danger-zone.tsx
 msgid "To delete your account, you need to enter the confirmation text and click the button below."
 msgstr "Para eliminar a sua conta, tem de introduzir o texto de confirmação e clicar no botão abaixo."
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Top Category Gained"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Top Performing"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Top Resumes →"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Total ATS Checks"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Total Resumes"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Total Students"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/statistics.tsx
 msgid "Track your resume's views and downloads"
@@ -2817,6 +3795,7 @@ msgstr "A autenticação de dois fatores foi configurada com sucesso."
 
 #: src/dialogs/resume/import.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/design.tsx
+#: src/routes/dashboard/-components/org-unit-filter.tsx
 msgid "Type"
 msgstr "Tipo"
 
@@ -2836,14 +3815,27 @@ msgstr "Fontes"
 msgid "Ukrainian"
 msgstr "Ucraniano"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Unable to load dashboard data"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Underline"
 msgstr "Sublinhar"
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
-msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Undo"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Undo (Ctrl+Z)"
-msgstr "Desfazer (Ctrl+Z)"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/dock.tsx
+#~ msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#~ msgid "Undo (Ctrl+Z)"
+#~ msgstr "Desfazer (Ctrl+Z)"
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Unlimited Resumes"
@@ -2859,6 +3851,10 @@ msgstr "A desassociar a sua conta de {providerName}..."
 #: src/routes/dashboard/resumes/-components/menus/dropdown-menu.tsx
 msgid "Unlock"
 msgstr "Desbloquear"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Unlock Resume"
+msgstr ""
 
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Unverified"
@@ -2957,6 +3953,10 @@ msgstr "A atualizar a sua senha..."
 msgid "Updating your resume..."
 msgstr "A atualizar o seu currículo..."
 
+#: src/routes/dashboard/resumes/-components/cards/import-card.tsx
+msgid "Upload your existing resume to continue building."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Uploading picture..."
 msgstr "A carregar foto..."
@@ -2968,6 +3968,10 @@ msgstr "URL"
 
 #: src/dialogs/resume/index.tsx
 msgid "Use My Info"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Use the “Needs Improvement” notes above, edit in the builder, then re-score. If you dismissed items, re-score to refresh."
 msgstr ""
 
 #: src/dialogs/resume/sections/profile.tsx
@@ -2992,10 +3996,31 @@ msgstr "URLs válidos devem começar por http:// ou https://."
 msgid "Verified"
 msgstr "Verificado"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Verified / Evaluated"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Verified Progress"
+msgstr ""
+
 #: src/routes/auth/verify-2fa-backup.tsx
 #: src/routes/auth/verify-2fa.tsx
 msgid "Verify"
 msgstr "Verificar"
+
+#. placeholder {0}: stats.totalResumes - stats.approvedResumes
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Verify All ({poVerifiedResumes} / {0}) First"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Verify All Resumes First"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Verify Individual"
+msgstr ""
 
 #: src/routes/auth/verify-2fa-backup.tsx
 msgid "Verify with a Backup Code"
@@ -3022,9 +4047,48 @@ msgstr "Verificar o seu email é necessário ao repor a sua senha."
 msgid "Vietnamese"
 msgstr "Vietnamita"
 
+#. placeholder {0}: pendingSuggestions.length
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "View & Apply Suggestions ({0})"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View all sections"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "View by"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View by unit"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/header.tsx
+#: src/routes/builder/$resumeId/route.tsx
+msgid "View Only"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View Sections"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "View student details"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View Students"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/statistics.tsx
 msgid "Views"
 msgstr "Visualizações"
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Voice Note"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Volunteer"
@@ -3032,6 +4096,14 @@ msgstr "Voluntariado"
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Volunteer Experience"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "vs. job description"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Waiting for Faculty"
 msgstr ""
 
 #: src/dialogs/resume/sections/award.tsx
@@ -3065,6 +4137,7 @@ msgid "What makes Reactive Resume different from other resume builders?"
 msgstr "O que torna o Reactive Resume diferente de outros criadores de currículos?"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "What's Good"
 msgstr ""
 
@@ -3078,9 +4151,21 @@ msgstr "O que há de novo na versão mais recente?"
 msgid "When locked, the resume cannot be updated or deleted."
 msgstr "Quando bloqueado, o currículo não pode ser atualizado nem eliminado."
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "With Resumes"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Write specific, actionable feedback for the student..."
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "Write your own CSS (or use an AI to generate it for you) to customize your resume to the fullest."
 msgstr "Escreva o seu próprio CSS (ou utilize uma IA para o gerar por si) para personalizar o seu currículo ao máximo."
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Write your reply..."
+msgstr ""
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "Yes, Reactive Resume is available in multiple languages. You can choose your preferred language in the settings page, or using the language switcher in the top right corner. If you don't see your language, or you would like to improve the existing translations, you can <0>contribute to the translations on Crowdin<1> (opens in new tab)</1></0>."
@@ -3094,9 +4179,17 @@ msgstr "Sim! Todos os modelos são totalmente personalizáveis. Pode alterar cor
 msgid "Yes! Reactive Resume is completely free to use, with no hidden costs, premium tiers, or subscription fees. It's open-source and will always remain free."
 msgstr "Sim! O Reactive Resume é completamente gratuito, sem custos ocultos, níveis premium ou taxas de subscrição. É de código aberto e permanecerá sempre gratuito."
 
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "yesterday"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "You also have the option to deploy on your own servers using the Docker image."
 msgstr "Também tem a opção de o implementar nos seus próprios servidores utilizando a imagem Docker."
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "You are at"
+msgstr ""
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "You can share your resume via a unique public URL, protect it with a password, or download it as a PDF to share directly. The choice is yours!"
@@ -3151,6 +4244,10 @@ msgstr "Sua senha foi atualizada com sucesso."
 msgid "Your profile has been updated successfully."
 msgstr "O seu perfil foi atualizado com sucesso."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "YOUR RESUME"
+msgstr ""
+
 #: src/dialogs/resume/index.tsx
 #: src/dialogs/resume/index.tsx
 msgid "Your resume has been created successfully."
@@ -3174,6 +4271,19 @@ msgstr "O seu currículo foi importado com sucesso."
 msgid "Your resume has been updated successfully."
 msgstr "O seu currículo foi atualizado com sucesso."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Your resume is on the right track but falls short in a few areas. Apply the suggestions below to improve your score."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Your resume needs significant improvements to pass ATS filters. Follow the suggestions below to boost your chances."
+msgstr ""
+
+#. placeholder {0}: result.overall
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Your resume scored {0} out of 100."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Your resume's public link is currently protected by a password. Share the password only with people you trust."
 msgstr "O link público do seu currículo está atualmente protegido por uma senha. Partilhe a senha apenas com pessoas em quem confia."
@@ -3183,13 +4293,13 @@ msgid "Your support ensures the project remains free and accessible for everyone
 msgstr "O seu apoio garante que o projeto permanece gratuito e acessível para todos, agora e no futuro."
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Zoom in"
-msgstr "Ampliar"
+#~ msgid "Zoom in"
+#~ msgstr "Ampliar"
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Zoom out"
-msgstr "Afastar"
+#~ msgid "Zoom out"
+#~ msgstr "Afastar"
 
 #: src/utils/locale.ts
-msgid "Zulu"
-msgstr "Zulu"
+#~ msgid "Zulu"
+#~ msgstr "Zulu"

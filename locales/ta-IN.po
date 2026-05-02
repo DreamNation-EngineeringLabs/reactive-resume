@@ -37,18 +37,80 @@ msgstr "பெயர்"
 msgid "(opens in new tab)"
 msgstr "(புதிய தாவலில் திறக்கிறது)"
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "(optional)"
+msgstr ""
+
 #. placeholder {0}: section.items.length
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom.tsx
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# உருப்படி} other {# உருப்படிகள்}}"
+
+#. placeholder {0}: st.passedFaculty - approved
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{0} pending PO"
+msgstr ""
+
+#. placeholder {0}: st.submittedResumes
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{0} with Faculty"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/shared/section-menu.tsx
 msgid "{column, plural, one {# Column} other {# Columns}}"
 msgstr "{column, plural, one {# நெடுவரிசை} other {# நெடுவரிசைகள்}}"
 
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "{days}d ago"
+msgstr ""
+
+#. placeholder {0}: fullyApproved !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{fullyApproved} section{0} are fully approved"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "{hours}h ago"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "{minutes}m ago"
+msgstr ""
+
+#. placeholder {0}: noResume !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{noResume} student{0} haven't created a resume yet"
+msgstr ""
+
+#. placeholder {0}: noSubmission !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{noSubmission} section{0} have no submissions yet"
+msgstr ""
+
+#. placeholder {0}: pendingPO !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{pendingPO} resume{0} finalized by faculty and waiting for your review"
+msgstr ""
+
+#. placeholder {0}: resubmitted !== 1 ? "s" : ""
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{resubmitted} resume{0} resubmitted by students after your revision request"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "{total} in Draft"
+msgstr ""
+
+#. placeholder {0}: reviews.length - 1
+#: src/routes/dashboard/-components/po-feedback-sent-badge.tsx
+msgid "+{0} earlier round(s)"
+msgstr ""
+
 #. placeholder {0}: keywords.length - 10
+#. placeholder {0}: missing.length - 8
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "+{0} more"
 msgstr ""
 
@@ -97,7 +159,7 @@ msgstr "உங்கள் தற்போதைய மின்னஞ்சல�
 msgid "A free and open-source resume builder that simplifies the process of creating, updating, and sharing your resume."
 msgstr "உங்கள் ரெஸ்யூமியை உருவாக்குதல், புதுப்பித்தல் மற்றும் பகிர்தல் ஆகிய செயல்முறைகளை எளிதாக்கும் ஒரு இலவச மற்றும் திறந்த மூல ரெஸ்யூம் பில்டர்."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "A link to your resume has been copied to clipboard."
 msgstr "உங்கள் ரெஸ்யூமிக்கான ஒரு இணைப்பு கிளிப்போர்டுக்கு நகலெடுக்கப்பட்டுள்ளது."
@@ -127,12 +189,20 @@ msgstr "ஏ4"
 msgid "Absolutely! You can export your resume to PDF with a single click. The exported PDF maintains all your formatting and styling perfectly."
 msgstr "நிச்சயமாக! ஒரு கிளிக் மூலமே உங்கள் ரெஸ்யூமியை PDF ஆக ஏற்றுமதி செய்யலாம். ஏற்றுமதி செய்யப்பட்ட PDF உங்கள் அனைத்து வடிவமைப்பு மற்றும் ஸ்டைல் அமைப்புகளையும் அப்படியே காக்கும்."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Accept Change"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "Access your resumes and data programmatically using the API."
 msgstr "API-யை பயன்படுத்தி உங்கள் ரெஸ்யூமிகளையும் தரவையும் நிரலாலும் அணுகலாம்."
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Achievements"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Action Alerts"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom-fields.tsx
@@ -224,6 +294,10 @@ msgstr ""
 msgid "Add Experience"
 msgstr ""
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Add Feedback Comment"
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 msgid "Add Interest"
 msgstr ""
@@ -276,6 +350,14 @@ msgstr ""
 msgid "Added"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Address All Fixes"
+msgstr ""
+
+#: src/routes/dashboard/admin/index.tsx
+msgid "Admin Metrics Dashboard"
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 msgid "Advanced"
 msgstr ""
@@ -291,6 +373,34 @@ msgstr ""
 #: src/utils/locale.ts
 msgid "Albanian"
 msgstr "அல்பேனியன்"
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "All"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "All addressed!"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "All Approved"
+msgstr ""
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "All packages"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "All suggestions addressed!"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "All suggestions applied or dismissed. Re-score to refresh."
+msgstr ""
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "All types"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Allow Public Access"
@@ -308,6 +418,14 @@ msgstr "பக்கத்தை ஏற்றும்போது ஒரு ப
 #: src/dialogs/resume/import.tsx
 msgid "An unknown error occurred while importing your resume."
 msgstr "உங்கள் ரெஸ்யூமியை இறக்குமதி செய்யும் போது ஒரு தெரியாத பிழை ஏற்பட்டது."
+
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "Analyze →"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Analyzing your resume..."
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "And many more..."
@@ -352,17 +470,49 @@ msgstr "செயலி புள்ளிவிபரங்கள்"
 msgid "Applied"
 msgstr ""
 
-#. placeholder {0}: toApply.length
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Applied {0} suggestions"
+#~ msgid "Applied {0} suggestions"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Applied {successCount} suggestions"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Apply"
+msgid "Applied {successCount} suggestions, {failCount} failed — re-score for fresh suggestions"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Apply All Suggestions ({applicablePendingCount})"
+#~ msgid "Apply"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply {applicablePendingCount}"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "Apply All Suggestions ({applicablePendingCount})"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Apply fix"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Approve"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Approve for Placement"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "approved"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Approved for Placement"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -416,15 +566,20 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "ஒப்புத்திணைவு விகிதம்"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "ATS Checks"
+msgstr ""
+
 #: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 #: src/routes/dashboard/ats-score/index.tsx
 #: src/utils/resume/section.tsx
 msgid "ATS Score"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "ATS Score Analysis"
-msgstr ""
+#~ msgid "ATS Score Analysis"
+#~ msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -435,6 +590,25 @@ msgstr "அங்கீகாரம்"
 #: src/routes/_home/-sections/features.tsx
 msgid "Available in multiple languages. If you would like to contribute, check out Crowdin."
 msgstr "பல மொழிகளில் கிடைக்கிறது. நீங்கள் பங்களிக்க விரும்பினால், Crowdin-ஐ பார்க்கவும்."
+
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Average Score"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Avg % gain per check"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Avg Improvement"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Avg Score"
+msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Awarder"
@@ -452,6 +626,15 @@ msgstr "விருதுகள்"
 #: src/utils/locale.ts
 msgid "Azerbaijani"
 msgstr "அசர்பைஜானி"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Back"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Back to App"
+msgstr ""
 
 #: src/routes/auth/verify-2fa.tsx
 msgid "Back to Login"
@@ -500,6 +683,7 @@ msgid "Border Width"
 msgstr "எல்லையின் அகலம்"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Brevity"
 msgstr ""
 
@@ -562,28 +746,45 @@ msgstr "என் ரெஸ்யூமியை PDF ஆக ஏற்றும�
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/hooks/use-prompt.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
 #: src/routes/dashboard/settings/api-keys.tsx
 #: src/routes/dashboard/settings/danger-zone.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Cancel"
 msgstr "ரத்து செய்"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Cancel Reply"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Catalan"
 msgstr "கட்டலான்"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Categories"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Category Improvement Breakdown"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Center Align"
 msgstr "நடுவில் சீரமை"
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Center view"
-msgstr "நடுப்பார்வை"
+#~ msgid "Center view"
+#~ msgstr "நடுப்பார்வை"
 
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Certifications"
 msgstr "சான்றிதழ்கள்"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Change Job Description"
+msgstr ""
 
 #: src/routes/_home/-sections/header.tsx
 msgid "Change language"
@@ -605,6 +806,14 @@ msgstr "மனசு மாறிச்சா? உங்கள் ரெஸ்�
 msgid "Changelog"
 msgstr "மாற்றப்பதிவேடு"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Changes"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Changes Summary"
+msgstr ""
+
 #: src/routes/auth/forgot-password.tsx
 msgid "Check your email for a link to reset your password."
 msgstr "உங்கள் கடவுச்சொல்லை மீட்டமைக்க ஒரு இணைப்புக்காக உங்கள் மின்னஞ்சலைச் சரிபார்க்கவும்."
@@ -612,6 +821,11 @@ msgstr "உங்கள் கடவுச்சொல்லை மீட்ட�
 #: src/routes/auth/register.tsx
 msgid "Check your email for a link to verify your account."
 msgstr "உங்கள் கணக்கை சரிபார்க்க ஒரு இணைப்புக்காக உங்கள் மின்னஞ்சலைச் சரிபார்க்கவும்."
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Checklists"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Chinese (Simplified)"
@@ -637,14 +851,26 @@ msgstr "தேர்வை அழிக்கவும்"
 msgid "Click here to select a file to import"
 msgstr "இறக்குமதி செய்ய ஒரு கோப்பை தேர்ந்தெடுக்க இங்கே கிளிக் செய்யவும்"
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Click to record a voice note"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Code Block"
 msgstr "குறியீட்டு தொகுதி"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Collapse"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/shared/section-menu.tsx
 msgid "Columns"
 msgstr "நெடுவரிசைகள்"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Comments"
+msgstr ""
 
 #: src/routes/_home/-sections/footer.tsx
 msgid "Community"
@@ -654,6 +880,10 @@ msgstr "சமூகம்"
 #: src/routes/dashboard/info/index.tsx
 msgid "Company"
 msgstr "நிறுவனம்"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Complete at least one evaluation to start tracking changes."
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Completely free, forever, no hidden costs."
@@ -675,6 +905,11 @@ msgstr "இணைக்கவும்"
 msgid "Content"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Content Quality"
+msgstr ""
+
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/dialogs/auth/enable-two-factor.tsx
 #: src/dialogs/auth/enable-two-factor.tsx
@@ -682,7 +917,6 @@ msgstr ""
 msgid "Continue"
 msgstr "தொடர்க"
 
-#: src/routes/dashboard/resumes/-components/cards/import-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Continue where you left off"
 msgstr "நீங்கள் நிறுத்திய இடத்தில் இருந்து தொடர்க"
@@ -711,9 +945,14 @@ msgstr "காப்பு குறியீடுகளை நகலெடு"
 msgid "Copy this secret key and use it in your applications to access your data."
 msgstr "இந்த ரகசிய விசையை நகலெடுத்து, உங்கள் பயன்பாடுகளில் உங்கள் தரவினை அணுக பயன்படுத்தவும்."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Copy URL"
 msgstr "URL-ஐ நகலெடு"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Could not apply — re-score for fresh suggestions"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Cover Letter"
@@ -819,6 +1058,18 @@ msgstr "ஒரு உதாரண ரெஸ்யூமியை உருவா
 msgid "Create as many resumes as you want, without limits."
 msgstr "வரம்புகள் இன்றி, நீங்கள் விரும்பும் அளவுக்கு ரெஸ்யூமிகளை உருவாக்குங்கள்."
 
+#: src/routes/dashboard/-components/checklist-creator.tsx
+msgid "Create Checklist"
+msgstr ""
+
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "Create checklists to standardize how you evaluate student resumes."
+msgstr ""
+
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "Create First Checklist"
+msgstr ""
+
 #: src/dialogs/api-key/create.tsx
 msgid "Creating your API key..."
 msgstr "உங்கள் API விசையை உருவாக்குகிறது..."
@@ -832,6 +1083,10 @@ msgstr "உங்கள் ரெஸ்யூமியை உருவாக்�
 msgid "Current Password"
 msgstr "தற்போதைய கடவுச்சொல்"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Current Status"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 #: src/utils/resume/section.tsx
 msgid "Custom CSS"
@@ -844,6 +1099,10 @@ msgstr "தனிப்பயன் பகுதிகள்"
 #: src/utils/locale.ts
 msgid "Czech"
 msgstr "செக்"
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Daily ATS Checks (14 days)"
+msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -924,6 +1183,10 @@ msgstr "உங்கள் API விசையை நீக்கிக் க�
 msgid "Deleting your resume..."
 msgstr "உங்கள் ரெஸ்யூமியை நீக்கிக் கொண்டிருக்கிறது..."
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Describe what needs to be improved across this section — e.g. \"Most resumes lack quantified metrics in the experience section. Please ensure every bullet uses the XYZ formula with numbers.\""
+msgstr ""
+
 #: src/dialogs/resume/sections/award.tsx
 #: src/dialogs/resume/sections/certification.tsx
 #: src/dialogs/resume/sections/education.tsx
@@ -964,6 +1227,10 @@ msgstr "முடக்கப்பட்டது"
 msgid "Disabling two-factor authentication..."
 msgstr "இரண்டு நிலை அங்கீகாரத்தை முடக்கிக் கொண்டிருக்கிறது..."
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Discard"
+msgstr ""
+
 #: src/routes/dashboard/settings/authentication/-components/social-provider.tsx
 msgid "Disconnect"
 msgstr "துண்டிக்கவும்"
@@ -973,6 +1240,8 @@ msgid "Discord"
 msgstr "டிஸ்கார்ட்"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Dismiss"
 msgstr ""
 
@@ -987,18 +1256,18 @@ msgid "Download"
 msgstr "பதிவிறக்கு"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
-msgid "Download a copy of your resume in JSON format. Use this file for backup or to import your resume into other applications, including AI assistants."
-msgstr "உங்கள் ரெஸ்யூமியின் ஒரு நகலை JSON வடிவில் பதிவிறக்கவும். இந்த கோப்பை காப்புப்பிரதி வைக்க அல்லது உங்கள் ரெஸ்யூமியை AI உதவியாளர்கள் உட்பட பிற பயன்பாடுகளுக்கு இறக்குமதி செய்ய பயன்படுத்தலாம்."
+#~ msgid "Download a copy of your resume in JSON format. Use this file for backup or to import your resume into other applications, including AI assistants."
+#~ msgstr "உங்கள் ரெஸ்யூமியின் ஒரு நகலை JSON வடிவில் பதிவிறக்கவும். இந்த கோப்பை காப்புப்பிரதி வைக்க அல்லது உங்கள் ரெஸ்யூமியை AI உதவியாளர்கள் உட்பட பிற பயன்பாடுகளுக்கு இறக்குமதி செய்ய பயன்படுத்தலாம்."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "Download a copy of your resume in PDF format. Use this file for printing or to easily share your resume with recruiters."
 msgstr "உங்கள் ரெஸ்யூமியின் ஒரு நகலை PDF வடிவில் பதிவிறக்கவும். இந்த கோப்பை அச்சிடுவதற்கும் அல்லது பணியமர்த்துநர்களுடன் எளிதாக பகிர்வதற்கும் பயன்படுத்தலாம்."
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Download JSON"
-msgstr "JSON-ஐ பதிவிறக்கவும்"
+#~ msgid "Download JSON"
+#~ msgstr "JSON-ஐ பதிவிறக்கவும்"
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Download PDF"
 msgstr "PDF-ஐ பதிவிறக்கவும்"
 
@@ -1041,6 +1310,18 @@ msgstr "டச்சு"
 
 #: src/components/ai/chat.tsx
 msgid "e.g. Change my name to..."
+msgstr ""
+
+#: src/routes/dashboard/-components/po-feedback-sent-badge.tsx
+msgid "Edit"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Edit Feedback: {sectionName}"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Edit in Builder"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
@@ -1119,6 +1400,26 @@ msgstr "இரண்டு நிலை அங்கீகாரத்தை அ
 msgid "Enter your password to disable two-factor authentication. Your account will be less secure without 2FA enabled."
 msgstr "இரண்டு நிலை அங்கீகாரத்தை முடக்க உங்கள் கடவுச்சொல்லை உள்ளிடவும். 2FA இயங்காவிட்டால் உங்கள் கணக்கு குறைந்த பாதுகாப்புடன் இருக்கும்."
 
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Entity"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Evaluate"
+msgstr ""
+
+#: src/routes/dashboard/-components/evaluation-form.tsx
+msgid "Evaluate Resume"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Evaluated"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Evaluation Rate"
+msgstr ""
+
 #: src/routes/_home/-sections/donate.tsx
 msgid "Every contribution, big or small, makes a huge difference to the project.<0/>Thank you for your support!"
 msgstr "ஒவ்வொரு பங்களிப்பும், பெரியதோ சிறியதோ, இந்த திட்டத்திற்கு மிகப் பெரிய மாற்றத்தை கொண்டுவந்து விடுகிறது.<0/>உங்கள் ஆதரவுக்கு நன்றி!"
@@ -1132,6 +1433,7 @@ msgid "Everything you need to create, customize, and share professional resumes.
 msgstr "தொழில்முறை ரெஸ்யூமிகளை உருவாக்க, விருப்பத்துக்கு உருப்பெற்றி, பகிர்வதற்குத் தேவையான அனைத்தும் இங்கே. தனியுரிமையை கருத்தில் கொண்டு உருவாக்கப்பட்டதால், திறந்த மூலத்தால் இயக்கப்படுகிறது மற்றும் எப்போதும் முழுவதுமாக இலவசம்."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Excellent"
 msgstr ""
 
@@ -1140,7 +1442,11 @@ msgid "Exit Fullscreen"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Expand"
+#~ msgid "Expand"
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Expand inline"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
@@ -1169,7 +1475,20 @@ msgstr ""
 msgid "Export"
 msgstr "ஏற்றுமதி"
 
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Faculty Finalized"
+msgstr ""
+
+#: src/routes/dashboard/faculty/index.tsx
+msgid "Faculty Review Dashboard"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Failed to save changes"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Failed to score resume. Please try again."
 msgstr ""
 
@@ -1181,13 +1500,41 @@ msgstr "இரண்டு நிலை அங்கீகாரத்தை அ
 msgid "Features"
 msgstr "அம்சங்கள்"
 
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Feedback Received"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-feedback-sent-badge.tsx
+msgid "Feedback sent — awaiting resubmission"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/feedback/index.tsx
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Feedback Summary"
+msgstr ""
+
 #: src/routes/dashboard/resumes/index.tsx
 msgid "Filter by"
 msgstr "இதன்படி வடிகட்டு"
 
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "Filters"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Final Approve"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Finnish"
 msgstr "ஃபின்னிஷ்"
+
+#: src/components/ats/score-history-chart.tsx
+#: src/components/ats/score-history-chart.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "First check"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Flexibility"
@@ -1238,6 +1585,7 @@ msgid "Format"
 msgstr "வடிவம்"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Formatting"
 msgstr ""
 
@@ -1265,10 +1613,24 @@ msgstr "முழு அகலம்"
 msgid "Fullscreen"
 msgstr ""
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "General ATS compatibility score"
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "General"
 msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "general ATS"
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "General ATS"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "General ATS compatibility score"
+#~ msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Generate a random name"
@@ -1294,7 +1656,6 @@ msgstr "ஜெர்மன்"
 msgid "Get Started"
 msgstr "தொடங்குங்கள்"
 
-#: src/components/layout/not-found-screen.tsx
 #: src/routes/auth/verify-2fa-backup.tsx
 msgid "Go Back"
 msgstr "திரும்பிச் செல்"
@@ -1303,9 +1664,16 @@ msgstr "திரும்பிச் செல்"
 msgid "Go to dashboard"
 msgstr "டாஷ்போர்டுக்கு செல்லவும்"
 
+#: src/components/layout/error-screen.tsx
+#: src/components/layout/not-found-screen.tsx
 #: src/routes/auth/login.tsx
 #: src/routes/auth/register.tsx
 msgid "Go to Dashboard"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Go to Inbox"
 msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
@@ -1313,6 +1681,7 @@ msgid "Go to..."
 msgstr "இதற்கு செல்லவும்..."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Good"
 msgstr ""
 
@@ -1320,6 +1689,10 @@ msgstr ""
 #: src/routes/dashboard/info/index.tsx
 msgid "Grade"
 msgstr "மதிப்பெண்"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Great job! Review the remaining suggestions to push it even higher."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Greek"
@@ -1332,6 +1705,10 @@ msgstr "கட்டம்"
 #: src/routes/_home/-sections/donate.tsx
 msgid "Grow the Team"
 msgstr "அணியை வளர்த்தெடுக்கவும்"
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Has Comments"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/typography.tsx
 msgctxt "Headings or Titles (H1, H2, H3, H4, H5, H6)"
@@ -1411,10 +1788,18 @@ msgstr "ஹைலைட்"
 msgid "Hindi"
 msgstr "ஹிந்தி"
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "History"
+msgstr ""
+
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 msgid "Home"
 msgstr "முகப்பு"
+
+#: src/components/ats/score-history-chart.tsx
+msgid "Hover a point to see what improved"
+msgstr ""
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "How do I share my resume?"
@@ -1429,6 +1814,7 @@ msgid "How is my data protected?"
 msgstr "என் தரவு எப்படி பாதுகாக்கப்படுகிறது?"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "How to Improve"
 msgstr ""
 
@@ -1442,6 +1828,7 @@ msgid "Icon"
 msgstr "ஐகான்"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Impact & Metrics"
 msgstr ""
 
@@ -1463,9 +1850,25 @@ msgstr "உங்கள் ரெஸ்யூமியை இறக்கும�
 msgid "Importing..."
 msgstr "இறக்குமதி செய்து கொண்டிருக்கிறது..."
 
+#: src/components/ats/score-history-chart.tsx
+msgid "Improvements vs previous"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Inbox"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Inbox is empty"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Indonesian"
 msgstr "இந்தோனேஷியன்"
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Initial Draft"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Inline Code"
@@ -1521,12 +1924,22 @@ msgstr ""
 msgid "Job Description"
 msgstr ""
 
+#: src/components/ats/score-history-chart.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Job Match"
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 msgid "John Doe"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
 msgid "johndoe"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "just now"
 msgstr ""
 
 #: src/components/input/rich-input.tsx
@@ -1538,7 +1951,12 @@ msgid "Kannada"
 msgstr "கன்னடம்"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Keyword Match"
+msgstr ""
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Keyword Scoring Curve"
 msgstr ""
 
 #: src/dialogs/resume/sections/interest.tsx
@@ -1580,6 +1998,7 @@ msgstr "மொழிகள்"
 msgid "Last downloaded on {0}"
 msgstr "கடைசியாக {0} அன்று பதிவிறக்கப்பட்டது"
 
+#: src/routes/dashboard/ats-score/index.tsx
 #: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Last updated on {updatedAt}"
@@ -1589,6 +2008,10 @@ msgstr "{updatedAt} அன்று கடைசியாக புதுப்�
 #: src/routes/builder/$resumeId/-sidebar/right/sections/statistics.tsx
 msgid "Last viewed on {0}"
 msgstr "கடைசியாக {0} அன்று பார்க்கப்பட்டது"
+
+#: src/routes/dashboard/-components/po-section-feedback-banner.tsx
+msgid "Latest"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Latvian"
@@ -1690,8 +2113,22 @@ msgstr "இடம்"
 msgid "Lock"
 msgstr "பூட்டு"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Lock Resume"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/header.tsx
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+#: src/routes/dashboard/resumes/-components/menus/dropdown-menu.tsx
+msgid "Locked by Placement Officer"
+msgstr ""
+
 #: src/routes/auth/login.tsx
 msgid "Login Restricted"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Logout"
 msgstr ""
 
 #: src/routes/_home/-sections/donate.tsx
@@ -1718,6 +2155,14 @@ msgstr "மலாய்"
 msgid "Malayalam"
 msgstr "மலையாளம்"
 
+#: src/routes/dashboard/resumes/index.tsx
+msgid "Manage and build professional, ATS-friendly resumes."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Manual fix needed"
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Marathi"
 msgstr "மராத்தி"
@@ -1730,17 +2175,38 @@ msgstr "விளிம்பு (கிடைமட்ட)"
 msgid "Margin (Vertical)"
 msgstr "விளிம்பு (செங்குத்து)"
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Matched Keywords"
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Mark Addressed"
+msgstr ""
+
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+msgid "Mark as Master"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Matched Keywords"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Menu"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Missing Keywords"
 msgstr ""
 
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Model"
 msgstr "மாதிரி"
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Most Improved Categories"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/shared/section-item.tsx
 msgid "Move to"
@@ -1754,6 +2220,14 @@ msgstr "பல்மொழி"
 #: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/info/index.tsx
 msgid "My Info"
+msgstr ""
+
+#: src/routes/dashboard/feedback/index.tsx
+msgid "My Resumes"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "My Space"
 msgstr ""
 
 #: src/dialogs/api-key/create.tsx
@@ -1778,10 +2252,12 @@ msgid "Need Help?"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Needs Improvement"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Needs Work"
 msgstr ""
 
@@ -1793,6 +2269,10 @@ msgstr "நேபாளி"
 #: src/routes/dashboard/info/index.tsx
 msgid "Network"
 msgstr "நெட்வொர்க்"
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "New Checklist"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "New features are constantly being added and improved, so be sure to check back often."
@@ -1815,26 +2295,110 @@ msgstr "புதிய கடவுச்சொல்"
 msgid "New Section"
 msgstr "புதிய பகுதி"
 
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Next milestone:"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "No Advertising, No Tracking"
 msgstr "விளம்பரம் இல்லை, கண்காணிப்பு இல்லை"
+
+#: src/components/ats/score-history-chart.tsx
+msgid "No change"
+msgstr ""
+
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "No checklists yet"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "No comments yet — add your feedback above"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "No comparison available"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "No improvement data yet"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "No new changes"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "No pending suggestion cards."
+msgstr ""
 
 #: src/components/ui/combobox.tsx
 #: src/components/ui/multiple-combobox.tsx
 msgid "No results found."
 msgstr "எந்த முடிவுகளும் கிடைக்கவில்லை."
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "No Resume Yet"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "No resumes"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "No resumes created yet"
+msgstr ""
+
 #: src/routes/dashboard/ats-score/index.tsx
 msgid "No resumes found. Create a resume first to use ATS scoring."
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "No resumes from faculty or student resubmissions are pending your action."
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+msgid "No score history yet — run your first ATS check above."
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "No student data found"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "No student submissions are waiting for your review."
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "No students or resumes found"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "No suggestion cards in this category."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "No suggestion cards in this tab. Use “Needs Improvement” above, try other categories, or re-score after edits."
 msgstr ""
 
 #: src/utils/locale.ts
 msgid "Norwegian"
 msgstr "நார்வேஜியன்"
 
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Not enough data yet"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Not Reviewed"
+msgstr ""
+
 #: src/utils/resume/section.tsx
 msgid "Notes"
 msgstr "குறிப்புகள்"
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Number of scoring runs by score range"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Odia"
@@ -1856,6 +2420,10 @@ msgstr "திற"
 #: src/routes/auth/forgot-password.tsx
 msgid "Open Email Client"
 msgstr "மின்னஞ்சல் பயன்பாட்டை திறக்கவும்"
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Open in Builder"
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Open Source"
@@ -1885,6 +2453,19 @@ msgstr "வரிசைப்படுத்தப்பட்ட பட்ட�
 #: src/routes/dashboard/info/index.tsx
 msgid "Organization"
 msgstr "நிறுவனம் / அமைப்பு"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Overall Review Status"
+msgstr ""
+
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/feedback/index.tsx
+msgid "Overview"
+msgstr ""
+
+#: src/routes/dashboard/-components/org-unit-filter.tsx
+msgid "Package"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Page"
@@ -1931,18 +2512,39 @@ msgstr "கடவுச்சொல் பாதுகாப்பு முட�
 msgid "Password protection has been enabled."
 msgstr "கடவுச்சொல் பாதுகாப்பு இயக்கப்பட்டுள்ளது."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Paste a job description (optional)..."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Paste a job description to score against, or leave blank for a general ATS check."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
+msgid "Paste a job description to score vs. a specific role, or score without one for general ATS checks."
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "Paste a job description to score your resume against it, or score without one for general ATS checks."
+#~ msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Paste job description here (optional)..."
 msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Paste the job description here to tailor your resume for this role..."
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Pending PO Review"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Pending Review"
 msgstr ""
 
 #: src/dialogs/resume/sections/education.tsx
@@ -1975,6 +2577,19 @@ msgstr "தொலைபேசி"
 msgid "Picture"
 msgstr "படம்"
 
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Pipeline"
+msgstr ""
+
+#: src/routes/dashboard/placement-officer/index.tsx
+msgid "Placement Officer Dashboard"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-feedback-banner.tsx
+#: src/routes/dashboard/-components/po-section-feedback-banner.tsx
+msgid "Placement Officer Feedback"
+msgstr ""
+
 #: src/routes/auth/register.tsx
 msgid "Please access via the main dashboard."
 msgstr ""
@@ -1995,16 +2610,21 @@ msgstr "நீங்கள் இணைக்க விரும்பும் 
 msgid "Please login via the main dashboard."
 msgstr ""
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "Please wait while your PDF is being generated..."
 msgstr "உங்கள் PDF உருவாக்கப்படும் வரை காத்திருக்கவும்..."
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "PO: Request Revision"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Polish"
 msgstr "போலிஷ்"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Poor"
 msgstr ""
 
@@ -2026,6 +2646,18 @@ msgstr "போர்ச்சுகீஸ் (போர்ச்சுகல்)
 #: src/routes/dashboard/info/index.tsx
 msgid "Position"
 msgstr "பதவி"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Post Comment"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Post Reply"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Posting…"
+msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -2093,7 +2725,17 @@ msgstr "வெளியீடுகள்"
 msgid "Publisher"
 msgstr "பதிப்பாளர்"
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Re-open"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Re-score"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Re-score Resume"
 msgstr ""
 
@@ -2117,8 +2759,24 @@ msgstr "Reactive Resume இன்று Product Hunt-ல் அறிமுக�
 msgid "Reactive Resume is open-source, privacy-focused, and completely free. Unlike other resume builders, it doesn't show ads, track your data, or limit your features behind a paywall."
 msgstr "Reactive Resume திறந்த மூலமாகவும், தனியுரிமை மீது கவனம் செலுத்தியதாகவும், முற்றிலும் இலவசமாகவும் உள்ளது. மற்ற ரெஸ்யூம் பில்டர்களைப் போல் இது விளம்பரங்களை காட்டாது, உங்கள் தரவை கண்காணிக்காது, அல்லது அம்சங்களை கட்டண சுவருக்கு பின்னால் பூட்டாது."
 
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Ready for PO Review"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Ready for review?"
+msgstr ""
+
 #: src/dialogs/resume/sections/cover-letter.tsx
 msgid "Recipient"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Record a new voice note"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Recording…"
 msgstr ""
 
 #: src/components/level/combobox.tsx
@@ -2129,10 +2787,14 @@ msgstr "சதுரம்"
 msgid "Rectangle (Full Width)"
 msgstr "சதுரம் (முழு அகலம்)"
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
-msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Redo (Ctrl+Y)"
-msgstr "மீண்டும் செயல்படுத்து (Ctrl+Y)"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/dock.tsx
+#~ msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#~ msgid "Redo (Ctrl+Y)"
+#~ msgstr "மீண்டும் செயல்படுத்து (Ctrl+Y)"
 
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
@@ -2163,6 +2825,21 @@ msgstr "கடவுச்சொல் பாதுகாப்பை நீக�
 msgid "Rename"
 msgstr "மறுபெயரிடு"
 
+#: src/routes/dashboard/-components/comment-dialog.tsx
+#: src/routes/dashboard/-components/comment-dialog.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Reply"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Reply to Thread"
+msgstr ""
+
+#: src/routes/dashboard/-components/comment-dialog.tsx
+msgid "Replying to thread"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Report a Bug"
 msgstr "ஒரு பிழையை அறிவிக்கவும்"
@@ -2170,6 +2847,10 @@ msgstr "ஒரு பிழையை அறிவிக்கவும்"
 #: src/routes/_home/-sections/footer.tsx
 msgid "Report an issue"
 msgstr "ஒரு பிரச்சினையை அறிக்கையிடவும்"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Request Revision"
+msgstr ""
 
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Resend verification email"
@@ -2195,12 +2876,52 @@ msgstr "உங்கள் கடவுச்சொல்லை மீட்ட�
 msgid "Resetting your password..."
 msgstr "உங்கள் கடவுச்சொல்லை மீட்டமைத்து கொண்டிருக்கிறது..."
 
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Resolve"
+msgstr ""
+
 #: src/routes/_home/-sections/footer.tsx
 msgid "Resources"
 msgstr "வளங்கள்"
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Resubmit to Faculty"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Resubmit to PO"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Resubmitted"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Resubmitted to PO"
+msgstr ""
+
 #: src/routes/_home/-sections/header.tsx
 msgid "Resume Builder - Go to homepage"
+msgstr ""
+
+#: src/routes/dashboard/-components/comment-dialog.tsx
+msgid "Resume Feedback"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Resume not found"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Resume Preview"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "resume(s)"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "resumes"
 msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
@@ -2209,10 +2930,40 @@ msgstr ""
 #: src/components/command-palette/pages/resumes.tsx
 #: src/components/command-palette/pages/resumes.tsx
 #: src/routes/_home/-sections/statistics.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/resumes/index.tsx
 msgid "Resumes"
 msgstr "ரெஸ்யூமிகள்"
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Resumes submitted by students waiting for your review"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Review"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Review & Send Feedback"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Review Notes"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Review Section: {sectionName}"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Review Students"
+msgstr ""
+
+#: src/utils/resume/section.tsx
+msgid "Reviewer Feedback"
+msgstr ""
 
 #: src/components/input/rich-input.tsx
 msgid "Right Align"
@@ -2254,6 +3005,7 @@ msgstr ""
 #: src/dialogs/resume/sections/skill.tsx
 #: src/dialogs/resume/sections/summary-item.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Save Changes"
 msgstr "மாற்றங்களைச் சேமிக்கவும்"
@@ -2271,23 +3023,61 @@ msgstr "கீழே உள்ள QR குறியீட்டை நீங்
 msgid "School"
 msgstr "பள்ளி"
 
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Score"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Score Distribution"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "Score History"
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+msgid "Score improved — check individual categories for details."
+msgstr ""
+
+#: src/components/ats/score-history-chart.tsx
+msgid "Score more to see progression over time."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Score My Resume"
 msgstr ""
 
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-msgid "Score your resume for ATS compatibility and get detailed feedback by category."
+#: src/components/ats/score-history-chart.tsx
+msgid "Score Progression"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
-#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#~ msgid "Score your resume for ATS compatibility and get detailed feedback by category."
+#~ msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Score your resume to see feedback here"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Score your resume to see results"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Scored against your job description"
 msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Scoring..."
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "Search by name or roll number..."
 msgstr ""
 
 #: src/components/input/icon-picker.tsx
@@ -2308,12 +3098,44 @@ msgstr "தேடல்..."
 msgid "Secret copied to clipboard."
 msgstr "ரகசியம் கிளிப்போர்டுக்கு நகலெடுக்கப்பட்டுள்ளது."
 
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Section"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Section Health"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Section Intelligence"
+msgstr ""
+
 #: src/dialogs/resume/sections/custom.tsx
 msgid "Section Type"
 msgstr "பகுதி வகை"
 
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Sections"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Sections resubmitted by faculty after your feedback"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Sections submitted by faculty awaiting your review"
+msgstr ""
+
 #: src/routes/dashboard/ats-score/index.tsx
 msgid "Select a resume to score"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Select another category for actionable items, or use “Needs Improvement” above."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Select another category to see more"
 msgstr ""
 
 #: src/components/ui/combobox.tsx
@@ -2325,9 +3147,17 @@ msgstr "தேர்வு செய்க..."
 msgid "Self-Host with Docker"
 msgstr "Docker-இன் உதவியுடன் தானே ஹோஸ்ட் செய்யவும்"
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Send Feedback to Faculty"
+msgstr ""
+
 #: src/routes/auth/forgot-password.tsx
 msgid "Send Password Reset Email"
 msgstr "கடவுச்சொல் மீட்டமைப்பு மின்னஞ்சலை அனுப்பவும்"
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Sending feedback for"
+msgstr ""
 
 #: src/routes/auth/forgot-password.tsx
 msgid "Sending password reset email..."
@@ -2346,6 +3176,10 @@ msgstr "செர்பியன்"
 #: src/routes/dashboard/settings/authentication/-components/password.tsx
 msgid "Set Password"
 msgstr "கடவுச்சொல்லை அமைக்கவும்"
+
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+msgid "Setting as Master Resume..."
+msgstr ""
 
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -2380,6 +3214,7 @@ msgid "Show"
 msgstr "காட்டு"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Show less"
 msgstr ""
 
@@ -2475,6 +3310,11 @@ msgstr "ஸ்லக்"
 msgid "Software Engineer"
 msgstr ""
 
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Some AI rewrites could not be generated. Manual suggestions and scores still apply — check your AI configuration or try re-scoring."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
@@ -2515,6 +3355,14 @@ msgstr "வேந்துகளை ஆதரிப்புகள்"
 msgid "Square"
 msgstr "சதுரம்"
 
+#: src/routes/auth/login.tsx
+msgid "SSO failed ({ssoError}). Please return to dashboard and try again."
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Stage"
+msgstr ""
+
 #: src/components/input/github-stars-button.tsx
 msgid "Star us on GitHub (opens in new tab)"
 msgstr "GitHub-இல் எங்களுக்கு ஸ்டார் கொடுக்கவும் (புதிய தாவலில் திறக்கிறது)"
@@ -2528,10 +3376,13 @@ msgstr "GitHub-இல் எங்களுக்கு ஸ்டார் க�
 msgid "Start building your resume by giving it a name."
 msgstr "ஒரு பெயர் கொடுத்து உங்கள் ரெஸ்யூமியை உருவாக்கத் தொடங்குங்கள்."
 
-#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Start building your resume from scratch"
 msgstr "அடிப்படையில் இருந்து உங்கள் ரெஸ்யூமியை உருவாக்கத் தொடங்குங்கள்"
+
+#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
+msgid "Start building your resume from scratch using our builder."
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Statistics"
@@ -2541,20 +3392,87 @@ msgstr "புள்ளிவிபரங்கள்"
 msgid "Stay"
 msgstr ""
 
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Stop"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Strike"
 msgstr "கோடு கிழித்தல்"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Structure"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Student Submissions"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "students"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Students"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Submission Breakdown"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Submission Rate"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submit for Faculty Review"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Submit Section to PO"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submit to notify faculty that your resume is ready for review."
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submit your resume to notify faculty that it is ready for feedback."
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Submitted"
+msgstr ""
+
+#: src/routes/dashboard/-components/inbox-view.tsx
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "Submitted to PO"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Submitting..."
 msgstr ""
 
 #: src/routes/_home/-sections/footer.tsx
 msgid "Subreddit"
 msgstr "சப்ரெட்டிட்"
 
+#: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
+msgid "Successfully set as Master Resume."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "Suggestion applied"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Suggestion applied to your resume"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
@@ -2583,6 +3501,7 @@ msgid "Table"
 msgstr "அட்டவணை"
 
 #: src/dialogs/resume/index.tsx
+#: src/routes/dashboard/resumes/index.tsx
 msgid "Tags"
 msgstr "டேக்குகள்"
 
@@ -2591,12 +3510,17 @@ msgid "Tags can be used to categorize your resume by keywords."
 msgstr "டேக்குகளை உங்கள் ரெஸ்யூமியை முக்கிய சொற்களால் வகைப்படுத்த பயன்படுத்தலாம்."
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Tailoring"
 msgstr ""
 
 #: src/utils/locale.ts
 msgid "Tamil"
 msgstr "தமிழ்"
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "Tech terms detected"
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Telugu"
@@ -2613,6 +3537,10 @@ msgstr "டெம்ப்ளேட் கலேரி"
 #: src/routes/_home/-sections/templates.tsx
 msgid "Templates"
 msgstr "டெம்ப்ளேட்டுகள்"
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "terms"
+msgstr ""
 
 #: src/routes/dashboard/settings/ai.tsx
 msgid "Test Connection"
@@ -2658,6 +3586,11 @@ msgstr "நீங்கள் உள்ளிட்ட கடவுச்சொ�
 msgid "The resume you are trying to access is password protected"
 msgstr "நீங்கள் அணுக முயற்சிக்கும் ரெஸ்யூமி கடவுச்சொல் பாதுகாப்புடன் உள்ளது"
 
+#. placeholder {0}: new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "The student hasn't made any changes since the evaluation on {0}."
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "The URL you entered is not valid."
 msgstr "நீங்கள் உள்ளிட்ட URL தவறானது."
@@ -2671,10 +3604,18 @@ msgstr "தீம்"
 msgid "Then, enter the 6 digit code that the app provides to continue."
 msgstr "பின்னர், செயலி வழங்கும் 6 இலக்க குறியீட்டை தொடர்ந்து செல்ல உள்ளிடவும்."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "There was a problem while generating the PDF, please try again in some time."
 msgstr "PDF உருவாக்கும் போது ஒரு பிரச்சனை ஏற்பட்டது, தயவுசெய்து சில நேரம் கழித்து மீண்டும் முயற்சிக்கவும்."
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "There was an error fetching student data. This might be due to missing database columns. Please ensure 'npm run db:push' has been executed."
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "They will return to FINALIZED_BY_FACULTY state for faculty to address."
+msgstr ""
 
 #: src/components/ai/chat.tsx
 msgid "Thinking..."
@@ -2702,10 +3643,18 @@ msgstr "இது உங்கள் ரெஸ்யூமிக்கான URL
 msgid "This may take a few minutes, depending on the response of the AI provider. Please do not close the window or refresh the page."
 msgstr "இது சில நிமிடங்கள் ஆகலாம்; இது AI வழங்குநரின் பதிலைப் பொருத்தது. தயவுசெய்து சாளரத்தை மூடவோ பக்கத்தை மீண்டும் ஏற்றவோ செய்யாதீர்கள்."
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "This may take a moment"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/export.tsx
 msgid "This may take a while depending on the server capacity. Please do not close the window or refresh the page."
 msgstr "சேவையக திறனைப் பொறுத்து இது சிறிது நேரம் எடுக்கலாம். தயவுசெய்து சாளரத்தை மூடவோ பக்கத்தை மீண்டும் ஏற்றவோ செய்யாதீர்கள்."
+
+#: src/routes/builder/$resumeId/route.tsx
+msgid "This resume is locked and cannot be edited."
+msgstr ""
 
 #: src/components/resume/store/resume.ts
 msgid "This resume is locked and cannot be updated."
@@ -2726,6 +3675,10 @@ msgstr ""
 #: src/routes/_home/-sections/hero.tsx
 msgid "Timelapse demonstration of building a resume with Reactive Resume"
 msgstr "Reactive Resume-யை பயன்படுத்தி ஒரு ரெஸ்யூமியை உருவாக்கும் காலச்சுருக்கக் காணொளி விளக்கம்"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Timeline"
+msgstr ""
 
 #: src/dialogs/api-key/create.tsx
 msgid "Tip: Give your API key a name, corresponding to the purpose of the key, to help you identify it later."
@@ -2748,6 +3701,31 @@ msgstr "தலைப்பு"
 #: src/routes/dashboard/settings/danger-zone.tsx
 msgid "To delete your account, you need to enter the confirmation text and click the button below."
 msgstr "உங்கள் கணக்கை நீக்க, கீழே உள்ள உறுதிப்படுத்தல் உரையை உள்ளீடு செய்து, கீழே உள்ள பொத்தானை கிளிக் செய்ய வேண்டும்."
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Top Category Gained"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "Top Performing"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Top Resumes →"
+msgstr ""
+
+#: src/components/ats/admin-ats-stats.tsx
+msgid "Total ATS Checks"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Total Resumes"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Total Students"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/statistics.tsx
 msgid "Track your resume's views and downloads"
@@ -2817,6 +3795,7 @@ msgstr "இரண்டு நிலை அங்கீகாரம் வெற
 
 #: src/dialogs/resume/import.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/design.tsx
+#: src/routes/dashboard/-components/org-unit-filter.tsx
 msgid "Type"
 msgstr "வகை"
 
@@ -2836,14 +3815,27 @@ msgstr "எழுத்துரு வடிவமைப்பு"
 msgid "Ukrainian"
 msgstr "உக்ரேனியன்"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Unable to load dashboard data"
+msgstr ""
+
 #: src/components/input/rich-input.tsx
 msgid "Underline"
 msgstr "அடைமுறை கோடு"
 
-#: src/routes/builder/$resumeId/-components/dock.tsx
-msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+#: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
+msgid "Undo"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/toolbar.tsx
 msgid "Undo (Ctrl+Z)"
-msgstr "முன்னைய செயல்கள் நீக்கு (Ctrl+Z)"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/dock.tsx
+#~ msgctxt "'Ctrl' may be replaced with the locale-specific equivalent (e.g. 'Strg' for QWERTZ layouts)."
+#~ msgid "Undo (Ctrl+Z)"
+#~ msgstr "முன்னைய செயல்கள் நீக்கு (Ctrl+Z)"
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Unlimited Resumes"
@@ -2859,6 +3851,10 @@ msgstr "உங்கள் {providerName} கணக்கை இணைப்ப�
 #: src/routes/dashboard/resumes/-components/menus/dropdown-menu.tsx
 msgid "Unlock"
 msgstr "பூட்டை திற"
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Unlock Resume"
+msgstr ""
 
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Unverified"
@@ -2957,6 +3953,10 @@ msgstr "உங்கள் கடவுச்சொல்லை புதுப�
 msgid "Updating your resume..."
 msgstr "உங்கள் ரெஸ்யூமியை புதுப்பித்து கொண்டிருக்கிறது..."
 
+#: src/routes/dashboard/resumes/-components/cards/import-card.tsx
+msgid "Upload your existing resume to continue building."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Uploading picture..."
 msgstr "படத்தை பதிவேற்றிக் கொண்டிருக்கிறது..."
@@ -2968,6 +3968,10 @@ msgstr "URL"
 
 #: src/dialogs/resume/index.tsx
 msgid "Use My Info"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Use the “Needs Improvement” notes above, edit in the builder, then re-score. If you dismissed items, re-score to refresh."
 msgstr ""
 
 #: src/dialogs/resume/sections/profile.tsx
@@ -2992,10 +3996,31 @@ msgstr "சரியான URL-கள் http:// அல்லது https:// க
 msgid "Verified"
 msgstr "சரிபார்க்கப்பட்டது"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Verified / Evaluated"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Verified Progress"
+msgstr ""
+
 #: src/routes/auth/verify-2fa-backup.tsx
 #: src/routes/auth/verify-2fa.tsx
 msgid "Verify"
 msgstr "சரிபார்க்கவும்"
+
+#. placeholder {0}: stats.totalResumes - stats.approvedResumes
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Verify All ({poVerifiedResumes} / {0}) First"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Verify All Resumes First"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Verify Individual"
+msgstr ""
 
 #: src/routes/auth/verify-2fa-backup.tsx
 msgid "Verify with a Backup Code"
@@ -3022,9 +4047,48 @@ msgstr "கடவுச்சொல்லை மீட்டமைக்கு�
 msgid "Vietnamese"
 msgstr "வியட்‌നாமீஸ்"
 
+#. placeholder {0}: pendingSuggestions.length
+#: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+msgid "View & Apply Suggestions ({0})"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View all sections"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "View by"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View by unit"
+msgstr ""
+
+#: src/routes/builder/$resumeId/-components/header.tsx
+#: src/routes/builder/$resumeId/route.tsx
+msgid "View Only"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View Sections"
+msgstr ""
+
+#: src/routes/dashboard/-components/student-resume-table.tsx
+msgid "View student details"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-intelligence.tsx
+msgid "View Students"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/statistics.tsx
 msgid "Views"
 msgstr "பார்வைகள்"
+
+#: src/routes/dashboard/-components/po-section-review-dialog.tsx
+msgid "Voice Note"
+msgstr ""
 
 #: src/utils/resume/section.tsx
 msgid "Volunteer"
@@ -3032,6 +4096,14 @@ msgstr "தன்னார்வம்"
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Volunteer Experience"
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "vs. job description"
+msgstr ""
+
+#: src/routes/dashboard/-components/po-section-card-actions.tsx
+msgid "Waiting for Faculty"
 msgstr ""
 
 #: src/dialogs/resume/sections/award.tsx
@@ -3065,6 +4137,7 @@ msgid "What makes Reactive Resume different from other resume builders?"
 msgstr "மற்ற ரெஸ்யூம் பில்டர்களிலிருந்து Reactive Resume-ஐ வித்தியாசப்படுத்துவது என்ன?"
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "What's Good"
 msgstr ""
 
@@ -3078,9 +4151,21 @@ msgstr "சமீபத்திய பதிப்பில் என்ன ப
 msgid "When locked, the resume cannot be updated or deleted."
 msgstr "பூட்டப்பட்டிருக்கும் போது, ரெஸ்யூமியை புதுப்பிக்கவோ நீக்கவோ முடியாது."
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "With Resumes"
+msgstr ""
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Write specific, actionable feedback for the student..."
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "Write your own CSS (or use an AI to generate it for you) to customize your resume to the fullest."
 msgstr "உங்கள் சொந்த CSS-ஐ எழுதவும் (அல்லது அதை உங்களுக்காக உருவாக்க AI-ஐ பயன்படுத்தவும்); இதனால் உங்கள் ரெஸ்யூமியை முழுமையாக தனிப்பயனாக்கலாம்."
+
+#: src/routes/dashboard/review/$resumeId/index.tsx
+msgid "Write your reply..."
+msgstr ""
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "Yes, Reactive Resume is available in multiple languages. You can choose your preferred language in the settings page, or using the language switcher in the top right corner. If you don't see your language, or you would like to improve the existing translations, you can <0>contribute to the translations on Crowdin<1> (opens in new tab)</1></0>."
@@ -3094,9 +4179,17 @@ msgstr "ஆம்! ஒவ்வொரு டெம்ப்ளேட்டும
 msgid "Yes! Reactive Resume is completely free to use, with no hidden costs, premium tiers, or subscription fees. It's open-source and will always remain free."
 msgstr "ஆம்! Reactive Resume-ஐ எவ்வித மறைந்த செலவுகளும், பிரீமியம் அடுக்கு கட்டணங்களும், சந்தா கட்டணங்களும் இன்றி முற்றிலும் இலவசமாக பயன்படுத்தலாம். இது திறந்த மூலமாகும் மற்றும் எப்போதும் இலவசமாகவே இருக்கும்."
 
+#: src/routes/dashboard/-components/inbox-view.tsx
+msgid "yesterday"
+msgstr ""
+
 #: src/routes/_home/-sections/features.tsx
 msgid "You also have the option to deploy on your own servers using the Docker image."
 msgstr "Docker image-ஐ பயன்படுத்தி, உங்கள் சொந்த சேவையகங்களில் நீங்கள் செய்தேploy செய்யும் விருப்பமும் உங்களுக்கு உள்ளது."
+
+#: src/components/ats/keyword-curve-chart.tsx
+msgid "You are at"
+msgstr ""
 
 #: src/routes/_home/-sections/faq.tsx
 msgid "You can share your resume via a unique public URL, protect it with a password, or download it as a PDF to share directly. The choice is yours!"
@@ -3151,6 +4244,10 @@ msgstr "உங்கள் கடவுச்சொல் வெற்றிக�
 msgid "Your profile has been updated successfully."
 msgstr "உங்கள் சுயவிவரம் வெற்றிகரமாக புதுப்பிக்கப்பட்டுள்ளது."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "YOUR RESUME"
+msgstr ""
+
 #: src/dialogs/resume/index.tsx
 #: src/dialogs/resume/index.tsx
 msgid "Your resume has been created successfully."
@@ -3174,6 +4271,19 @@ msgstr "உங்கள் ரெஸ்யூமி வெற்றிகரம�
 msgid "Your resume has been updated successfully."
 msgstr "உங்கள் ரெஸ்யூமி வெற்றிகரமாக புதுப்பிக்கப்பட்டுள்ளது."
 
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Your resume is on the right track but falls short in a few areas. Apply the suggestions below to improve your score."
+msgstr ""
+
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Your resume needs significant improvements to pass ATS filters. Follow the suggestions below to boost your chances."
+msgstr ""
+
+#. placeholder {0}: result.overall
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+msgid "Your resume scored {0} out of 100."
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 msgid "Your resume's public link is currently protected by a password. Share the password only with people you trust."
 msgstr "உங்கள் ரெஸ்யூமியின் பொது இணைப்பு தற்போது ஒரு கடவுச்சொல்லால் பாதுகாக்கப்பட்டுள்ளது. நீங்கள் நம்பும் மக்களுடன்தான் அந்த கடவுச்சொல்லைப் பகிரவும்."
@@ -3183,13 +4293,13 @@ msgid "Your support ensures the project remains free and accessible for everyone
 msgstr "உங்கள் ஆதரவு இந்த திட்டம் இப்போது மற்றும் எதிர்காலத்திலும் அனைவருக்கும் இலவசமாகவும் எளிதாக அணுகக்கூடியதாகவும் தொடர உதவுகிறது."
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Zoom in"
-msgstr "பெரிதாக்கு"
+#~ msgid "Zoom in"
+#~ msgstr "பெரிதாக்கு"
 
 #: src/routes/builder/$resumeId/-components/dock.tsx
-msgid "Zoom out"
-msgstr "சிறிதாக்கு"
+#~ msgid "Zoom out"
+#~ msgstr "சிறிதாக்கு"
 
 #: src/utils/locale.ts
-msgid "Zulu"
-msgstr "ஜூலு"
+#~ msgid "Zulu"
+#~ msgstr "ஜூலு"
