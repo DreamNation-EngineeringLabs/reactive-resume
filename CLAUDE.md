@@ -136,6 +136,23 @@ Routes use `createFileRoute()` with `beforeLoad()` for auth guards and `loader()
 
 An MCP (Model Context Protocol) server is available at `/mcp/` for LLM-based resume interaction. It requires an `x-api-key` header for authentication. Configuration is in `src/routes/mcp/` with helper modules for resources, prompts, and tools.
 
+### Dashboard Scoping Rules
+
+The faculty / PO / admin dashboards (`src/routes/dashboard/{faculty,placement-officer,admin}` rendered via `SectionMetricsView`) report stats that **must always be sourced from eng-labs `users`**, never from Better Auth `user` alone. The Better Auth `user` row enriches each learner with their resume data; absence of a Better Auth row means the learner hasn't signed up to the resume builder yet but they still appear in counts.
+
+**Total Students = learners in scope ∩ active resume-builder access:**
+- "Active resume-builder access" = at least one non-expired `user_quota_grants` row where `service_type = 'RESUME_CREATE'` (eng-labs DB). Helper: `filterEmailsWithResumeBuilderAccess` in `src/integrations/eng-labs/service.ts`.
+- "In scope" depends on the role:
+  - **Faculty**: learners in the faculty's assigned sections (resolved via `getInstructorSections(engLabsUser.id)` → `getStudentsBySections`).
+  - **PO / Admin**: learners across the tenant's placement-scoped sections, deduplicated. Admin scope is silently mapped to `"po"` server-side.
+
+**Other metrics on the same dashboard:**
+- `enrolledInResumeBuilder` = subset of Total Students who have a Better Auth `user` row (i.e., signed up). Always ≤ Total Students.
+- `withPrimaryResume` = subset of Total Students with at least one resume.
+- All metrics must be tenant-scoped — never cross-tenant.
+
+The cohort logic lives in `src/integrations/orpc/router/dashboard.ts` (`sectionsDashboard` handler). When changing dashboard counts, preserve the cohort-from-eng-labs invariant: do not iterate Better Auth users as the source of truth, iterate eng-labs profiles instead.
+
 ### State Management
 
 - **Zustand** - Client-side state (resume editor state in `src/components/resume/store/`)

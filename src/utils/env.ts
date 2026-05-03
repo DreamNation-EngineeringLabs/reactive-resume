@@ -8,6 +8,11 @@ export const env = createEnv({
 
 	client: {
 		VITE_MAIN_APP_URL: z.string().url().optional(),
+		/** Full placements/Services URL on the main app (optional). Overrides path built from origin. */
+		VITE_MAIN_APP_PLACEMENTS_URL: z
+			.string()
+			.optional()
+			.refine((v) => !v || /^https?:\/\/.+/i.test(v), "Must be an absolute http(s) URL"),
 	},
 
 	server: {
@@ -33,6 +38,16 @@ export const env = createEnv({
 			.string()
 			.optional()
 			.transform((value) => (value ? value.split(",").map((s) => s.trim()) : [])),
+
+		// Public URL of the main (eng-labs) web app — origin used for "back to placements" / SSO exit links.
+		// Set when the resume app is on a different host or port than the main app (e.g. resume :3001, main :3003).
+		MAIN_APP_PUBLIC_URL: z.url({ protocol: /https?/ }).optional(),
+
+		// Full URL for the main app Services / placements tab (optional), including query e.g. ?tab=services.
+		MAIN_APP_PLACEMENTS_URL: z
+			.string()
+			.optional()
+			.refine((v) => !v || /^https?:\/\/.+/i.test(v), "MAIN_APP_PLACEMENTS_URL must be an absolute http(s) URL"),
 
 		// Main App API (for placement access checks)
 		MAIN_APP_API_URL: z.url({ protocol: /https?/ }).optional(),

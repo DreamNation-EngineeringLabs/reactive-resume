@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { getPlacementsUrl } from "@/utils/source-url";
+import { getPlacementsUrl, redirectToPlacements } from "@/utils/source-url";
 import { getDashboardSidebarServerFn, setDashboardSidebarServerFn } from "./-components/functions";
 import { DashboardSidebar } from "./-components/sidebar";
 
@@ -11,10 +11,7 @@ export const Route = createFileRoute("/dashboard")({
 		if (!context.session) {
 			// In SSO-only mode, redirect back to the main application instead of the login page
 			if (context.flags.ssoOnly) {
-				throw redirect({
-					href: getPlacementsUrl(),
-					replace: true,
-				});
+				redirectToPlacements();
 			}
 			throw redirect({ to: "/auth/login", replace: true });
 		}

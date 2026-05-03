@@ -2,8 +2,25 @@ import { scryptSync } from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
 // @ts-expect-error
 import jwt from "jsonwebtoken";
-import { auth } from "@/integrations/auth/config";
+import { auth, DEFAULT_RESUME_USER_ORG_ID, DEFAULT_RESUME_USER_TENANT_ID } from "@/integrations/auth/config";
 import { env } from "@/utils/env";
+
+function tenantOrgFromJwt(decoded: Record<string, unknown>): { tenantId: string; organisationId: string } {
+	const tenantRaw = decoded.tenantId ?? decoded.tenant_id;
+	const orgRaw = decoded.organisationId ?? decoded.organisation_id ?? decoded.org_id;
+	const tenantId = typeof tenantRaw === "string" && tenantRaw.length > 0 ? tenantRaw : DEFAULT_RESUME_USER_TENANT_ID;
+	const organisationId = typeof orgRaw === "string" && orgRaw.length > 0 ? orgRaw : DEFAULT_RESUME_USER_ORG_ID;
+	return { tenantId, organisationId };
+}
+
+/** Prefer eng-labs PK (`user_id`, …); `userId` is often Firebase/auth and won't match `users.id`. */
+function engLabsUserIdFromJwt(decoded: Record<string, unknown>): string | null {
+	const candidates = [decoded.eng_labs_user_id, decoded.user_id, decoded.engLabsUserId, decoded.userId];
+	for (const c of candidates) {
+		if (typeof c === "string" && c.length > 0) return c;
+	}
+	return null;
+}
 
 async function handler({ request }: { request: Request }) {
 	const url = new URL(request.url);
@@ -32,7 +49,7 @@ async function handler({ request }: { request: Request }) {
 			return errorRedirect("server_configuration");
 		}
 
-		const decoded = jwt.verify(token, secret) as {
+		const decoded = jwt.verify(token, secret) as Record<string, unknown> & {
 			email: string;
 			name: string;
 			username: string;
@@ -41,6 +58,8 @@ async function handler({ request }: { request: Request }) {
 			role?: string;
 			tenantId?: string;
 			organisationId?: string;
+			tenant_id?: string;
+			organisation_id?: string;
 			organisationUnits?: string[];
 		};
 
@@ -67,6 +86,8 @@ async function handler({ request }: { request: Request }) {
 			return errorRedirect("invalid_token_payload");
 		}
 
+		const { tenantId: resolvedTenantId, organisationId: resolvedOrganisationId } = tenantOrgFromJwt(decoded);
+
 		// Generate deterministic password (32 bytes -> 64 hex chars, fitting maxPasswordLength: 64)
 		const password = scryptSync(decoded.email, secret, 32).toString("hex");
 
@@ -87,6 +108,8 @@ async function handler({ request }: { request: Request }) {
 					password,
 					name: decoded.name,
 					username: decoded.username || decoded.email.split("@")[0],
+					tenantId: resolvedTenantId,
+					organisationId: resolvedOrganisationId,
 				},
 				asResponse: true,
 			});
@@ -111,9 +134,9 @@ async function handler({ request }: { request: Request }) {
 				if (r === "STUDENT" || r === "LEARNER") return "LEARNER";
 				return r;
 			})(),
-			engLabsUserId: decoded.userId ?? null,
-			tenantId: decoded.tenantId ?? null,
-			organisationId: decoded.organisationId ?? null,
+			engLabsUserId: engLabsUserIdFromJwt(decoded),
+			tenantId: resolvedTenantId,
+			organisationId: resolvedOrganisationId,
 			organisationUnits: decoded.organisationUnits ?? [],
 			trace: traceId,
 		};
@@ -146,6 +169,17 @@ window.location.replace(${JSON.stringify(destination)});
 				responseHeaders.append(key, value);
 			}
 		});
+
+		// So SSR matches the client: localStorage holds `source_url` in sso_context, but the server
+		// cannot read it — mirror into a cookie for getSourceUrl() / exit links (hydration-safe hrefs).
+		if (decoded.source_url) {
+			const enc = encodeURIComponent(decoded.source_url);
+			const secure = url.protocol === "https:" ? "; Secure" : "";
+			responseHeaders.append(
+				"Set-Cookie",
+				`source_url=${enc}; Path=/resume; Max-Age=${60 * 60 * 24 * 180}; SameSite=Lax${secure}`,
+			);
+		}
 
 		return new Response(html, { status: 200, headers: responseHeaders });
 	} catch (e) {

@@ -12,6 +12,10 @@ import { generateId, toUsername } from "@/utils/string";
 import { schema } from "../drizzle";
 import { sendEmail } from "../email/service";
 
+/** Fallback tenant/org for new users — must match `user` table defaults in drizzle/schema.ts */
+export const DEFAULT_RESUME_USER_TENANT_ID = "yCXkn-v4fkLZw9FKXOAg8";
+export const DEFAULT_RESUME_USER_ORG_ID = "kAvyiiLGzMFOyOeVkcm5o";
+
 function isCustomOAuthProviderEnabled() {
 	const hasDiscovery = Boolean(env.OAUTH_DISCOVERY_URL);
 	const hasManual =
@@ -124,6 +128,17 @@ const getAuthConfig = () => {
 				username: {
 					type: "string",
 					required: true,
+				},
+				tenantId: {
+					type: "string",
+					required: true,
+					// DB has NOT NULL without a Postgres DEFAULT; adapter must send a value on insert.
+					defaultValue: DEFAULT_RESUME_USER_TENANT_ID,
+				},
+				organisationId: {
+					type: "string",
+					required: true,
+					defaultValue: DEFAULT_RESUME_USER_ORG_ID,
 				},
 			},
 		},

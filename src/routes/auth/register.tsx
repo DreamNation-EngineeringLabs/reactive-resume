@@ -11,14 +11,14 @@ import z from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/integrations/auth/client";
-import { getPlacementsUrl } from "@/utils/source-url";
+import { getPlacementsUrl, redirectToPlacements } from "@/utils/source-url";
 import { useSignalAuthReady } from "./-components/auth-layout-context";
 
 export const Route = createFileRoute("/auth/register")({
 	component: RouteComponent,
 	beforeLoad: async ({ context }) => {
 		if (context.flags.ssoOnly) {
-			throw redirect({ href: getPlacementsUrl(), replace: true });
+			redirectToPlacements();
 		}
 		if (context.session) throw redirect({ to: "/dashboard", replace: true });
 		if (context.flags.disableSignups) throw redirect({ to: "/auth/login", replace: true });

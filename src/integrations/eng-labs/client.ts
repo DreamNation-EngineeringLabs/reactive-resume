@@ -6,10 +6,12 @@ declare global {
 }
 
 export function getEngLabsPool(): Pool | null {
-	if (!env.ENG_LABS_DATABASE_URL) return null;
+	// When resume + eng-labs share one Postgres, only DATABASE_URL may be set — reuse it for org/student reads.
+	const url = env.ENG_LABS_DATABASE_URL ?? env.DATABASE_URL;
+	if (!url) return null;
 
 	if (!globalThis.__engLabsPool) {
-		globalThis.__engLabsPool = new Pool({ connectionString: env.ENG_LABS_DATABASE_URL });
+		globalThis.__engLabsPool = new Pool({ connectionString: url });
 	}
 
 	return globalThis.__engLabsPool;

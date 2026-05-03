@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { getTenantId } from "@/utils/sso-context";
 import type { DashboardTab } from "../-components/section-metrics-view";
@@ -30,13 +30,15 @@ function RouteComponent() {
 		setTenantId(getTenantId() ?? "default");
 	}, []);
 
+	const initialFilter = useMemo(() => ({ packageId, unitType, unitId }), [packageId, unitType, unitId]);
+
 	return (
 		<SectionMetricsView
 			scope="admin"
 			sectionIds={[]}
 			tenantId={tenantId}
 			initialTab={tab as DashboardTab}
-			initialFilter={{ packageId, unitType, unitId }}
+			initialFilter={initialFilter}
 			sectionId={sectionId}
 		/>
 	);

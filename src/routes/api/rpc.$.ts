@@ -9,7 +9,11 @@ const rpcHandler = new RPCHandler(router, {
 	plugins: [new BatchHandlerPlugin(), new RequestHeadersPlugin(), new StrictGetMethodPlugin()],
 	interceptors: [
 		onError((error) => {
-			console.error(`ERROR [oRPC]: ${error}`);
+			console.error("ERROR [oRPC]:", error);
+			// Drizzle wraps the underlying Postgres error in `cause`; surface it explicitly
+			// so we don't lose the SQLSTATE / constraint name / detail message.
+			const cause = (error as { cause?: unknown }).cause;
+			if (cause) console.error("ERROR [oRPC] cause:", cause);
 		}),
 	],
 });

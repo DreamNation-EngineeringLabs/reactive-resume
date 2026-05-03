@@ -109,14 +109,27 @@ export const atsRouter = {
 			path: "/ats/admin/stats",
 			tags: ["ATS"],
 			operationId: "getAtsAdminStats",
-			summary: "Get aggregate ATS improvement statistics (admin)",
+			summary: "Get aggregate ATS improvement statistics (tenant-scoped)",
 			description:
-				"Returns platform-wide ATS scoring statistics: total checks, average improvement, score distribution, top improved categories, and daily activity.",
-			successDescription: "Aggregate ATS statistics for the admin dashboard.",
+				"Returns ATS scoring statistics scoped to the caller's tenant: total checks, average improvement, score distribution, top improved categories, and daily activity. Rejects learners.",
+			successDescription: "Aggregate ATS statistics for the dashboard.",
 		})
 		.input(z.object({}))
-		.handler(async () => {
-			return getAtsAdminStats();
+		.handler(async ({ context }) => {
+			const { getEngLabsUserByEmail } = await import("@/integrations/eng-labs");
+			const engUser = await getEngLabsUserByEmail(context.user.email);
+			if (!engUser) {
+				throw new ORPCError("FORBIDDEN", {
+					message: "Authenticated user is not provisioned in the institutional directory.",
+				});
+			}
+			if (engUser.userType === "LEARNER") {
+				throw new ORPCError("FORBIDDEN", { message: "Learners cannot view aggregate ATS statistics." });
+			}
+			if (!engUser.tenantId) {
+				throw new ORPCError("FORBIDDEN", { message: "Authenticated user has no tenant assignment." });
+			}
+			return getAtsAdminStats({ tenantId: engUser.tenantId });
 		}),
 
 	edit: protectedProcedure

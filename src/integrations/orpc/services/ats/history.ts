@@ -1,7 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/integrations/drizzle/client";
-import { type AtsMajorImprovement, atsScoreHistory } from "@/integrations/drizzle/schema";
+import { type AtsMajorImprovement, atsScoreHistory, user } from "@/integrations/drizzle/schema";
 import type { ScoringResult } from "./index";
 
 type AtsScoreHistoryRow = InferSelectModel<typeof atsScoreHistory>;
@@ -84,6 +84,16 @@ export async function saveAtsScoreEntry(
 		majorImprovements.sort((a, b) => b.delta - a.delta);
 	}
 
+	// `ats_score_history.tenant_id` / `organisation_id` are NOT NULL without a Postgres DEFAULT,
+	// so we must send values explicitly on insert. Source them from the user row.
+	const [userRow] = await db
+		.select({ tenantId: user.tenantId, organisationId: user.organisationId })
+		.from(user)
+		.where(eq(user.id, userId))
+		.limit(1);
+
+	if (!userRow) throw new Error(`User ${userId} not found while saving ATS score`);
+
 	const [inserted] = await db
 		.insert(atsScoreHistory)
 		.values({
@@ -94,6 +104,8 @@ export async function saveAtsScoreEntry(
 			deltaScore,
 			majorImprovements,
 			jobDescriptionProvided: result.metadata.jdProvided,
+			tenantId: userRow.tenantId,
+			organisationId: userRow.organisationId,
 		})
 		.returning();
 
@@ -139,24 +151,43 @@ export async function getAtsScoreHistory(resumeId: string, userId: string): Prom
  * Admin aggregate stats across all resumes (or a specific tenant if implemented later).
  * Returns summary metrics suitable for a dashboard.
  */
-export async function getAtsAdminStats(): Promise<AtsAdminStats> {
+function num(v: unknown, fallback = 0): number {
+	if (v == null) return fallback;
+	if (typeof v === "number" && !Number.isNaN(v)) return v;
+	if (typeof v === "string" && v !== "") return Number(v) || fallback;
+	return fallback;
+}
+
+export async function getAtsAdminStats({ tenantId }: { tenantId: string }): Promise<AtsAdminStats> {
+	// All queries below scope by tenant_id so callers cannot read other tenants' rows.
+	const tenantFilter = sql`tenant_id = ${tenantId}`;
+
 	// 1. Total checks
-	const [totalResult] = await db.select({ count: sql<number>`count(*)::int` }).from(atsScoreHistory);
-	const totalChecks = totalResult?.count ?? 0;
+	const [totalResult] = await db
+		.select({ count: sql<number>`count(*)::int` })
+		.from(atsScoreHistory)
+		.where(tenantFilter);
+	const totalChecks = num(totalResult?.count);
 
 	// 2. Average improvement (only for entries that have a delta)
 	const [avgDeltaResult] = await db
 		.select({ avg: sql<number>`avg(delta_score)::float` })
 		.from(atsScoreHistory)
-		.where(sql`delta_score is not null`);
-	const avgScoreImprovement = Math.round((avgDeltaResult?.avg ?? 0) * 10) / 10;
+		.where(sql`${tenantFilter} and delta_score is not null`);
+	const avgScoreImprovement = Math.round(num(avgDeltaResult?.avg) * 10) / 10;
 
-	// 3. Average current score per resume (latest entry per resume)
-	const [avgScoreResult] = await db.select({ avg: sql<number>`avg(overall_score)::float` }).from(atsScoreHistory);
-	const avgCurrentScore = Math.round(avgScoreResult?.avg ?? 0);
+	// 3. Average overall score across all recorded checks (not latest-per-resume)
+	const [avgScoreResult] = await db
+		.select({ avg: sql<number>`avg(overall_score)::float` })
+		.from(atsScoreHistory)
+		.where(tenantFilter);
+	const avgCurrentScore = Math.round(num(avgScoreResult?.avg));
 
 	// 4. Score distribution buckets: 0-20, 21-40, 41-60, 61-80, 81-100
-	const allScores = await db.select({ score: atsScoreHistory.overallScore }).from(atsScoreHistory);
+	const allScores = await db
+		.select({ score: atsScoreHistory.overallScore })
+		.from(atsScoreHistory)
+		.where(tenantFilter);
 
 	const buckets = [
 		{ bucket: "0–20", min: 0, max: 20, count: 0 },
@@ -178,14 +209,14 @@ export async function getAtsAdminStats(): Promise<AtsAdminStats> {
 			avgScore: sql<number>`avg(overall_score)::float`,
 		})
 		.from(atsScoreHistory)
-		.where(sql`created_at >= now() - interval '14 days'`)
+		.where(sql`${tenantFilter} and created_at >= now() - interval '14 days'`)
 		.groupBy(sql`date_trunc('day', created_at)`)
 		.orderBy(sql`date_trunc('day', created_at) asc`);
 
 	const checksByDay = (last14 as Array<{ date: string; count: number; avgScore: number }>).map((r) => ({
 		date: r.date,
-		count: r.count,
-		avgScore: Math.round(r.avgScore ?? 0),
+		count: num(r.count),
+		avgScore: Math.round(num(r.avgScore)),
 	}));
 
 	// 6. Top improved categories — from majorImprovements jsonb array
@@ -193,7 +224,7 @@ export async function getAtsAdminStats(): Promise<AtsAdminStats> {
 	const rows = await db
 		.select({ improvements: atsScoreHistory.majorImprovements })
 		.from(atsScoreHistory)
-		.where(sql`jsonb_array_length(major_improvements) > 0`);
+		.where(sql`${tenantFilter} and jsonb_array_length(major_improvements) > 0`);
 
 	const catDeltaSum: Record<string, { sum: number; count: number; label: string }> = {};
 	for (const row of rows) {

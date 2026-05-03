@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { cn } from "@/utils/style";
+import { uiControl, uiSurface } from "@/utils/ui-tokens";
 import type { DashboardTab } from "./section-metrics-view";
 import type { StudentWithResumes } from "./student-resume-table";
 
@@ -146,8 +147,8 @@ function UnitTypeSelector({
 	if (types.length <= 1) return null;
 
 	return (
-		<div className="flex flex-wrap items-center gap-3 rounded-2xl bg-white px-5 py-3 shadow-sm">
-			<span className="shrink-0 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`View by unit`}</span>
+		<div className={cn(uiSurface.card, "flex flex-wrap items-center gap-3 px-5 py-3")}>
+			<span className="shrink-0 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`View by unit`}</span>
 			<div className="flex flex-wrap gap-1.5">
 				{types.map((type) => {
 					const isSelected = type === selectedType;
@@ -157,8 +158,8 @@ function UnitTypeSelector({
 							type="button"
 							onClick={() => onSelect(type)}
 							className={cn(
-								"rounded-lg px-3 py-1.5 font-bold text-xs uppercase tracking-wide transition-all active:scale-[0.97]",
-								isSelected ? "bg-indigo-600 text-white shadow-sm" : "bg-slate-100 text-slate-500 hover:bg-slate-200",
+								"uppercase tracking-wide transition-[transform,colors] duration-200 active:scale-[0.97]",
+								isSelected ? uiControl.pillSelected : uiControl.pillIdle,
 							)}
 						>
 							{type}
@@ -210,8 +211,8 @@ function ActionAlerts({
 			id: "pending_po",
 			icon: <ClipboardTextIcon weight="duotone" className="size-4" />,
 			message: t`${pendingPO} resume${pendingPO !== 1 ? "s" : ""} finalized by faculty and waiting for your review`,
-			accent: "border-l-indigo-500",
-			iconBg: "bg-indigo-50 text-indigo-600",
+			accent: "border-l-primary",
+			iconBg: "bg-primary/10 text-primary",
 			tab: "inbox",
 			cta: t`Go to Inbox`,
 		});
@@ -263,28 +264,28 @@ function ActionAlerts({
 	if (alerts.length === 0) return null;
 
 	return (
-		<div className="space-y-3 rounded-2xl bg-white p-5 shadow-sm">
+		<div className={cn(uiSurface.card, "space-y-3 p-5")}>
 			<div className="mb-1 flex items-center gap-2">
-				<BellRingingIcon weight="duotone" className="size-4 text-slate-500" />
-				<h3 className="font-bold text-base text-slate-900">{t`Action Alerts`}</h3>
+				<BellRingingIcon weight="duotone" className="size-4 text-muted-foreground" />
+				<h3 className="font-bold text-base text-foreground">{t`Action Alerts`}</h3>
 			</div>
 			<div className="space-y-2">
 				{alerts.map((alert) => (
 					<div
 						key={alert.id}
 						className={cn(
-							"flex items-center gap-3 rounded-xl border border-slate-100 border-l-4 bg-slate-50 px-4 py-3",
+							"flex items-center gap-3 rounded-xl border border-border border-l-4 bg-muted/40 px-4 py-3",
 							alert.accent,
 						)}
 					>
-						<div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", alert.iconBg)}>
+						<div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-xl", alert.iconBg)}>
 							{alert.icon}
 						</div>
-						<p className="flex-1 text-slate-700 text-sm">{alert.message}</p>
+						<p className="flex-1 text-foreground text-sm">{alert.message}</p>
 						<button
 							type="button"
 							onClick={() => onNavigateToTab(alert.tab)}
-							className="flex shrink-0 items-center gap-1 rounded-lg bg-white px-3 py-1.5 font-semibold text-slate-700 text-xs shadow-sm ring-1 ring-slate-200 transition-all hover:bg-slate-50 active:scale-[0.97]"
+							className="flex shrink-0 items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 font-semibold text-foreground text-xs shadow-sm transition-[transform,colors,box-shadow] duration-200 hover:bg-muted/50 active:scale-[0.97]"
 						>
 							{alert.cta}
 							<ArrowRightIcon weight="bold" className="size-3" />
@@ -311,15 +312,15 @@ function TopPerformingSections({ sections }: { sections: UnitStat[] }) {
 	const medals = ["🥇", "🥈", "🥉"];
 	const medalColors = [
 		{ ring: "ring-amber-200", bg: "bg-amber-50" },
-		{ ring: "ring-slate-200", bg: "bg-slate-50" },
+		{ ring: "ring-border", bg: "bg-muted/50" },
 		{ ring: "ring-orange-200", bg: "bg-orange-50" },
 	];
 
 	return (
-		<div className="rounded-2xl bg-white p-5 shadow-sm">
+		<div className={cn(uiSurface.card, "p-5")}>
 			<div className="mb-4 flex items-center gap-2">
 				<MedalIcon weight="duotone" className="size-4 text-amber-500" />
-				<h3 className="font-bold text-base text-slate-900">{t`Top Performing`}</h3>
+				<h3 className="font-bold text-base text-foreground">{t`Top Performing`}</h3>
 			</div>
 			<div className="grid gap-3 sm:grid-cols-3">
 				{ranked.map((section, i) => {
@@ -336,8 +337,8 @@ function TopPerformingSections({ sections }: { sections: UnitStat[] }) {
 									{score.toFixed(1)}/5
 								</span>
 							</div>
-							<p className="line-clamp-2 font-semibold text-slate-900 text-sm leading-snug">{section.name}</p>
-							<div className="flex items-center gap-1 text-slate-500 text-xs">
+							<p className="line-clamp-2 font-semibold text-foreground text-sm leading-snug">{section.name}</p>
+							<div className="flex items-center gap-1 text-muted-foreground text-xs">
 								<UsersIcon weight="duotone" className="size-3" />
 								<span>
 									{section.stats.totalStudents} {t`students`}
@@ -368,26 +369,26 @@ function SectionHealthTable({
 	const sorted = [...active].sort((a, b) => b.stats.totalStudents - a.stats.totalStudents);
 
 	return (
-		<div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+		<div className={cn(uiSurface.card, "overflow-hidden p-0 shadow-sm")}>
 			<div className="flex items-center gap-2 px-5 pt-5 pb-4">
-				<h3 className="font-bold text-base text-slate-900">{t`Section Health`}</h3>
-				<span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-500 text-xs">{active.length}</span>
+				<h3 className="font-bold text-base text-foreground">{t`Section Health`}</h3>
+				<span className="rounded-full bg-muted px-2 py-0.5 font-bold text-muted-foreground text-xs">{active.length}</span>
 			</div>
 
 			{/* Desktop table */}
 			<div className="hidden overflow-x-auto md:block">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="border-slate-100 border-t bg-slate-50/60 text-left">
-							<th className="px-5 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Section`}</th>
-							<th className="px-4 py-2.5 text-center font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Students`}</th>
-							<th className="px-4 py-2.5 text-center font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Resumes`}</th>
-							<th className="w-48 px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Pipeline`}</th>
-							<th className="px-4 py-2.5 text-center font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Avg Score`}</th>
-							<th className="px-4 py-2.5 font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Stage`}</th>
+						<tr className="border-border border-t bg-muted/40 text-left">
+							<th className="px-5 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Section`}</th>
+							<th className="px-4 py-2.5 text-center font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Students`}</th>
+							<th className="px-4 py-2.5 text-center font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Resumes`}</th>
+							<th className="w-48 px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Pipeline`}</th>
+							<th className="px-4 py-2.5 text-center font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Avg Score`}</th>
+							<th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Stage`}</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-slate-100">
+					<tbody className="divide-y divide-border">
 						{sorted.map((section) => {
 							const st = section.stats;
 							const total = st.totalResumes;
@@ -402,27 +403,27 @@ function SectionHealthTable({
 							else stageText = t`${total} in Draft`;
 
 							return (
-								<tr key={section.id} className="transition-colors hover:bg-slate-50/50">
+								<tr key={section.id} className="transition-colors duration-200 hover:bg-muted/40">
 									<td className="px-5 py-3">
-										<p className="line-clamp-1 font-semibold text-slate-900 text-sm">{section.name}</p>
-										<p className="text-slate-400 text-xs">{section.unitType}</p>
+										<p className="line-clamp-1 font-semibold text-foreground text-sm">{section.name}</p>
+										<p className="text-muted-foreground text-xs">{section.unitType}</p>
 									</td>
-									<td className="px-4 py-3 text-center font-semibold text-slate-900 text-sm">{st.totalStudents}</td>
-									<td className="px-4 py-3 text-center font-semibold text-slate-900 text-sm">{total}</td>
+									<td className="px-4 py-3 text-center font-semibold text-foreground text-sm">{st.totalStudents}</td>
+									<td className="px-4 py-3 text-center font-semibold text-foreground text-sm">{total}</td>
 									<td className="px-4 py-3">
 										{total > 0 ? (
-											<div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100">
+											<div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
 												{approved > 0 && (
 													<div className="h-full bg-emerald-500" style={{ width: `${(approved / total) * 100}%` }} />
 												)}
 												{remaining > 0 && (
-													<div className="h-full bg-slate-300" style={{ width: `${(remaining / total) * 100}%` }} />
+													<div className="h-full bg-muted-foreground/30" style={{ width: `${(remaining / total) * 100}%` }} />
 												)}
 											</div>
 										) : (
-											<div className="h-2 w-full rounded-full bg-slate-100" />
+											<div className="h-2 w-full rounded-full bg-muted" />
 										)}
-										<p className="mt-1 text-[10px] text-slate-400">
+										<p className="mt-1 text-[10px] text-muted-foreground">
 											{approved}/{total} {t`approved`}
 										</p>
 									</td>
@@ -438,11 +439,11 @@ function SectionHealthTable({
 												{st.averageScore.toFixed(1)}/5
 											</span>
 										) : (
-											<span className="text-slate-300 text-xs">—</span>
+											<span className="text-muted-foreground/40 text-xs">—</span>
 										)}
 									</td>
 									<td className="px-4 py-3">
-										<span className="text-slate-600 text-xs">{stageText}</span>
+										<span className="text-muted-foreground text-xs">{stageText}</span>
 									</td>
 								</tr>
 							);
@@ -452,7 +453,7 @@ function SectionHealthTable({
 			</div>
 
 			{/* Mobile cards */}
-			<div className="divide-y divide-slate-100 md:hidden">
+			<div className="divide-y divide-border md:hidden">
 				{sorted.map((section) => {
 					const st = section.stats;
 					const total = st.totalResumes;
@@ -461,11 +462,11 @@ function SectionHealthTable({
 						<div key={section.id} className="space-y-2 px-5 py-4">
 							<div className="flex items-start justify-between gap-2">
 								<div>
-									<p className="font-semibold text-slate-900 text-sm">{section.name}</p>
-									<p className="text-slate-400 text-xs">{section.unitType}</p>
+									<p className="font-semibold text-foreground text-sm">{section.name}</p>
+									<p className="text-muted-foreground text-xs">{section.unitType}</p>
 								</div>
 							</div>
-							<div className="flex items-center gap-4 text-slate-500 text-xs">
+							<div className="flex items-center gap-4 text-muted-foreground text-xs">
 								<span>
 									{st.totalStudents} {t`students`}
 								</span>
@@ -480,12 +481,12 @@ function SectionHealthTable({
 							</div>
 							{total > 0 && (
 								<>
-									<div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+									<div className="flex h-1.5 w-full overflow-hidden rounded-full bg-muted">
 										{approved > 0 && (
 											<div className="h-full bg-emerald-500" style={{ width: `${(approved / total) * 100}%` }} />
 										)}
 									</div>
-									<p className="text-[10px] text-slate-400">
+									<p className="text-[10px] text-muted-foreground">
 										{approved}/{total} {t`approved`}
 									</p>
 								</>
@@ -495,11 +496,11 @@ function SectionHealthTable({
 				})}
 			</div>
 
-			<div className="border-slate-100 border-t px-5 py-3">
+			<div className="border-border border-t px-5 py-3">
 				<button
 					type="button"
 					onClick={() => onNavigateToTab("sections")}
-					className="flex items-center gap-1.5 font-semibold text-indigo-600 text-xs transition-colors hover:text-indigo-700"
+					className="flex items-center gap-1.5 font-semibold text-primary text-xs transition-colors duration-200 hover:text-primary/80"
 				>
 					{t`View all sections`}
 					<ArrowRightIcon weight="bold" className="size-3" />
@@ -540,11 +541,11 @@ export function SectionIntelligence({ sections, students, allOrgUnits, onNavigat
 		<div className="space-y-4">
 			{/* Section label */}
 			<div className="flex items-center gap-3">
-				<div className="h-px flex-1 bg-slate-200" />
-				<span className="font-bold text-[10px] text-slate-400 uppercase tracking-widest">
+				<div className="h-px flex-1 bg-border" />
+				<span className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
 					{t`Section Intelligence`}
 				</span>
-				<div className="h-px flex-1 bg-slate-200" />
+				<div className="h-px flex-1 bg-border" />
 			</div>
 
 			{/* Unit type selector — controls ALL blocks below */}

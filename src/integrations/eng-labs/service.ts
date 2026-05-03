@@ -528,7 +528,9 @@ export async function getFacultyList(tenantId: string): Promise<FacultyInfo[]> {
 /**
  * Get an eng-labs user by their email address.
  */
-export async function getEngLabsUserByEmail(email: string): Promise<(StudentInfo & { tenantId?: string }) | null> {
+export async function getEngLabsUserByEmail(
+	email: string,
+): Promise<(StudentInfo & { tenantId?: string; userType?: string }) | null> {
 	const pool = getEngLabsPool();
 	if (!pool) return null;
 
@@ -539,8 +541,10 @@ export async function getEngLabsUserByEmail(email: string): Promise<(StudentInfo
 		roll_number: string | null;
 		enrollment_unit_id: string | null;
 		tenant_id: string | null;
+		user_type: string | null;
 	}>(
-		`SELECT u.id, u.name, u.email, u.roll_number, u.enrollment_unit_id, u.tenant_id
+		`SELECT u.id, u.name, u.email, u.roll_number, u.enrollment_unit_id, u.tenant_id,
+		        UPPER(u.type::text) AS user_type
 		 FROM users u
 		 WHERE LOWER(TRIM(u.email)) = LOWER(TRIM($1))
 		 ORDER BY CASE UPPER(u.type::text)
@@ -565,6 +569,7 @@ export async function getEngLabsUserByEmail(email: string): Promise<(StudentInfo
 		rollNumber: r.roll_number,
 		sectionId: r.enrollment_unit_id ?? "",
 		tenantId: r.tenant_id ?? undefined,
+		userType: r.user_type ?? undefined,
 	};
 }
 
@@ -779,4 +784,29 @@ export async function getInstructorsForUnits(unitIds: string[]): Promise<string[
 	);
 
 	return rows.map((r) => r.user_id);
+}
+
+/**
+ * Returns the subset of input emails whose owners have at least one active
+ * `user_quota_grants` row for `RESUME_CREATE` in eng-labs. Active = expiry_date IS NULL OR > NOW().
+ * Returns null when eng-labs is not configured — callers should treat that as "no filter applied".
+ */
+export async function filterEmailsWithResumeBuilderAccess(emails: string[]): Promise<Set<string> | null> {
+	const pool = getEngLabsPool();
+	if (!pool) return null;
+	if (emails.length === 0) return new Set();
+
+	const normalized = [...new Set(emails.map((e) => e.toLowerCase().trim()).filter((e) => e.length > 0))];
+	if (normalized.length === 0) return new Set();
+
+	const { rows } = await pool.query<{ email: string }>(
+		`SELECT DISTINCT LOWER(TRIM(u.email)) AS email
+		 FROM users u
+		 JOIN user_quota_grants g ON g.user_id = u.id
+		 WHERE LOWER(TRIM(u.email)) = ANY($1)
+		   AND g.service_type = 'RESUME_CREATE'
+		   AND (g.expiry_date IS NULL OR g.expiry_date > NOW())`,
+		[normalized],
+	);
+	return new Set(rows.map((r) => r.email));
 }

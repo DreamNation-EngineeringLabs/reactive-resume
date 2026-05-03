@@ -1,6 +1,7 @@
 export { getEngLabsPool } from "./client";
 export {
 	enrichByEmails,
+	filterEmailsWithResumeBuilderAccess,
 	getAllOrgUnits,
 	getAllSections,
 	getDescendantOrgUnitIds,

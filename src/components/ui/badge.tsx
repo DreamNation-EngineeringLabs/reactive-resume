@@ -4,7 +4,7 @@ import type * as React from "react";
 import { cn } from "@/utils/style";
 
 const badgeVariants = cva(
-	"group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-4xl border border-transparent px-2 py-0.5 font-medium text-xs transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!",
+	"group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border border-transparent px-2 py-0.5 font-semibold text-xs transition-[color,background-color,border-color] duration-200 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-start]:ps-1.5 has-data-[icon=inline-end]:pe-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3.5",
 	{
 		variants: {
 			variant: {
@@ -15,6 +15,12 @@ const badgeVariants = cva(
 				outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
 				ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
 				link: "text-primary underline-offset-4 hover:underline",
+				blue: "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200 [a]:hover:bg-blue-100/80",
+				purple: "bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-200 [a]:hover:bg-purple-100/80",
+				emerald:
+					"bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 [a]:hover:bg-emerald-100/80",
+				amber: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 [a]:hover:bg-amber-100/80",
+				rose: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200 [a]:hover:bg-rose-100/80",
 			},
 		},
 		defaultVariants: {

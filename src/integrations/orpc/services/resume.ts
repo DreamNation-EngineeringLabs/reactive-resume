@@ -270,6 +270,17 @@ export const resumeService = {
 		input.data.metadata.page.locale = input.locale;
 
 		try {
+			// `resume.tenant_id` / `organisation_id` are NOT NULL without a Postgres DEFAULT,
+			// so we must send values explicitly on insert. Source them from the user row.
+			const [userRow] = await db
+				.select({ tenantId: schema.user.tenantId, organisationId: schema.user.organisationId })
+				.from(schema.user)
+				.where(eq(schema.user.id, input.userId))
+				.limit(1);
+
+			if (!userRow) throw new Error(`User ${input.userId} not found while creating resume`);
+
+			const now = new Date();
 			await db.insert(schema.resume).values({
 				id,
 				name: input.name,
@@ -277,6 +288,10 @@ export const resumeService = {
 				tags: input.tags,
 				userId: input.userId,
 				data: input.data,
+				tenantId: userRow.tenantId,
+				organisationId: userRow.organisationId,
+				createdAt: now,
+				updatedAt: now,
 			});
 
 			return id;

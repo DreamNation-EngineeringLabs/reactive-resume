@@ -13,7 +13,9 @@ export const getORPCClient = createIsomorphicFn()
 		return createRouterClient(router, {
 			interceptors: [
 				onError((error) => {
-					console.error(`ERROR [oRPC]: ${error}`);
+					console.error("ERROR [oRPC]:", error);
+					const cause = (error as { cause?: unknown }).cause;
+					if (cause) console.error("ERROR [oRPC] cause:", cause);
 				}),
 			],
 			context: async () => {
@@ -31,16 +33,20 @@ export const getORPCClient = createIsomorphicFn()
 		const link = new RPCLink({
 			url: `${window.location.origin}/resume/api/rpc`,
 			fetch: (request, init) => fetch(request, { ...init, credentials: "include" }),
-			plugins: [
-				new BatchLinkPlugin({
-					mode: typeof window === "undefined" ? "buffered" : "streaming",
-					groups: [{ condition: () => true, context: {} }],
-				}),
-			],
+			plugins: import.meta.env.DEV
+				? []
+				: [
+						new BatchLinkPlugin({
+							mode: typeof window === "undefined" ? "buffered" : "streaming",
+							groups: [{ condition: () => true, context: {} }],
+						}),
+					],
 			interceptors: [
 				onError((error) => {
 					if (error instanceof DOMException && error.name === "AbortError") return;
-					console.error(`ERROR [oRPC]: ${error}`);
+					console.error("ERROR [oRPC]:", error);
+					const cause = (error as { cause?: unknown }).cause;
+					if (cause) console.error("ERROR [oRPC] cause:", cause);
 				}),
 			],
 		});

@@ -6,8 +6,8 @@
  * GET /api/dashboard-stats?tenantId=...&scope=po&sectionIds=id1,id2&activeUnitId=...&email=...
  */
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { createFileRoute } from "@tanstack/react-router";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { schema } from "@/integrations/drizzle";
 import { db } from "@/integrations/drizzle/client";
 import {
@@ -21,6 +21,7 @@ import {
 	getPlacementScopedSections,
 	getPlacementSubtreeOrgUnitIds,
 	getSectionsByIds,
+	getStudentsBySections,
 	getTenantIdForOrgUnits,
 	getUnitSchemaTypes,
 } from "@/integrations/eng-labs";
@@ -206,7 +207,12 @@ async function handler({ request }: { request: Request }) {
 			if (sectionRows.length === 0) {
 				instructorSubtreeSet = new Set();
 			} else if (tenantId !== "default") {
-				instructorSubtreeSet = new Set(await getDescendantOrgUnitIds(sectionRows.map((s: any) => s.id), tenantId));
+				instructorSubtreeSet = new Set(
+					await getDescendantOrgUnitIds(
+						sectionRows.map((s: any) => s.id),
+						tenantId,
+					),
+				);
 			} else {
 				instructorSubtreeSet = new Set(sectionRows.map((s: any) => s.id));
 			}
@@ -214,16 +220,42 @@ async function handler({ request }: { request: Request }) {
 
 		function profilePassesFilters(p: EngLabsLearnerProfile): boolean {
 			if (placementBoundarySet && !p.unitIds.some((id) => placementBoundarySet.has(id))) return false;
-			if (instructorSubtreeSet !== null && !p.unitIds.some((id) => instructorSubtreeSet.has(id)))
-				return false;
+			if (instructorSubtreeSet !== null && !p.unitIds.some((id) => instructorSubtreeSet.has(id))) return false;
 			if (activeDescendantSet && !p.unitIds.some((id) => activeDescendantSet.has(id))) return false;
 			return true;
 		}
 
-		const resumeUsers =
-			tenantId !== "default"
-				? await db.select().from(schema.user).where(eq(schema.user.tenantId, tenantId))
-				: [];
+		let resumeUsers: (typeof schema.user.$inferSelect)[] = [];
+		if (tenantId !== "default") {
+			const resumeUsersByTenant = await db.select().from(schema.user).where(eq(schema.user.tenantId, tenantId));
+
+			const tenantEmailSet = new Set(resumeUsersByTenant.map((u) => normEmail(u.email)));
+			let extraEmails: string[] = [];
+			if (sectionRows.length > 0) {
+				const inSections = await getStudentsBySections(
+					sectionRows.map((s: { id: string }) => s.id),
+					tenantId,
+				);
+				extraEmails = [
+					...new Set(inSections.map((s) => normEmail(s.email)).filter((e) => e.length > 0 && !tenantEmailSet.has(e))),
+				];
+			}
+
+			const resumeUsersExtra =
+				extraEmails.length > 0
+					? await db
+							.select()
+							.from(schema.user)
+							.where(inArray(sql<string>`lower(trim(${schema.user.email}))`, extraEmails))
+					: [];
+
+			const byId = new Map<string, typeof schema.user.$inferSelect>();
+			for (const u of resumeUsersByTenant) byId.set(u.id, u);
+			for (const u of resumeUsersExtra) {
+				if (!byId.has(u.id)) byId.set(u.id, u);
+			}
+			resumeUsers = [...byId.values()];
+		}
 
 		const profiles = await getEngLabsLearnerProfilesByEmails(
 			resumeUsers.map((u) => normEmail(u.email)),
@@ -345,12 +377,39 @@ async function handler({ request }: { request: Request }) {
 				stats: {
 					totalStudents: unitStudents.length,
 					totalResumes: unitResumes.length,
-					evaluatedResumes: byStatus(["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]),
+					evaluatedResumes: byStatus([
+						"FACULTY_VERIFIED",
+						"FINALIZED_BY_FACULTY",
+						"PO_REVISION_REQUESTED",
+						"RESUBMITTED_TO_PO",
+						"PO_VERIFIED",
+						"APPROVED",
+					]),
 					submittedResumes: byStatus(["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "APPROVED"]),
-					passedFaculty: byStatus(["FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]),
+					passedFaculty: byStatus([
+						"FINALIZED_BY_FACULTY",
+						"PO_REVISION_REQUESTED",
+						"RESUBMITTED_TO_PO",
+						"PO_VERIFIED",
+						"APPROVED",
+					]),
 					poVerifiedResumes: byStatus(["PO_VERIFIED"]),
 					approvedResumes: byStatus(["APPROVED"]),
-					completionRate: unitResumes.length > 0 ? Math.round((byStatus(["FACULTY_VERIFIED", "FINALIZED_BY_FACULTY", "PO_REVISION_REQUESTED", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]) / unitResumes.length) * 100) : 0,
+					completionRate:
+						unitResumes.length > 0
+							? Math.round(
+									(byStatus([
+										"FACULTY_VERIFIED",
+										"FINALIZED_BY_FACULTY",
+										"PO_REVISION_REQUESTED",
+										"RESUBMITTED_TO_PO",
+										"PO_VERIFIED",
+										"APPROVED",
+									]) /
+										unitResumes.length) *
+										100,
+								)
+							: 0,
 					averageScore: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null,
 				},
 			};
@@ -363,23 +422,25 @@ async function handler({ request }: { request: Request }) {
 		const totalComments = allResumes.reduce((sum, r) => sum + r.commentCount, 0);
 
 		// 10. Recent activity
-		const recentEvaluations = resumeIds.length > 0
-			? await db
-					.select()
-					.from(schema.resumeEvaluation)
-					.where(inArray(schema.resumeEvaluation.resumeId, resumeIds))
-					.orderBy(desc(schema.resumeEvaluation.createdAt))
-					.limit(5)
-			: [];
+		const recentEvaluations =
+			resumeIds.length > 0
+				? await db
+						.select()
+						.from(schema.resumeEvaluation)
+						.where(inArray(schema.resumeEvaluation.resumeId, resumeIds))
+						.orderBy(desc(schema.resumeEvaluation.createdAt))
+						.limit(5)
+				: [];
 
-		const recentComments = resumeIds.length > 0
-			? await db
-					.select()
-					.from(schema.resumeComment)
-					.where(inArray(schema.resumeComment.resumeId, resumeIds))
-					.orderBy(desc(schema.resumeComment.createdAt))
-					.limit(5)
-			: [];
+		const recentComments =
+			resumeIds.length > 0
+				? await db
+						.select()
+						.from(schema.resumeComment)
+						.where(inArray(schema.resumeComment.resumeId, resumeIds))
+						.orderBy(desc(schema.resumeComment.createdAt))
+						.limit(5)
+				: [];
 
 		const resumeIdToEmail = new Map<string, string>();
 		for (const student of students) {
@@ -396,9 +457,7 @@ async function handler({ request }: { request: Request }) {
 		const totalResumes = allResumes.length;
 		const withPrimaryResume = students.filter((s) => s.resumes.length > 0).length;
 		const primaryResumeRate =
-			enrolledInResumeBuilder > 0
-				? Math.round((withPrimaryResume / enrolledInResumeBuilder) * 1000) / 10
-				: 0;
+			enrolledInResumeBuilder > 0 ? Math.round((withPrimaryResume / enrolledInResumeBuilder) * 1000) / 10 : 0;
 
 		// Submission Breakdown (left column of charts)
 		const withResumes = withPrimaryResume;
@@ -406,9 +465,7 @@ async function handler({ request }: { request: Request }) {
 		const pendingReview = students.filter((s) =>
 			s.resumes.some((r) => r.isSubmitted && r.evaluationScore === null),
 		).length;
-		const evaluated = students.filter((s) =>
-			s.resumes.some((r) => r.evaluationScore !== null),
-		).length;
+		const evaluated = students.filter((s) => s.resumes.some((r) => r.evaluationScore !== null)).length;
 
 		// Card 3: Submission Rate = students with resumes / total students
 		const submissionRate = totalStudents > 0 ? Math.round((withResumes / totalStudents) * 1000) / 10 : 0;
@@ -417,16 +474,17 @@ async function handler({ request }: { request: Request }) {
 		const evaluationRate = withResumes > 0 ? Math.round((evaluated / withResumes) * 1000) / 10 : 0;
 
 		// Card 5: Avg Score (out of 5)
-		const averageScore = allScores.length > 0
-			? Math.round((allScores.reduce((a, b) => a + b, 0) / allScores.length) * 10) / 10
-			: null;
+		const averageScore =
+			allScores.length > 0 ? Math.round((allScores.reduce((a, b) => a + b, 0) / allScores.length) * 10) / 10 : null;
 
 		// Card 6: ATS Checks (total across all students)
 		let totalAtsChecks = 0;
 		try {
 			const [atsResult] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.atsScoreHistory);
 			totalAtsChecks = atsResult?.count ?? 0;
-		} catch { /* ats_score_history table may not exist */ }
+		} catch {
+			/* ats_score_history table may not exist */
+		}
 
 		// Score Distribution (right column chart) — buckets of 0-1, 1-2, 2-3, 3-4, 4-5
 		const scoreDistribution = [
@@ -438,8 +496,14 @@ async function handler({ request }: { request: Request }) {
 		];
 		for (const score of allScores) {
 			for (const b of scoreDistribution) {
-				if (score >= b.min && score < b.max) { b.count++; break; }
-				if (b.max === 5 && score === 5) { b.count++; break; }
+				if (score >= b.min && score < b.max) {
+					b.count++;
+					break;
+				}
+				if (b.max === 5 && score === 5) {
+					b.count++;
+					break;
+				}
 			}
 		}
 
@@ -452,16 +516,16 @@ async function handler({ request }: { request: Request }) {
 				withPrimaryResume,
 				primaryResumeRate,
 				totalResumes,
-				submissionRate,          // % — "0.2%" in the UI
-				evaluationRate,          // % — "100.0%" in the UI
-				averageScore,            // out of 5 — "3.0/5" in the UI
-				totalAtsChecks,          // integer — "4" in the UI
+				submissionRate, // % — "0.2%" in the UI
+				evaluationRate, // % — "100.0%" in the UI
+				averageScore, // out of 5 — "3.0/5" in the UI
+				totalAtsChecks, // integer — "4" in the UI
 
 				// Submission Breakdown (left column)
-				withResumes,             // students who have at least 1 resume
-				noResumes,               // students with no resume
-				pendingReview,           // submitted but not yet evaluated
-				evaluated,               // has evaluation score
+				withResumes, // students who have at least 1 resume
+				noResumes, // students with no resume
+				pendingReview, // submitted but not yet evaluated
+				evaluated, // has evaluation score
 
 				// Donut Chart (center column)
 				donutChart: {
@@ -493,16 +557,31 @@ async function handler({ request }: { request: Request }) {
 				recentEvaluations: recentEvaluations.map((e) => {
 					const email = resumeIdToEmail.get(e.resumeId);
 					const student = email ? engLabsStudents.find((s) => s.email === email) : null;
-					return { id: e.id, resumeId: e.resumeId, overallScore: e.overallScore, evaluatedAt: e.evaluatedAt, studentName: student?.name ?? null };
+					return {
+						id: e.id,
+						resumeId: e.resumeId,
+						overallScore: e.overallScore,
+						evaluatedAt: e.evaluatedAt,
+						studentName: student?.name ?? null,
+					};
 				}),
 				recentComments: recentComments.map((c) => {
 					const email = resumeIdToEmail.get(c.resumeId);
 					const student = email ? engLabsStudents.find((s) => s.email === email) : null;
-					return { id: c.id, resumeId: c.resumeId, content: c.content, createdAt: c.createdAt, studentName: student?.name ?? null };
+					return {
+						id: c.id,
+						resumeId: c.resumeId,
+						content: c.content,
+						createdAt: c.createdAt,
+						studentName: student?.name ?? null,
+					};
 				}),
 			},
 			packages: filterPackages,
-			unitTypes: scope === "faculty" && sectionRows.length > 0 ? [...new Set(scopedOrgUnits.map((u: any) => u.type))].sort() : unitTypes,
+			unitTypes:
+				scope === "faculty" && sectionRows.length > 0
+					? [...new Set(scopedOrgUnits.map((u: any) => u.type))].sort()
+					: unitTypes,
 			allOrgUnits: scopedOrgUnits,
 		});
 	} catch (error) {

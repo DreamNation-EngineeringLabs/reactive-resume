@@ -2,7 +2,6 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
 	ArrowCounterClockwiseIcon,
-	ArrowLeftIcon,
 	CheckCircleIcon,
 	CircleNotchIcon,
 	LightningIcon,
@@ -13,7 +12,7 @@ import {
 	XCircleIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -29,6 +28,14 @@ import type { CategoryScore, JsonPatchOp, ScoringResult, Suggestion } from "@/in
 import { removeBulletFromHtml, replaceBulletInHtml } from "@/integrations/orpc/services/ats/html-utils";
 import { generatePrinterToken } from "@/utils/printer-token";
 import { cn } from "@/utils/style";
+
+/** Phosphor: duotone + consistent sizes (size-4 chrome/buttons, size-3.5 dense labels, size-10 empty states). Spinners stay default weight. */
+const ICON = {
+	chrome: "size-4 shrink-0",
+	btn: "size-4 shrink-0",
+	dense: "size-3.5 shrink-0",
+	hero: "size-10 shrink-0",
+} as const;
 
 // ---------------------------------------------------------------------------
 // Server fn — generates a time-limited printer token so we can iframe the resume
@@ -203,68 +210,65 @@ function ATSResultPage() {
 
 	return (
 		<div className="flex h-full flex-col">
-			{/* ── Top bar ── */}
-			<div className="flex shrink-0 items-center justify-between border-b bg-background px-4 py-2.5">
-				<div className="flex items-center gap-2">
-					<Link to="/dashboard/ats-score">
-						<Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground">
-							<ArrowLeftIcon className="size-3.5" />
-							<Trans>Back</Trans>
+			{/* ── Title + actions ── */}
+			<div className="flex shrink-0 flex-col gap-2 border-border border-b bg-background px-4 py-3">
+				<div className="flex items-center justify-between gap-4">
+					<div className="flex min-w-0 items-center gap-2">
+						<TargetIcon weight="duotone" className={cn(ICON.chrome, "text-muted-foreground")} />
+						<span className="truncate font-semibold text-base text-foreground leading-tight">
+							{resume?.name ?? t`ATS Score`}
+						</span>
+					</div>
+					<div className="flex shrink-0 items-center gap-2">
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button variant="outline" size="sm" disabled={isScoring} className="gap-1.5">
+									{isScoring ? (
+										<CircleNotchIcon className={cn(ICON.btn, "animate-spin")} />
+									) : (
+										<ArrowCounterClockwiseIcon weight="duotone" className={ICON.btn} />
+									)}
+									<Trans>Re-score</Trans>
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent align="end" className="w-80 space-y-3 p-4">
+								<div>
+									<p className="font-semibold text-sm">
+										<Trans>Change Job Description</Trans>
+									</p>
+									<p className="mt-0.5 text-muted-foreground text-xs">
+										<Trans>Paste a job description to score against, or leave blank for a general ATS check.</Trans>
+									</p>
+								</div>
+								<Textarea
+									value={jobDescription}
+									onChange={(e) => setJobDescription(e.target.value)}
+									placeholder={t`Paste job description here (optional)...`}
+									rows={5}
+									className="resize-none text-xs"
+								/>
+								<Button onClick={handleScore} disabled={isScoring} size="sm" className="w-full gap-1.5">
+									{isScoring ? (
+										<>
+											<CircleNotchIcon className={cn(ICON.btn, "animate-spin")} />
+											<Trans>Scoring...</Trans>
+										</>
+									) : (
+										<>
+											<ArrowCounterClockwiseIcon weight="duotone" className={ICON.btn} />
+											<Trans>Re-score Resume</Trans>
+										</>
+									)}
+								</Button>
+							</PopoverContent>
+						</Popover>
+						<Button
+							size="sm"
+							onClick={() => navigate({ to: "/builder/$resumeId", params: { resumeId: params.resumeId } })}
+						>
+							<Trans>Open in Builder</Trans>
 						</Button>
-					</Link>
-					<div className="h-4 w-px bg-border" />
-					<TargetIcon className="size-4 text-muted-foreground" />
-					<span className="font-semibold text-sm">{resume?.name ?? t`ATS Score`}</span>
-				</div>
-				<div className="flex items-center gap-2">
-					<Popover>
-						<PopoverTrigger asChild>
-							<Button variant="outline" size="sm" disabled={isScoring} className="gap-1.5">
-								{isScoring ? (
-									<CircleNotchIcon className="size-3.5 animate-spin" />
-								) : (
-									<ArrowCounterClockwiseIcon className="size-3.5" />
-								)}
-								<Trans>Re-score</Trans>
-							</Button>
-						</PopoverTrigger>
-						<PopoverContent align="end" className="w-80 space-y-3 p-4">
-							<div>
-								<p className="font-semibold text-sm">
-									<Trans>Change Job Description</Trans>
-								</p>
-								<p className="mt-0.5 text-muted-foreground text-xs">
-									<Trans>Paste a job description to score against, or leave blank for a general ATS check.</Trans>
-								</p>
-							</div>
-							<Textarea
-								value={jobDescription}
-								onChange={(e) => setJobDescription(e.target.value)}
-								placeholder={t`Paste job description here (optional)...`}
-								rows={5}
-								className="resize-none text-xs"
-							/>
-							<Button onClick={handleScore} disabled={isScoring} size="sm" className="w-full gap-1.5">
-								{isScoring ? (
-									<>
-										<CircleNotchIcon className="size-3.5 animate-spin" />
-										<Trans>Scoring...</Trans>
-									</>
-								) : (
-									<>
-										<ArrowCounterClockwiseIcon className="size-3.5" />
-										<Trans>Re-score Resume</Trans>
-									</>
-								)}
-							</Button>
-						</PopoverContent>
-					</Popover>
-					<Button
-						size="sm"
-						onClick={() => navigate({ to: "/builder/$resumeId", params: { resumeId: params.resumeId } })}
-					>
-						<Trans>Open in Builder</Trans>
-					</Button>
+					</div>
 				</div>
 			</div>
 
@@ -361,7 +365,7 @@ function ATSResultPage() {
 						/* Pre-score: job description input */
 						<div className="flex flex-1 flex-col gap-3 p-4">
 							<div className="flex flex-col items-center gap-2 py-4 text-center">
-								<TargetIcon weight="duotone" className="size-10 text-muted-foreground/30" />
+								<TargetIcon weight="duotone" className={cn(ICON.hero, "text-muted-foreground/35")} />
 								<p className="text-muted-foreground text-xs">
 									<Trans>Score your resume to see results</Trans>
 								</p>
@@ -376,12 +380,12 @@ function ATSResultPage() {
 							<Button onClick={handleScore} disabled={isScoring} size="sm" className="w-full gap-1.5">
 								{isScoring ? (
 									<>
-										<CircleNotchIcon className="size-3.5 animate-spin" />
+										<CircleNotchIcon className={cn(ICON.btn, "animate-spin")} />
 										<Trans>Scoring...</Trans>
 									</>
 								) : (
 									<>
-										<MagnifyingGlassIcon className="size-3.5" />
+										<MagnifyingGlassIcon weight="duotone" className={ICON.btn} />
 										<Trans>Score My Resume</Trans>
 									</>
 								)}
@@ -436,7 +440,7 @@ function ATSResultPage() {
 							<div className="space-y-2">
 								<div className="flex items-center justify-between">
 									<h3 className="flex items-center gap-1.5 font-semibold text-blue-600 text-sm">
-										<LightningIcon weight="fill" className="size-3.5" />
+										<LightningIcon weight="duotone" className={ICON.dense} />
 										<Trans>How to Improve</Trans>
 									</h3>
 									{categorySuggestions.length > 0 && (
@@ -460,7 +464,7 @@ function ATSResultPage() {
 									</div>
 								) : selectedCategoryHasDeductions ? (
 									<div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-8 text-center">
-										<WarningCircleIcon weight="fill" className="size-8 text-amber-500" />
+										<WarningCircleIcon weight="duotone" className={cn(ICON.hero, "text-amber-500")} />
 										<div className="max-w-xs px-2">
 											<p className="font-semibold text-foreground text-sm">
 												{pendingInOtherCategories ? (
@@ -483,9 +487,9 @@ function ATSResultPage() {
 									</div>
 								) : (
 									<div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-8 text-center">
-										<CheckCircleIcon weight="fill" className="size-8 text-green-500" />
+										<CheckCircleIcon weight="duotone" className={cn(ICON.hero, "text-emerald-500")} />
 										<div>
-											<p className="font-semibold text-green-600 text-sm">
+											<p className="font-semibold text-emerald-600 text-sm">
 												<Trans>All suggestions addressed!</Trans>
 											</p>
 											<p className="mt-0.5 text-muted-foreground text-xs">
@@ -498,7 +502,7 @@ function ATSResultPage() {
 						</div>
 					) : isScoring ? (
 						<div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-							<CircleNotchIcon className="size-10 animate-spin text-muted-foreground/40" />
+							<CircleNotchIcon className={cn(ICON.hero, "animate-spin text-muted-foreground/40")} />
 							<div>
 								<p className="font-semibold text-muted-foreground text-sm">
 									<Trans>Analyzing your resume...</Trans>
@@ -510,7 +514,7 @@ function ATSResultPage() {
 						</div>
 					) : (
 						<div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
-							<TargetIcon weight="duotone" className="size-10 text-muted-foreground/30" />
+							<TargetIcon weight="duotone" className={cn(ICON.hero, "text-muted-foreground/35")} />
 							<p className="text-muted-foreground text-sm">
 								<Trans>Score your resume to see feedback here</Trans>
 							</p>
@@ -688,8 +692,8 @@ function KeywordsPanel({ matched, missing }: { matched: string[]; missing: strin
 		<div className="space-y-3 rounded-xl border bg-muted/20 p-4">
 			{matched.length > 0 && (
 				<div className="space-y-2">
-					<h4 className="flex items-center gap-1.5 font-semibold text-green-600 text-xs">
-						<CheckCircleIcon weight="fill" className="size-3.5" />
+					<h4 className="flex items-center gap-1.5 font-semibold text-emerald-600 text-xs">
+						<CheckCircleIcon weight="duotone" className={ICON.dense} />
 						<Trans>Matched Keywords</Trans>
 						<Badge variant="secondary" className="px-1 text-[9px]">
 							{matched.length}
@@ -710,7 +714,7 @@ function KeywordsPanel({ matched, missing }: { matched: string[]; missing: strin
 			{missing.length > 0 && (
 				<div className="space-y-2">
 					<h4 className="flex items-center gap-1.5 font-semibold text-red-600 text-xs">
-						<XCircleIcon weight="fill" className="size-3.5" />
+						<XCircleIcon weight="duotone" className={ICON.dense} />
 						<Trans>Missing Keywords</Trans>
 						<Badge variant="secondary" className="px-1 text-[9px]">
 							{missing.length}
@@ -778,8 +782,8 @@ function CategoryFeedbackPanel({ category, jdProvided }: { category: CategoryInf
 			{/* What's Good */}
 			{passedRules.length > 0 && (
 				<div className="space-y-1">
-					<p className="flex items-center gap-1.5 font-semibold text-green-600 text-xs">
-						<CheckCircleIcon weight="fill" className="size-3.5" />
+					<p className="flex items-center gap-1.5 font-semibold text-emerald-600 text-xs">
+						<CheckCircleIcon weight="duotone" className={ICON.dense} />
 						<Trans>What's Good</Trans>
 					</p>
 					{passedRules.map((rule) => (
@@ -787,7 +791,7 @@ function CategoryFeedbackPanel({ category, jdProvided }: { category: CategoryInf
 							key={rule.ruleId}
 							className="flex items-start gap-2 rounded-lg bg-green-50 px-3 py-2 dark:bg-green-950/20"
 						>
-							<CheckCircleIcon weight="fill" className="mt-0.5 size-3 shrink-0 text-green-500" />
+							<CheckCircleIcon weight="duotone" className={cn(ICON.dense, "mt-0.5 text-emerald-600")} />
 							<span className="text-green-800 text-xs dark:text-green-300">{rule.details || rule.ruleName}</span>
 						</div>
 					))}
@@ -798,7 +802,7 @@ function CategoryFeedbackPanel({ category, jdProvided }: { category: CategoryInf
 			{deductedRules.length > 0 && (
 				<div className="space-y-1">
 					<p className="flex items-center gap-1.5 font-semibold text-amber-600 text-xs">
-						<WarningCircleIcon weight="fill" className="size-3.5" />
+						<WarningCircleIcon weight="duotone" className={ICON.dense} />
 						<Trans>Needs Improvement</Trans>
 					</p>
 					{deductedRules.map((rule) => (
@@ -806,7 +810,7 @@ function CategoryFeedbackPanel({ category, jdProvided }: { category: CategoryInf
 							key={rule.ruleId}
 							className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-950/20"
 						>
-							<WarningIcon weight="fill" className="mt-0.5 size-3 shrink-0 text-amber-500" />
+							<WarningIcon weight="duotone" className={cn(ICON.dense, "mt-0.5 text-amber-600")} />
 							<div className="text-xs">
 								<span className="font-semibold text-amber-800 dark:text-amber-300">
 									-{rule.maxScore - rule.score} pts{" "}
@@ -864,7 +868,7 @@ function SuggestionCard({
 		<div className={cn("overflow-hidden rounded-xl border border-l-4", cfg.accent, cfg.bg)}>
 			<div className="px-3 py-3">
 				<div className="flex items-start gap-2">
-					<Icon weight="fill" className={cn("mt-0.5 size-3.5 shrink-0", cfg.color)} />
+					<Icon weight="duotone" className={cn(ICON.dense, "mt-0.5", cfg.color)} />
 					<div className="min-w-0 flex-1">
 						<p className="font-semibold text-[13px] leading-snug">{suggestion.title}</p>
 						<AtsSuggestionDescription suggestion={suggestion} className="mt-0.5" />
@@ -905,9 +909,9 @@ function SuggestionCard({
 								disabled={isApplying}
 							>
 								{isApplying ? (
-									<CircleNotchIcon className="size-3 animate-spin" />
+									<CircleNotchIcon className={cn(ICON.dense, "animate-spin")} />
 								) : (
-									<CheckCircleIcon className="size-3" />
+									<CheckCircleIcon weight="duotone" className={ICON.dense} />
 								)}
 								<Trans>Accept Change</Trans>
 							</Button>

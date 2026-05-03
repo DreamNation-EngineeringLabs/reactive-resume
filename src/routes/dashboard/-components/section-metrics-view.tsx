@@ -20,10 +20,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AdminAtsStats } from "@/components/ats/admin-ats-stats";
+import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
+import { uiControl, uiSurface } from "@/utils/ui-tokens";
 import { ChecklistCreator } from "./checklist-creator";
 import { ChecklistsTab } from "./checklists-tab";
 import { DashboardHeader } from "./header";
@@ -39,9 +41,6 @@ import { DetailStatCard, RateCard, ScoreCard, StatCard } from "./stat-card";
 import { StudentDetailPanel } from "./student-detail-panel";
 import type { StudentWithResumes } from "./student-resume-table";
 import { StudentResumeTable } from "./student-resume-table";
-
-const sectionsTabPackageDropdownClass =
-	"h-8 min-w-[160px] rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-50";
 
 export type DashboardTab = "overview" | "inbox" | "sections" | "students" | "checklists";
 
@@ -116,10 +115,8 @@ export function SectionMetricsView({
 		if (!dashboard) return { withResumes: 0, noResumes: 0, pendingReview: 0, evaluated: 0, submitted: 0 };
 		const students = dashboard.students;
 		const withResumes =
-			dashboard.aggregateStats.withPrimaryResume ??
-			students.filter((s) => s.resumes.length > 0).length;
-		const enrolled =
-			dashboard.aggregateStats.enrolledInResumeBuilder ?? students.length;
+			dashboard.aggregateStats.withPrimaryResume ?? students.filter((s) => s.resumes.length > 0).length;
+		const enrolled = dashboard.aggregateStats.enrolledInResumeBuilder ?? students.length;
 		const noResumes = enrolled - withResumes;
 		const pendingReview = students.filter((s) =>
 			s.resumes.some((r) => r.isSubmitted && r.evaluationScore === null),
@@ -205,7 +202,7 @@ export function SectionMetricsView({
 				<DashboardHeader icon={header.icon} title={header.title} />
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					{[...Array(4)].map((_, i) => (
-						<div key={i} className="rounded-2xl bg-white p-6 shadow-sm">
+						<div key={i} className={cn(uiSurface.card, "p-6")}>
 							<Skeleton className="mb-2 h-8 w-16" />
 							<Skeleton className="h-4 w-24" />
 						</div>
@@ -219,13 +216,13 @@ export function SectionMetricsView({
 
 	if (error) {
 		return (
-			<div className="flex flex-col items-center justify-center rounded-2xl border-2 border-slate-200 border-dashed bg-white/50 p-12 text-center">
+			<div className={cn("flex flex-col items-center justify-center border-2 p-12", uiSurface.empty)}>
 				<WarningIcon className="mb-4 size-12 text-amber-500 opacity-50" />
-				<h3 className="font-bold text-lg text-slate-900">{t`Unable to load dashboard data`}</h3>
-				<p className="mt-2 max-w-md text-slate-500 text-sm">
+				<h3 className="font-bold text-foreground text-lg">{t`Unable to load dashboard data`}</h3>
+				<p className="mt-2 max-w-md text-muted-foreground text-sm">
 					{t`There was an error fetching student data. This might be due to missing database columns. Please ensure 'npm run db:push' has been executed.`}
 				</p>
-				<p className="mt-4 rounded border border-slate-100 bg-slate-50 p-2 font-mono text-slate-400 text-xs">
+				<p className="mt-4 rounded-xl border border-border bg-muted p-2 font-mono text-muted-foreground text-xs">
 					{error.message}
 				</p>
 			</div>
@@ -236,14 +233,10 @@ export function SectionMetricsView({
 		<div className="space-y-6">
 			<DashboardHeader icon={header.icon} title={header.title}>
 				{activeTab === "checklists" && (
-					<button
-						type="button"
-						onClick={() => setShowChecklistCreator(true)}
-						className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-indigo-700"
-					>
+					<Button type="button" onClick={() => setShowChecklistCreator(true)} className="rounded-xl">
 						<ListChecksIcon weight="duotone" className="size-4" />
 						{t`New Checklist`}
-					</button>
+					</Button>
 				)}
 			</DashboardHeader>
 
@@ -252,7 +245,7 @@ export function SectionMetricsView({
 				<div className="space-y-6">
 					{/* Filter — above metrics */}
 					{(filterPackages.length > 0 || filterUnitTypes.length > 0) && (
-						<div className="rounded-2xl bg-white p-4 shadow-sm">
+						<div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
 							<OrgUnitFilter
 								packages={filterPackages}
 								unitTypes={filterUnitTypes}
@@ -288,8 +281,8 @@ export function SectionMetricsView({
 						/>
 						<StatCard
 							icon={<FileTextIcon weight="duotone" className="size-5" />}
-							iconBg="bg-indigo-50"
-							iconColor="text-indigo-600"
+							iconBg="bg-primary/10"
+							iconColor="text-primary"
 							label={t`With primary resume`}
 							value={dashboard.aggregateStats.withPrimaryResume ?? stats.totalResumes}
 							tooltip="How many enrolled students have created their primary resume document in the builder."
@@ -327,7 +320,7 @@ export function SectionMetricsView({
 					<div className="grid gap-6 lg:grid-cols-3">
 						{/* Left: compact breakdown counters */}
 						<div className="flex flex-col gap-3">
-							<h4 className="font-semibold text-slate-500 text-xs uppercase tracking-wider">{t`Submission Breakdown`}</h4>
+							<h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Submission Breakdown`}</h4>
 							<DetailStatCard
 								icon={<FileTextIcon weight="duotone" className="size-5 text-emerald-600" />}
 								iconBg="bg-emerald-50"
@@ -341,8 +334,8 @@ export function SectionMetricsView({
 								label={t`No Resume Yet`}
 							/>
 							<DetailStatCard
-								icon={<HourglassIcon weight="duotone" className="size-5 text-indigo-600" />}
-								iconBg="bg-indigo-50"
+								icon={<HourglassIcon weight="duotone" className="size-5 text-primary" />}
+								iconBg="bg-primary/10"
 								value={detailedStats.pendingReview}
 								label={t`Pending Review`}
 							/>
@@ -367,10 +360,10 @@ export function SectionMetricsView({
 
 					{/* Empty state */}
 					{!hasStudents && (
-						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+						<div className={cn("flex flex-col items-center justify-center py-12", uiSurface.empty)}>
 							<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
-							<p className="font-semibold text-slate-600">{t`No student data found`}</p>
-							<p className="mt-1 max-w-xs text-slate-400 text-sm">
+							<p className="font-semibold text-foreground">{t`No student data found`}</p>
+							<p className="mt-1 max-w-xs text-muted-foreground text-sm">
 								No students found for the assigned sections. Ensure eng-labs is configured and students are enrolled.
 							</p>
 						</div>
@@ -473,22 +466,22 @@ export function SectionMetricsView({
 			{activeTab === "sections" && !sectionId && (
 				<div className="space-y-6">
 					{/* Package filter + search */}
-					<div className="rounded-2xl bg-white p-4 shadow-sm">
+					<div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
 						<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 							{sectionsTabPackageOptions.length > 0 ? (
 								<div className="flex flex-wrap items-center gap-3">
-									<div className="flex items-center gap-1.5 text-slate-400 text-xs">
+									<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
 										<FunnelSimpleIcon weight="duotone" className="size-3.5" />
 										<span className="font-medium">{t`Filters`}</span>
 									</div>
 									<div className="flex items-center gap-2">
-										<span className="font-medium text-slate-500 text-xs">{t`Package`}</span>
+										<span className="font-medium text-muted-foreground text-xs">{t`Package`}</span>
 										<Combobox
 											options={sectionsTabPackageOptions}
 											value={filter.packageId ?? null}
 											placeholder={t`All packages`}
 											clearable={true}
-											buttonProps={{ className: sectionsTabPackageDropdownClass }}
+											buttonProps={{ className: uiControl.comboboxTrigger }}
 											onValueChange={(v) => {
 												const updatedFilter: OrgUnitFilterValue = {
 													packageId: v ?? undefined,
@@ -510,13 +503,13 @@ export function SectionMetricsView({
 									sectionsTabPackageOptions.length > 0 ? "lg:max-w-md" : "w-full",
 								)}
 							>
-								<MagnifyingGlassIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+								<MagnifyingGlassIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
 								<input
 									type="search"
 									placeholder={t`Search sections by name, package, or type...`}
 									value={sectionsTabSearch}
 									onChange={(e) => setSectionsTabSearch(e.target.value)}
-									className="h-10 w-full rounded-xl border-0 bg-slate-50 pr-4 pl-9 text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
+									className={uiControl.searchField}
 									autoComplete="off"
 								/>
 							</div>
@@ -525,8 +518,8 @@ export function SectionMetricsView({
 
 					{/* Level Selector */}
 					{filterUnitTypes.length > 1 && (
-						<div className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm">
-							<span className="font-bold text-slate-500 text-sm uppercase tracking-wider">{t`View by`}:</span>
+						<div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
+							<span className="font-bold text-muted-foreground text-sm uppercase tracking-wider">{t`View by`}:</span>
 							<div className="flex gap-2">
 								{filterUnitTypes.map((type) => (
 									<button
@@ -534,10 +527,10 @@ export function SectionMetricsView({
 										type="button"
 										onClick={() => setViewLevel(type)}
 										className={cn(
-											"rounded-lg px-3 py-1.5 font-bold text-xs transition-all",
+											"transition-[transform,colors] duration-200 active:scale-[0.97]",
 											viewLevel === type || (!viewLevel && type === "CLASS")
-												? "bg-indigo-600 text-white shadow-md"
-												: "bg-slate-100 text-slate-500 hover:bg-slate-200",
+												? uiControl.pillSelected
+												: uiControl.pillIdle,
 										)}
 									>
 										{type}
@@ -549,178 +542,181 @@ export function SectionMetricsView({
 
 					<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{sectionsTabDisplayRows.map((unit) => {
-								const { stats } = unit;
-								const totalResumes = stats.totalResumes;
-								const verifiedResumes = stats.evaluatedResumes;
+							const { stats } = unit;
+							const totalResumes = stats.totalResumes;
+							const verifiedResumes = stats.evaluatedResumes;
 
-								const sectionStudents = dashboard?.students.filter((s) => s.sectionId === unit.id) || [];
+							const sectionStudents = dashboard?.students.filter((s) => s.sectionId === unit.id) || [];
 
-								// Faculty: resumes eligible to submit to PO (FACULTY_VERIFIED or FINALIZED_BY_FACULTY for re-submission after PO feedback)
-								const pendingResumesList = sectionStudents.flatMap((s) =>
-									s.resumes
-										.filter((r) => r.reviewStatus === "FACULTY_VERIFIED" || r.reviewStatus === "FINALIZED_BY_FACULTY")
-										.map((r) => ({ id: r.id, studentId: s.engLabsId })),
-								);
+							// Faculty: resumes eligible to submit to PO (FACULTY_VERIFIED or FINALIZED_BY_FACULTY for re-submission after PO feedback)
+							const pendingResumesList = sectionStudents.flatMap((s) =>
+								s.resumes
+									.filter((r) => r.reviewStatus === "FACULTY_VERIFIED" || r.reviewStatus === "FINALIZED_BY_FACULTY")
+									.map((r) => ({ id: r.id, studentId: s.engLabsId })),
+							);
 
-								// States that are "in PO hands" — faculty cannot submit or change these
-								const PO_MANAGED = [
-									"SUBMITTED_TO_PO",
-									"PO_REVISION_REQUESTED",
-									"RESUBMITTED_TO_PO",
-									"PO_VERIFIED",
-									"APPROVED",
-								];
+							// States that are "in PO hands" — faculty cannot submit or change these
+							const PO_MANAGED = [
+								"SUBMITTED_TO_PO",
+								"PO_REVISION_REQUESTED",
+								"RESUBMITTED_TO_PO",
+								"PO_VERIFIED",
+								"APPROVED",
+							];
 
-								// Resumes currently in PO-managed states
-								const resumesInPOHands = sectionStudents.flatMap((s) =>
-									s.resumes.filter((r) => PO_MANAGED.includes(r.reviewStatus ?? "")),
-								);
-								const isInPOHands = resumesInPOHands.length > 0;
+							// Resumes currently in PO-managed states
+							const resumesInPOHands = sectionStudents.flatMap((s) =>
+								s.resumes.filter((r) => PO_MANAGED.includes(r.reviewStatus ?? "")),
+							);
+							const isInPOHands = resumesInPOHands.length > 0;
 
-								// PO: all resumes that are in any active PO-managed state (excluding APPROVED — those are done)
-								const poSubmittedResumes = sectionStudents.flatMap((s) =>
-									s.resumes
-										.filter((r) => PO_MANAGED.includes(r.reviewStatus ?? "") && r.reviewStatus !== "APPROVED")
-										.map((r) => ({ id: r.id, studentId: s.engLabsId })),
-								);
+							// PO: all resumes that are in any active PO-managed state (excluding APPROVED — those are done)
+							const poSubmittedResumes = sectionStudents.flatMap((s) =>
+								s.resumes
+									.filter((r) => PO_MANAGED.includes(r.reviewStatus ?? "") && r.reviewStatus !== "APPROVED")
+									.map((r) => ({ id: r.id, studentId: s.engLabsId })),
+							);
 
-								// Summary label for faculty when section is in PO hands
-								const poHandsStatusLabel = (() => {
-									if (resumesInPOHands.every((r) => r.reviewStatus === "APPROVED")) return "Approved";
-									if (resumesInPOHands.some((r) => r.reviewStatus === "PO_REVISION_REQUESTED"))
-										return "PO: Revision Requested";
-									if (resumesInPOHands.some((r) => r.reviewStatus === "SUBMITTED_TO_PO")) return "Awaiting PO Review";
-									return "With PO";
-								})();
+							// Summary label for faculty when section is in PO hands
+							const poHandsStatusLabel = (() => {
+								if (resumesInPOHands.every((r) => r.reviewStatus === "APPROVED")) return "Approved";
+								if (resumesInPOHands.some((r) => r.reviewStatus === "PO_REVISION_REQUESTED"))
+									return "PO: Revision Requested";
+								if (resumesInPOHands.some((r) => r.reviewStatus === "SUBMITTED_TO_PO")) return "Awaiting PO Review";
+								return "With PO";
+							})();
 
-								return (
-									<div
-										key={unit.id}
-										className="flex flex-col rounded-2xl bg-white p-5 shadow-sm transition-all hover:shadow-md"
-									>
-										<div className="mb-4 flex items-start justify-between gap-2">
-											<div className="min-w-0 flex-1">
-												<h3 className="line-clamp-1 font-bold text-lg text-slate-900">{unit.name}</h3>
-												{unit.packageName ? (
-													<p className="mt-0.5 line-clamp-1 text-[11px] text-slate-400">{unit.packageName}</p>
-												) : null}
-											</div>
-											<span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 font-bold text-[10px] text-slate-500 uppercase">
-												{unit.unitType}
+							return (
+								<div
+									key={unit.id}
+									className={cn(
+										uiSurface.card,
+										"flex flex-col p-5 transition-[box-shadow] duration-200 hover:shadow-md",
+									)}
+								>
+									<div className="mb-4 flex items-start justify-between gap-2">
+										<div className="min-w-0 flex-1">
+											<h3 className="line-clamp-1 font-bold text-foreground text-lg">{unit.name}</h3>
+											{unit.packageName ? (
+												<p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{unit.packageName}</p>
+											) : null}
+										</div>
+										<span className="shrink-0 rounded-lg bg-muted px-2 py-1 font-bold text-[10px] text-muted-foreground uppercase">
+											{unit.unitType}
+										</span>
+									</div>
+
+									<div className="mb-4 flex-1 space-y-3">
+										<div className="flex justify-between text-xs">
+											<span className="text-muted-foreground">{t`Verified Progress`}</span>
+											<span className="font-bold text-foreground">
+												{verifiedResumes} / {totalResumes}
 											</span>
 										</div>
-
-										<div className="mb-4 flex-1 space-y-3">
-											<div className="flex justify-between text-xs">
-												<span className="text-slate-500">{t`Verified Progress`}</span>
-												<span className="font-bold text-slate-900">
-													{verifiedResumes} / {totalResumes}
-												</span>
-											</div>
-											<div className="h-2 overflow-hidden rounded-full bg-slate-100">
-												<div
-													className="h-full bg-emerald-500 text-[8px] transition-all"
-													style={{ width: `${totalResumes > 0 ? (verifiedResumes / totalResumes) * 100 : 0}%` }}
-												/>
-											</div>
-											<div className="flex justify-between text-[10px] text-slate-400 italic">
-												<span>
-													{t`Total Students`}: {stats.totalStudents}
-												</span>
-												{stats.averageScore && (
-													<span>
-														{t`Avg Score`}: {stats.averageScore.toFixed(1)}
-													</span>
-												)}
-											</div>
-										</div>
-
-										{/* Review button */}
-										<button
-											type="button"
-											onClick={() => {
-												navigate({
-													search: (prev: any) => ({ ...prev, tab: "sections", sectionId: unit.id }),
-												});
-											}}
-											className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 py-2 font-semibold text-indigo-700 text-sm transition-all hover:bg-indigo-100 active:scale-[0.98]"
-										>
-											<UsersIcon weight="duotone" className="size-4" />
-											{t`Review Students`}
-											<ArrowRightIcon weight="bold" className="size-3" />
-										</button>
-
-										{scope === "faculty" ? (
-											<>
-												{/* Show PO feedback banner if the section was returned with notes */}
-												<POSectionFeedbackBanner sectionId={unit.id} tenantId={tenantId} />
-
-												{isInPOHands ? (
-													/* Read-only: section is currently with the PO — faculty cannot submit */
-													<div className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 py-2.5 font-bold text-orange-600 text-sm">
-														<CheckCircleIcon weight="fill" className="size-4" />
-														{poHandsStatusLabel}
-													</div>
-												) : (
-													<button
-														type="button"
-														disabled={pendingResumesList.length === 0 || bulkUpdateMutation.isPending}
-														onClick={() => {
-															bulkUpdateMutation.mutate({
-																resumes: pendingResumesList,
-																tenantId,
-																status: "SUBMITTED_TO_PO",
-															});
-														}}
-														className={cn(
-															"mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-bold text-sm shadow-sm transition-all active:scale-[0.98]",
-															pendingResumesList.length > 0
-																? "bg-indigo-600 text-white hover:bg-indigo-700"
-																: "cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-400",
-														)}
-													>
-														{pendingResumesList.length > 0 ? t`Submit Section to PO` : t`Verify All Resumes First`}
-													</button>
-												)}
-											</>
-										) : (
-											<POSectionCardActions
-												sectionId={unit.id}
-												sectionName={unit.name}
-												tenantId={tenantId}
-												stats={stats as any}
-												poSubmittedResumes={poSubmittedResumes}
-												sectionStudents={sectionStudents}
-												onOpenReviewDialog={() =>
-													setPoReviewDialog({
-														sectionId: unit.id,
-														sectionName: unit.name,
-														resumes: poSubmittedResumes,
-													})
-												}
-												isPending={bulkUpdateMutation.isPending}
+										<div className="h-2 overflow-hidden rounded-full bg-muted">
+											<div
+												className="h-full bg-emerald-500 text-[8px] transition-all"
+												style={{ width: `${totalResumes > 0 ? (verifiedResumes / totalResumes) * 100 : 0}%` }}
 											/>
-										)}
+										</div>
+										<div className="flex justify-between text-[10px] text-muted-foreground italic">
+											<span>
+												{t`Total Students`}: {stats.totalStudents}
+											</span>
+											{stats.averageScore && (
+												<span>
+													{t`Avg Score`}: {stats.averageScore.toFixed(1)}
+												</span>
+											)}
+										</div>
 									</div>
-								);
-							})}
+
+									{/* Review button */}
+									<button
+										type="button"
+										onClick={() => {
+											navigate({
+												search: (prev: any) => ({ ...prev, tab: "sections", sectionId: unit.id }),
+											});
+										}}
+										className={cn(uiControl.outlineButton, "mb-3 w-full py-2 font-semibold text-sm")}
+									>
+										<UsersIcon weight="duotone" className="size-4" />
+										{t`Review Students`}
+										<ArrowRightIcon weight="bold" className="size-3" />
+									</button>
+
+									{scope === "faculty" ? (
+										<>
+											{/* Show PO feedback banner if the section was returned with notes */}
+											<POSectionFeedbackBanner sectionId={unit.id} tenantId={tenantId} />
+
+											{isInPOHands ? (
+												/* Read-only: section is currently with the PO — faculty cannot submit */
+												<div className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 py-2.5 font-bold text-orange-600 text-sm">
+													<CheckCircleIcon weight="fill" className="size-4" />
+													{poHandsStatusLabel}
+												</div>
+											) : (
+												<button
+													type="button"
+													disabled={pendingResumesList.length === 0 || bulkUpdateMutation.isPending}
+													onClick={() => {
+														bulkUpdateMutation.mutate({
+															resumes: pendingResumesList,
+															tenantId,
+															status: "SUBMITTED_TO_PO",
+														});
+													}}
+													className={cn(
+														"mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 font-bold text-sm shadow-sm transition-[transform,colors] duration-200 active:scale-[0.97]",
+														pendingResumesList.length > 0
+															? "bg-primary text-primary-foreground hover:bg-primary/90"
+															: "cursor-not-allowed border border-border bg-muted text-muted-foreground",
+													)}
+												>
+													{pendingResumesList.length > 0 ? t`Submit Section to PO` : t`Verify All Resumes First`}
+												</button>
+											)}
+										</>
+									) : (
+										<POSectionCardActions
+											sectionId={unit.id}
+											sectionName={unit.name}
+											tenantId={tenantId}
+											stats={stats as any}
+											poSubmittedResumes={poSubmittedResumes}
+											sectionStudents={sectionStudents}
+											onOpenReviewDialog={() =>
+												setPoReviewDialog({
+													sectionId: unit.id,
+													sectionName: unit.name,
+													resumes: poSubmittedResumes,
+												})
+											}
+											isPending={bulkUpdateMutation.isPending}
+										/>
+									)}
+								</div>
+							);
+						})}
 					</div>
 
 					{sectionsTabDisplayRows.length === 0 && sectionsTabFilteredRows.length > 0 && (
-						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
-							<MagnifyingGlassIcon weight="duotone" className="mb-3 size-10 text-slate-300" />
-							<p className="font-semibold text-slate-600">{t`No sections match your search`}</p>
-							<p className="mt-1 max-w-sm text-slate-400 text-sm">
+						<div className={cn("flex flex-col items-center justify-center py-12", uiSurface.empty)}>
+							<MagnifyingGlassIcon weight="duotone" className="mb-3 size-10 text-muted-foreground/50" />
+							<p className="font-semibold text-foreground">{t`No sections match your search`}</p>
+							<p className="mt-1 max-w-sm text-muted-foreground text-sm">
 								{t`Try a different keyword or clear the search box.`}
 							</p>
 						</div>
 					)}
 
 					{sectionsTabFilteredRows.length === 0 && (dashboard?.sections ?? []).length > 0 && (
-						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+						<div className={cn("flex flex-col items-center justify-center py-12", uiSurface.empty)}>
 							<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
-							<p className="font-semibold text-slate-600">{t`No sections match the current filters`}</p>
-							<p className="mt-1 max-w-sm text-slate-400 text-sm">
+							<p className="font-semibold text-foreground">{t`No sections match the current filters`}</p>
+							<p className="mt-1 max-w-sm text-muted-foreground text-sm">
 								{t`Try clearing the package filter or pick a different unit type.`}
 							</p>
 						</div>
@@ -733,7 +729,7 @@ export function SectionMetricsView({
 				<div className="space-y-5">
 					{/* Filter */}
 					{(filterPackages.length > 0 || filterUnitTypes.length > 0) && (
-						<div className="rounded-2xl bg-white p-4 shadow-sm">
+						<div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
 							<OrgUnitFilter
 								packages={filterPackages}
 								unitTypes={filterUnitTypes}
@@ -758,9 +754,9 @@ export function SectionMetricsView({
 					)}
 
 					{!hasStudents ? (
-						<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+						<div className={cn("flex flex-col items-center justify-center py-12", uiSurface.empty)}>
 							<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
-							<p className="font-semibold text-slate-600">No student data found</p>
+							<p className="font-semibold text-foreground">No student data found</p>
 						</div>
 					) : (
 						<StudentResumeTable
@@ -847,9 +843,9 @@ function SubmissionDonutChart({
 
 	if (total === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm">
-				<h4 className="font-semibold text-slate-500 text-xs uppercase tracking-wider">Resume Submission</h4>
-				<p className="mt-6 text-slate-400 text-sm">No data available yet</p>
+			<div className={cn(uiSurface.card, "flex flex-col items-center justify-center p-6")}>
+				<h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Resume Submission</h4>
+				<p className="mt-6 text-muted-foreground text-sm">No data available yet</p>
 			</div>
 		);
 	}
@@ -864,8 +860,8 @@ function SubmissionDonutChart({
 	const notSubmittedArc = C - submittedArc;
 
 	return (
-		<div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm">
-			<h4 className="mb-2 font-semibold text-slate-500 text-xs uppercase tracking-wider">Resume Submission</h4>
+		<div className={cn(uiSurface.card, "flex flex-col p-6")}>
+			<h4 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Resume Submission</h4>
 			<div className="flex flex-1 flex-col items-center justify-center">
 				<div className="relative">
 					<svg width="170" height="170" viewBox="0 0 170 170">
@@ -899,18 +895,18 @@ function SubmissionDonutChart({
 							onMouseLeave={() => setHovered(null)}
 							style={{ transition: "opacity 0.3s" }}
 						/>
-						<text x="85" y="80" textAnchor="middle" className="fill-slate-900" fontSize="26" fontWeight="700">
+						<text x="85" y="80" textAnchor="middle" className="fill-foreground" fontSize="26" fontWeight="700">
 							{total}
 						</text>
-						<text x="85" y="98" textAnchor="middle" className="fill-slate-400" fontSize="11">
+						<text x="85" y="98" textAnchor="middle" className="fill-muted-foreground" fontSize="11">
 							students
 						</text>
 					</svg>
 
 					{hovered && (
 						<div
-							className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md px-2.5 py-1 text-white text-xs shadow-lg"
-							style={{ backgroundColor: "#1a3a5c", marginTop: -48 }}
+							className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-primary px-2.5 py-1 text-primary-foreground text-xs shadow-lg"
+							style={{ marginTop: -48 }}
 						>
 							{hovered === "submitted"
 								? `Submitted: ${submitted} (${submittedPct.toFixed(1)}%)`
@@ -922,11 +918,11 @@ function SubmissionDonutChart({
 			<div className="mt-auto flex items-center justify-center gap-5 pt-3 text-xs">
 				<div className="flex items-center gap-1.5">
 					<div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#1D9E75" }} />
-					<span className="text-slate-600">Submitted ({submitted})</span>
+					<span className="text-muted-foreground">Submitted ({submitted})</span>
 				</div>
 				<div className="flex items-center gap-1.5">
 					<div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#E24B4A" }} />
-					<span className="text-slate-600">Not Submitted ({notSubmitted})</span>
+					<span className="text-muted-foreground">Not Submitted ({notSubmitted})</span>
 				</div>
 			</div>
 		</div>
@@ -963,16 +959,16 @@ function ScoreDistributionChart({
 
 	if (evaluatedCount === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center rounded-2xl bg-white p-6 shadow-sm">
-				<h4 className="font-semibold text-slate-500 text-xs uppercase tracking-wider">Score Distribution</h4>
-				<p className="mt-6 text-slate-400 text-sm">No data available yet</p>
+			<div className={cn(uiSurface.card, "flex flex-col items-center justify-center p-6")}>
+				<h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Score Distribution</h4>
+				<p className="mt-6 text-muted-foreground text-sm">No data available yet</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm">
-			<h4 className="mb-2 font-semibold text-slate-500 text-xs uppercase tracking-wider">Score Distribution</h4>
+		<div className={cn(uiSurface.card, "flex flex-col p-6")}>
+			<h4 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Score Distribution</h4>
 			<div className="flex flex-1 items-end justify-center gap-2 pt-4 pb-2">
 				{buckets.map((b, i) => {
 					const heightPct = Math.max(6, (counts[i] / max) * 100);
@@ -983,12 +979,12 @@ function ScoreDistributionChart({
 							onMouseEnter={() => setHoveredIdx(i)}
 							onMouseLeave={() => setHoveredIdx(null)}
 						>
-							<span className="font-semibold text-[11px] text-slate-500 tabular-nums">
+							<span className="font-semibold text-[11px] text-muted-foreground tabular-nums">
 								{counts[i] > 0 ? counts[i] : ""}
 							</span>
 							<div className="flex w-full justify-center" style={{ height: 110 }}>
 								<div
-									className="w-full max-w-[36px] self-end rounded-t-md transition-all"
+									className="w-full max-w-[36px] self-end rounded-t-xl transition-all duration-200"
 									style={{
 										height: `${heightPct}%`,
 										backgroundColor: b.color,
@@ -996,12 +992,12 @@ function ScoreDistributionChart({
 									}}
 								/>
 							</div>
-							<span className="font-medium text-[11px] text-slate-500">{b.label}</span>
+							<span className="font-medium text-[11px] text-muted-foreground">{b.label}</span>
 						</div>
 					);
 				})}
 			</div>
-			<p className="mt-auto pt-2 text-center text-slate-400 text-xs">
+			<p className="mt-auto pt-2 text-center text-muted-foreground text-xs">
 				Based on {evaluatedCount} evaluated resume{evaluatedCount !== 1 ? "s" : ""}
 			</p>
 		</div>
@@ -1056,14 +1052,14 @@ function SectionStudentsPage({ section, students, onBack, onReview, onStudentCli
 				<button
 					type="button"
 					onClick={onBack}
-					className="flex items-center gap-2 font-semibold text-slate-500 text-sm transition-colors hover:text-indigo-600"
+					className="flex items-center gap-2 font-semibold text-muted-foreground text-sm transition-colors duration-200 hover:text-primary"
 				>
 					<ArrowLeftIcon weight="bold" className="size-4" />
 					{t`Back to Sections`}
 				</button>
-				<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+				<div className={cn("flex flex-col items-center justify-center py-12", uiSurface.empty)}>
 					<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
-					<p className="font-semibold text-slate-600">{t`Section not found`}</p>
+					<p className="font-semibold text-foreground">{t`Section not found`}</p>
 				</div>
 			</div>
 		);
@@ -1080,7 +1076,7 @@ function SectionStudentsPage({ section, students, onBack, onReview, onStudentCli
 			<button
 				type="button"
 				onClick={onBack}
-				className="flex items-center gap-2 font-semibold text-slate-500 text-sm transition-colors hover:text-indigo-600"
+				className="flex items-center gap-2 font-semibold text-muted-foreground text-sm transition-colors duration-200 hover:text-primary"
 			>
 				<ArrowLeftIcon weight="bold" className="size-4" />
 				{t`Back to Sections`}
@@ -1120,26 +1116,26 @@ function SectionStudentsPage({ section, students, onBack, onReview, onStudentCli
 			</div>
 
 			{/* Verified progress bar */}
-			<div className="rounded-2xl bg-white p-5 shadow-sm">
+			<div className={cn(uiSurface.card, "p-5")}>
 				<div className="mb-2 flex items-center justify-between">
 					<div>
-						<p className="font-bold text-[10px] text-slate-400 uppercase tracking-widest">{t`Verified Progress`}</p>
-						<p className="mt-1 font-bold text-slate-900 text-sm">
+						<p className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">{t`Verified Progress`}</p>
+						<p className="mt-1 font-bold text-foreground text-sm">
 							{stats.evaluatedResumes} / {stats.totalResumes} {t`resumes verified`}
 						</p>
 					</div>
 					<span className="font-bold text-emerald-600 text-sm tabular-nums">{verifiedPct.toFixed(0)}%</span>
 				</div>
-				<div className="h-2 overflow-hidden rounded-full bg-slate-100">
+				<div className="h-2 overflow-hidden rounded-full bg-muted">
 					<div className="h-full bg-emerald-500 transition-all" style={{ width: `${verifiedPct}%` }} />
 				</div>
 			</div>
 
 			{/* Students table */}
 			{students.length === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-2xl border border-slate-200 border-dashed bg-slate-50 py-12 text-center">
+				<div className={cn("flex flex-col items-center justify-center py-12", uiSurface.empty)}>
 					<WarningIcon weight="duotone" className="mb-3 size-10 text-amber-400" />
-					<p className="font-semibold text-slate-600">{t`No students in this section`}</p>
+					<p className="font-semibold text-foreground">{t`No students in this section`}</p>
 				</div>
 			) : (
 				<StudentResumeTable students={students} onReview={onReview} onStudentClick={onStudentClick} />
@@ -1154,12 +1150,12 @@ function SectionStudentsPage({ section, students, onBack, onReview, onStudentCli
 
 function AtsImprovementsSection() {
 	return (
-		<div className="space-y-3 rounded-2xl border bg-white p-5 shadow-sm">
+		<div className={cn(uiSurface.card, "space-y-3 p-5")}>
 			<div className="flex items-center gap-2">
-				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50">
+				<div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						className="size-4 text-green-600"
+						className="size-4 text-emerald-600"
 						viewBox="0 0 256 256"
 						fill="currentColor"
 					>
@@ -1167,8 +1163,8 @@ function AtsImprovementsSection() {
 					</svg>
 				</div>
 				<div>
-					<h3 className="font-semibold text-slate-900 text-sm">ATS Score Improvements</h3>
-					<p className="text-slate-500 text-xs">Platform-wide ATS scoring activity and improvement trends</p>
+					<h3 className="font-semibold text-foreground text-sm">ATS Score Improvements</h3>
+					<p className="text-muted-foreground text-xs">Platform-wide ATS scoring activity and improvement trends</p>
 				</div>
 			</div>
 			<AdminAtsStats />

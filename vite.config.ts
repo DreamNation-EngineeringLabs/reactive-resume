@@ -2,9 +2,39 @@ import { lingui } from "@lingui/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
-import { nitro } from "nitro/vite";
-import { defineConfig } from "vite";
+import { type Connect, defineConfig, type Plugin } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+
+/** Main app often links to `/api/auth/sso`; this app is mounted at `base: /resume/`. */
+const LEGACY_SSO_PATH = "/api/auth/sso";
+const CANONICAL_SSO_PATH = "/resume/api/auth/sso";
+
+function mountSsoLegacyRedirect(middlewares: Connect.Server) {
+	middlewares.use((req, res, next) => {
+		const raw = req.url ?? "";
+		const pathOnly = raw.split(/[?#]/)[0] ?? "";
+		if (pathOnly !== LEGACY_SSO_PATH) {
+			next();
+			return;
+		}
+		const query = raw.includes("?") ? raw.slice(raw.indexOf("?")).split("#")[0] : "";
+		res.statusCode = 302;
+		res.setHeader("Location", `${CANONICAL_SSO_PATH}${query}`);
+		res.end();
+	});
+}
+
+function ssoLegacyPathRedirectPlugin(): Plugin {
+	return {
+		name: "sso-legacy-path-redirect",
+		configureServer(server) {
+			mountSsoLegacyRedirect(server.middlewares);
+		},
+		configurePreviewServer(server) {
+			mountSsoLegacyRedirect(server.middlewares);
+		},
+	};
+}
 
 const config = defineConfig({
 	base: "/resume/",
@@ -35,10 +65,10 @@ const config = defineConfig({
 	},
 
 	plugins: [
+		ssoLegacyPathRedirectPlugin(),
 		lingui(),
 		tailwindcss(),
-		nitro({ baseURL: "/resume" }),
-		tanstackStart({ router: { semicolons: true, quoteStyle: "double" } }),
+		tanstackStart({ router: { semicolons: true, quoteStyle: "double", basepath: "/resume" } }),
 		viteReact({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }),
 		VitePWA({
 			outDir: "public",

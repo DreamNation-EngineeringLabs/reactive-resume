@@ -29,7 +29,7 @@ function InfoTooltip({ text }: { text: string }) {
 			<button
 				ref={triggerRef}
 				type="button"
-				className="flex items-center justify-center rounded-full p-0.5 text-slate-300 transition-colors hover:text-slate-500"
+				className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-colors duration-200 hover:text-foreground"
 				onMouseEnter={() => setVisible(true)}
 				onMouseLeave={() => setVisible(false)}
 				onFocus={() => setVisible(true)}
@@ -45,28 +45,15 @@ function InfoTooltip({ text }: { text: string }) {
 						className="pointer-events-none fixed z-[9999]"
 						style={{ top: pos.top, left: pos.left, width: 220, transform: "translateY(-100%)" }}
 					>
-						<div
-							className="rounded-md text-left text-white leading-relaxed shadow-lg"
-							style={{
-								backgroundColor: "#1a3a5c",
-								borderRadius: 6,
-								padding: "8px 10px",
-								fontSize: 12,
-								lineHeight: 1.5,
-							}}
-						>
-							{text}
+						<div className="relative">
+							<div className="rounded-lg bg-primary px-2.5 py-2 text-left text-primary-foreground text-xs leading-relaxed shadow-lg">
+								{text}
+							</div>
+							<div
+								className="absolute top-full right-3 h-0 w-0 border-x-[5px] border-x-transparent border-t-[5px] border-t-primary"
+								aria-hidden
+							/>
 						</div>
-						<div
-							className="absolute right-2"
-							style={{
-								width: 0,
-								height: 0,
-								borderLeft: "5px solid transparent",
-								borderRight: "5px solid transparent",
-								borderTop: "5px solid #1a3a5c",
-							}}
-						/>
 					</div>,
 					document.body,
 				)}
@@ -87,13 +74,13 @@ type StatCardProps = {
 
 export function StatCard({ icon, iconBg, iconColor, label, value, tooltip }: StatCardProps) {
 	return (
-		<div className="relative rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5">
+		<div className="relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md">
 			<div className="mb-3 flex items-center justify-between">
 				<div className={cn("flex h-9 w-9 items-center justify-center rounded-xl", iconBg, iconColor)}>{icon}</div>
 				{tooltip && <InfoTooltip text={tooltip} />}
 			</div>
-			<p className="font-medium text-[10px] text-slate-400 uppercase tracking-widest">{label}</p>
-			<p className="mt-0.5 font-bold text-2xl text-slate-900">{value}</p>
+			<p className="font-medium text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
+			<p className="mt-0.5 font-bold text-2xl text-foreground">{value}</p>
 		</div>
 	);
 }
@@ -110,12 +97,12 @@ type CompletionRateCardProps = {
 
 export function CompletionRateCard({ icon, iconBg, iconColor, label, value }: CompletionRateCardProps) {
 	return (
-		<div className="relative rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5">
+		<div className="relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md">
 			<div className={cn("mb-3 flex h-9 w-9 items-center justify-center rounded-xl", iconBg, iconColor)}>{icon}</div>
-			<p className="font-medium text-[10px] text-slate-400 uppercase tracking-widest">{label}</p>
-			<p className="mt-0.5 font-bold text-2xl text-slate-900">{value}%</p>
-			<div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-100">
-				<div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${value}%` }} />
+			<p className="font-medium text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
+			<p className="mt-0.5 font-bold text-2xl text-foreground">{value}%</p>
+			<div className="mt-3 h-1 overflow-hidden rounded-full bg-muted">
+				<div className="h-full rounded-full bg-blue-500 transition-all duration-200" style={{ width: `${value}%` }} />
 			</div>
 		</div>
 	);
@@ -137,15 +124,18 @@ export function RateCard({ icon, iconBg, iconColor, label, value, tooltip }: Rat
 	const textColor = value > 75 ? "text-emerald-600" : value >= 25 ? "text-amber-600" : "text-rose-600";
 
 	return (
-		<div className="relative rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5">
+		<div className="relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md">
 			<div className="mb-3 flex items-center justify-between">
 				<div className={cn("flex h-9 w-9 items-center justify-center rounded-xl", iconBg, iconColor)}>{icon}</div>
 				{tooltip && <InfoTooltip text={tooltip} />}
 			</div>
-			<p className="font-medium text-[10px] text-slate-400 uppercase tracking-widest">{label}</p>
+			<p className="font-medium text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
 			<p className={cn("mt-0.5 font-bold text-2xl", textColor)}>{value.toFixed(1)}%</p>
-			<div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-100">
-				<div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${value}%` }} />
+			<div className="mt-3 h-1 overflow-hidden rounded-full bg-muted">
+				<div
+					className={cn("h-full rounded-full transition-all duration-200", barColor)}
+					style={{ width: `${value}%` }}
+				/>
 			</div>
 		</div>
 	);
@@ -164,18 +154,18 @@ type ScoreCardProps = {
 export function ScoreCard({ icon, iconBg, iconColor, label, value }: ScoreCardProps) {
 	if (value === null) {
 		return (
-			<div className="rounded-2xl bg-white p-5 shadow-sm">
+			<div className="rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm">
 				<div className={cn("mb-3 flex h-9 w-9 items-center justify-center rounded-xl", iconBg, iconColor)}>{icon}</div>
-				<p className="font-medium text-[10px] text-slate-400 uppercase tracking-widest">{label}</p>
-				<p className="mt-0.5 font-bold text-2xl text-slate-300">—</p>
+				<p className="font-medium text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
+				<p className="mt-0.5 font-bold text-2xl text-muted-foreground/50">—</p>
 			</div>
 		);
 	}
 
 	return (
-		<div className="relative rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5">
+		<div className="relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md">
 			<div className={cn("mb-3 flex h-9 w-9 items-center justify-center rounded-xl", iconBg, iconColor)}>{icon}</div>
-			<p className="font-medium text-[10px] text-slate-400 uppercase tracking-widest">{label}</p>
+			<p className="font-medium text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
 			<p className={cn("mt-0.5 font-bold text-2xl", getScoreColor(value))}>{value.toFixed(1)}/5</p>
 		</div>
 	);
@@ -192,11 +182,11 @@ type DetailStatCardProps = {
 
 export function DetailStatCard({ icon, iconBg, value, label }: DetailStatCardProps) {
 	return (
-		<div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
-			<div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", iconBg)}>{icon}</div>
+		<div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-card-foreground shadow-sm">
+			<div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-xl", iconBg)}>{icon}</div>
 			<div className="min-w-0">
-				<p className="font-bold text-lg text-slate-900 leading-none">{value}</p>
-				<p className="mt-0.5 text-[11px] text-slate-500">{label}</p>
+				<p className="font-bold text-foreground text-lg leading-none">{value}</p>
+				<p className="mt-0.5 text-[11px] text-muted-foreground">{label}</p>
 			</div>
 		</div>
 	);
