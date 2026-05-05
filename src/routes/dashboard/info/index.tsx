@@ -17,7 +17,6 @@ import {
 	TrashIcon,
 	TrophyIcon,
 	UserCircleIcon,
-	UserIcon,
 	UsersIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { orpc } from "@/integrations/orpc/client";
 import { defaultUserInfoData, type UserInfoData, userInfoDataSchema } from "@/schema/resume/user-info";
 import { generateId } from "@/utils/string";
-import { DashboardHeader } from "../-components/header";
+import { cn } from "@/utils/style";
 
 export const Route = createFileRoute("/dashboard/info/")({
 	component: RouteComponent,
@@ -74,52 +73,65 @@ function RouteComponent() {
 
 	if (isLoading) {
 		return (
-			<div className="space-y-8">
-				<DashboardHeader icon={UserIcon} title={t`My Info`} />
-				<div className="flex items-center justify-center py-12">
-					<p className="text-slate-400 text-sm">Loading...</p>
+			<div className="-m-10 md:-m-12 min-h-full bg-slate-50 p-10 md:p-12">
+				<div className="space-y-6">
+					<MasterProfileHeader isPending={false} onSave={() => undefined} />
+					<div className="flex items-center justify-center py-12">
+						<p className="text-slate-400 text-sm">Loading...</p>
+					</div>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6">
-			<DashboardHeader icon={UserIcon} title={t`My Info`}>
-				<Button onClick={form.handleSubmit(onSubmit)} disabled={isPending} size="sm" className="rounded-xl">
-					<FloppyDiskIcon className="mr-2" />
-					<Trans>Save</Trans>
-				</Button>
-			</DashboardHeader>
+		<div className="-m-10 md:-m-12 min-h-full bg-slate-50 p-10 md:p-12">
+			<div className="space-y-6">
+				<MasterProfileHeader isPending={isPending} onSave={form.handleSubmit(onSubmit)} />
 
-			<p className="text-slate-500 text-sm">
-				<Trans>
-					Add your details here once. When you create a new resume, this information will be used to generate a
-					tailored, ATS-friendly resume. Changes here won't affect existing resumes.
-				</Trans>
-			</p>
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+						<Accordion type="multiple" defaultValue={["basics"]} className="space-y-4">
+							<BasicsSection />
+							<SummarySection />
+							<ProfilesSection />
+							<ExperienceSection />
+							<EducationSection />
+							<ProjectsSection />
+							<SkillsSection />
+							<LanguagesSection />
+							<InterestsSection />
+							<AwardsSection />
+							<CertificationsSection />
+							<PublicationsSection />
+							<VolunteerSection />
+							<ReferencesSection />
+						</Accordion>
+					</form>
+				</Form>
+				<div className="h-50"></div>
+			</div>
+		</div>
+	);
+}
 
-			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-					<Accordion type="multiple" defaultValue={["basics"]} className="space-y-3">
-						<BasicsSection />
-						<SummarySection />
-						<ProfilesSection />
-						<ExperienceSection />
-						<EducationSection />
-						<ProjectsSection />
-						<SkillsSection />
-						<LanguagesSection />
-						<InterestsSection />
-						<AwardsSection />
-						<CertificationsSection />
-						<PublicationsSection />
-						<VolunteerSection />
-						<ReferencesSection />
-					</Accordion>
-				</form>
-			</Form>
-			<div className="h-50"></div>
+// ─── Master Profile Header ────────────────────────────────────────────────────
+
+function MasterProfileHeader({ isPending, onSave }: { isPending: boolean; onSave: () => void }) {
+	return (
+		<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+			<div className="max-w-xl">
+				<h1 className="font-black text-3xl text-slate-900 tracking-tight">
+					<Trans>Master Profile</Trans>
+				</h1>
+				<p className="mt-1 font-medium text-slate-500 text-sm">
+					<Trans>Manage your core professional data to pre-fill future resumes and applications securely.</Trans>
+				</p>
+			</div>
+			<Button onClick={onSave} disabled={isPending} size="lg" className="shrink-0">
+				<FloppyDiskIcon weight="duotone" className="size-4" />
+				<Trans>Save Changes</Trans>
+			</Button>
 		</div>
 	);
 }
@@ -134,23 +146,40 @@ type SectionWrapperProps = {
 	children: React.ReactNode;
 };
 
+const FIELD_OVERRIDES = [
+	// Tiny uppercase labels with tight spacing to input
+	"[&_label]:mb-0 [&_label]:font-semibold [&_label]:text-[10.5px] [&_label]:text-slate-500 [&_label]:uppercase [&_label]:tracking-widest",
+	// Standalone Input (data-slot="input") — filled grey, no border
+	"**:data-[slot=input]:h-11 **:data-[slot=input]:rounded-lg **:data-[slot=input]:border-transparent **:data-[slot=input]:bg-slate-100 **:data-[slot=input]:font-medium **:data-[slot=input]:text-slate-900 **:data-[slot=input]:shadow-none",
+	"**:data-[slot=input]:hover:bg-slate-100/80",
+	"**:data-[slot=input]:focus-visible:bg-white **:data-[slot=input]:focus-visible:ring-2 **:data-[slot=input]:focus-visible:ring-primary/20",
+	// Standalone Textarea
+	"[&_textarea]:rounded-lg [&_textarea]:border-transparent [&_textarea]:bg-slate-100 [&_textarea]:font-medium [&_textarea]:text-slate-900 [&_textarea]:shadow-none",
+	"[&_textarea:hover]:bg-slate-100/80",
+	"[&_textarea:focus-visible]:bg-white [&_textarea:focus-visible]:ring-2 [&_textarea:focus-visible]:ring-primary/20",
+	// URLInput wrapper (InputGroup) — becomes the filled container; its inner input stays transparent (default)
+	"**:data-[slot=input-group]:h-11 **:data-[slot=input-group]:rounded-lg **:data-[slot=input-group]:border-transparent **:data-[slot=input-group]:bg-slate-100 **:data-[slot=input-group]:shadow-none",
+	"**:data-[slot=input-group]:focus-within:bg-white **:data-[slot=input-group]:focus-within:ring-2 **:data-[slot=input-group]:focus-within:ring-primary/20",
+].join(" ");
+
 function SectionWrapper({ value, icon, title, count, children }: SectionWrapperProps) {
 	return (
-		<AccordionItem value={value} className="rounded-2xl border-0 bg-white px-5 shadow-sm">
-			<AccordionTrigger className="hover:no-underline">
+		<AccordionItem
+			value={value}
+			className="rounded-2xl border border-slate-200/60 bg-white px-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_1px_3px_rgba(15,23,42,0.03)] transition-shadow hover:shadow-[0_4px_12px_rgba(15,23,42,0.06)]"
+		>
+			<AccordionTrigger className="py-5 hover:no-underline">
 				<div className="flex items-center gap-x-3">
-					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-						{icon}
-					</div>
-					<span className="font-semibold text-slate-900">{title}</span>
+					<div className="flex size-7 shrink-0 items-center justify-center text-primary">{icon}</div>
+					<span className="font-bold text-base text-slate-900">{title}</span>
 					{count !== undefined && count > 0 && (
-						<span className="rounded-full bg-indigo-100 px-2 py-0.5 font-semibold text-indigo-600 text-xs">
+						<span className="rounded-full bg-primary/10 px-2 py-0.5 font-bold text-[10px] text-primary uppercase tracking-wider">
 							{count}
 						</span>
 					)}
 				</div>
 			</AccordionTrigger>
-			<AccordionContent className="pt-2 pb-5">{children}</AccordionContent>
+			<AccordionContent className={cn("pb-6", FIELD_OVERRIDES)}>{children}</AccordionContent>
 		</AccordionItem>
 	);
 }
@@ -262,20 +291,24 @@ function BasicsSection() {
 
 function SummarySection() {
 	const form = useFormContext<UserInfoData>();
+	const summary = form.watch("summary") ?? "";
+	const charCount = summary.replace(/<[^>]*>/g, "").length;
 
 	return (
-		<SectionWrapper value="summary" icon={<ChatCircleIcon className="size-5" />} title={t`Summary`}>
+		<SectionWrapper value="summary" icon={<ChatCircleIcon className="size-5" />} title={t`Professional Summary`}>
 			<FormField
 				control={form.control}
 				name="summary"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>
-							<Trans>Professional Summary</Trans>
-						</FormLabel>
 						<FormControl>
 							<RichInput value={field.value} onChange={field.onChange} />
 						</FormControl>
+						<div className="flex justify-end pt-1">
+							<span className="text-[11px] text-slate-400 tabular-nums">
+								{charCount} <Trans>characters</Trans>
+							</span>
+						</div>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -294,12 +327,15 @@ function ProfilesSection() {
 		<SectionWrapper value="profiles" icon={<GlobeIcon className="size-5" />} title={t`Profiles`} count={fields.length}>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -352,8 +388,9 @@ function ProfilesSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -389,12 +426,15 @@ function ExperienceSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -489,8 +529,9 @@ function ExperienceSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -528,12 +569,15 @@ function EducationSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -656,8 +700,9 @@ function EducationSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -692,12 +737,15 @@ function ProjectsSection() {
 		<SectionWrapper value="projects" icon={<CodeIcon className="size-5" />} title={t`Projects`} count={fields.length}>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -764,8 +812,9 @@ function ProjectsSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -796,12 +845,15 @@ function SkillsSection() {
 		<SectionWrapper value="skills" icon={<LightbulbIcon className="size-5" />} title={t`Skills`} count={fields.length}>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -840,8 +892,9 @@ function SkillsSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -878,12 +931,15 @@ function LanguagesSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -922,8 +978,9 @@ function LanguagesSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -958,12 +1015,15 @@ function InterestsSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -986,8 +1046,9 @@ function InterestsSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -1022,12 +1083,15 @@ function AwardsSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1108,8 +1172,9 @@ function AwardsSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -1146,12 +1211,15 @@ function CertificationsSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1232,8 +1300,9 @@ function CertificationsSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -1270,12 +1339,15 @@ function PublicationsSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1356,8 +1428,9 @@ function PublicationsSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -1394,12 +1467,15 @@ function VolunteerSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1480,8 +1556,9 @@ function VolunteerSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),
@@ -1518,12 +1595,15 @@ function ReferencesSection() {
 		>
 			<div className="space-y-4">
 				{fields.map((field, index) => (
-					<div key={field.id} className="relative space-y-3 rounded-lg border p-4">
+					<div
+						key={field.id}
+						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+					>
 						<Button
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="absolute top-2 right-2 size-7"
+							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1604,8 +1684,9 @@ function ReferencesSection() {
 				))}
 				<Button
 					type="button"
-					variant="outline"
+					variant="ghost"
 					size="sm"
+					className="h-auto justify-start p-0 font-semibold text-primary hover:bg-transparent hover:text-primary/80"
 					onClick={() =>
 						append({
 							id: generateId(),

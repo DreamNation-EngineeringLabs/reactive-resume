@@ -1,87 +1,133 @@
+import { FileText } from "lucide-react";
 import type { RouterOutput } from "@/integrations/orpc/client";
 import type { ResumeData, SectionItem } from "@/schema/resume/data";
 
 type Resume = RouterOutput["resume"]["list"][number];
 
-export function MiniResumePreview({ resume }: { resume: Resume }) {
-	const data = resume.data as unknown as ResumeData;
-	const template = data?.metadata?.template ?? "onyx";
-	const resumeName = resume.name;
-	const templateColors: Record<string, { header: string; accent: string }> = {
-		azurill: { header: "bg-blue-600", accent: "text-blue-600" },
-		bronzor: { header: "bg-slate-600", accent: "text-slate-600" },
-		chikorita: { header: "bg-green-600", accent: "text-green-600" },
-		ditgar: { header: "bg-purple-600", accent: "text-purple-600" },
-		ditto: { header: "bg-pink-600", accent: "text-pink-600" },
-		gengar: { header: "bg-indigo-600", accent: "text-indigo-600" },
-		glalie: { header: "bg-cyan-600", accent: "text-cyan-600" },
-		kakuna: { header: "bg-yellow-600", accent: "text-yellow-600" },
-		lapras: { header: "bg-blue-500", accent: "text-blue-500" },
-		leafish: { header: "bg-emerald-600", accent: "text-emerald-600" },
-		onyx: { header: "bg-slate-700", accent: "text-slate-700" },
-		pikachu: { header: "bg-amber-500", accent: "text-amber-500" },
-		rhyhorn: { header: "bg-orange-600", accent: "text-orange-600" },
-	};
+function stripHtml(input?: string) {
+	if (!input) return "";
+	return input.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
 
-	const colors = templateColors[template] || templateColors.onyx;
+export function MiniResumePreview({ resume }: { resume: Resume }) {
+	const data = resume.data as unknown as ResumeData | undefined;
+	const basics = data?.basics;
+	const sections = data?.sections;
+
+	const experienceItems = (sections?.experience?.items ?? []) as SectionItem<"experience">[];
+	const educationItems = (sections?.education?.items ?? []) as SectionItem<"education">[];
+	const projectItems = (sections?.projects?.items ?? []) as SectionItem<"projects">[];
+	const skillItems = (sections?.skills?.items ?? []) as SectionItem<"skills">[];
+
+	const totalItems =
+		experienceItems.length + educationItems.length + projectItems.length + skillItems.length;
+
+	const hasName = Boolean(basics?.name?.trim());
+	const isEmpty = !hasName && totalItems === 0;
+
+	if (isEmpty) {
+		return (
+			<div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-white text-slate-300">
+				<FileText strokeWidth={1.5} className="size-12" />
+				<p className="font-semibold text-[11px] text-slate-400 uppercase tracking-wider">In Progress</p>
+			</div>
+		);
+	}
+
+	const displayName = basics?.name?.trim() || resume.name;
+	const headline = basics?.headline?.trim();
 
 	return (
-		<div className="flex h-full flex-col bg-white text-slate-900">
-			{/* Colored Header Bar - 25% of card height */}
-			<div
-				className={`${colors.header} flex flex-col items-center justify-center px-5 py-6 text-white`}
-				style={{ height: "25%" }}
-			>
-				<h3 className="line-clamp-3 text-center font-bold text-lg leading-tight">{resumeName}</h3>
+		<div className="flex h-full flex-col bg-white px-5 pt-5 pb-3 font-serif text-[8px] text-slate-700 leading-tight">
+			{/* Header */}
+			<div className="border-slate-200 border-b pb-2.5">
+				<h3 className="line-clamp-2 font-bold text-[13px] text-slate-900 leading-tight tracking-tight">
+					{displayName}
+				</h3>
+				{headline && <p className="mt-0.5 line-clamp-1 text-[9px] text-slate-500">{headline}</p>}
 			</div>
 
-			{/* Body Content */}
-			<div className="flex flex-1 flex-col overflow-hidden px-4 py-3 text-xs">
-				{/* Experience Section */}
-				{data?.sections?.experience?.items && data.sections.experience.items.length > 0 && (
-					<div className="mb-2">
-						<p className={`${colors.accent} mb-1 font-bold text-xs uppercase tracking-wide`}>Experience</p>
-						{data.sections.experience.items.slice(0, 1).map((exp: SectionItem<"experience">, i: number) => (
-							<div key={i} className="space-y-0.5">
-								<p className="line-clamp-1 font-semibold text-slate-900">{exp.position || exp.company}</p>
-								<p className="line-clamp-1 text-slate-500">{exp.company}</p>
-							</div>
+			<div className="mt-2.5 flex flex-1 flex-col gap-2 overflow-hidden">
+				{experienceItems.length > 0 && (
+					<Section title="Experience">
+						{experienceItems.slice(0, 2).map((item, i) => (
+							<Line
+								key={i}
+								primary={item.position || item.company}
+								secondary={item.position && item.company ? item.company : item.period}
+								tertiary={stripHtml(item.description)}
+							/>
 						))}
-					</div>
+					</Section>
 				)}
 
-				{/* Education Section */}
-				{data?.sections?.education?.items && data.sections.education.items.length > 0 && (
-					<div className="mb-2">
-						<p className={`${colors.accent} mb-1 font-bold text-xs uppercase tracking-wide`}>Education</p>
-						{data.sections.education.items.slice(0, 1).map((edu: SectionItem<"education">, i: number) => (
-							<div key={i} className="space-y-0.5">
-								<p className="line-clamp-1 font-semibold text-slate-900">
-									{edu.degree ? `${edu.degree} in ${edu.area}` : edu.area}
-								</p>
-								<p className="line-clamp-1 text-slate-500">{edu.school}</p>
-							</div>
+				{educationItems.length > 0 && (
+					<Section title="Education">
+						{educationItems.slice(0, 1).map((item, i) => (
+							<Line
+								key={i}
+								primary={item.degree ? `${item.degree}${item.area ? `, ${item.area}` : ""}` : item.area || item.school}
+								secondary={item.degree || item.area ? item.school : item.period}
+							/>
 						))}
-					</div>
+					</Section>
 				)}
 
-				{/* Skills Section - Auto margin to bottom */}
-				{data?.sections?.skills?.items && data.sections.skills.items.length > 0 && (
+				{projectItems.length > 0 && experienceItems.length + educationItems.length < 2 && (
+					<Section title="Projects">
+						{projectItems.slice(0, 1).map((item, i) => (
+							<Line key={i} primary={item.name} secondary={stripHtml(item.description)} />
+						))}
+					</Section>
+				)}
+
+				{skillItems.length > 0 && (
 					<div className="mt-auto">
-						<p className={`${colors.accent} mb-1 font-bold text-xs uppercase tracking-wide`}>Skills</p>
-						<div className="flex flex-wrap gap-1">
-							{data.sections.skills.items.slice(0, 4).map((skill: SectionItem<"skills">, i: number) => (
-								<span
-									key={i}
-									className={`truncate rounded px-1.5 py-0.5 ${colors.header} font-medium text-white text-xs`}
-								>
-									{skill.name}
-								</span>
-							))}
-						</div>
+						<SectionTitle>Skills</SectionTitle>
+						<p className="line-clamp-2 text-[8.5px] text-slate-600">
+							{skillItems
+								.slice(0, 6)
+								.map((skill) => skill.name)
+								.filter(Boolean)
+								.join(" • ")}
+						</p>
 					</div>
 				)}
 			</div>
+		</div>
+	);
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+	return (
+		<div>
+			<SectionTitle>{title}</SectionTitle>
+			<div className="space-y-1">{children}</div>
+		</div>
+	);
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+	return (
+		<p className="mb-1 font-bold text-[7.5px] text-slate-400 uppercase tracking-[0.12em]">{children}</p>
+	);
+}
+
+function Line({
+	primary,
+	secondary,
+	tertiary,
+}: {
+	primary?: string;
+	secondary?: string;
+	tertiary?: string;
+}) {
+	if (!primary && !secondary) return null;
+	return (
+		<div className="space-y-0.5">
+			{primary && <p className="line-clamp-1 font-semibold text-[9px] text-slate-800">{primary}</p>}
+			{secondary && <p className="line-clamp-1 text-[8.5px] text-slate-500">{secondary}</p>}
+			{tertiary && <p className="line-clamp-2 text-[8px] text-slate-400 leading-snug">{tertiary}</p>}
 		</div>
 	);
 }

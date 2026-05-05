@@ -2,19 +2,21 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg, t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import {
-	ArrowLeftIcon,
-	BuildingsIcon,
-	ChartBarIcon,
-	ChartLineIcon,
-	CheckIcon,
-	ListChecksIcon,
-	ReadCvLogoIcon,
-	SignOutIcon,
-	TargetIcon,
-	TrayIcon,
-	UserIcon,
-	UsersIcon,
-} from "@phosphor-icons/react";
+	ArrowLeft,
+	BarChart3,
+	Building2,
+	Check,
+	ChevronsLeft,
+	ChevronsRight,
+	FileText,
+	Inbox,
+	LineChart,
+	ListChecks,
+	LogOut,
+	Target,
+	User,
+	Users,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -61,22 +63,22 @@ type SidebarItem = {
 
 const appSidebarItems: SidebarItem[] = [
 	{
-		icon: <ReadCvLogoIcon weight="duotone" />,
+		icon: <FileText strokeWidth={2} />,
 		label: msg`Resumes`,
 		href: "/dashboard/resumes",
 		iconBg: "bg-indigo-50",
 		iconColor: "text-indigo-600",
 	},
 	{
-		icon: <UserIcon weight="duotone" />,
+		icon: <User strokeWidth={2} />,
 		label: msg`My Info`,
 		href: "/dashboard/info",
 		iconBg: "bg-violet-50",
 		iconColor: "text-violet-600",
 	},
 	{
-		icon: <TargetIcon weight="duotone" />,
-		label: msg`ATS Score`,
+		icon: <Target strokeWidth={2} />,
+		label: msg`ATS Analysis`,
 		href: "/dashboard/ats-score",
 		iconBg: "bg-emerald-50",
 		iconColor: "text-emerald-600",
@@ -85,7 +87,7 @@ const appSidebarItems: SidebarItem[] = [
 
 const learnerSidebarItems: SidebarItem[] = [
 	{
-		icon: <ChartLineIcon weight="duotone" />,
+		icon: <LineChart strokeWidth={2} />,
 		label: msg`Feedback Summary`,
 		href: "/dashboard/feedback",
 		iconBg: "bg-sky-50",
@@ -103,7 +105,7 @@ function staffDashboardItems(role: string): SidebarItem[] {
 
 	const items: SidebarItem[] = [
 		{
-			icon: <ChartBarIcon weight="duotone" />,
+			icon: <BarChart3 strokeWidth={2} />,
 			label: msg`Overview`,
 			href: baseHref,
 			search: { tab: "overview" },
@@ -115,7 +117,7 @@ function staffDashboardItems(role: string): SidebarItem[] {
 	// Faculty and Placement Officer get a dedicated Inbox
 	if (role === "INSTRUCTOR" || role === "PLACEMENT_OFFICER") {
 		items.push({
-			icon: <TrayIcon weight="duotone" />,
+			icon: <Inbox strokeWidth={2} />,
 			label: msg`Inbox`,
 			href: baseHref,
 			search: { tab: "inbox" },
@@ -126,7 +128,7 @@ function staffDashboardItems(role: string): SidebarItem[] {
 
 	items.push(
 		{
-			icon: <BuildingsIcon weight="duotone" />,
+			icon: <Building2 strokeWidth={2} />,
 			label: msg`Sections`,
 			href: baseHref,
 			search: { tab: "sections" },
@@ -134,7 +136,7 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			iconColor: "text-blue-600",
 		},
 		{
-			icon: <UsersIcon weight="duotone" />,
+			icon: <Users strokeWidth={2} />,
 			label: msg`Students`,
 			href: baseHref,
 			search: { tab: "students" },
@@ -142,7 +144,7 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			iconColor: "text-violet-600",
 		},
 		{
-			icon: <ListChecksIcon weight="duotone" />,
+			icon: <ListChecks strokeWidth={2} />,
 			label: msg`Checklists`,
 			href: baseHref,
 			search: { tab: "checklists" },
@@ -286,15 +288,15 @@ function OrgUnitSwitcher({
 								)}
 							>
 								<div className="flex items-center gap-3">
-									<BuildingsIcon
-										weight={activeUnitId === section.id ? "fill" : "duotone"}
+									<Building2
+										strokeWidth={2}
 										className={cn("size-4", activeUnitId === section.id ? "text-white" : "text-slate-400")}
 									/>
 									<span className="truncate">{section.name}</span>
 								</div>
 								{activeUnitId === section.id && (
 									<div className="rounded-full bg-white/20 p-0.5">
-										<CheckIcon weight="bold" className="size-3 text-white" />
+										<Check strokeWidth={3} className="size-3 text-white" />
 									</div>
 								)}
 							</button>
@@ -307,7 +309,7 @@ function OrgUnitSwitcher({
 }
 
 export function DashboardSidebar() {
-	const { state } = useSidebarState();
+	const { state, toggleSidebar } = useSidebarState();
 	const isCollapsed = state === "collapsed";
 	const isMobile = useIsMobile();
 	const { data: session } = authClient.useSession();
@@ -350,7 +352,12 @@ export function DashboardSidebar() {
 	return (
 		<Sidebar variant="sidebar" collapsible="icon">
 			<SidebarHeader className="pb-2">
-				<div className="flex items-center gap-2 px-2 pt-2">
+				<div
+					className={cn(
+						"flex items-center gap-2 px-2 pt-2",
+						isCollapsed ? "justify-center" : "justify-between",
+					)}
+				>
 					<button type="button" onClick={handleLogoClick} className={isCollapsed ? "hidden" : ""}>
 						<img
 							className="my-3 w-40"
@@ -358,6 +365,19 @@ export function DashboardSidebar() {
 							src={`${import.meta.env.BASE_URL}images/polymath_with_logo.png`}
 							style={{ objectFit: "contain" }}
 						/>
+					</button>
+					<button
+						type="button"
+						onClick={toggleSidebar}
+						title={isCollapsed ? t`Expand sidebar` : t`Collapse sidebar`}
+						aria-label={isCollapsed ? t`Expand sidebar` : t`Collapse sidebar`}
+						className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-slate-200/70 bg-white/70 text-slate-500 shadow-sm transition-colors hover:border-primary/30 hover:bg-white hover:text-primary"
+					>
+						{isCollapsed ? (
+							<ChevronsRight strokeWidth={2} className="size-4" />
+						) : (
+							<ChevronsLeft strokeWidth={2} className="size-4" />
+						)}
 					</button>
 				</div>
 			</SidebarHeader>
@@ -411,7 +431,7 @@ export function DashboardSidebar() {
 												isCollapsed ? "size-4 text-slate-400" : "h-8 w-8 rounded-xl bg-primary/10 text-primary",
 											)}
 										>
-											<ArrowLeftIcon weight="duotone" className={isCollapsed ? "size-full" : "size-4"} />
+											<ArrowLeft strokeWidth={2} className={isCollapsed ? "size-full" : "size-4"} />
 										</div>
 										<span
 											className={cn(
@@ -487,7 +507,7 @@ export function DashboardSidebar() {
 											onClick={handleLogout}
 											className="flex cursor-pointer items-center gap-3 rounded-xl py-2.5 text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-600 focus:bg-rose-50 focus:text-rose-600"
 										>
-											<SignOutIcon weight="duotone" className="size-4" />
+											<LogOut strokeWidth={2} className="size-4" />
 											<span className="font-semibold">{t`Logout`}</span>
 										</DropdownMenuItem>
 									</div>

@@ -21,6 +21,7 @@ import { CreateReferenceDialog, UpdateReferenceDialog } from "./resume/sections/
 import { CreateSkillDialog, UpdateSkillDialog } from "./resume/sections/skill";
 import { CreateSummaryItemDialog, UpdateSummaryItemDialog } from "./resume/sections/summary-item";
 import { CreateVolunteerDialog, UpdateVolunteerDialog } from "./resume/sections/volunteer";
+import { TemplateBrowseDialog } from "./resume/template/browse";
 import { TemplateGalleryDialog } from "./resume/template/gallery";
 import { useDialogStore } from "./store";
 
@@ -37,6 +38,7 @@ export function DialogManager() {
 		.with({ type: "resume.duplicate" }, ({ data }) => <DuplicateResumeDialog data={data} />)
 		.with({ type: "resume.import" }, () => <ImportResumeDialog />)
 		.with({ type: "resume.template.gallery" }, () => <TemplateGalleryDialog />)
+		.with({ type: "resume.template.browse" }, () => <TemplateBrowseDialog />)
 		.with({ type: "resume.sections.profiles.create" }, ({ data }) => <CreateProfileDialog data={data} />)
 		.with({ type: "resume.sections.profiles.update" }, ({ data }) => <UpdateProfileDialog data={data} />)
 		.with({ type: "resume.sections.experience.create" }, ({ data }) => <CreateExperienceDialog data={data} />)

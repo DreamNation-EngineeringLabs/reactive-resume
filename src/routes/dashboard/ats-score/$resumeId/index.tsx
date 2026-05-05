@@ -216,7 +216,7 @@ function ATSResultPage() {
 					<div className="flex min-w-0 items-center gap-2">
 						<TargetIcon weight="duotone" className={cn(ICON.chrome, "text-muted-foreground")} />
 						<span className="truncate font-semibold text-base text-foreground leading-tight">
-							{resume?.name ?? t`ATS Score`}
+							{resume?.name ?? t`ATS Analysis`}
 						</span>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">

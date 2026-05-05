@@ -40,6 +40,7 @@ const dialogTypeSchema = z.discriminatedUnion("type", [
 		}),
 	}),
 	z.object({ type: z.literal("resume.template.gallery"), data: z.undefined() }),
+	z.object({ type: z.literal("resume.template.browse"), data: z.undefined() }),
 	z.object({
 		type: z.literal("resume.sections.profiles.create"),
 		data: z.object({ item: profileItemSchema.optional(), customSectionId: z.string().optional() }).optional(),
