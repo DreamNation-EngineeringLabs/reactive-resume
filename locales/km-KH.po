@@ -20,18 +20,18 @@ msgstr ""
 
 #. js-lingui-explicit-id
 #: src/routes/dashboard/resumes/index.tsx
-msgid "Last Updated"
-msgstr "បាន​ធ្វើបច្ចុប្បន្នភាព​ចុងក្រោយ​​នៅ​"
+#~ msgid "Last Updated"
+#~ msgstr "បាន​ធ្វើបច្ចុប្បន្នភាព​ចុងក្រោយ​​នៅ​"
 
 #. js-lingui-explicit-id
 #: src/routes/dashboard/resumes/index.tsx
-msgid "Created"
-msgstr "បាន​បង្កើត"
+#~ msgid "Created"
+#~ msgstr "បាន​បង្កើត"
 
 #. js-lingui-explicit-id
 #: src/routes/dashboard/resumes/index.tsx
-msgid "Name"
-msgstr "ឈ្មោះ"
+#~ msgid "Name"
+#~ msgstr "ឈ្មោះ"
 
 #: src/routes/_home/-sections/hero.tsx
 msgid "(opens in new tab)"
@@ -343,8 +343,8 @@ msgid "Add Volunteer Experience"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
-msgid "Add your details here once. When you create a new resume, this information will be used to generate a tailored, ATS-friendly resume. Changes here won't affect existing resumes."
-msgstr ""
+#~ msgid "Add your details here once. When you create a new resume, this information will be used to generate a tailored, ATS-friendly resume. Changes here won't affect existing resumes."
+#~ msgstr ""
 
 #: src/components/ai/chat.tsx
 msgid "Added"
@@ -355,8 +355,8 @@ msgid "Address All Fixes"
 msgstr ""
 
 #: src/routes/dashboard/admin/index.tsx
-msgid "Admin Metrics Dashboard"
-msgstr ""
+#~ msgid "Admin Metrics Dashboard"
+#~ msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Advanced"
@@ -387,6 +387,7 @@ msgid "All Approved"
 msgstr ""
 
 #: src/routes/dashboard/-components/org-unit-filter.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "All packages"
 msgstr ""
 
@@ -420,8 +421,8 @@ msgid "An unknown error occurred while importing your resume."
 msgstr "មានកំហុសមិនស្គាល់មួយបាន​កើតឡើង ខណៈពេល​កំពុង​នាំចូល​ប្រវត្តិរូប​របស់​អ្នក។"
 
 #: src/routes/dashboard/ats-score/index.tsx
-msgid "Analyze →"
-msgstr ""
+#~ msgid "Analyze →"
+#~ msgstr ""
 
 #: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Analyzing your resume..."
@@ -566,13 +567,16 @@ msgstr ""
 msgid "Aspect Ratio"
 msgstr "សមាមាត្រទ្រង់ទ្រាយ"
 
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/ats-score/$resumeId/index.tsx
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "ATS Analysis"
+msgstr ""
+
 #: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "ATS Checks"
 msgstr ""
 
-#: src/routes/dashboard/-components/sidebar.tsx
-#: src/routes/dashboard/ats-score/$resumeId/index.tsx
-#: src/routes/dashboard/ats-score/index.tsx
 #: src/utils/resume/section.tsx
 msgid "ATS Score"
 msgstr ""
@@ -607,6 +611,7 @@ msgstr ""
 #: src/routes/dashboard/-components/section-intelligence.tsx
 #: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/section-metrics-view.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "Avg Score"
 msgstr ""
 
@@ -628,8 +633,8 @@ msgid "Azerbaijani"
 msgstr "Azerbaijani"
 
 #: src/routes/dashboard/ats-score/$resumeId/index.tsx
-msgid "Back"
-msgstr ""
+#~ msgid "Back"
+#~ msgstr ""
 
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
@@ -639,6 +644,11 @@ msgstr ""
 #: src/routes/auth/verify-2fa.tsx
 msgid "Back to Login"
 msgstr "ត្រឡប់​ទៅ​ការចូល"
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Back to Sections"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/design.tsx
 msgid "Background Color"
@@ -687,9 +697,17 @@ msgstr "ទទឹង​គែម"
 msgid "Brevity"
 msgstr ""
 
+#: src/dialogs/resume/template/browse.tsx
+msgid "Browse Templates"
+msgstr ""
+
 #: src/components/command-palette/index.tsx
 msgid "Builder Command Palette"
 msgstr "បញ្ជី​ពាក្យ​បញ្ជា​របស់​កម្មវិធី​បង្កើត"
+
+#: src/dialogs/resume/template/browse.tsx
+msgid "Building your resume from My Info..."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Bulgarian"
@@ -744,6 +762,7 @@ msgstr "តើ​ខ្ញុំ​អាច​នាំចេញ​ប្រវ
 #: src/dialogs/resume/sections/summary-item.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
+#: src/dialogs/resume/template/browse.tsx
 #: src/hooks/use-prompt.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/sharing.tsx
 #: src/routes/dashboard/-components/po-section-review-dialog.tsx
@@ -814,6 +833,10 @@ msgstr ""
 msgid "Changes Summary"
 msgstr ""
 
+#: src/routes/dashboard/info/index.tsx
+msgid "characters"
+msgstr ""
+
 #: src/routes/auth/forgot-password.tsx
 msgid "Check your email for a link to reset your password."
 msgstr "ពិនិត្យ​អ៊ីមែល​របស់​អ្នក​សម្រាប់​តំណ​មួយ ដើម្បី​កំណត់​ពាក្យសម្ងាត់​ឡើងវិញ។"
@@ -822,6 +845,7 @@ msgstr "ពិនិត្យ​អ៊ីមែល​របស់​អ្នក
 msgid "Check your email for a link to verify your account."
 msgstr "ពិនិត្យ​អ៊ីមែល​របស់​អ្នក​សម្រាប់​តំណ​មួយ ដើម្បី​ផ្ទៀងផ្ទាត់​គណនី​របស់​អ្នក។"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/feedback/index.tsx
 msgid "Checklists"
@@ -863,6 +887,11 @@ msgstr "កូដ​ប្លុក"
 msgid "Collapse"
 msgstr ""
 
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Collapse sidebar"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/left/sections/custom.tsx
 #: src/routes/builder/$resumeId/-sidebar/left/shared/section-menu.tsx
 msgid "Columns"
@@ -880,6 +909,10 @@ msgstr "សហគមន៍"
 #: src/routes/dashboard/info/index.tsx
 msgid "Company"
 msgstr "ក្រុមហ៊ុន"
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Complete"
+msgstr ""
 
 #: src/routes/dashboard/review/$resumeId/index.tsx
 msgid "Complete at least one evaluation to start tracking changes."
@@ -941,6 +974,10 @@ msgstr "ចម្លង និង​រក្សាទុក​កូដ​ប�
 msgid "Copy Backup Codes"
 msgstr "ចម្លង​កូដ​បម្រុងទុក"
 
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Copy share link"
+msgstr ""
+
 #: src/dialogs/api-key/create.tsx
 msgid "Copy this secret key and use it in your applications to access your data."
 msgstr "ចម្លង​កូនសោ​សម្ងាត់​នេះ ហើយ​ប្រើ​វា​ក្នុង​កម្មវិធី​របស់​អ្នក ដើម្បី​ចូលដំណើរការ​ទិន្នន័យ​របស់​អ្នក។"
@@ -952,6 +989,10 @@ msgstr "ចម្លង URL"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Could not apply — re-score for fresh suggestions"
+msgstr ""
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Could not copy share link."
 msgstr ""
 
 #: src/utils/resume/section.tsx
@@ -1033,7 +1074,6 @@ msgstr "បង្កើត​យោង​ថ្មី"
 
 #: src/components/command-palette/pages/resumes.tsx
 #: src/dialogs/resume/index.tsx
-#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Create a new resume"
 msgstr "បង្កើត​ប្រវត្តិរូប​ថ្មី"
@@ -1070,6 +1110,14 @@ msgstr ""
 msgid "Create First Checklist"
 msgstr ""
 
+#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
+msgid "Create New"
+msgstr ""
+
+#: src/routes/dashboard/resumes/index.tsx
+msgid "Create New Resume"
+msgstr ""
+
 #: src/dialogs/api-key/create.tsx
 msgid "Creating your API key..."
 msgstr "កំពុង​បង្កើត​កូនសោ API របស់​អ្នក..."
@@ -1078,6 +1126,14 @@ msgstr "កំពុង​បង្កើត​កូនសោ API របស់�
 #: src/dialogs/resume/index.tsx
 msgid "Creating your resume..."
 msgstr "កំពុង​បង្កើត​ប្រវត្តិរូប​របស់​អ្នក..."
+
+#: src/routes/dashboard/-components/credit-usage-banner.tsx
+msgid "Credits"
+msgstr ""
+
+#: src/routes/dashboard/-components/credit-usage-banner.tsx
+msgid "Credits replenish at the start of each cycle."
+msgstr ""
 
 #: src/dialogs/auth/change-password.tsx
 msgid "Current Password"
@@ -1268,8 +1324,13 @@ msgstr "ទាញយក​ច្បាប់ចម្លង​មួយ​នៃ
 #~ msgstr "ទាញយក JSON"
 
 #: src/routes/builder/$resumeId/-components/toolbar.tsx
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
 msgid "Download PDF"
 msgstr "ទាញយក PDF"
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Download ready."
+msgstr ""
 
 #: src/routes/$username/$slug.tsx
 msgid "Downloading..."
@@ -1278,6 +1339,10 @@ msgstr "កំពុង​ទាញយក..."
 #: src/routes/builder/$resumeId/-sidebar/right/sections/statistics.tsx
 msgid "Downloads"
 msgstr "ចំនួន​ទាញយក"
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Draft"
+msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/layout/pages.tsx
 msgid "Drag and drop sections here to move them between columns"
@@ -1310,6 +1375,10 @@ msgstr "Dutch"
 
 #: src/components/ai/chat.tsx
 msgid "e.g. Change my name to..."
+msgstr ""
+
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "Each item contributes a share of the final score based on its weight. Higher weight means a higher score share."
 msgstr ""
 
 #: src/routes/dashboard/-components/po-feedback-sent-badge.tsx
@@ -1449,6 +1518,11 @@ msgstr ""
 msgid "Expand inline"
 msgstr ""
 
+#: src/routes/dashboard/-components/sidebar.tsx
+#: src/routes/dashboard/-components/sidebar.tsx
+msgid "Expand sidebar"
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Experience"
@@ -1467,6 +1541,10 @@ msgstr "ផុតកំណត់​នៅ​ថ្ងៃទី {0}"
 msgid "Explore our diverse selection of templates, each designed to fit different styles, professions, and personalities. Reactive Resume currently offers 12 templates, with more on the way."
 msgstr "ស្វែង​រក​គំរូ​ជ្រើសរើស​ចម្រុះ​របស់​យើង ដែល​ត្រូវ​បាន​រចនា​ឡើង​សម្រាប់​រចនាបថ មុខរបរ និង​លក្ខណៈ​ផ្ទាល់ខ្លួន​ផ្សេងៗ។ បច្ចុប្បន្ន Reactive Resume មាន​គំរូ ១២ និង​នឹង​មាន​បន្ថែម​ទៀត​នៅ​ពេល​ខាងមុខ។"
 
+#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
+msgid "Explore Templates"
+msgstr ""
+
 #: src/routes/dashboard/settings/api-keys.tsx
 msgid "Explore the API documentation to learn how to integrate with your applications. Find"
 msgstr ""
@@ -1480,7 +1558,15 @@ msgid "Faculty Finalized"
 msgstr ""
 
 #: src/routes/dashboard/faculty/index.tsx
-msgid "Faculty Review Dashboard"
+#~ msgid "Faculty Review Dashboard"
+#~ msgstr ""
+
+#: src/dialogs/resume/template/browse.tsx
+msgid "Failed to create resume."
+msgstr ""
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Failed to generate PDF."
 msgstr ""
 
 #: src/routes/dashboard/ats-score/$resumeId/index.tsx
@@ -1515,10 +1601,11 @@ msgid "Feedback Summary"
 msgstr ""
 
 #: src/routes/dashboard/resumes/index.tsx
-msgid "Filter by"
-msgstr "ត្រង​តាម"
+#~ msgid "Filter by"
+#~ msgstr "ត្រង​តាម"
 
 #: src/routes/dashboard/-components/org-unit-filter.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "Filters"
 msgstr ""
 
@@ -1699,8 +1786,8 @@ msgid "Greek"
 msgstr "Greek"
 
 #: src/routes/dashboard/resumes/index.tsx
-msgid "Grid"
-msgstr "ក្រឡារៀបចំ"
+#~ msgid "Grid"
+#~ msgstr "ក្រឡារៀបចំ"
 
 #: src/routes/_home/-sections/donate.tsx
 msgid "Grow the Team"
@@ -1837,10 +1924,13 @@ msgid "Import"
 msgstr "នាំចូល"
 
 #: src/dialogs/resume/import.tsx
-#: src/routes/dashboard/resumes/-components/cards/import-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Import an existing resume"
 msgstr "នាំចូល​ប្រវត្តិរូប​មាន​ស្រាប់"
+
+#: src/routes/dashboard/resumes/index.tsx
+msgid "Import PDF"
+msgstr ""
 
 #: src/dialogs/resume/import.tsx
 msgid "Importing your resume..."
@@ -1854,6 +1944,7 @@ msgstr "កំពុង​នាំចូល..."
 msgid "Improvements vs previous"
 msgstr ""
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 msgid "Inbox"
 msgstr ""
@@ -1999,7 +2090,6 @@ msgid "Last downloaded on {0}"
 msgstr "បាន​ទាញយក​ចុងក្រោយ​នៅ​ថ្ងៃទី {0}"
 
 #: src/routes/dashboard/ats-score/index.tsx
-#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
 #: src/routes/dashboard/resumes/-components/list-view.tsx
 msgid "Last updated on {updatedAt}"
 msgstr "បាន​បច្ចុប្បន្នភាព​ចុងក្រោយ​នៅ {updatedAt}"
@@ -2081,8 +2171,8 @@ msgid "Linking your {providerName} account..."
 msgstr "កំពុង​តភ្ជាប់​គណនី {providerName} របស់​អ្នក..."
 
 #: src/routes/dashboard/resumes/index.tsx
-msgid "List"
-msgstr "បញ្ជី"
+#~ msgid "List"
+#~ msgstr "បញ្ជី"
 
 #: src/utils/locale.ts
 msgid "Lithuanian"
@@ -2117,6 +2207,10 @@ msgstr "ចាក់សោ"
 msgid "Lock Resume"
 msgstr ""
 
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Locked"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-components/header.tsx
 #: src/routes/dashboard/resumes/-components/menus/context-menu.tsx
 #: src/routes/dashboard/resumes/-components/menus/dropdown-menu.tsx
@@ -2147,6 +2241,10 @@ msgstr "មេ"
 msgid "Main navigation"
 msgstr "ការរុករក​មេ"
 
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Make this resume public from the builder before sharing."
+msgstr ""
+
 #: src/utils/locale.ts
 msgid "Malay"
 msgstr "Malay"
@@ -2156,7 +2254,15 @@ msgid "Malayalam"
 msgstr "Malayalam"
 
 #: src/routes/dashboard/resumes/index.tsx
-msgid "Manage and build professional, ATS-friendly resumes."
+#~ msgid "Manage and build professional, ATS-friendly resumes."
+#~ msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Manage your core professional data to pre-fill future resumes and applications securely."
+msgstr ""
+
+#: src/routes/dashboard/resumes/index.tsx
+msgid "Manage your professional narratives. Create tailored versions for specific roles or import existing documents."
 msgstr ""
 
 #: src/routes/dashboard/ats-score/$resumeId/index.tsx
@@ -2186,6 +2292,14 @@ msgstr ""
 msgid "Mark as Master"
 msgstr ""
 
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Master"
+msgstr ""
+
+#: src/routes/dashboard/info/index.tsx
+msgid "Master Profile"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #: src/routes/dashboard/ats-score/$resumeId/index.tsx
 msgid "Matched Keywords"
@@ -2204,6 +2318,10 @@ msgstr ""
 msgid "Model"
 msgstr "ម៉ូដែល"
 
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "More actions"
+msgstr ""
+
 #: src/components/ats/admin-ats-stats.tsx
 msgid "Most Improved Categories"
 msgstr ""
@@ -2217,8 +2335,6 @@ msgid "Multilingual"
 msgstr "ច្រើន​ភាសា"
 
 #: src/routes/dashboard/-components/sidebar.tsx
-#: src/routes/dashboard/info/index.tsx
-#: src/routes/dashboard/info/index.tsx
 msgid "My Info"
 msgstr ""
 
@@ -2337,6 +2453,7 @@ msgid "No results found."
 msgstr "រក​មិន​ឃើញ​លទ្ធផល។"
 
 #: src/routes/dashboard/-components/section-metrics-view.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "No Resume Yet"
 msgstr ""
 
@@ -2361,11 +2478,23 @@ msgid "No score history yet — run your first ATS check above."
 msgstr ""
 
 #: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "No sections match the current filters"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "No sections match your search"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "No student data found"
 msgstr ""
 
 #: src/routes/dashboard/-components/inbox-view.tsx
 msgid "No student submissions are waiting for your review."
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "No students in this section"
 msgstr ""
 
 #: src/routes/dashboard/-components/student-resume-table.tsx
@@ -2378,6 +2507,10 @@ msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 msgid "No suggestion cards in this tab. Use “Needs Improvement” above, try other categories, or re-score after edits."
+msgstr ""
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "No target role"
 msgstr ""
 
 #: src/utils/locale.ts
@@ -2458,12 +2591,14 @@ msgstr "អង្គការ"
 msgid "Overall Review Status"
 msgstr ""
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 #: src/routes/dashboard/feedback/index.tsx
 msgid "Overview"
 msgstr ""
 
 #: src/routes/dashboard/-components/org-unit-filter.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "Package"
 msgstr ""
 
@@ -2573,6 +2708,22 @@ msgstr "ប្ដូរ​ប្រវត្តិរូប​របស់​អ
 msgid "Phone"
 msgstr "ទូរស័ព្ទ"
 
+#: src/routes/dashboard/ats-score/index.tsx
+msgid "Pick a resume to score it against ATS criteria and get tailored improvement suggestions."
+msgstr ""
+
+#: src/dialogs/resume/template/browse.tsx
+msgid "Pick a starting point. Add details in <0>My Info</0> to personalize new resumes — until then we'll spin up a sample resume with the chosen template."
+msgstr ""
+
+#: src/dialogs/resume/template/browse.tsx
+msgid "Pick a starting point. We'll create a new resume from your <0>My Info</0> tab using the chosen template — you can rename or switch templates anytime in the builder."
+msgstr ""
+
+#: src/dialogs/resume/template/browse.tsx
+msgid "Pick a template"
+msgstr ""
+
 #: src/utils/resume/section.tsx
 msgid "Picture"
 msgstr "រូបភាព"
@@ -2582,8 +2733,8 @@ msgid "Pipeline"
 msgstr ""
 
 #: src/routes/dashboard/placement-officer/index.tsx
-msgid "Placement Officer Dashboard"
-msgstr ""
+#~ msgid "Placement Officer Dashboard"
+#~ msgstr ""
 
 #: src/routes/dashboard/-components/po-section-feedback-banner.tsx
 #: src/routes/dashboard/-components/po-section-feedback-banner.tsx
@@ -2666,6 +2817,10 @@ msgstr ""
 msgid "Preferences"
 msgstr "ចំណង់ចំណូលចិត្ត"
 
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Preparing your PDF..."
+msgstr ""
+
 #: src/components/input/chip-input.tsx
 msgid "Press <0>{RETURN_KEY}</0> or <1>{COMMA_KEY}</1> to add or save the current keyword."
 msgstr "ចុច <0>{RETURN_KEY}</0> ឬ <1>{COMMA_KEY}</1> ដើម្បីបន្ថែម ឬរក្សាទុកពាក្យគន្លឹះបច្ចុប្បន្ន។"
@@ -2673,6 +2828,10 @@ msgstr "ចុច <0>{RETURN_KEY}</0> ឬ <1>{COMMA_KEY}</1> ដើម្បី�
 #: src/routes/builder/$resumeId/-sidebar/right/sections/design.tsx
 msgid "Primary Color"
 msgstr "ពណ៌​មូលដ្ឋាន"
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Primary resume rate"
+msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
 msgid "Professional Summary"
@@ -2904,12 +3063,21 @@ msgstr ""
 msgid "Resume Builder - Go to homepage"
 msgstr ""
 
+#. placeholder {0}: templates[selected].name
+#: src/dialogs/resume/template/browse.tsx
+msgid "Resume created from My Info using the {0} template."
+msgstr ""
+
 #: src/routes/dashboard/-components/comment-dialog.tsx
 msgid "Resume Feedback"
 msgstr ""
 
 #: src/routes/dashboard/review/$resumeId/index.tsx
 msgid "Resume not found"
+msgstr ""
+
+#: src/routes/dashboard/resumes/index.tsx
+msgid "Resume Portfolio"
 msgstr ""
 
 #: src/routes/dashboard/ats-score/$resumeId/index.tsx
@@ -2932,12 +3100,15 @@ msgstr ""
 #: src/routes/_home/-sections/statistics.tsx
 #: src/routes/dashboard/-components/section-intelligence.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
-#: src/routes/dashboard/resumes/index.tsx
 msgid "Resumes"
 msgstr "ប្រវត្តិរូប"
 
 #: src/routes/dashboard/-components/inbox-view.tsx
 msgid "Resumes submitted by students waiting for your review"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "resumes verified"
 msgstr ""
 
 #: src/routes/dashboard/-components/inbox-view.tsx
@@ -2981,13 +3152,18 @@ msgstr "មុំ​បង្វែរ"
 msgid "Russian"
 msgstr "Russian"
 
+#. placeholder {0}: templates[selected].name
+#: src/dialogs/resume/template/browse.tsx
+msgid "Sample resume created with the {0} template. Fill out My Info to get personalized resumes."
+msgstr ""
+
 #: src/routes/dashboard/info/index.tsx
 msgid "San Francisco, CA"
 msgstr ""
 
 #: src/routes/dashboard/info/index.tsx
-msgid "Save"
-msgstr ""
+#~ msgid "Save"
+#~ msgstr ""
 
 #: src/dialogs/resume/index.tsx
 #: src/dialogs/resume/sections/award.tsx
@@ -3006,6 +3182,7 @@ msgstr ""
 #: src/dialogs/resume/sections/summary-item.tsx
 #: src/dialogs/resume/sections/volunteer.tsx
 #: src/routes/dashboard/-components/po-section-review-dialog.tsx
+#: src/routes/dashboard/info/index.tsx
 #: src/routes/dashboard/settings/profile.tsx
 msgid "Save Changes"
 msgstr "រក្សាទុក​ការ​ផ្លាស់ប្ដូរ"
@@ -3053,6 +3230,10 @@ msgstr ""
 msgid "Score Progression"
 msgstr ""
 
+#: src/routes/dashboard/-components/checklists-tab.tsx
+msgid "Score Share"
+msgstr ""
+
 #: src/routes/builder/$resumeId/-sidebar/right/sections/ats-score.tsx
 #~ msgid "Score your resume for ATS compatibility and get detailed feedback by category."
 #~ msgstr ""
@@ -3089,6 +3270,10 @@ msgstr "ស្វែងរក​រូបតំណាង"
 msgid "Search for..."
 msgstr "ស្វែងរក​ប្រវត្តិរូប..."
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Search sections by name, package, or type..."
+msgstr ""
+
 #: src/components/ui/combobox.tsx
 #: src/components/ui/multiple-combobox.tsx
 msgid "Search..."
@@ -3099,6 +3284,7 @@ msgid "Secret copied to clipboard."
 msgstr "កូនសោ​សម្ងាត់​ត្រូវ​បាន​ចម្លង​ទៅ​ក្ដារ​តម្រៀប។"
 
 #: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "Section"
 msgstr ""
 
@@ -3110,10 +3296,15 @@ msgstr ""
 msgid "Section Intelligence"
 msgstr ""
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Section not found"
+msgstr ""
+
 #: src/dialogs/resume/sections/custom.tsx
 msgid "Section Type"
 msgstr "ប្រភេទ​ផ្នែក"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 msgid "Sections"
 msgstr ""
@@ -3181,6 +3372,10 @@ msgstr "កំណត់​ពាក្យសម្ងាត់"
 msgid "Setting as Master Resume..."
 msgstr ""
 
+#: src/dialogs/resume/template/browse.tsx
+msgid "Setting up a sample resume..."
+msgstr ""
+
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
 #: src/components/command-palette/pages/navigation.tsx
@@ -3194,6 +3389,10 @@ msgstr "រៀបចំ​កម្មវិធី​ផ្ទៀងផ្ទា
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Shadow Width"
 msgstr "ទទឹង​ស្រមោល"
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Share link copied to clipboard."
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Share your resume with a public URL, and let others view it."
@@ -3237,6 +3436,10 @@ msgstr "របារ​បាត"
 #: src/routes/builder/$resumeId/-sidebar/right/sections/layout/index.tsx
 msgid "Sidebar Width"
 msgstr "ទទឹង​របារ​បាត"
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Sign in to share this resume."
+msgstr ""
 
 #: src/routes/_home/-sections/features.tsx
 msgid "Sign in with GitHub, Google or a custom OAuth provider."
@@ -3322,8 +3525,8 @@ msgid "Something went wrong. Please try again."
 msgstr "មាន​អ្វីមួយ​ខុសប្រក្រតី។ សូម​ព្យាយាម​ម្ដង​ទៀត។"
 
 #: src/routes/dashboard/resumes/index.tsx
-msgid "Sort by"
-msgstr "តម្រៀប​តាម"
+#~ msgid "Sort by"
+#~ msgstr "តម្រៀប​តាម"
 
 #: src/routes/_home/-sections/footer.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
@@ -3381,7 +3584,11 @@ msgid "Start building your resume from scratch"
 msgstr "ចាប់ផ្តើម​បង្កើត​ប្រវត្តិរូប​របស់​អ្នក​ពី​សូន្យ"
 
 #: src/routes/dashboard/resumes/-components/cards/create-card.tsx
-msgid "Start building your resume from scratch using our builder."
+#~ msgid "Start building your resume from scratch using our builder."
+#~ msgstr ""
+
+#: src/routes/dashboard/resumes/-components/cards/create-card.tsx
+msgid "Start fresh or use AI to generate a tailored baseline."
 msgstr ""
 
 #: src/utils/resume/section.tsx
@@ -3411,13 +3618,17 @@ msgstr ""
 
 #: src/routes/dashboard/-components/section-intelligence.tsx
 #: src/routes/dashboard/-components/section-intelligence.tsx
-#: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "students"
 msgstr ""
 
 #: src/routes/dashboard/-components/section-intelligence.tsx
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/sidebar.tsx
 msgid "Students"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Students who have created at least one resume"
 msgstr ""
 
 #: src/routes/dashboard/-components/section-metrics-view.tsx
@@ -3425,8 +3636,8 @@ msgid "Submission Breakdown"
 msgstr ""
 
 #: src/routes/dashboard/-components/section-metrics-view.tsx
-msgid "Submission Rate"
-msgstr ""
+#~ msgid "Submission Rate"
+#~ msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
 #: src/routes/builder/$resumeId/-sidebar/right/sections/reviewer-feedback.tsx
@@ -3475,7 +3686,6 @@ msgstr ""
 msgid "Suggestion applied to your resume"
 msgstr ""
 
-#: src/routes/dashboard/info/index.tsx
 #: src/utils/resume/section.tsx
 msgid "Summary"
 msgstr "សង្ខេប"
@@ -3501,7 +3711,6 @@ msgid "Table"
 msgstr "តារាង"
 
 #: src/dialogs/resume/index.tsx
-#: src/routes/dashboard/resumes/index.tsx
 msgid "Tags"
 msgstr "ស្លាក"
 
@@ -3517,6 +3726,10 @@ msgstr ""
 #: src/utils/locale.ts
 msgid "Tamil"
 msgstr "Tamil"
+
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
+msgid "Target:"
+msgstr ""
 
 #: src/components/ats/keyword-curve-chart.tsx
 msgid "Tech terms detected"
@@ -3719,9 +3932,10 @@ msgid "Total ATS Checks"
 msgstr ""
 
 #: src/routes/dashboard/-components/section-metrics-view.tsx
-msgid "Total Resumes"
-msgstr ""
+#~ msgid "Total Resumes"
+#~ msgstr ""
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "Total Students"
@@ -3735,6 +3949,14 @@ msgstr "តាមដាន​ចំនួន​មើល និង​ចំន�
 #: src/routes/builder/$resumeId/-sidebar/right/sections/information.tsx
 msgid "Translations"
 msgstr "ការបកប្រែ"
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Try a different keyword or clear the search box."
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "Try clearing the package filter or pick a different unit type."
+msgstr ""
 
 #: src/utils/locale.ts
 msgid "Turkish"
@@ -3942,6 +4164,7 @@ msgid "Update your password"
 msgstr "បច្ចុប្បន្នភាព​ពាក្យសម្ងាត់​របស់​អ្នក"
 
 #: src/components/ai/chat.tsx
+#: src/routes/dashboard/resumes/-components/cards/resume-card.tsx
 msgid "Updated"
 msgstr ""
 
@@ -3954,8 +4177,8 @@ msgid "Updating your resume..."
 msgstr "កំពុង​បច្ចុប្បន្នភាព​ប្រវត្តិរូប​របស់​អ្នក..."
 
 #: src/routes/dashboard/resumes/-components/cards/import-card.tsx
-msgid "Upload your existing resume to continue building."
-msgstr ""
+#~ msgid "Upload your existing resume to continue building."
+#~ msgstr ""
 
 #: src/routes/builder/$resumeId/-sidebar/left/sections/picture.tsx
 msgid "Uploading picture..."
@@ -3965,6 +4188,11 @@ msgstr "កំពុង​អាប់ឡូដ​រូបភាព..."
 #: src/routes/dashboard/info/index.tsx
 msgid "URL"
 msgstr "URL"
+
+#. placeholder {0}: templates[selected].name
+#: src/dialogs/resume/template/browse.tsx
+msgid "Use {0}"
+msgstr ""
 
 #: src/dialogs/resume/index.tsx
 msgid "Use My Info"
@@ -4000,6 +4228,7 @@ msgstr "បាន​ផ្ទៀងផ្ទាត់"
 msgid "Verified / Evaluated"
 msgstr ""
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "Verified Progress"
 msgstr ""
@@ -4151,6 +4380,11 @@ msgstr "អ្វី​ថ្មី​នៅ​ក្នុង​កំណែ​
 msgid "When locked, the resume cannot be updated or deleted."
 msgstr "នៅ​ពេល​ចាក់សោ ប្រវត្តិរូប​នឹង​មិន​អាច​បច្ចុប្បន្នភាព ឬ​លុប​បាន​ទេ។"
 
+#: src/routes/dashboard/-components/section-metrics-view.tsx
+msgid "With primary resume"
+msgstr ""
+
+#: src/routes/dashboard/-components/section-metrics-view.tsx
 #: src/routes/dashboard/-components/section-metrics-view.tsx
 msgid "With Resumes"
 msgstr ""

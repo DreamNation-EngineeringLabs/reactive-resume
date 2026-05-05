@@ -27,7 +27,7 @@
 		"knip": "knip",
 		"lingui:extract": "lingui extract --clean --overwrite",
 		"lint": "biome check --write",
-		"start": "node .output/server/index.mjs",
+		"start": "node dist/server/server.js",
 		"typecheck": "tsgo --noEmit"
 	},
 	"dependencies": {

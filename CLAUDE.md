@@ -199,8 +199,8 @@ Key variables (see `.env.example` for full list):
 
 ## Build & Deployment
 
-- **Build output**: `.output/` directory (Nitro server bundle)
-- **Production start**: `node .output/server/index.mjs`
+- **Build output**: `dist/` directory (Vite SSR bundle — `dist/client/` for static assets, `dist/server/server.js` for the server entry)
+- **Production start**: `node dist/server/server.js`
 - **Docker**: Multi-stage Dockerfile with Node 24-slim base
 - **Health check**: `GET /api/health`
 - **PWA**: Configured via vite-plugin-pwa with auto-update, standalone display, dark theme
