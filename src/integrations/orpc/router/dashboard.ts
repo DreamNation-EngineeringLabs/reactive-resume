@@ -39,6 +39,17 @@ import { protectedProcedure } from "../context";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Resolve the tenantId server-side from the authenticated user's eng-labs identity.
+ * The client-supplied `input.tenantId` (sourced from localStorage `sso_context`) drifts and is
+ * not trustworthy for tenant scoping or persistence. Always prefer the eng-labs user's tenant;
+ * fall back to the client value only when the user has no eng-labs row at all (legacy accounts).
+ */
+async function resolveServerTenantId(email: string, fallback?: string): Promise<string | undefined> {
+	const u = await getEngLabsUserByEmail(email);
+	return u?.tenantId ?? fallback;
+}
+
 async function getResumesForUsers(userIds: string[]) {
 	if (userIds.length === 0) return [];
 	return db
@@ -833,10 +844,12 @@ export const submitResume = protectedProcedure
 			nextStatus = "RESUBMITTED_TO_PO";
 		}
 
+		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? "default";
+
 		await updateResumeStatus({
 			resumeId: input.resumeId,
 			studentId: input.studentId ?? currentResume?.userId ?? "unknown",
-			tenantId: input.tenantId ?? "default",
+			tenantId,
 			status: nextStatus,
 			changedBy: context.user.id,
 			actorType: "LEARNER",
@@ -866,10 +879,12 @@ export const approveResume = protectedProcedure
 	.handler(async ({ context, input }) => {
 		const { updateResumeStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
+		const tenantId = await resolveServerTenantId(context.user.email, input.tenantId);
+
 		await updateResumeStatus({
 			resumeId: input.resumeId,
 			studentId: input.studentId,
-			tenantId: input.tenantId,
+			tenantId,
 			status: "PO_VERIFIED",
 			changedBy: context.user.id,
 			actorType: "PLACEMENT_OFFICER",
@@ -941,10 +956,12 @@ export const updateStatus = protectedProcedure
 		const actorType =
 			input.status.startsWith("PO_") || input.status === "APPROVED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
 
+		const tenantId = await resolveServerTenantId(context.user.email, input.tenantId);
+
 		await updateResumeStatus({
 			resumeId: input.resumeId,
 			studentId: input.studentId,
-			tenantId: input.tenantId,
+			tenantId,
 			status: input.status as any,
 			changedBy: context.user.id,
 			actorType,
@@ -978,9 +995,11 @@ export const bulkUpdateResumes = protectedProcedure
 		const actorType =
 			input.status === "APPROVED" || input.status === "PO_VERIFIED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
 
+		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
+
 		await bulkUpdateSectionResumes({
 			resumes: input.resumes,
-			tenantId: input.tenantId,
+			tenantId,
 			toStatus: input.status as any,
 			changedBy: context.user.id,
 			actorType,
@@ -1122,10 +1141,12 @@ export const forwardResume = protectedProcedure
 	.handler(async ({ context, input }) => {
 		const { addToHistory } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
+		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
+
 		await addToHistory({
 			resumeId: input.resumeId,
 			studentId: input.studentId,
-			tenantId: input.tenantId,
+			tenantId,
 			action: "FORWARDED",
 			changedBy: context.user.id,
 			actorType: "INSTRUCTOR",
@@ -1157,10 +1178,8 @@ export const sectionsList = protectedProcedure
 
 		const engLabsUser = await getEngLabsUserByEmail(context.user.email);
 
-		let tenantId = input.tenantId;
-		if ((!tenantId || tenantId === "default") && engLabsUser?.tenantId) {
-			tenantId = engLabsUser.tenantId;
-		}
+		// Server-resolved tenant wins over client-supplied input.tenantId (which can drift via stale SSO localStorage).
+		let tenantId = engLabsUser?.tenantId ?? input.tenantId;
 
 		if (engLabsUser?.id) {
 			sections = await getInstructorSections(engLabsUser.id);
@@ -1282,10 +1301,12 @@ export const poReviewSection = protectedProcedure
 			"@/integrations/drizzle/services/resume-feedback.service"
 		);
 
+		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
+
 		// 1. Persist the review record
 		await createPoSectionReview({
 			sectionId: input.sectionId,
-			tenantId: input.tenantId,
+			tenantId,
 			facultyId: input.facultyId,
 			poId: context.user.id,
 			reviewNotes: input.reviewNotes,
@@ -1296,7 +1317,7 @@ export const poReviewSection = protectedProcedure
 		// 2. Bulk-reset all resumes back to FINALIZED_BY_FACULTY so faculty can address and resubmit
 		await bulkUpdateSectionResumes({
 			resumes: input.resumes,
-			tenantId: input.tenantId,
+			tenantId,
 			toStatus: "FINALIZED_BY_FACULTY",
 			changedBy: context.user.id,
 			actorType: "PLACEMENT_OFFICER",
@@ -1363,11 +1384,12 @@ export const getPoSectionReviews = protectedProcedure
 			}),
 		),
 	)
-	.handler(async ({ input }) => {
+	.handler(async ({ context, input }) => {
 		const { getPoSectionReviews: getSectionReviews } = await import(
 			"@/integrations/drizzle/services/resume-feedback.service"
 		);
-		return getSectionReviews(input.sectionId, input.tenantId);
+		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
+		return getSectionReviews(input.sectionId, tenantId);
 	});
 
 export const dashboardRouter = {

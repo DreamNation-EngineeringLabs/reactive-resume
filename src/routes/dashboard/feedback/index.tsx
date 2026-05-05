@@ -10,7 +10,7 @@ import {
 	PaperPlaneTiltIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
@@ -278,8 +278,9 @@ function ResumeCard({
 				</div>
 
 				<div className="ml-4 flex shrink-0 items-center gap-2">
-					<a
-						href={`/builder/${resume.id}`}
+					<Link
+						to="/builder/$resumeId"
+						params={{ resumeId: resume.id }}
 						target="_blank"
 						rel="noreferrer"
 						title="Open resume builder"
@@ -287,7 +288,7 @@ function ResumeCard({
 						className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
 					>
 						<ArrowSquareOutIcon weight="duotone" className="size-4" />
-					</a>
+					</Link>
 					<CaretDownIcon
 						weight="bold"
 						className={cn("size-4 text-slate-400 transition-transform", isExpanded && "rotate-180")}

@@ -7,6 +7,7 @@ import {
 	XIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
@@ -215,15 +216,16 @@ export function StudentDetailPanel({ student, tenantId, open, onOpenChange }: St
 													</span>
 
 													{/* View */}
-													<a
-														href={`/builder/${resume.id}`}
+													<Link
+														to="/builder/$resumeId"
+														params={{ resumeId: resume.id }}
 														target="_blank"
 														rel="noreferrer"
 														className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
 														title="Open resume"
 													>
 														<ArrowSquareOutIcon weight="duotone" className="size-4" />
-													</a>
+													</Link>
 
 													{/* Toggle comments */}
 													<button
