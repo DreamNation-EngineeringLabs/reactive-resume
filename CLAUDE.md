@@ -199,8 +199,9 @@ Key variables (see `.env.example` for full list):
 
 ## Build & Deployment
 
-- **Build output**: `dist/` directory (Vite SSR bundle — `dist/client/` for static assets, `dist/server/server.js` for the server entry)
-- **Production start**: `node dist/server/server.js`
+- **Build output**: `dist/` directory (Vite SSR bundle — `dist/client/` for static assets, `dist/server/server-entry.js` for the runnable server)
+- **Server entry**: `src/server-entry.ts` wraps the TanStack Start fetch handler with `@hono/node-server` so it actually listens on a port; configured via `tanstackStart({ server: { entry: "./server-entry" } })` in `vite.config.ts`. Path is resolved relative to `srcDirectory` (default `src/`), not the project root
+- **Production start**: `node dist/server/server-entry.js`
 - **Docker**: Multi-stage Dockerfile with Node 24-slim base
 - **Health check**: `GET /api/health`
 - **PWA**: Configured via vite-plugin-pwa with auto-update, standalone display, dark theme

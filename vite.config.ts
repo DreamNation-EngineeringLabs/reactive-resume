@@ -68,7 +68,10 @@ const config = defineConfig({
 		ssoLegacyPathRedirectPlugin(),
 		lingui(),
 		tailwindcss(),
-		tanstackStart({ router: { semicolons: true, quoteStyle: "double", basepath: "/resume" } }),
+		tanstackStart({
+			router: { semicolons: true, quoteStyle: "double", basepath: "/resume" },
+			server: { entry: "./server-entry" },
+		}),
 		viteReact({ babel: { plugins: ["@lingui/babel-plugin-lingui-macro"] } }),
 		VitePWA({
 			outDir: "public",
