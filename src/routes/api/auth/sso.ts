@@ -177,35 +177,58 @@ async function handler({ request }: { request: Request }) {
 			ssoContext: { ...ssoContext, organisationUnits: ssoContext.organisationUnits.length },
 		});
 
-		const html = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"></head><body>
-<script>
-localStorage.setItem("sso_context", ${JSON.stringify(JSON.stringify(ssoContext))});
-window.location.replace(${JSON.stringify(destination)});
-</script>
-<noscript><a href="${destination}">Continue to dashboard</a></noscript>
-</body></html>`;
+		// IMPORTANT: respond with a real 302 redirect, not an HTML page that scripts-then-navigates.
+		//
+		// The previous version returned HTML containing `localStorage.setItem(...)` +
+		// `window.location.replace(destination)`. Browsers usually commit Set-Cookie before running
+		// inline scripts, but in practice there's a race (Chrome under load, cold container, etc.)
+		// where the navigation fires before the cookie is fully attached to outgoing requests. That
+		// race is the entire reason first-SSO users saw a 307 from /dashboard/admin to /auth/login:
+		// the very next request after this response went out without the auth cookie that we'd just
+		// issued, so the server's getSession() returned null and the dashboard's beforeLoad
+		// redirected them to /auth/login.
+		//
+		// HTTP spec is unambiguous about redirects: the browser MUST commit Set-Cookie headers
+		// before following Location. Switching to a 302 closes the race entirely — the cookie is
+		// guaranteed to ride on the next request.
+		//
+		// `sso_context` previously lived in localStorage (set by the inline script). We now write it
+		// as a cookie instead so the server can deliver it atomically with the auth cookie.
+		// sso-context.ts reads from `document.cookie` first, with localStorage as a fallback for
+		// users whose entry was set by the previous HTML+script version of this handler.
 
-		// Forward auth cookies from better-auth on the HTML response
-		const responseHeaders = new Headers({ "Content-Type": "text/html; charset=utf-8" });
+		const responseHeaders = new Headers();
+
+		// Forward Better Auth's session cookies as-is.
 		response.headers.forEach((value, key) => {
 			if (key.toLowerCase() === "set-cookie") {
 				responseHeaders.append(key, value);
 			}
 		});
 
-		// So SSR matches the client: localStorage holds `source_url` in sso_context, but the server
-		// cannot read it — mirror into a cookie for getSourceUrl() / exit links (hydration-safe hrefs).
+		// SSO context cookie — readable by client JS (NOT HttpOnly) because sidebar/sso-context.ts
+		// needs to read it for role-based UI. SameSite=Lax so it rides on the cross-site SSO entry
+		// navigation; Path=/resume to keep it scoped to the resume app.
+		const secure = url.protocol === "https:" ? "; Secure" : "";
+		const ssoContextCookie = encodeURIComponent(JSON.stringify(ssoContext));
+		responseHeaders.append(
+			"Set-Cookie",
+			`sso_context=${ssoContextCookie}; Path=/resume; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax${secure}`,
+		);
+
+		// Mirror source_url as before — kept separate so server-side code (getSourceUrl) can read
+		// it without parsing the full sso_context blob.
 		if (decoded.source_url) {
 			const enc = encodeURIComponent(decoded.source_url);
-			const secure = url.protocol === "https:" ? "; Secure" : "";
 			responseHeaders.append(
 				"Set-Cookie",
 				`source_url=${enc}; Path=/resume; Max-Age=${60 * 60 * 24 * 180}; SameSite=Lax${secure}`,
 			);
 		}
 
-		return new Response(html, { status: 200, headers: responseHeaders });
+		responseHeaders.set("Location", destination);
+		responseHeaders.set("Cache-Control", "no-store");
+		return new Response(null, { status: 302, headers: responseHeaders });
 	} catch (e) {
 		console.error(`[SSOTrace:${traceId}] token:verify_failed`, e);
 		return errorRedirect("invalid_token");

@@ -8,9 +8,31 @@ interface SsoContext {
 	trace: string | null;
 }
 
+/**
+ * Read the `sso_context` cookie set by the SSO callback (src/routes/api/auth/sso.ts). Returns the
+ * raw cookie value or null. Cookie is NOT HttpOnly precisely so this can read it.
+ */
+function readSsoContextCookie(): string | null {
+	if (typeof document === "undefined") return null;
+	const match = document.cookie.match(/(?:^|;\s*)sso_context=([^;]+)/);
+	if (!match) return null;
+	try {
+		return decodeURIComponent(match[1]);
+	} catch {
+		return null;
+	}
+}
+
 function getSsoContext(): SsoContext | null {
 	if (typeof window === "undefined") return null;
 	try {
+		// Prefer the cookie set atomically by the SSO callback's 302 response — guaranteed to be
+		// present on the very first dashboard render after SSO. localStorage was the previous
+		// storage location (set by an inline script that raced with the navigation), kept as a
+		// fallback for users whose entry was written by the older HTML+script version of the
+		// SSO callback before this commit.
+		const fromCookie = readSsoContextCookie();
+		if (fromCookie) return JSON.parse(fromCookie) as SsoContext;
 		const raw = localStorage.getItem("sso_context");
 		if (!raw) return null;
 		return JSON.parse(raw) as SsoContext;
