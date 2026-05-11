@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getPlacementsUrl, redirectToPlacements } from "@/utils/source-url";
 import { getDashboardSidebarServerFn, setDashboardSidebarServerFn } from "./-components/functions";
@@ -34,7 +34,18 @@ function RouteComponent() {
 
 	const isReviewPage = isFullBleedPage;
 
+	// Optimistic local state: UI flips instantly on toggle; cookie + loader catch up in the background.
+	// Without this, the controlled `open` prop waits for setDashboardSidebarServerFn → router.invalidate() →
+	// loader re-run — a multi-hundred-ms round-trip behind Firebase Hosting → Cloud Run that makes the
+	// toggle button feel broken.
+	const [openOptimistic, setOpenOptimistic] = useState(sidebarState);
+
+	useEffect(() => {
+		setOpenOptimistic(sidebarState);
+	}, [sidebarState]);
+
 	const handleSidebarOpenChange = (open: boolean) => {
+		setOpenOptimistic(open);
 		setDashboardSidebarServerFn({ data: open }).then(() => {
 			router.invalidate();
 		});
@@ -54,7 +65,7 @@ function RouteComponent() {
 
 	return (
 		<div className="flex h-screen bg-background">
-			<SidebarProvider open={isReviewPage ? false : sidebarState} onOpenChange={handleSidebarOpenChange}>
+			<SidebarProvider open={isReviewPage ? false : openOptimistic} onOpenChange={handleSidebarOpenChange}>
 				<DashboardSidebar />
 
 				<div className="flex flex-1 flex-col overflow-hidden p-0">

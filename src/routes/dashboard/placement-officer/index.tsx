@@ -1,8 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { z } from "zod";
-import { getTenantId } from "@/utils/sso-context";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
 
@@ -24,19 +23,15 @@ export const Route = createFileRoute("/dashboard/placement-officer/")({
 
 function RouteComponent() {
 	const { tab, packageId, unitType, unitId, sectionId } = Route.useSearch();
-	const [tenantId, setTenantId] = useState<string>("default");
-
-	useEffect(() => {
-		setTenantId(getTenantId() ?? "default");
-	}, []);
-
 	const initialFilter = useMemo(() => ({ packageId, unitType, unitId }), [packageId, unitType, unitId]);
 
+	// See admin/index.tsx — tenantId is server-resolved from auth; client value would just trigger
+	// a refetch on mount that blanks the page under deployed-env latency.
 	return (
 		<SectionMetricsView
 			scope="po"
 			sectionIds={[]}
-			tenantId={tenantId}
+			tenantId="default"
 			initialTab={tab as DashboardTab}
 			initialFilter={initialFilter}
 			sectionId={sectionId}

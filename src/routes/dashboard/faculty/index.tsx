@@ -1,8 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { z } from "zod";
-import { getOrganisationUnits, getTenantId } from "@/utils/sso-context";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
 
@@ -24,21 +23,17 @@ export const Route = createFileRoute("/dashboard/faculty/")({
 
 function RouteComponent() {
 	const { tab, packageId, unitType, unitId, sectionId } = Route.useSearch();
-	const [orgUnits, setOrgUnits] = useState<string[]>([]);
-	const [tenantId, setTenantId] = useState<string>("default");
-
-	useEffect(() => {
-		setOrgUnits(getOrganisationUnits() ?? []);
-		setTenantId(getTenantId() ?? "default");
-	}, []);
-
 	const initialFilter = useMemo(() => ({ packageId, unitType, unitId }), [packageId, unitType, unitId]);
 
+	// Both sectionIds and tenantId are resolved server-side from the faculty's eng-labs instructor
+	// mapping (dashboard.ts: getInstructorSections + engLabsUser.tenantId). Reading them from
+	// localStorage and updating state on mount caused a post-hydration refetch with a new query key,
+	// which blanked the page under deployed-env latency.
 	return (
 		<SectionMetricsView
 			scope="faculty"
-			sectionIds={orgUnits}
-			tenantId={tenantId}
+			sectionIds={[]}
+			tenantId="default"
 			initialTab={tab as DashboardTab}
 			initialFilter={initialFilter}
 			sectionId={sectionId}

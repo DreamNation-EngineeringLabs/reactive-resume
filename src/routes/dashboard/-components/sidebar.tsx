@@ -18,7 +18,7 @@ import {
 	Users,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouteContext, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { authClient } from "@/integrations/auth/client";
+import type { AuthSession } from "@/integrations/auth/types";
 import { orpc } from "@/integrations/orpc/client";
 import { getPlacementsUrl } from "@/utils/source-url";
 import { getOrganisationUnits, getTenantId, getUserRole } from "@/utils/sso-context";
@@ -312,7 +313,11 @@ export function DashboardSidebar() {
 	const { state, toggleSidebar } = useSidebarState();
 	const isCollapsed = state === "collapsed";
 	const isMobile = useIsMobile();
-	const { data: session } = authClient.useSession();
+	// Read the session from router context (populated by root beforeLoad via server-side getSession).
+	// Better Auth's client `useSession()` hits /resume/api/auth/get-session, which can return null behind
+	// Firebase Hosting → Cloud Run when cookies don't ride along on that path — that's why the profile
+	// card was disappearing in deployed envs even though SSR had a valid session.
+	const { session } = useRouteContext({ strict: false }) as { session: AuthSession | null };
 
 	const handleLogout = () => {
 		authClient.signOut({
