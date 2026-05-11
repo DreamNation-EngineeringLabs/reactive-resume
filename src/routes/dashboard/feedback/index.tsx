@@ -26,6 +26,24 @@ export const Route = createFileRoute("/dashboard/feedback/")({
 	beforeLoad: async ({ context }) => {
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });
 	},
+	// Prefetch the student feedback dashboard on the server. The query input mirrors the initial
+	// useQuery shape in RouteComponent before its useEffect populates engLabsUserId from localStorage
+	// — `engLabsUserId: undefined` matches on the first render, and the server-side handler resolves
+	// the student from the authenticated user's email anyway. See admin/index.tsx for the broader
+	// rationale around SSR suspension + Cloud Run streaming.
+	loader: async ({ context }) => {
+		const userId = context.session?.user?.id;
+		if (!userId) return;
+		try {
+			await context.queryClient.prefetchQuery(
+				orpc.resume.dashboard.student.queryOptions({
+					input: { userId, engLabsUserId: undefined },
+				}),
+			);
+		} catch {
+			// non-fatal
+		}
+	},
 });
 
 type FeedbackTab = "overview" | "checklists";

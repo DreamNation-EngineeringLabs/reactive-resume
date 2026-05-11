@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { useMemo } from "react";
 import { z } from "zod";
+import { orpc } from "@/integrations/orpc/client";
 import { dlog } from "@/utils/debug";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
@@ -20,6 +21,22 @@ export const Route = createFileRoute("/dashboard/admin/")({
 	beforeLoad: async ({ context }) => {
 		dlog("route:admin", "beforeLoad", { hasSession: !!context.session });
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });
+	},
+	loaderDeps: ({ search }) => ({ unitId: search.unitId }),
+	// Prefetch the dashboard query on the server so SectionMetricsView's useQuery returns
+	// synchronously with data already in cache — no SSR suspension, no streaming dependency.
+	// Without this, useQuery suspends under `wrapQueryClient: true` and the resolved chunk
+	// can fail to flush through Firebase Hosting → Cloud Run, leaving the Outlet blank.
+	loader: async ({ context, deps }) => {
+		const queryOpts = orpc.resume.dashboard.sections.queryOptions({
+			input: { sectionIds: [], tenantId: "default", scope: "po", activeUnitId: deps.unitId },
+		});
+		try {
+			await context.queryClient.prefetchQuery(queryOpts);
+			dlog("route:admin", "loader:prefetch:ok", { unitId: deps.unitId });
+		} catch (err) {
+			dlog("route:admin", "loader:prefetch:failed", { error: (err as Error).message });
+		}
 	},
 });
 

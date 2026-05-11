@@ -10,6 +10,16 @@ type Resume = RouterOutput["resume"]["list"][number];
 
 export const Route = createFileRoute("/dashboard/ats-score/")({
 	component: RouteComponent,
+	// See dashboard/resumes/index.tsx — prefetch the same resume list to avoid SSR suspension.
+	loader: async ({ context }) => {
+		try {
+			await context.queryClient.prefetchQuery(
+				orpc.resume.list.queryOptions({ input: { tags: [], sort: "lastUpdatedAt" } }),
+			);
+		} catch {
+			// non-fatal
+		}
+	},
 });
 
 function RouteComponent() {

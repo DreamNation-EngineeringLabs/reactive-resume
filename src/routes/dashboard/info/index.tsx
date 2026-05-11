@@ -37,6 +37,15 @@ import { cn } from "@/utils/style";
 
 export const Route = createFileRoute("/dashboard/info/")({
 	component: RouteComponent,
+	// See dashboard/resumes/index.tsx — prefetch on the server so useQuery returns synchronously
+	// and SectionMetricsView-style SSR-suspend doesn't strand the Outlet empty.
+	loader: async ({ context }) => {
+		try {
+			await context.queryClient.prefetchQuery(orpc.userInfo.get.queryOptions());
+		} catch {
+			// non-fatal
+		}
+	},
 });
 
 function RouteComponent() {

@@ -10,6 +10,18 @@ import { GridView } from "./-components/grid-view";
 
 export const Route = createFileRoute("/dashboard/resumes/")({
 	component: RouteComponent,
+	// Prefetch the resume list on the server so useQuery returns synchronously with data already
+	// in cache — no SSR suspension, no streaming-chunk-flush dependency. Failures fall through
+	// silently to the existing `resumes ?? []` handling in the component.
+	loader: async ({ context }) => {
+		try {
+			await context.queryClient.prefetchQuery(
+				orpc.resume.list.queryOptions({ input: { tags: [], sort: "lastUpdatedAt" } }),
+			);
+		} catch {
+			// non-fatal
+		}
+	},
 });
 
 function RouteComponent() {
