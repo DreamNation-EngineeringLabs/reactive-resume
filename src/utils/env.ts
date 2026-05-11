@@ -13,6 +13,12 @@ export const env = createEnv({
 			.string()
 			.optional()
 			.refine((v) => !v || /^https?:\/\/.+/i.test(v), "Must be an absolute http(s) URL"),
+		/**
+		 * Set to "true" to print verbose dashboard lifecycle logs (SSO, route lifecycle, ORPC handler,
+		 * query state, render guards). VITE_ prefix is required so the flag is available in the
+		 * client bundle; the SSR side reads the same value from `process.env`.
+		 */
+		VITE_FLAG_DEBUG_DASHBOARD: z.stringbool().default(false),
 	},
 
 	server: {

@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { useMemo } from "react";
 import { z } from "zod";
+import { dlog } from "@/utils/debug";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
 
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/dashboard/admin/")({
 		}),
 	),
 	beforeLoad: async ({ context }) => {
+		dlog("route:admin", "beforeLoad", { hasSession: !!context.session });
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });
 	},
 });
@@ -24,6 +26,8 @@ export const Route = createFileRoute("/dashboard/admin/")({
 function RouteComponent() {
 	const { tab, packageId, unitType, unitId, sectionId } = Route.useSearch();
 	const initialFilter = useMemo(() => ({ packageId, unitType, unitId }), [packageId, unitType, unitId]);
+
+	dlog("route:admin", "render", { tab, packageId, unitType, unitId, sectionId });
 
 	// tenantId is intentionally hardcoded as "default". The orpc handler resolves the real tenantId
 	// from the authenticated user's eng-labs profile (dashboard.ts L299-300), so reading it from

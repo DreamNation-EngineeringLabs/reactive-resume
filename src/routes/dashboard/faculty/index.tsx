@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { useMemo } from "react";
 import { z } from "zod";
+import { dlog } from "@/utils/debug";
 import type { DashboardTab } from "../-components/section-metrics-view";
 import { SectionMetricsView } from "../-components/section-metrics-view";
 
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/dashboard/faculty/")({
 		}),
 	),
 	beforeLoad: async ({ context }) => {
+		dlog("route:faculty", "beforeLoad", { hasSession: !!context.session });
 		if (!context.session) throw redirect({ to: "/auth/login", replace: true });
 	},
 });
@@ -24,6 +26,8 @@ export const Route = createFileRoute("/dashboard/faculty/")({
 function RouteComponent() {
 	const { tab, packageId, unitType, unitId, sectionId } = Route.useSearch();
 	const initialFilter = useMemo(() => ({ packageId, unitType, unitId }), [packageId, unitType, unitId]);
+
+	dlog("route:faculty", "render", { tab, packageId, unitType, unitId, sectionId });
 
 	// Both sectionIds and tenantId are resolved server-side from the faculty's eng-labs instructor
 	// mapping (dashboard.ts: getInstructorSections + engLabsUser.tenantId). Reading them from

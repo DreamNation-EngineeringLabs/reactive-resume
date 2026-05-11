@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 // @ts-expect-error
 import jwt from "jsonwebtoken";
 import { auth, DEFAULT_RESUME_USER_ORG_ID, DEFAULT_RESUME_USER_TENANT_ID } from "@/integrations/auth/config";
+import { dlog } from "@/utils/debug";
 import { env } from "@/utils/env";
 
 function tenantOrgFromJwt(decoded: Record<string, unknown>): { tenantId: string; organisationId: string } {
@@ -27,7 +28,17 @@ async function handler({ request }: { request: Request }) {
 	const token = url.searchParams.get("token");
 	const traceId = url.searchParams.get("trace") ?? `sso-${Date.now().toString(36)}`;
 
+	dlog("sso", "request:received", {
+		traceId,
+		host: url.host,
+		path: url.pathname,
+		hasToken: !!token,
+		referrer: request.headers.get("referer") ?? null,
+		ua: request.headers.get("user-agent")?.slice(0, 100) ?? null,
+	});
+
 	const errorRedirect = (error: string) => {
+		dlog("sso", "request:error-redirect", { traceId, error });
 		return new Response(null, {
 			status: 302,
 			headers: {
@@ -99,6 +110,7 @@ async function handler({ request }: { request: Request }) {
 			},
 			asResponse: true,
 		});
+		dlog("sso", "signin:attempt", { traceId, ok: response.ok, status: response.status });
 
 		// If sign in fails, try to sign up
 		if (!response.ok) {
@@ -113,6 +125,7 @@ async function handler({ request }: { request: Request }) {
 				},
 				asResponse: true,
 			});
+			dlog("sso", "signup:attempt", { traceId, ok: response.ok, status: response.status });
 		}
 
 		if (!response.ok) {
@@ -152,6 +165,17 @@ async function handler({ request }: { request: Request }) {
 					: roleUpper === "ADMIN"
 						? "/resume/dashboard/admin?tab=overview"
 						: "/resume/dashboard/resumes?sort=lastUpdatedAt";
+
+		const setCookieCount = Array.from(response.headers.entries()).filter(
+			([k]) => k.toLowerCase() === "set-cookie",
+		).length;
+		dlog("sso", "destination:resolved", {
+			traceId,
+			roleUpper,
+			destination,
+			setCookieCount,
+			ssoContext: { ...ssoContext, organisationUnits: ssoContext.organisationUnits.length },
+		});
 
 		const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"></head><body>

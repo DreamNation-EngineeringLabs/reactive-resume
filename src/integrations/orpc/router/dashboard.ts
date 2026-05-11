@@ -33,6 +33,7 @@ import {
 	getUnitSchemaTypes,
 } from "@/integrations/eng-labs";
 import type { EngLabsLearnerProfile, OrgUnitRow, PlacementPackage, Section } from "@/integrations/eng-labs/types";
+import { derror, dlog } from "@/utils/debug";
 import { protectedProcedure } from "../context";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -292,439 +293,481 @@ export const sectionsDashboard = protectedProcedure
 	)
 	.handler(async ({ context, input }) => {
 		const { activeUnitId, scope } = input;
+		const reqId = `dash-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-		// 1. Resolve the authenticated user in eng-labs + actual tenantId.
-		// The eng-labs user's tenantId is authoritative — client-supplied input.tenantId can drift
-		// (e.g., stale SSO localStorage, cross-tenant testing) and would mis-scope every query below.
-		const engLabsUser = await getEngLabsUserByEmail(context.user.email);
-		let tenantId = engLabsUser?.tenantId ?? input.tenantId;
+		dlog("handler", "sections:request:received", {
+			reqId,
+			userEmail: context.user.email,
+			input: {
+				scope,
+				activeUnitId,
+				sectionIdsCount: input.sectionIds.length,
+				clientTenantId: input.tenantId,
+			},
+		});
 
-		// 2. Resolve assigned sections BEFORE packages/org tree — faculty SSO often has tenantId "default"
-		//    and no org resolution until we know real tenant from organisation_units.
-		let sections: Section[] = [];
-		if (scope === "faculty" && engLabsUser?.id) {
-			sections = await getInstructorSections(engLabsUser.id);
-		}
-		if (sections.length === 0 && input.sectionIds.length > 0) {
-			sections = await getSectionsByIds(input.sectionIds);
-		}
-		if (sections.length > 0) {
-			const ouTenant = await getTenantIdForOrgUnits(sections.map((s) => s.id));
-			if (ouTenant && (!tenantId || tenantId === "default")) {
-				tenantId = ouTenant;
+		try {
+			// 1. Resolve the authenticated user in eng-labs + actual tenantId.
+			// The eng-labs user's tenantId is authoritative — client-supplied input.tenantId can drift
+			// (e.g., stale SSO localStorage, cross-tenant testing) and would mis-scope every query below.
+			const engLabsUser = await getEngLabsUserByEmail(context.user.email);
+			let tenantId = engLabsUser?.tenantId ?? input.tenantId;
+
+			dlog("handler", "sections:auth:resolved", {
+				reqId,
+				engLabsUserFound: !!engLabsUser,
+				engLabsUserId: engLabsUser?.id ?? null,
+				engLabsTenantId: engLabsUser?.tenantId ?? null,
+				resolvedTenantId: tenantId,
+			});
+
+			// 2. Resolve assigned sections BEFORE packages/org tree — faculty SSO often has tenantId "default"
+			//    and no org resolution until we know real tenant from organisation_units.
+			let sections: Section[] = [];
+			if (scope === "faculty" && engLabsUser?.id) {
+				sections = await getInstructorSections(engLabsUser.id);
+				dlog("handler", "sections:faculty:instructor-sections", { reqId, count: sections.length });
 			}
-		}
-
-		// 3. Get placement packages for the filter UI
-		let filterPackages: PlacementPackage[] = [];
-		let resolvedOrganisationId: string | null = null;
-
-		if (engLabsUser?.id) {
-			if (scope === "faculty") {
-				filterPackages = await getInstructorPackages(engLabsUser.id);
+			if (sections.length === 0 && input.sectionIds.length > 0) {
+				sections = await getSectionsByIds(input.sectionIds);
+				dlog("handler", "sections:fallback:by-ids", { reqId, count: sections.length });
 			}
-		}
-		// PO/admin always get all packages for the org; faculty fallback to all if no assigned packages
-		if (filterPackages.length === 0 && tenantId && tenantId !== "default") {
-			// Derive organisationId from the first available placement package or org unit
-			const pool = await import("@/integrations/eng-labs/client").then((m) => m.getEngLabsPool());
-			if (pool) {
-				const { rows } = await pool.query<{ organisation_id: string }>(
-					`SELECT organisation_id FROM placement_packages WHERE tenant_id = $1 LIMIT 1`,
-					[tenantId],
-				);
-				if (rows[0]) {
-					resolvedOrganisationId = rows[0].organisation_id;
-					filterPackages = await getPlacementPackages(tenantId, resolvedOrganisationId);
+			if (sections.length > 0) {
+				const ouTenant = await getTenantIdForOrgUnits(sections.map((s) => s.id));
+				if (ouTenant && (!tenantId || tenantId === "default")) {
+					dlog("handler", "sections:tenant:upgraded-from-orgunits", { reqId, from: tenantId, to: ouTenant });
+					tenantId = ouTenant;
 				}
-				// If no packages, try to get organisation_id from org units
-				if (!resolvedOrganisationId) {
-					const { rows: ouRows } = await pool.query<{ organisation_id: string }>(
-						`SELECT organisation_id FROM organisation_units WHERE tenant_id = $1 LIMIT 1`,
+			}
+
+			// 3. Get placement packages for the filter UI
+			let filterPackages: PlacementPackage[] = [];
+			let resolvedOrganisationId: string | null = null;
+
+			if (engLabsUser?.id) {
+				if (scope === "faculty") {
+					filterPackages = await getInstructorPackages(engLabsUser.id);
+				}
+			}
+			// PO/admin always get all packages for the org; faculty fallback to all if no assigned packages
+			if (filterPackages.length === 0 && tenantId && tenantId !== "default") {
+				// Derive organisationId from the first available placement package or org unit
+				const pool = await import("@/integrations/eng-labs/client").then((m) => m.getEngLabsPool());
+				if (pool) {
+					const { rows } = await pool.query<{ organisation_id: string }>(
+						`SELECT organisation_id FROM placement_packages WHERE tenant_id = $1 LIMIT 1`,
 						[tenantId],
 					);
-					if (ouRows[0]) resolvedOrganisationId = ouRows[0].organisation_id;
-				}
-			}
-		} else if (filterPackages.length > 0) {
-			resolvedOrganisationId = filterPackages[0].organisationId;
-		}
-
-		// 4. Get unit schema types + all org units for the filter UI
-		const [unitTypes, allOrgUnits] = await Promise.all([
-			resolvedOrganisationId && tenantId && tenantId !== "default"
-				? getUnitSchemaTypes(tenantId, resolvedOrganisationId)
-				: Promise.resolve([] as string[]),
-			resolvedOrganisationId && tenantId && tenantId !== "default"
-				? getAllOrgUnits(tenantId, resolvedOrganisationId)
-				: Promise.resolve([] as OrgUnitRow[]),
-		]);
-
-		// 5. PO/admin: sections with learners under orgs that have placement packages (not whole tenant)
-		if (sections.length === 0 && scope === "po" && tenantId && tenantId !== "default") {
-			sections = await getPlacementScopedSections(tenantId);
-		}
-
-		// 6. For faculty scope, restrict allOrgUnits to only units relevant to their assigned sections
-		let scopedOrgUnits = allOrgUnits;
-		if (scope === "faculty" && sections.length > 0) {
-			const relevantIds = new Set(sections.map((s) => s.id));
-			scopedOrgUnits = allOrgUnits.filter((u) => relevantIds.has(u.id));
-		}
-
-		// 7. Derive unit types present in the scoped units (overrides full-org unitTypes for faculty).
-		//     When allOrgUnits failed to load, scopedOrgUnits is empty — fall back to instructor sections' types
-		//     so the Sections tab filter matches real rows.
-		const scopedUnitTypes =
-			scope === "faculty" && sections.length > 0
-				? scopedOrgUnits.length > 0
-					? [...new Set(scopedOrgUnits.map((u) => u.type))].sort()
-					: [...new Set(sections.map((s) => s.type))].sort()
-				: unitTypes;
-
-		const normEmail = (e: string) => e.trim().toLowerCase();
-
-		// 8–9. Cohort (resume DB first): all `user` rows for this tenant → eng-labs LEARNER profiles with
-		//     every org link (enrollment + user_mappings). Filters:
-		//     • PO: optional placement subtree (skip if none configured).
-		//     • Faculty: instructor-assigned org units + all descendants in tenant.
-		//     • activeUnitId: subtree of selected department/stream/class.
-		//     This matches department-only and class-only enrollments for default overview and filters.
-		let activeDescendantSet: Set<string> | null = null;
-		if (activeUnitId) {
-			if (tenantId && tenantId !== "default") {
-				activeDescendantSet = new Set(await getDescendantOrgUnitIds([activeUnitId], tenantId));
-			} else {
-				const selectedUnit = scopedOrgUnits.find((u) => u.id === activeUnitId);
-				if (selectedUnit) {
-					const childIds = new Set<string>();
-					const queue = [activeUnitId];
-					while (queue.length > 0) {
-						const current = queue.shift()!;
-						childIds.add(current);
-						for (const u of scopedOrgUnits) {
-							if (u.parentId === current) queue.push(u.id);
-						}
+					if (rows[0]) {
+						resolvedOrganisationId = rows[0].organisation_id;
+						filterPackages = await getPlacementPackages(tenantId, resolvedOrganisationId);
 					}
-					activeDescendantSet = childIds;
+					// If no packages, try to get organisation_id from org units
+					if (!resolvedOrganisationId) {
+						const { rows: ouRows } = await pool.query<{ organisation_id: string }>(
+							`SELECT organisation_id FROM organisation_units WHERE tenant_id = $1 LIMIT 1`,
+							[tenantId],
+						);
+						if (ouRows[0]) resolvedOrganisationId = ouRows[0].organisation_id;
+					}
+				}
+			} else if (filterPackages.length > 0) {
+				resolvedOrganisationId = filterPackages[0].organisationId;
+			}
+
+			// 4. Get unit schema types + all org units for the filter UI
+			const [unitTypes, allOrgUnits] = await Promise.all([
+				resolvedOrganisationId && tenantId && tenantId !== "default"
+					? getUnitSchemaTypes(tenantId, resolvedOrganisationId)
+					: Promise.resolve([] as string[]),
+				resolvedOrganisationId && tenantId && tenantId !== "default"
+					? getAllOrgUnits(tenantId, resolvedOrganisationId)
+					: Promise.resolve([] as OrgUnitRow[]),
+			]);
+
+			// 5. PO/admin: sections with learners under orgs that have placement packages (not whole tenant)
+			if (sections.length === 0 && scope === "po" && tenantId && tenantId !== "default") {
+				sections = await getPlacementScopedSections(tenantId);
+			}
+
+			// 6. For faculty scope, restrict allOrgUnits to only units relevant to their assigned sections
+			let scopedOrgUnits = allOrgUnits;
+			if (scope === "faculty" && sections.length > 0) {
+				const relevantIds = new Set(sections.map((s) => s.id));
+				scopedOrgUnits = allOrgUnits.filter((u) => relevantIds.has(u.id));
+			}
+
+			// 7. Derive unit types present in the scoped units (overrides full-org unitTypes for faculty).
+			//     When allOrgUnits failed to load, scopedOrgUnits is empty — fall back to instructor sections' types
+			//     so the Sections tab filter matches real rows.
+			const scopedUnitTypes =
+				scope === "faculty" && sections.length > 0
+					? scopedOrgUnits.length > 0
+						? [...new Set(scopedOrgUnits.map((u) => u.type))].sort()
+						: [...new Set(sections.map((s) => s.type))].sort()
+					: unitTypes;
+
+			const normEmail = (e: string) => e.trim().toLowerCase();
+
+			// 8–9. Cohort (resume DB first): all `user` rows for this tenant → eng-labs LEARNER profiles with
+			//     every org link (enrollment + user_mappings). Filters:
+			//     • PO: optional placement subtree (skip if none configured).
+			//     • Faculty: instructor-assigned org units + all descendants in tenant.
+			//     • activeUnitId: subtree of selected department/stream/class.
+			//     This matches department-only and class-only enrollments for default overview and filters.
+			let activeDescendantSet: Set<string> | null = null;
+			if (activeUnitId) {
+				if (tenantId && tenantId !== "default") {
+					activeDescendantSet = new Set(await getDescendantOrgUnitIds([activeUnitId], tenantId));
+				} else {
+					const selectedUnit = scopedOrgUnits.find((u) => u.id === activeUnitId);
+					if (selectedUnit) {
+						const childIds = new Set<string>();
+						const queue = [activeUnitId];
+						while (queue.length > 0) {
+							const current = queue.shift()!;
+							childIds.add(current);
+							for (const u of scopedOrgUnits) {
+								if (u.parentId === current) queue.push(u.id);
+							}
+						}
+						activeDescendantSet = childIds;
+					}
 				}
 			}
-		}
 
-		let placementBoundarySet: Set<string> | null = null;
-		if (scope === "po" && tenantId && tenantId !== "default") {
-			const pIds = await getPlacementSubtreeOrgUnitIds(tenantId);
-			placementBoundarySet = pIds.length > 0 ? new Set(pIds) : null;
-		}
-
-		let instructorSubtreeSet: Set<string> | null = null;
-		if (scope === "faculty") {
-			if (sections.length === 0) {
-				instructorSubtreeSet = new Set();
-			} else if (tenantId && tenantId !== "default") {
-				instructorSubtreeSet = new Set(
-					await getDescendantOrgUnitIds(
-						sections.map((s) => s.id),
-						tenantId,
-					),
-				);
-			} else {
-				instructorSubtreeSet = new Set(sections.map((s) => s.id));
+			let placementBoundarySet: Set<string> | null = null;
+			if (scope === "po" && tenantId && tenantId !== "default") {
+				const pIds = await getPlacementSubtreeOrgUnitIds(tenantId);
+				placementBoundarySet = pIds.length > 0 ? new Set(pIds) : null;
 			}
-		}
 
-		function profilePassesFilters(p: EngLabsLearnerProfile): boolean {
-			if (placementBoundarySet && !p.unitIds.some((id) => placementBoundarySet.has(id))) return false;
-			if (instructorSubtreeSet !== null && !p.unitIds.some((id) => instructorSubtreeSet.has(id))) return false;
-			if (activeDescendantSet && !p.unitIds.some((id) => activeDescendantSet.has(id))) return false;
-			return true;
-		}
-
-		// Cohort: source of truth is eng-labs. "Total Students" is the deduplicated set of learners
-		// in scope who have **active resume-builder access** (a non-expired `user_quota_grants` row
-		// for `RESUME_CREATE`). Better Auth `user` rows enrich each learner with resume data when
-		// the learner has signed up; learners without a Better Auth row appear with empty resumes.
-		//   • Faculty scope = learners in the faculty's assigned sections.
-		//   • Admin / PO scope = learners across the tenant's placement-scoped packages, deduped.
-		// See CLAUDE.md "Dashboard scoping rules" for the canonical product spec.
-		const cohortEmailSet = new Set<string>();
-		if (sections.length > 0 && tenantId && tenantId !== "default") {
-			const inSections = await getStudentsBySections(
-				sections.map((s) => s.id),
-				tenantId,
-			);
-			for (const s of inSections) {
-				const e = normEmail(s.email);
-				if (e) cohortEmailSet.add(e);
-			}
-		}
-
-		// Admin/PO also seed cohort from Better Auth tenant users (signed-up learners not yet linked
-		// to a placement section). Faculty stays strictly within their assigned sections.
-		let resumeUsers: (typeof schema.user.$inferSelect)[] = [];
-		if (tenantId && tenantId !== "default") {
+			let instructorSubtreeSet: Set<string> | null = null;
 			if (scope === "faculty") {
-				resumeUsers =
-					cohortEmailSet.size > 0
-						? await db
-								.select()
-								.from(schema.user)
-								.where(inArray(sql<string>`lower(trim(${schema.user.email}))`, [...cohortEmailSet]))
-						: [];
-			} else {
-				const resumeUsersByTenant = await db.select().from(schema.user).where(eq(schema.user.tenantId, tenantId));
-				for (const u of resumeUsersByTenant) cohortEmailSet.add(normEmail(u.email));
-
-				const allEmails = [...cohortEmailSet];
-				resumeUsers =
-					allEmails.length > 0
-						? await db
-								.select()
-								.from(schema.user)
-								.where(inArray(sql<string>`lower(trim(${schema.user.email}))`, allEmails))
-						: [];
-			}
-		}
-
-		// Restrict the cohort to learners with active resume-builder access. Returns null when
-		// eng-labs isn't configured — in that case we leave the cohort untouched (no filter).
-		const cohortBeforeAccess = cohortEmailSet.size;
-		const accessEmails = await filterEmailsWithResumeBuilderAccess([...cohortEmailSet]);
-		if (accessEmails !== null) {
-			for (const email of [...cohortEmailSet]) {
-				if (!accessEmails.has(email)) cohortEmailSet.delete(email);
-			}
-		}
-
-		const profiles = await getEngLabsLearnerProfilesByEmails([...cohortEmailSet], tenantId);
-		const profileByEmail = new Map<string, EngLabsLearnerProfile>(profiles.map((p) => [normEmail(p.email), p]));
-		const localUserByEmail = new Map(resumeUsers.map((u) => [normEmail(u.email), u]));
-
-		const emailToLocalUser = new Map<string, (typeof resumeUsers)[number]>();
-		const engLabsStudents: import("@/integrations/eng-labs/types").StudentInfo[] = [];
-
-		// TEMP-DIAGNOSTIC: trace cohort funnel for the dashboard. Remove once verified.
-		console.log("[dashboard.sections] funnel", {
-			scope,
-			tenantId,
-			engLabsUserId: engLabsUser?.id ?? null,
-			sectionsResolved: sections.length,
-			sectionIdsSample: sections.slice(0, 5).map((s) => s.id),
-			cohortBeforeAccess,
-			accessEmailsCount: accessEmails === null ? "no-filter" : accessEmails.size,
-			cohortAfterAccess: cohortEmailSet.size,
-			profilesCount: profiles.length,
-			instructorSubtreeSetSize: instructorSubtreeSet?.size ?? null,
-			profilesUnitIdsSample: profiles.slice(0, 3).map((p) => ({ email: p.email, unitIds: p.unitIds })),
-		});
-
-		for (const p of profiles) {
-			if (!profilePassesFilters(p)) continue;
-			const email = normEmail(p.email);
-			const localUser = localUserByEmail.get(email);
-			if (localUser) emailToLocalUser.set(email, localUser);
-			const primarySection = p.enrollmentUnitId ?? p.unitIds[0] ?? "";
-			engLabsStudents.push({
-				id: p.id,
-				name: p.name,
-				email: p.email,
-				rollNumber: p.rollNumber,
-				sectionId: primarySection,
-			});
-		}
-
-		const localUserIds = engLabsStudents.flatMap((s) => {
-			const u = emailToLocalUser.get(normEmail(s.email));
-			return u ? [u.id] : [];
-		});
-
-		// 10. Get resumes for matched users
-		const resumes = await getResumesForUsers(localUserIds);
-		const resumeIds = resumes.map((r) => r.id);
-
-		// 9. Get feedback data + submission status
-		const [commentCounts, latestScores, submissionStatus] = await Promise.all([
-			getCommentCountsByResumeIds(resumeIds),
-			getLatestEvaluationsByResumeIds(resumeIds),
-			getSubmissionStatusByResumeIds(resumeIds),
-		]);
-
-		// 10. Build per-user resume data
-		const resumesByUserId = new Map<string, typeof resumes>();
-		for (const r of resumes) {
-			const existing = resumesByUserId.get(r.userId) ?? [];
-			existing.push(r);
-			resumesByUserId.set(r.userId, existing);
-		}
-
-		const students = engLabsStudents.map((student) => {
-			const localUser = emailToLocalUser.get(normEmail(student.email));
-			const p = profileByEmail.get(normEmail(student.email));
-			const userResumes = localUser ? (resumesByUserId.get(localUser.id) ?? []) : [];
-			const engLabsUnitIds = p?.unitIds?.length ? p.unitIds : student.sectionId ? [student.sectionId] : [];
-
-			return {
-				engLabsId: student.id,
-				name: student.name,
-				email: student.email,
-				rollNumber: student.rollNumber,
-				sectionId: student.sectionId,
-				sectionName: student.sectionName ?? null,
-				engLabsUnitIds,
-				resumeAppUserId: localUser?.id ?? null,
-				resumes: userResumes.map((r) => {
-					const score = latestScores.get(r.id) ?? null;
-					const comments = commentCounts.get(r.id) ?? 0;
-					const isSubmitted = submissionStatus.get(r.id) ?? false;
-
-					let status: "not_reviewed" | "submitted" | "evaluated" | "has_comments" = "not_reviewed";
-					if (score !== null) status = "evaluated";
-					else if (isSubmitted) status = "submitted";
-					else if (comments > 0) status = "has_comments";
-
-					return {
-						id: r.id,
-						name: r.name,
-						updatedAt: r.updatedAt,
-						evaluationScore: score,
-						commentCount: comments,
-						isSubmitted,
-						status,
-						reviewStatus: (r as any).reviewStatus ?? "DRAFT",
-						locked: (r as any).locked ?? false,
-						unlockReason: (r as any).unlockReason ?? null,
-					};
-				}),
-			};
-		});
-
-		// 11. Calculate stats for ALL org units (hierarchical aggregation)
-		let unitStats = scopedOrgUnits.map((unit) => {
-			// Find all descendant CLASS-level section IDs for this unit
-			const descendantSectionIds = new Set<string>();
-			const queue = [unit.id];
-			const processed = new Set<string>();
-
-			while (queue.length > 0) {
-				const currentId = queue.shift()!;
-				if (processed.has(currentId)) continue;
-				processed.add(currentId);
-
-				// If it's a leaf section, add it
-				const isSection = sections.some((s) => s.id === currentId);
-				if (isSection) descendantSectionIds.add(currentId);
-
-				// Find children in allOrgUnits to continue recursion
-				for (const u of allOrgUnits) {
-					if (u.parentId === currentId) queue.push(u.id);
+				if (sections.length === 0) {
+					instructorSubtreeSet = new Set();
+				} else if (tenantId && tenantId !== "default") {
+					instructorSubtreeSet = new Set(
+						await getDescendantOrgUnitIds(
+							sections.map((s) => s.id),
+							tenantId,
+						),
+					);
+				} else {
+					instructorSubtreeSet = new Set(sections.map((s) => s.id));
 				}
 			}
 
-			return computeUnitStatsRow(
-				{ id: unit.id, name: unit.name, type: unit.type },
-				descendantSectionIds,
-				students,
-				resolveSectionPackageMeta(unit.id, descendantSectionIds, sections),
-			);
-		});
-
-		// Faculty: when org-unit tree never loaded (or IDs don't intersect), scopedOrgUnits is empty but
-		// getInstructorSections still returned rows — build one card per assigned section so the UI isn't blank.
-		if (unitStats.length === 0 && scope === "faculty" && sections.length > 0) {
-			unitStats = sections.map((sec) =>
-				computeUnitStatsRow({ id: sec.id, name: sec.name, type: sec.type }, new Set([sec.id]), students, {
-					packageId: sec.packageId,
-					packageName: sec.packageName,
-				}),
-			);
-		}
-
-		// 12. Aggregate stats. Cohort is now eng-labs-driven (every assigned learner counts in
-		// totalStudents), so `enrolledInResumeBuilder` is specifically those who have a Better Auth
-		// `user` row (resumeAppUserId set after the join above).
-		const allResumes = students.flatMap((s) => s.resumes);
-		const allEvaluated = allResumes.filter((r) => r.evaluationScore !== null);
-		const allScores = allEvaluated.map((r) => r.evaluationScore!);
-		const totalComments = allResumes.reduce((sum, r) => sum + r.commentCount, 0);
-		const allSubmitted = allResumes.filter((r) => r.isSubmitted);
-		const enrolledInResumeBuilder = students.filter((s) => s.resumeAppUserId !== null).length;
-		const withPrimaryResume = students.filter((s) => s.resumes.length > 0).length;
-
-		// 13. Recent activity
-		const recentEvaluations = await db
-			.select()
-			.from(schema.resumeEvaluation)
-			.where(resumeIds.length > 0 ? inArray(schema.resumeEvaluation.resumeId, resumeIds) : undefined)
-			.orderBy(desc(schema.resumeEvaluation.createdAt))
-			.limit(5);
-
-		const recentComments = await db
-			.select()
-			.from(schema.resumeComment)
-			.where(resumeIds.length > 0 ? inArray(schema.resumeComment.resumeId, resumeIds) : undefined)
-			.orderBy(desc(schema.resumeComment.createdAt))
-			.limit(5);
-
-		const resumeIdToEmail = new Map<string, string>();
-		for (const student of students) {
-			for (const r of student.resumes) {
-				resumeIdToEmail.set(r.id, student.email);
+			function profilePassesFilters(p: EngLabsLearnerProfile): boolean {
+				if (placementBoundarySet && !p.unitIds.some((id) => placementBoundarySet.has(id))) return false;
+				if (instructorSubtreeSet !== null && !p.unitIds.some((id) => instructorSubtreeSet.has(id))) return false;
+				if (activeDescendantSet && !p.unitIds.some((id) => activeDescendantSet.has(id))) return false;
+				return true;
 			}
+
+			// Cohort: source of truth is eng-labs. "Total Students" is the deduplicated set of learners
+			// in scope who have **active resume-builder access** (a non-expired `user_quota_grants` row
+			// for `RESUME_CREATE`). Better Auth `user` rows enrich each learner with resume data when
+			// the learner has signed up; learners without a Better Auth row appear with empty resumes.
+			//   • Faculty scope = learners in the faculty's assigned sections.
+			//   • Admin / PO scope = learners across the tenant's placement-scoped packages, deduped.
+			// See CLAUDE.md "Dashboard scoping rules" for the canonical product spec.
+			const cohortEmailSet = new Set<string>();
+			if (sections.length > 0 && tenantId && tenantId !== "default") {
+				const inSections = await getStudentsBySections(
+					sections.map((s) => s.id),
+					tenantId,
+				);
+				for (const s of inSections) {
+					const e = normEmail(s.email);
+					if (e) cohortEmailSet.add(e);
+				}
+			}
+
+			// Admin/PO also seed cohort from Better Auth tenant users (signed-up learners not yet linked
+			// to a placement section). Faculty stays strictly within their assigned sections.
+			let resumeUsers: (typeof schema.user.$inferSelect)[] = [];
+			if (tenantId && tenantId !== "default") {
+				if (scope === "faculty") {
+					resumeUsers =
+						cohortEmailSet.size > 0
+							? await db
+									.select()
+									.from(schema.user)
+									.where(inArray(sql<string>`lower(trim(${schema.user.email}))`, [...cohortEmailSet]))
+							: [];
+				} else {
+					const resumeUsersByTenant = await db.select().from(schema.user).where(eq(schema.user.tenantId, tenantId));
+					for (const u of resumeUsersByTenant) cohortEmailSet.add(normEmail(u.email));
+
+					const allEmails = [...cohortEmailSet];
+					resumeUsers =
+						allEmails.length > 0
+							? await db
+									.select()
+									.from(schema.user)
+									.where(inArray(sql<string>`lower(trim(${schema.user.email}))`, allEmails))
+							: [];
+				}
+			}
+
+			// Restrict the cohort to learners with active resume-builder access. Returns null when
+			// eng-labs isn't configured — in that case we leave the cohort untouched (no filter).
+			const cohortBeforeAccess = cohortEmailSet.size;
+			const accessEmails = await filterEmailsWithResumeBuilderAccess([...cohortEmailSet]);
+			if (accessEmails !== null) {
+				for (const email of [...cohortEmailSet]) {
+					if (!accessEmails.has(email)) cohortEmailSet.delete(email);
+				}
+			}
+
+			const profiles = await getEngLabsLearnerProfilesByEmails([...cohortEmailSet], tenantId);
+			const profileByEmail = new Map<string, EngLabsLearnerProfile>(profiles.map((p) => [normEmail(p.email), p]));
+			const localUserByEmail = new Map(resumeUsers.map((u) => [normEmail(u.email), u]));
+
+			const emailToLocalUser = new Map<string, (typeof resumeUsers)[number]>();
+			const engLabsStudents: import("@/integrations/eng-labs/types").StudentInfo[] = [];
+
+			// TEMP-DIAGNOSTIC: trace cohort funnel for the dashboard. Remove once verified.
+			console.log("[dashboard.sections] funnel", {
+				scope,
+				tenantId,
+				engLabsUserId: engLabsUser?.id ?? null,
+				sectionsResolved: sections.length,
+				sectionIdsSample: sections.slice(0, 5).map((s) => s.id),
+				cohortBeforeAccess,
+				accessEmailsCount: accessEmails === null ? "no-filter" : accessEmails.size,
+				cohortAfterAccess: cohortEmailSet.size,
+				profilesCount: profiles.length,
+				instructorSubtreeSetSize: instructorSubtreeSet?.size ?? null,
+				profilesUnitIdsSample: profiles.slice(0, 3).map((p) => ({ email: p.email, unitIds: p.unitIds })),
+			});
+
+			for (const p of profiles) {
+				if (!profilePassesFilters(p)) continue;
+				const email = normEmail(p.email);
+				const localUser = localUserByEmail.get(email);
+				if (localUser) emailToLocalUser.set(email, localUser);
+				const primarySection = p.enrollmentUnitId ?? p.unitIds[0] ?? "";
+				engLabsStudents.push({
+					id: p.id,
+					name: p.name,
+					email: p.email,
+					rollNumber: p.rollNumber,
+					sectionId: primarySection,
+				});
+			}
+
+			const localUserIds = engLabsStudents.flatMap((s) => {
+				const u = emailToLocalUser.get(normEmail(s.email));
+				return u ? [u.id] : [];
+			});
+
+			// 10. Get resumes for matched users
+			const resumes = await getResumesForUsers(localUserIds);
+			const resumeIds = resumes.map((r) => r.id);
+
+			// 9. Get feedback data + submission status
+			const [commentCounts, latestScores, submissionStatus] = await Promise.all([
+				getCommentCountsByResumeIds(resumeIds),
+				getLatestEvaluationsByResumeIds(resumeIds),
+				getSubmissionStatusByResumeIds(resumeIds),
+			]);
+
+			// 10. Build per-user resume data
+			const resumesByUserId = new Map<string, typeof resumes>();
+			for (const r of resumes) {
+				const existing = resumesByUserId.get(r.userId) ?? [];
+				existing.push(r);
+				resumesByUserId.set(r.userId, existing);
+			}
+
+			const students = engLabsStudents.map((student) => {
+				const localUser = emailToLocalUser.get(normEmail(student.email));
+				const p = profileByEmail.get(normEmail(student.email));
+				const userResumes = localUser ? (resumesByUserId.get(localUser.id) ?? []) : [];
+				const engLabsUnitIds = p?.unitIds?.length ? p.unitIds : student.sectionId ? [student.sectionId] : [];
+
+				return {
+					engLabsId: student.id,
+					name: student.name,
+					email: student.email,
+					rollNumber: student.rollNumber,
+					sectionId: student.sectionId,
+					sectionName: student.sectionName ?? null,
+					engLabsUnitIds,
+					resumeAppUserId: localUser?.id ?? null,
+					resumes: userResumes.map((r) => {
+						const score = latestScores.get(r.id) ?? null;
+						const comments = commentCounts.get(r.id) ?? 0;
+						const isSubmitted = submissionStatus.get(r.id) ?? false;
+
+						let status: "not_reviewed" | "submitted" | "evaluated" | "has_comments" = "not_reviewed";
+						if (score !== null) status = "evaluated";
+						else if (isSubmitted) status = "submitted";
+						else if (comments > 0) status = "has_comments";
+
+						return {
+							id: r.id,
+							name: r.name,
+							updatedAt: r.updatedAt,
+							evaluationScore: score,
+							commentCount: comments,
+							isSubmitted,
+							status,
+							reviewStatus: (r as any).reviewStatus ?? "DRAFT",
+							locked: (r as any).locked ?? false,
+							unlockReason: (r as any).unlockReason ?? null,
+						};
+					}),
+				};
+			});
+
+			// 11. Calculate stats for ALL org units (hierarchical aggregation)
+			let unitStats = scopedOrgUnits.map((unit) => {
+				// Find all descendant CLASS-level section IDs for this unit
+				const descendantSectionIds = new Set<string>();
+				const queue = [unit.id];
+				const processed = new Set<string>();
+
+				while (queue.length > 0) {
+					const currentId = queue.shift()!;
+					if (processed.has(currentId)) continue;
+					processed.add(currentId);
+
+					// If it's a leaf section, add it
+					const isSection = sections.some((s) => s.id === currentId);
+					if (isSection) descendantSectionIds.add(currentId);
+
+					// Find children in allOrgUnits to continue recursion
+					for (const u of allOrgUnits) {
+						if (u.parentId === currentId) queue.push(u.id);
+					}
+				}
+
+				return computeUnitStatsRow(
+					{ id: unit.id, name: unit.name, type: unit.type },
+					descendantSectionIds,
+					students,
+					resolveSectionPackageMeta(unit.id, descendantSectionIds, sections),
+				);
+			});
+
+			// Faculty: when org-unit tree never loaded (or IDs don't intersect), scopedOrgUnits is empty but
+			// getInstructorSections still returned rows — build one card per assigned section so the UI isn't blank.
+			if (unitStats.length === 0 && scope === "faculty" && sections.length > 0) {
+				unitStats = sections.map((sec) =>
+					computeUnitStatsRow({ id: sec.id, name: sec.name, type: sec.type }, new Set([sec.id]), students, {
+						packageId: sec.packageId,
+						packageName: sec.packageName,
+					}),
+				);
+			}
+
+			// 12. Aggregate stats. Cohort is now eng-labs-driven (every assigned learner counts in
+			// totalStudents), so `enrolledInResumeBuilder` is specifically those who have a Better Auth
+			// `user` row (resumeAppUserId set after the join above).
+			const allResumes = students.flatMap((s) => s.resumes);
+			const allEvaluated = allResumes.filter((r) => r.evaluationScore !== null);
+			const allScores = allEvaluated.map((r) => r.evaluationScore!);
+			const totalComments = allResumes.reduce((sum, r) => sum + r.commentCount, 0);
+			const allSubmitted = allResumes.filter((r) => r.isSubmitted);
+			const enrolledInResumeBuilder = students.filter((s) => s.resumeAppUserId !== null).length;
+			const withPrimaryResume = students.filter((s) => s.resumes.length > 0).length;
+
+			// 13. Recent activity
+			const recentEvaluations = await db
+				.select()
+				.from(schema.resumeEvaluation)
+				.where(resumeIds.length > 0 ? inArray(schema.resumeEvaluation.resumeId, resumeIds) : undefined)
+				.orderBy(desc(schema.resumeEvaluation.createdAt))
+				.limit(5);
+
+			const recentComments = await db
+				.select()
+				.from(schema.resumeComment)
+				.where(resumeIds.length > 0 ? inArray(schema.resumeComment.resumeId, resumeIds) : undefined)
+				.orderBy(desc(schema.resumeComment.createdAt))
+				.limit(5);
+
+			const resumeIdToEmail = new Map<string, string>();
+			for (const student of students) {
+				for (const r of student.resumes) {
+					resumeIdToEmail.set(r.id, student.email);
+				}
+			}
+
+			const enrichedEvaluations = recentEvaluations.map((e) => {
+				const email = resumeIdToEmail.get(e.resumeId);
+				const student = email ? engLabsStudents.find((s) => s.email === email) : null;
+				return {
+					id: e.id,
+					resumeId: e.resumeId,
+					overallScore: e.overallScore,
+					evaluatedAt: e.evaluatedAt,
+					studentName: student?.name ?? null,
+				};
+			});
+
+			const enrichedComments = recentComments.map((c) => {
+				const email = resumeIdToEmail.get(c.resumeId);
+				const student = email ? engLabsStudents.find((s) => s.email === email) : null;
+				return {
+					id: c.id,
+					resumeId: c.resumeId,
+					content: c.content,
+					createdAt: c.createdAt,
+					studentName: student?.name ?? null,
+				};
+			});
+
+			const response = {
+				// Filter UI data (scoped to instructor's sections for faculty role)
+				packages: filterPackages,
+				unitTypes: scopedUnitTypes,
+				allOrgUnits: scopedOrgUnits,
+				// Section-level stats (CLASS leaf nodes)
+				sections: unitStats,
+				students,
+				aggregateStats: {
+					totalStudents: students.length,
+					totalResumes: allResumes.length,
+					/** Learners in scope who have a Polymath `user` row (eng-labs ∩ resume DB). Same as totalStudents. */
+					enrolledInResumeBuilder,
+					/** How many of those have at least one primary resume document (`resume.is_primary`). */
+					withPrimaryResume,
+					/** % of resume-builder enrollees with a primary resume. */
+					primaryResumeRate:
+						enrolledInResumeBuilder > 0 ? Math.round((withPrimaryResume / enrolledInResumeBuilder) * 1000) / 10 : 0,
+					totalEvaluations: allEvaluated.length,
+					totalSubmitted: allSubmitted.length,
+					totalComments,
+					completionRate: allResumes.length > 0 ? Math.round((allEvaluated.length / allResumes.length) * 100) : 0,
+					averageScore: allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : null,
+				},
+				recentActivity: {
+					recentEvaluations: enrichedEvaluations,
+					recentComments: enrichedComments,
+				},
+			};
+
+			dlog("handler", "sections:response:ready", {
+				reqId,
+				packagesCount: response.packages.length,
+				unitTypesCount: response.unitTypes.length,
+				allOrgUnitsCount: response.allOrgUnits.length,
+				sectionsCount: response.sections.length,
+				studentsCount: response.students.length,
+				aggregate: response.aggregateStats,
+				recentEvaluationsCount: response.recentActivity.recentEvaluations.length,
+				recentCommentsCount: response.recentActivity.recentComments.length,
+			});
+
+			return response;
+		} catch (err) {
+			derror("handler", "sections:request:failed", err, { reqId });
+			throw err;
 		}
-
-		const enrichedEvaluations = recentEvaluations.map((e) => {
-			const email = resumeIdToEmail.get(e.resumeId);
-			const student = email ? engLabsStudents.find((s) => s.email === email) : null;
-			return {
-				id: e.id,
-				resumeId: e.resumeId,
-				overallScore: e.overallScore,
-				evaluatedAt: e.evaluatedAt,
-				studentName: student?.name ?? null,
-			};
-		});
-
-		const enrichedComments = recentComments.map((c) => {
-			const email = resumeIdToEmail.get(c.resumeId);
-			const student = email ? engLabsStudents.find((s) => s.email === email) : null;
-			return {
-				id: c.id,
-				resumeId: c.resumeId,
-				content: c.content,
-				createdAt: c.createdAt,
-				studentName: student?.name ?? null,
-			};
-		});
-
-		return {
-			// Filter UI data (scoped to instructor's sections for faculty role)
-			packages: filterPackages,
-			unitTypes: scopedUnitTypes,
-			allOrgUnits: scopedOrgUnits,
-			// Section-level stats (CLASS leaf nodes)
-			sections: unitStats,
-			students,
-			aggregateStats: {
-				totalStudents: students.length,
-				totalResumes: allResumes.length,
-				/** Learners in scope who have a Polymath `user` row (eng-labs ∩ resume DB). Same as totalStudents. */
-				enrolledInResumeBuilder,
-				/** How many of those have at least one primary resume document (`resume.is_primary`). */
-				withPrimaryResume,
-				/** % of resume-builder enrollees with a primary resume. */
-				primaryResumeRate:
-					enrolledInResumeBuilder > 0 ? Math.round((withPrimaryResume / enrolledInResumeBuilder) * 1000) / 10 : 0,
-				totalEvaluations: allEvaluated.length,
-				totalSubmitted: allSubmitted.length,
-				totalComments,
-				completionRate: allResumes.length > 0 ? Math.round((allEvaluated.length / allResumes.length) * 100) : 0,
-				averageScore: allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : null,
-			},
-			recentActivity: {
-				recentEvaluations: enrichedEvaluations,
-				recentComments: enrichedComments,
-			},
-		};
 	});
 
 // ─────────────────────────────────────────────────────────────────────────────

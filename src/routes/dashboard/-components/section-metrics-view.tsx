@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
+import { dlog } from "@/utils/debug";
 import { cn } from "@/utils/style";
 import { uiControl, uiSurface } from "@/utils/ui-tokens";
 import { ChecklistCreator } from "./checklist-creator";
@@ -79,20 +80,45 @@ export function SectionMetricsView({
 		resumes: Array<{ id: string; studentId: string }>;
 	} | null>(null);
 
+	const queryInput = {
+		sectionIds,
+		tenantId,
+		scope: scope === "admin" ? "po" : scope,
+		activeUnitId: filter.unitId,
+	};
+
 	const {
 		data: dashboard,
 		isLoading,
+		isPending,
+		isFetching,
+		isSuccess,
+		isError,
+		fetchStatus,
 		error,
-	} = useQuery(
-		orpc.resume.dashboard.sections.queryOptions({
-			input: {
-				sectionIds,
-				tenantId,
-				scope: scope === "admin" ? "po" : scope,
-				activeUnitId: filter.unitId,
-			},
-		}),
-	);
+	} = useQuery(orpc.resume.dashboard.sections.queryOptions({ input: queryInput }));
+
+	// Log every render so we can correlate render passes with query state transitions. The same
+	// component renders on SSR and on each client re-render after a query state change, so this
+	// gives a per-render snapshot to compare against the handler logs above.
+	dlog("section-metrics-view", "render", {
+		scope,
+		activeTab,
+		sectionIds,
+		tenantId,
+		activeUnitId: filter.unitId,
+		query: {
+			isLoading,
+			isPending,
+			isFetching,
+			isSuccess,
+			isError,
+			fetchStatus,
+			hasData: dashboard !== undefined,
+			hasError: error !== null,
+			errorMessage: error?.message ?? null,
+		},
+	});
 
 	const bulkUpdateMutation = useMutation({
 		...orpc.resume.dashboard.bulkUpdateResumes.mutationOptions(),
@@ -195,8 +221,38 @@ export function SectionMetricsView({
 		}
 	})();
 
-	// ── Loading ────────────────────────────────────────────────────────────────
-	if (isLoading) {
+	// ── Error first, then loading. `isLoading` is `isPending && isFetching`, which is FALSE on the
+	// server (no client fetch yet) — so without the explicit `!dashboard` guard, SSR would fall
+	// through to the main render below and crash on `dashboard.aggregateStats` (line ~287). That
+	// crash mid-stream is what was leaving the content area blank after SSO redirect: the sidebar
+	// was already flushed, then the content render threw, breaking the stream.
+	if (error) {
+		dlog("section-metrics-view", "guard:error-branch", {
+			errorName: error.name,
+			errorMessage: error.message,
+		});
+		return (
+			<div className={cn("flex flex-col items-center justify-center border-2 p-12", uiSurface.empty)}>
+				<WarningIcon className="mb-4 size-12 text-amber-500 opacity-50" />
+				<h3 className="font-bold text-foreground text-lg">{t`Unable to load dashboard data`}</h3>
+				<p className="mt-2 max-w-md text-muted-foreground text-sm">
+					{t`There was an error fetching student data. This might be due to missing database columns. Please ensure 'npm run db:push' has been executed.`}
+				</p>
+				<p className="mt-4 rounded-xl border border-border bg-muted p-2 font-mono text-muted-foreground text-xs">
+					{error.message}
+				</p>
+			</div>
+		);
+	}
+
+	if (isLoading || !dashboard) {
+		dlog("section-metrics-view", "guard:loading-branch", {
+			reason: isLoading ? "isLoading-true" : "data-undefined",
+			isLoading,
+			isPending,
+			isFetching,
+			fetchStatus,
+		});
 		return (
 			<div className="space-y-6">
 				<DashboardHeader icon={header.icon} title={header.title} />
@@ -212,22 +268,14 @@ export function SectionMetricsView({
 		);
 	}
 
-	const hasStudents = (dashboard?.students.length ?? 0) > 0;
+	dlog("section-metrics-view", "guard:main-branch", {
+		studentsCount: dashboard.students.length,
+		sectionsCount: dashboard.sections.length,
+		packagesCount: dashboard.packages.length,
+		aggregate: dashboard.aggregateStats,
+	});
 
-	if (error) {
-		return (
-			<div className={cn("flex flex-col items-center justify-center border-2 p-12", uiSurface.empty)}>
-				<WarningIcon className="mb-4 size-12 text-amber-500 opacity-50" />
-				<h3 className="font-bold text-foreground text-lg">{t`Unable to load dashboard data`}</h3>
-				<p className="mt-2 max-w-md text-muted-foreground text-sm">
-					{t`There was an error fetching student data. This might be due to missing database columns. Please ensure 'npm run db:push' has been executed.`}
-				</p>
-				<p className="mt-4 rounded-xl border border-border bg-muted p-2 font-mono text-muted-foreground text-xs">
-					{error.message}
-				</p>
-			</div>
-		);
-	}
+	const hasStudents = dashboard.students.length > 0;
 
 	return (
 		<div className="space-y-6">

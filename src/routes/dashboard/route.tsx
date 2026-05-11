@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { dlog } from "@/utils/debug";
 import { getPlacementsUrl, redirectToPlacements } from "@/utils/source-url";
 import { getDashboardSidebarServerFn, setDashboardSidebarServerFn } from "./-components/functions";
 import { DashboardSidebar } from "./-components/sidebar";
@@ -8,17 +9,27 @@ import { DashboardSidebar } from "./-components/sidebar";
 export const Route = createFileRoute("/dashboard")({
 	component: RouteComponent,
 	beforeLoad: async ({ context }) => {
+		dlog("route:dashboard", "beforeLoad:start", {
+			hasSession: !!context.session,
+			userEmail: context.session?.user?.email ?? null,
+			ssoOnly: context.flags?.ssoOnly ?? false,
+		});
 		if (!context.session) {
+			dlog("route:dashboard", "beforeLoad:no-session:redirect", {
+				ssoOnly: context.flags?.ssoOnly ?? false,
+			});
 			// In SSO-only mode, redirect back to the main application instead of the login page
 			if (context.flags.ssoOnly) {
 				redirectToPlacements();
 			}
 			throw redirect({ to: "/auth/login", replace: true });
 		}
+		dlog("route:dashboard", "beforeLoad:session-ok", { userEmail: context.session.user.email });
 		return { session: context.session };
 	},
 	loader: async () => {
 		const sidebarState = await getDashboardSidebarServerFn();
+		dlog("route:dashboard", "loader:sidebar-cookie", { sidebarState });
 		return { sidebarState };
 	},
 });
@@ -33,6 +44,13 @@ function RouteComponent() {
 		location.pathname.includes("/dashboard/review/") || /\/dashboard\/ats-score\/[^/]+/.test(location.pathname);
 
 	const isReviewPage = isFullBleedPage;
+
+	dlog("route:dashboard", "render", {
+		pathname: location.pathname,
+		search: location.search,
+		isReviewPage,
+		sidebarState,
+	});
 
 	// Optimistic local state: UI flips instantly on toggle; cookie + loader catch up in the background.
 	// Without this, the controlled `open` prop waits for setDashboardSidebarServerFn → router.invalidate() →

@@ -47,6 +47,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { authClient } from "@/integrations/auth/client";
 import type { AuthSession } from "@/integrations/auth/types";
 import { orpc } from "@/integrations/orpc/client";
+import { dlog } from "@/utils/debug";
 import { getPlacementsUrl } from "@/utils/source-url";
 import { getOrganisationUnits, getTenantId, getUserRole } from "@/utils/sso-context";
 import { getInitials } from "@/utils/string";
@@ -189,7 +190,8 @@ function SidebarItemRow({ item }: { item: SidebarItem }) {
 				title={i18n.t(item.label)}
 				className={cn(
 					"h-11",
-					isActive && "bg-primary font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 focus-visible:bg-primary/90",
+					isActive &&
+						"bg-primary font-bold text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 focus-visible:bg-primary/90",
 				)}
 			>
 				<Link
@@ -334,7 +336,16 @@ export function DashboardSidebar() {
 	useEffect(() => {
 		const r = getUserRole();
 		setRole(r ? r.toUpperCase() : null);
+		dlog("sidebar", "role:hydrated-from-localstorage", { role: r ?? null });
 	}, []);
+
+	dlog("sidebar", "render", {
+		hasSession: !!session?.user,
+		userEmail: session?.user?.email ?? null,
+		role,
+		isCollapsed,
+		isMobile,
+	});
 
 	// Build dashboard nav items based on role
 	const filteredDashboardItems = useMemo(() => {
@@ -357,12 +368,7 @@ export function DashboardSidebar() {
 	return (
 		<Sidebar variant="sidebar" collapsible="icon">
 			<SidebarHeader className="pb-2">
-				<div
-					className={cn(
-						"flex items-center gap-2 px-2 pt-2",
-						isCollapsed ? "justify-center" : "justify-between",
-					)}
-				>
+				<div className={cn("flex items-center gap-2 px-2 pt-2", isCollapsed ? "justify-center" : "justify-between")}>
 					<button type="button" onClick={handleLogoClick} className={isCollapsed ? "hidden" : ""}>
 						<img
 							className="my-3 w-40"
