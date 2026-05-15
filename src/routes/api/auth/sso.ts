@@ -1,5 +1,6 @@
 import { scryptSync } from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
+import { setCookie } from "@tanstack/react-start/server";
 // @ts-expect-error
 import jwt from "jsonwebtoken";
 import { auth, DEFAULT_RESUME_USER_ORG_ID, DEFAULT_RESUME_USER_TENANT_ID } from "@/integrations/auth/config";
@@ -199,32 +200,38 @@ async function handler({ request }: { request: Request }) {
 
 		const responseHeaders = new Headers();
 
-		// Forward Better Auth's session cookies as-is.
+		// Forward Better Auth's session cookies as-is. This is the only Set-Cookie path that
+		// survives via the manual Response headers (it's the first append, and the framework's
+		// response writer happens to pick up the first set-cookie entry only). Our own cookies
+		// must go through `setCookie` from @tanstack/react-start/server — that uses H3's
+		// `appendResponseHeader` under the hood, which is the only API that reliably writes
+		// multiple Set-Cookie headers through the Vite/TanStack Start middleware pipeline.
 		response.headers.forEach((value, key) => {
 			if (key.toLowerCase() === "set-cookie") {
 				responseHeaders.append(key, value);
 			}
 		});
 
-		// SSO context cookie — readable by client JS (NOT HttpOnly) because sidebar/sso-context.ts
-		// needs to read it for role-based UI. SameSite=Lax so it rides on the cross-site SSO entry
-		// navigation; Path=/resume to keep it scoped to the resume app.
-		const secure = url.protocol === "https:" ? "; Secure" : "";
-		const ssoContextCookie = encodeURIComponent(JSON.stringify(ssoContext));
-		responseHeaders.append(
-			"Set-Cookie",
-			`sso_context=${ssoContextCookie}; Path=/resume; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax${secure}`,
-		);
+		const isSecure = url.protocol === "https:";
 
-		// Mirror source_url as before — kept separate so server-side code (getSourceUrl) can read
-		// it without parsing the full sso_context blob.
+		// TEMP: swapped order to diagnose. Previously sso_context was first → got dropped.
+		// Now source_url is first; if sso_context still gets dropped, the bug is value-specific
+		// (likely the long JSON value), not order-dependent.
 		if (decoded.source_url) {
-			const enc = encodeURIComponent(decoded.source_url);
-			responseHeaders.append(
-				"Set-Cookie",
-				`source_url=${enc}; Path=/resume; Max-Age=${60 * 60 * 24 * 180}; SameSite=Lax${secure}`,
-			);
+			setCookie("source_url", decoded.source_url, {
+				path: "/resume",
+				maxAge: 60 * 60 * 24 * 180,
+				sameSite: "lax",
+				secure: isSecure,
+			});
 		}
+
+		setCookie("sso_context", JSON.stringify(ssoContext), {
+			path: "/resume",
+			maxAge: 60 * 60 * 24 * 30,
+			sameSite: "lax",
+			secure: isSecure,
+		});
 
 		responseHeaders.set("Location", destination);
 		responseHeaders.set("Cache-Control", "no-store");
