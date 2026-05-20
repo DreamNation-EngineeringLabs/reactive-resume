@@ -1,6 +1,6 @@
 import { scryptSync } from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
-import { setCookie } from "@tanstack/react-start/server";
+import { setResponseHeader } from "@tanstack/react-start/server";
 // @ts-expect-error
 import jwt from "jsonwebtoken";
 import { auth, DEFAULT_RESUME_USER_ORG_ID, DEFAULT_RESUME_USER_TENANT_ID } from "@/integrations/auth/config";
@@ -198,44 +198,46 @@ async function handler({ request }: { request: Request }) {
 		// sso-context.ts reads from `document.cookie` first, with localStorage as a fallback for
 		// users whose entry was set by the previous HTML+script version of this handler.
 
-		const responseHeaders = new Headers();
-
-		// Forward Better Auth's session cookies as-is. This is the only Set-Cookie path that
-		// survives via the manual Response headers (it's the first append, and the framework's
-		// response writer happens to pick up the first set-cookie entry only). Our own cookies
-		// must go through `setCookie` from @tanstack/react-start/server — that uses H3's
-		// `appendResponseHeader` under the hood, which is the only API that reliably writes
-		// multiple Set-Cookie headers through the Vite/TanStack Start middleware pipeline.
-		response.headers.forEach((value, key) => {
-			if (key.toLowerCase() === "set-cookie") {
-				responseHeaders.append(key, value);
-			}
-		});
-
 		const isSecure = url.protocol === "https:";
+		const secureAttr = isSecure ? "; Secure" : "";
 
-		// TEMP: swapped order to diagnose. Previously sso_context was first → got dropped.
-		// Now source_url is first; if sso_context still gets dropped, the bug is value-specific
-		// (likely the long JSON value), not order-dependent.
+		// Vite dev pipeline (start-plugin-core + srvx) drops all but the LAST set-cookie in the
+		// response. Production (Hono node-server) doesn't have this bug. Until the framework
+		// is patched, we put Better Auth's session cookie LAST so it's the one that survives —
+		// it's the only cookie that's strictly required (without it `auth.api.getSession()`
+		// returns null and the dashboard bounces). The other two (`sso_context`, `source_url`)
+		// are written but will be dropped in dev; they survive in prod. The client recovers
+		// `sso_context` data from the Better Auth user record via ORPC — see TODO below.
+		const setCookies: string[] = [];
+		setCookies.push(
+			`sso_context=${encodeURIComponent(JSON.stringify(ssoContext))}; Path=/resume; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax${secureAttr}`,
+		);
 		if (decoded.source_url) {
-			setCookie("source_url", decoded.source_url, {
-				path: "/resume",
-				maxAge: 60 * 60 * 24 * 180,
-				sameSite: "lax",
-				secure: isSecure,
-			});
+			setCookies.push(
+				`source_url=${encodeURIComponent(decoded.source_url)}; Path=/resume; Max-Age=${60 * 60 * 24 * 180}; SameSite=Lax${secureAttr}`,
+			);
 		}
+		setCookies.push(...response.headers.getSetCookie());
+		setResponseHeader("set-cookie", setCookies);
 
-		setCookie("sso_context", JSON.stringify(ssoContext), {
-			path: "/resume",
-			maxAge: 60 * 60 * 24 * 30,
-			sameSite: "lax",
-			secure: isSecure,
+		// `sso_context` ALSO travels via the redirect URL's hash fragment as a backup channel.
+		// In `pnpm dev` the Vite response pipeline drops all-but-one Set-Cookie, so the cookie
+		// version of `sso_context` won't reach the browser — but the hash fragment rides on the
+		// navigation regardless. Client-side `getSsoContext` (sso-context.ts) reads from the hash
+		// on first dashboard render and persists to localStorage. In prod the cookie wins; the
+		// hash is then quietly stripped out. Same code path, both environments work.
+		const ssoContextHash = encodeURIComponent(JSON.stringify(ssoContext));
+		const destinationWithHash = `${destination}#sso=${ssoContextHash}`;
+
+		console.log("[SSO] setCookies handed to framework:", setCookies.length, setCookies.map((c) => c.split("=")[0]));
+
+		return new Response(null, {
+			status: 302,
+			headers: {
+				Location: destinationWithHash,
+				"Cache-Control": "no-store",
+			},
 		});
-
-		responseHeaders.set("Location", destination);
-		responseHeaders.set("Cache-Control", "no-store");
-		return new Response(null, { status: 302, headers: responseHeaders });
 	} catch (e) {
 		console.error(`[SSOTrace:${traceId}] token:verify_failed`, e);
 		return errorRedirect("invalid_token");

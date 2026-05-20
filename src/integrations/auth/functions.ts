@@ -37,8 +37,11 @@ export const getSession = createIsomorphicFn()
 	})
 	.server(async (): Promise<AuthSession | null> => {
 		const headers = await getRequestHeaders();
-		const cookieHeader =
-			(headers as Record<string, string>).cookie ?? (headers as Record<string, string>).Cookie ?? "";
+		// `getRequestHeaders()` returns a Web `Headers` object — values are accessed via `.get()`,
+		// NOT property access. Without this, `cookieHeader`, `host`, etc. would all be `undefined`
+		// and the dlog below would lie about what's actually on the request.
+		const h = headers as Headers;
+		const cookieHeader = h.get("cookie") ?? "";
 		const cookieNames = cookieNamesFromHeader(cookieHeader);
 		const hasBetterAuthSession = cookieNames.some((n) => n.includes("better-auth.session_token"));
 
@@ -51,10 +54,10 @@ export const getSession = createIsomorphicFn()
 			cookieHeaderLength: cookieHeader.length,
 			cookieNames,
 			hasBetterAuthSession,
-			host: (headers as Record<string, string>).host ?? null,
-			forwardedHost: (headers as Record<string, string>)["x-forwarded-host"] ?? null,
-			forwardedFor: (headers as Record<string, string>)["x-forwarded-for"] ?? null,
-			forwardedProto: (headers as Record<string, string>)["x-forwarded-proto"] ?? null,
+			host: h.get("host") ?? null,
+			forwardedHost: h.get("x-forwarded-host") ?? null,
+			forwardedFor: h.get("x-forwarded-for") ?? null,
+			forwardedProto: h.get("x-forwarded-proto") ?? null,
 		});
 
 		try {
