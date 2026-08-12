@@ -29,8 +29,12 @@ function readSsoContextCookie(): string | null {
  * pipeline drops all-but-one Set-Cookie on a single response, so the `sso_context` cookie may be
  * stripped. The hash fragment rides on the navigation regardless, lets us still recover the data.
  *
- * On first read we persist it to localStorage and strip it from the URL — subsequent reads find it
- * in the cookie (prod) or localStorage (dev) and never see the hash again.
+ * On first read we persist it to localStorage AND overwrite the cookie, then strip it from the URL —
+ * subsequent reads find it in the cookie (prod) or localStorage (dev) and never see the hash again.
+ *
+ * Overwriting the cookie matters when a second user signs in on the same browser: the dropped
+ * Set-Cookie leaves the FIRST user's `sso_context` in place, and since that cookie is consulted
+ * before localStorage the app would keep reading the previous user's role and engLabsUserId.
  */
 function consumeSsoContextFromHash(): string | null {
 	if (typeof window === "undefined") return null;
@@ -45,6 +49,15 @@ function consumeSsoContextFromHash(): string | null {
 			localStorage.setItem("sso_context", decoded);
 		} catch {
 			// localStorage unavailable in some sandboxed contexts — still return the value.
+		}
+		try {
+			// Same name/Path/attributes as the server-side cookie (src/routes/api/auth/sso.ts) so
+			// this replaces that value instead of creating a second, differently-scoped cookie.
+			const secure = window.location.protocol === "https:" ? "; Secure" : "";
+			// biome-ignore lint/suspicious/noDocumentCookie: overwriting the server-set cookie in place; cookieStore is unavailable in some target browsers
+			document.cookie = `sso_context=${encodeURIComponent(decoded)}; Path=/resume; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax${secure}`;
+		} catch {
+			// Non-fatal: localStorage above already carries the fresh context.
 		}
 		// Strip `sso` from the hash, leave other fragments alone.
 		params.delete("sso");
@@ -61,14 +74,16 @@ function consumeSsoContextFromHash(): string | null {
 function getSsoContext(): SsoContext | null {
 	if (typeof window === "undefined") return null;
 	try {
-		// 1. Cookie (prod path — SSO callback set it directly).
-		const fromCookie = readSsoContextCookie();
-		if (fromCookie) return JSON.parse(fromCookie) as SsoContext;
-
-		// 2. URL hash (dev path — Vite drops the cookie, so SSO callback also encodes the context
-		// in `#sso=…`. First read here persists it to localStorage and cleans the URL.)
+		// 1. URL hash (`#sso=…`, appended by the SSO callback to the post-login redirect). Checked
+		// FIRST because it is the only source guaranteed to describe the login that just happened:
+		// the cookie may still hold a previous user's context when Set-Cookie was dropped (dev) or
+		// when two users share a browser. Consuming it also refreshes the cookie and localStorage.
 		const fromHash = consumeSsoContextFromHash();
 		if (fromHash) return JSON.parse(fromHash) as SsoContext;
+
+		// 2. Cookie (prod path — SSO callback set it directly).
+		const fromCookie = readSsoContextCookie();
+		if (fromCookie) return JSON.parse(fromCookie) as SsoContext;
 
 		// 3. localStorage (set either by the hash-consumer above, or by the older HTML+script
 		// version of the SSO callback for users mid-session).
