@@ -8,6 +8,8 @@ const creditStatusSchema = z.object({
 	remaining: z.number(),
 	total: z.number(),
 	used: z.number(),
+	/** Present and true when access is unlimited rather than balance-limited. */
+	unlimited: z.boolean().optional(),
 });
 
 export const quotaRouter = {
@@ -59,10 +61,9 @@ export const quotaRouter = {
 		)
 		.handler(async ({ context }) => {
 			const rows = await withEngLabsClient(async (client) => {
-				const userResult = await client.query<{ id: string }>(
-					"SELECT id FROM users WHERE email = $1 LIMIT 1",
-					[context.user.email],
-				);
+				const userResult = await client.query<{ id: string }>("SELECT id FROM users WHERE email = $1 LIMIT 1", [
+					context.user.email,
+				]);
 				const engLabsUserId = userResult.rows[0]?.id;
 				if (!engLabsUserId) return [];
 

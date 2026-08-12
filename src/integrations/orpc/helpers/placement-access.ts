@@ -9,6 +9,8 @@ export interface CreditStatus {
 	remaining: number;
 	total: number;
 	used: number;
+	/** True when access is unlimited rather than balance-limited. See isUnlimitedForUser. */
+	unlimited?: boolean;
 }
 
 interface ConsumeResult {
@@ -31,12 +33,91 @@ function generateEngLabsId(): string {
 }
 
 /**
- * Looks up the eng-labs user ID for the given email.
+ * Looks up the eng-labs user for the given email.
  * Returns null if the user doesn't exist in eng-labs.
+ *
+ * tenant_id comes back too because unlimited access can be configured tenant-wide,
+ * not just per grant — see isUnlimitedForUser.
  */
-async function getEngLabsUserId(client: import("pg").PoolClient, email: string): Promise<string | null> {
-	const result = await client.query<{ id: string }>("SELECT id FROM users WHERE email = $1 LIMIT 1", [email]);
-	return result.rows[0]?.id ?? null;
+async function getEngLabsUser(
+	client: import("pg").PoolClient,
+	email: string,
+): Promise<{ id: string; tenantId: string | null } | null> {
+	const result = await client.query<{ id: string; tenant_id: string | null }>(
+		"SELECT id, tenant_id FROM users WHERE email = $1 LIMIT 1",
+		[email],
+	);
+	const row = result.rows[0];
+	return row ? { id: row.id, tenantId: row.tenant_id } : null;
+}
+
+/**
+ * True when the user holds an unexpired grant flagged `unlimited` for this service.
+ *
+ * `unlimited` grants carry quantity 0 by design — the flag, not the number, is the
+ * authoritative signal. Treating quantity as the balance denies the user outright,
+ * which is what happened to the whole VNRVJIET cohort before this was handled.
+ */
+async function hasUnlimitedGrant(
+	client: import("pg").PoolClient,
+	userId: string,
+	engServiceType: string,
+): Promise<boolean> {
+	const { rows } = await client.query(
+		`SELECT 1
+		   FROM user_quota_grants
+		  WHERE user_id = $1
+		    AND service_type = $2
+		    AND unlimited = true
+		    AND (expiry_date IS NULL OR expiry_date > NOW())
+		  LIMIT 1`,
+		[userId, engServiceType],
+	);
+	return rows.length > 0;
+}
+
+/**
+ * True when the tenant configures this service as UNLIMITED for every student.
+ * Mirrors AccessResolverService.getUnlimitedServices + parseUnlimitedServices in
+ * packages/placements: the placements_module feature must be enabled for the tenant,
+ * and its configuration.unlimitedServices must list the service.
+ */
+async function isTenantUnlimitedService(
+	client: import("pg").PoolClient,
+	tenantId: string | null,
+	engServiceType: string,
+): Promise<boolean> {
+	if (!tenantId) return false;
+	const { rows } = await client.query<{ configuration: unknown }>(
+		`SELECT ef.configuration
+		   FROM entity_features ef
+		   JOIN feature_registry fr ON fr.id = ef.feature_registry_id
+		  WHERE fr.key = 'placements_module'
+		    AND ef.tenant_id = $1
+		    AND ef.enabled = true
+		  LIMIT 1`,
+		[tenantId],
+	);
+	const configuration = rows[0]?.configuration;
+	if (!configuration || typeof configuration !== "object") return false;
+	const raw = (configuration as Record<string, unknown>).unlimitedServices;
+	if (!Array.isArray(raw)) return false;
+	return raw.some((entry) => typeof entry === "string" && entry.trim().toUpperCase() === engServiceType);
+}
+
+/**
+ * True when the service is unlimited for this user — either configured UNLIMITED for
+ * their tenant or because they hold an unlimited grant. Same two sources, and the same
+ * precedence, as AccessCheckService.isUnlimited in eng-labs.
+ */
+async function isUnlimitedForUser(
+	client: import("pg").PoolClient,
+	userId: string,
+	tenantId: string | null,
+	engServiceType: string,
+): Promise<boolean> {
+	if (await hasUnlimitedGrant(client, userId, engServiceType)) return true;
+	return await isTenantUnlimitedService(client, tenantId, engServiceType);
 }
 
 /**
@@ -44,17 +125,24 @@ async function getEngLabsUserId(client: import("pg").PoolClient, email: string):
  *
  * - If ENG_LABS_DATABASE_URL is not set → unlimited (allowed = true, remaining = -1).
  * - If the user has no eng-labs account → unlimited (not yet subject to quotas).
+ * - If the service is unlimited for the user (tenant config or an unlimited grant) →
+ *   allowed, remaining/total = -1. Checked BEFORE the balance, because unlimited grants
+ *   carry quantity 0 and would otherwise read as an exhausted balance.
  * - If the user has no grants for this service type → denied (remaining = 0).
  * - Otherwise enforces strictly based on sum(grants.quantity) − sum(usage_logs.amount).
  */
 export async function checkPlacementCredit(email: string, serviceType: ServiceType): Promise<CreditStatus> {
 	const result = await withEngLabsClient(async (client) => {
-		const engLabsUserId = await getEngLabsUserId(client, email);
-		if (!engLabsUserId) {
+		const engLabsUser = await getEngLabsUser(client, email);
+		if (!engLabsUser) {
 			return { allowed: true, remaining: -1, total: -1, used: 0 };
 		}
 
 		const engServiceType = ENG_LABS_SERVICE_TYPE[serviceType];
+
+		if (await isUnlimitedForUser(client, engLabsUser.id, engLabsUser.tenantId, engServiceType)) {
+			return { allowed: true, remaining: -1, total: -1, used: 0, unlimited: true };
+		}
 
 		const { rows } = await client.query<{ quantity: number; used: string }>(
 			`SELECT g.quantity,
@@ -65,7 +153,7 @@ export async function checkPlacementCredit(email: string, serviceType: ServiceTy
 			    AND g.service_type = $2
 			    AND (g.expiry_date IS NULL OR g.expiry_date > NOW())
 			  GROUP BY g.id, g.quantity`,
-			[engLabsUserId, engServiceType],
+			[engLabsUser.id, engServiceType],
 		);
 
 		if (rows.length === 0) {
@@ -97,15 +185,29 @@ export async function checkPlacementCredit(email: string, serviceType: ServiceTy
  * Consumes one credit in eng-labs quota_usage_logs.
  * Picks the grant with the earliest expiry that still has capacity.
  * Does nothing (returns success) when eng-labs is not configured or the user isn't found.
+ *
+ * When the service is unlimited no balance is decremented, but the usage is still metered
+ * with grant_id = null for analytics — matching AccessCheckService.consumeCredit /
+ * QuotaService.logUnlimitedUsage in eng-labs.
  */
 export async function consumePlacementCredit(email: string, serviceType: ServiceType): Promise<ConsumeResult> {
 	const result = await withEngLabsClient(async (client) => {
-		const engLabsUserId = await getEngLabsUserId(client, email);
-		if (!engLabsUserId) {
+		const engLabsUser = await getEngLabsUser(client, email);
+		if (!engLabsUser) {
 			return { success: true, remaining: -1 };
 		}
+		const engLabsUserId = engLabsUser.id;
 
 		const engServiceType = ENG_LABS_SERVICE_TYPE[serviceType];
+
+		if (await isUnlimitedForUser(client, engLabsUserId, engLabsUser.tenantId, engServiceType)) {
+			await client.query(
+				`INSERT INTO quota_usage_logs (id, user_id, grant_id, service_type, amount, timestamp, updated_at)
+				      VALUES ($1, $2, NULL, $3, 1, NOW(), NOW())`,
+				[generateEngLabsId(), engLabsUserId, engServiceType],
+			);
+			return { success: true, remaining: -1 };
+		}
 
 		// Pick the best grant (earliest expiry first, then oldest grant)
 		const { rows } = await client.query<{ id: string; quantity: number; used: string }>(
