@@ -361,7 +361,10 @@ export function SectionMetricsView({
 							label={t`Avg Score`}
 							value={stats.averageScore}
 						/>
-						<AtsChecksCard />
+						{/* ats.adminStats is tenant-wide by design (it only rejects learners), so this
+						    count is not confined to a faculty member's own students. Restricted to
+						    PO/admin for the same reason AtsImprovementsSection below is. */}
+						{scope !== "faculty" && <AtsChecksCard />}
 					</div>
 
 					{/* ── Breakdown + Charts ── */}
