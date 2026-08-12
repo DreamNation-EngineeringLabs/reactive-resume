@@ -23,6 +23,7 @@ import {
 	getFacultyList,
 	getInstructorPackages,
 	getInstructorSections,
+	getMenteeStudents,
 	getPlacementPackages,
 	getPlacementScopedSections,
 	getPlacementSubtreeOrgUnitIds,
@@ -324,13 +325,59 @@ export const sectionsDashboard = protectedProcedure
 			// 2. Resolve assigned sections BEFORE packages/org tree — faculty SSO often has tenantId "default"
 			//    and no org resolution until we know real tenant from organisation_units.
 			let sections: Section[] = [];
+			// Faculty scope = unit-assigned students UNION personally mentored students, mirroring
+			// FacultyScopeService.facultyStudentIds in eng-labs. Null for PO/admin, who are tenant-wide.
+			// When set, it is the authoritative cohort: section membership alone over-collects, because
+			// a section is routinely split between two faculty by roll range.
+			let facultyStudentIds: Set<string> | null = null;
+			// Sections the faculty owns outright. Students in these count wholly; students in
+			// mentee-derived sections count only if personally mentored.
+			const unitAssignedSectionIds = new Set<string>();
 			if (scope === "faculty" && engLabsUser?.id) {
-				sections = await getInstructorSections(engLabsUser.id);
-				dlog("handler", "sections:faculty:instructor-sections", { reqId, count: sections.length });
+				const unitSections = await getInstructorSections(engLabsUser.id);
+				for (const s of unitSections) unitAssignedSectionIds.add(s.id);
+				// tenantId may still be "default" here (faculty SSO); resolve it from the unit
+				// assignments first so the mentee query is correctly scoped.
+				let menteeTenantId = engLabsUser.tenantId ?? tenantId;
+				if ((!menteeTenantId || menteeTenantId === "default") && unitSections.length > 0) {
+					menteeTenantId = (await getTenantIdForOrgUnits(unitSections.map((s) => s.id))) ?? menteeTenantId;
+				}
+				const mentees =
+					menteeTenantId && menteeTenantId !== "default"
+						? await getMenteeStudents(engLabsUser.id, menteeTenantId)
+						: [];
+
+				facultyStudentIds = new Set(mentees.map((m) => m.id));
+
+				// A mentor-only faculty has no unit assignment, so their section cards have to come from
+				// the classes their mentees actually sit in — otherwise every tab renders blank.
+				const menteeSectionIds = [...new Set(mentees.map((m) => m.sectionId).filter(Boolean))];
+				const menteeSections =
+					menteeSectionIds.length > 0
+						? (await getSectionsByIds(menteeSectionIds)).filter((s) => !unitSections.some((u) => u.id === s.id))
+						: [];
+				sections = [...unitSections, ...menteeSections];
+
+				// Unit-assigned students belong to this faculty too. Their ids are resolved after the
+				// tenant is final (step 11 cohort build) — recorded here so that step knows to add them.
+				dlog("handler", "sections:faculty:scope-resolved", {
+					reqId,
+					unitSections: unitSections.length,
+					menteeSections: menteeSections.length,
+					mentees: mentees.length,
+				});
 			}
 			if (sections.length === 0 && input.sectionIds.length > 0) {
 				sections = await getSectionsByIds(input.sectionIds);
-				dlog("handler", "sections:fallback:by-ids", { reqId, count: sections.length });
+				// Retained for all scopes, faculty included. It only fires when the server derived no
+				// scope at all — no unit assignments AND no mentees — so for a correctly configured
+				// faculty it is unreachable. When it does fire, the cohort filter is dropped as well:
+				// leaving an empty facultyStudentIds in place would return sections with zero students,
+				// which is worse than the pre-existing behaviour this preserves.
+				// Note this means scope is client-supplied in that case; it is a deliberate fallback,
+				// not an enforcement boundary.
+				facultyStudentIds = null;
+				dlog("handler", "sections:fallback:by-ids", { reqId, count: sections.length, scope });
 			}
 			if (sections.length > 0) {
 				const ouTenant = await getTenantIdForOrgUnits(sections.map((s) => s.id));
@@ -478,7 +525,17 @@ export const sectionsDashboard = protectedProcedure
 					sections.map((s) => s.id),
 					tenantId,
 				);
+				// Unit-assigned sections contribute all their students; mentee-derived sections contribute
+				// only the mentees. Both are folded into facultyStudentIds so every downstream count —
+				// overview totals, inbox, per-section cards, students tab — uses one cohort.
+				if (facultyStudentIds) {
+					for (const s of inSections) {
+						if (unitAssignedSectionIds.has(s.sectionId)) facultyStudentIds.add(s.id);
+					}
+				}
 				for (const s of inSections) {
+					// Section membership alone over-collects for faculty who own half a section.
+					if (facultyStudentIds && !facultyStudentIds.has(s.id)) continue;
 					const e = normEmail(s.email);
 					if (e) cohortEmailSet.add(e);
 				}
@@ -528,19 +585,14 @@ export const sectionsDashboard = protectedProcedure
 			const emailToLocalUser = new Map<string, (typeof resumeUsers)[number]>();
 			const engLabsStudents: import("@/integrations/eng-labs/types").StudentInfo[] = [];
 
-			// TEMP-DIAGNOSTIC: trace cohort funnel for the dashboard. Remove once verified.
-			console.log("[dashboard.sections] funnel", {
+			dlog("handler", "sections:cohort-funnel", {
+				reqId,
 				scope,
-				tenantId,
-				engLabsUserId: engLabsUser?.id ?? null,
 				sectionsResolved: sections.length,
-				sectionIdsSample: sections.slice(0, 5).map((s) => s.id),
 				cohortBeforeAccess,
 				accessEmailsCount: accessEmails === null ? "no-filter" : accessEmails.size,
 				cohortAfterAccess: cohortEmailSet.size,
 				profilesCount: profiles.length,
-				instructorSubtreeSetSize: instructorSubtreeSet?.size ?? null,
-				profilesUnitIdsSample: profiles.slice(0, 3).map((p) => ({ email: p.email, unitIds: p.unitIds })),
 			});
 
 			for (const p of profiles) {

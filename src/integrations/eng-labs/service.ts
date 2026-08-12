@@ -618,6 +618,73 @@ export async function getStudentEnrollmentInfo(engLabsUserId: string): Promise<{
 }
 
 /**
+ * Students this faculty member personally mentors, via `package_enrollments.mentor_id`.
+ *
+ * Complements {@link getInstructorSections}, which only knows about
+ * `placement_instructor_unit_assignments`. A unit assignment covers a whole section, but a section
+ * is commonly split between two faculty by roll range — there is no org unit for "half of CSE-A", so
+ * that split can only be expressed per student. Faculty scoped this way have NO unit assignment at
+ * all, so without this query they resolve to zero sections and every dashboard tab renders empty.
+ *
+ * Kept deliberately to a single query with no hierarchy logic. eng-labs owns the real rule
+ * (`FacultyScopeService.facultyStudentIds` = unit-assigned students UNION mentees, with subtree
+ * expansion and package narrowing); duplicating that here is what would drift. The caller composes
+ * the union from this plus {@link getInstructorSections}.
+ *
+ * Returns the same shape as {@link getStudentsBySections} so callers can treat both alike, including
+ * `sectionId`, which lets a mentor-only faculty's section cards be derived from where their mentees
+ * actually sit.
+ */
+export async function getMenteeStudents(userId: string, tenantId: string): Promise<StudentInfo[]> {
+	const pool = getEngLabsPool();
+	if (!pool || !userId || !tenantId) return [];
+
+	const { rows } = await pool.query<{
+		id: string;
+		name: string;
+		email: string;
+		roll_number: string | null;
+		unit_id: string | null;
+		section_name: string | null;
+		section_code: string | null;
+	}>(
+		// Enrolments carry no tenant of their own — scope through the package, matching
+		// FacultyScopeService. The CLASS join is LEFT so a mentee with no class mapping is still
+		// returned (and simply contributes no section card) rather than silently dropped.
+		// DISTINCT is wrapped in a subquery so the ORDER BY can reference the aliases — Postgres and
+		// CockroachDB both reject `SELECT DISTINCT ... ORDER BY ou.name` because the ordering
+		// expression is not in the select list. Same pattern as getStudentsBySections above.
+		`SELECT * FROM (
+			 SELECT DISTINCT u.id, u.name, u.email, u.roll_number,
+			        ou.id   AS unit_id,
+			        ou.name AS section_name,
+			        ou.code AS section_code
+			 FROM package_enrollments e
+			 JOIN placement_packages p ON p.id = e.package_id
+			 JOIN users u ON u.id = e.user_id
+			 LEFT JOIN user_mappings um ON um.user_id = u.id
+			 LEFT JOIN organisation_units ou
+			        ON ou.id = um.unit_id AND ou.type = 'CLASS' AND ou.tenant_id = $2
+			 WHERE e.mentor_id = $1
+			   AND p.tenant_id = $2
+			   AND u.type = 'LEARNER'
+		 ) q
+		 ORDER BY q.section_name NULLS LAST, q.roll_number, q.name`,
+		[userId, tenantId],
+	);
+
+	return rows.map((r) => ({
+		id: r.id,
+		name: r.name,
+		email: r.email,
+		rollNumber: r.roll_number,
+		sectionId: r.unit_id ?? "",
+		sectionName: r.section_name ?? undefined,
+		sectionCode: r.section_code ?? undefined,
+	}));
+}
+
+/**
  * Get all sections assigned to an instructor (Professor/PO) via the placement_instructor tables.
  */
 export async function getInstructorSections(userId: string): Promise<Section[]> {

@@ -14,6 +14,7 @@ export {
 	getInstructorPackages,
 	getInstructorSections,
 	getInstructorsForUnits,
+	getMenteeStudents,
 	getPlacementPackages,
 	getSectionsByIds,
 	getStudentById,
