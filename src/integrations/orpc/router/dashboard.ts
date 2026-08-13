@@ -734,20 +734,29 @@ export const sectionsDashboard = protectedProcedure
 			const enrolledInResumeBuilder = students.filter((s) => s.resumeAppUserId !== null).length;
 			const withPrimaryResume = students.filter((s) => s.resumes.length > 0).length;
 
-			// 13. Recent activity
-			const recentEvaluations = await db
-				.select()
-				.from(schema.resumeEvaluation)
-				.where(resumeIds.length > 0 ? inArray(schema.resumeEvaluation.resumeId, resumeIds) : undefined)
-				.orderBy(desc(schema.resumeEvaluation.createdAt))
-				.limit(5);
-
-			const recentComments = await db
-				.select()
-				.from(schema.resumeComment)
-				.where(resumeIds.length > 0 ? inArray(schema.resumeComment.resumeId, resumeIds) : undefined)
-				.orderBy(desc(schema.resumeComment.createdAt))
-				.limit(5);
+			// 13. Recent activity — strictly this cohort's own resumes.
+			// An empty resumeIds means "this cohort has no resumes", NOT "no filter". Passing
+			// undefined to .where() drops the predicate entirely and returns the newest rows in
+			// the whole table, across every tenant: a faculty member whose students had no
+			// resumes was shown another faculty's students' feedback, with the student name
+			// rendering as "Student" because the enrichment map could not resolve it.
+			const [recentEvaluations, recentComments] =
+				resumeIds.length > 0
+					? await Promise.all([
+							db
+								.select()
+								.from(schema.resumeEvaluation)
+								.where(inArray(schema.resumeEvaluation.resumeId, resumeIds))
+								.orderBy(desc(schema.resumeEvaluation.createdAt))
+								.limit(5),
+							db
+								.select()
+								.from(schema.resumeComment)
+								.where(inArray(schema.resumeComment.resumeId, resumeIds))
+								.orderBy(desc(schema.resumeComment.createdAt))
+								.limit(5),
+						])
+					: [[], []];
 
 			const resumeIdToEmail = new Map<string, string>();
 			for (const student of students) {
