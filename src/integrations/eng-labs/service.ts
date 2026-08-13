@@ -266,6 +266,21 @@ export async function getPlacementScopedSections(tenantId: string): Promise<Sect
 		return mapSectionRows(assignedRows);
 	}
 
+	return getTenantPlacementSections(tenantId);
+}
+
+/**
+ * Every section with learners under an org that owns a placement package, for the whole tenant —
+ * i.e. the placement-relevant population without any instructor-assignment narrowing.
+ *
+ * This was previously only the fallback inside getPlacementScopedSections, reachable solely when
+ * `placement_instructor_unit_assignments` was completely empty. It is exported so officer-scoped
+ * callers can use it directly: see getOfficerSections.
+ */
+export async function getTenantPlacementSections(tenantId: string): Promise<Section[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
 	const { rows } = await pool.query<{
 		id: string;
 		name: string;
@@ -296,6 +311,30 @@ export async function getPlacementScopedSections(tenantId: string): Promise<Sect
 }
 
 /**
+ * Sections an officer (placement admin / PO) supervises. An officer is tenant-wide by definition,
+ * so this must NOT be narrowed by placement_instructor_unit_assignments: that table describes which
+ * classes a *faculty member* was handed, and deriving the officer's view from it collapses them to
+ * whatever classes happen to be assigned — one class tenant-wide today — hiding every cohort that is
+ * mentor-mapped rather than unit-assigned. A section submitted to the PO then never reaches them.
+ *
+ * Returns the tenant-wide set unioned with the assignment-derived set, so no section that used to be
+ * visible can disappear: a PIUA unit whose org owns no placement package is outside the tenant-wide
+ * query, and is appended rather than dropped.
+ */
+export async function getOfficerSections(tenantId: string): Promise<Section[]> {
+	const [tenantWide, assignmentDerived] = await Promise.all([
+		getTenantPlacementSections(tenantId),
+		getPlacementScopedSections(tenantId),
+	]);
+
+	// Keep the tenant-wide ordering (parent name, then section name) and append only the extras.
+	const byId = new Map<string, Section>();
+	for (const s of tenantWide) byId.set(s.id, s);
+	for (const s of assignmentDerived) if (!byId.has(s.id)) byId.set(s.id, s);
+	return [...byId.values()];
+}
+
+/**
  * All organisation unit IDs in the placement subtree for a tenant (PIUA roots + descendants,
  * or fallback: all units under orgs that own a placement package).
  */
@@ -322,6 +361,17 @@ export async function getPlacementSubtreeOrgUnitIds(tenantId: string): Promise<s
 		return [...new Set(assignedRows.map((r) => r.id))];
 	}
 
+	return getTenantPlacementOrgUnitIds(tenantId);
+}
+
+/**
+ * Every org unit in the tenant under an org that owns a placement package. Tenant-wide counterpart
+ * of getPlacementSubtreeOrgUnitIds, exported for officer-scoped callers (see getOfficerOrgUnitIds).
+ */
+export async function getTenantPlacementOrgUnitIds(tenantId: string): Promise<string[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
 	const { rows } = await pool.query<{ id: string }>(
 		`SELECT ou.id
 		 FROM organisation_units ou
@@ -333,6 +383,22 @@ export async function getPlacementSubtreeOrgUnitIds(tenantId: string): Promise<s
 	);
 
 	return [...new Set(rows.map((r) => r.id))];
+}
+
+/**
+ * The org units an officer's cohort may live in — the boundary `profilePassesFilters` checks each
+ * learner against. Tenant-wide for the same reason as getOfficerSections: leaving this derived from
+ * placement_instructor_unit_assignments would re-filter out the very students a widened section list
+ * just admitted, since a learner outside the assignment subtree fails the boundary check.
+ *
+ * Unioned with the assignment-derived set so the boundary can only widen, never shrink.
+ */
+export async function getOfficerOrgUnitIds(tenantId: string): Promise<string[]> {
+	const [tenantWide, assignmentDerived] = await Promise.all([
+		getTenantPlacementOrgUnitIds(tenantId),
+		getPlacementSubtreeOrgUnitIds(tenantId),
+	]);
+	return [...new Set([...tenantWide, ...assignmentDerived])];
 }
 
 /**

@@ -24,9 +24,10 @@ import {
 	getInstructorPackages,
 	getInstructorSections,
 	getMenteeStudents,
+	getOfficerOrgUnitIds,
+	getOfficerSections,
 	getPlacementPackages,
 	getPlacementScopedSections,
-	getPlacementSubtreeOrgUnitIds,
 	getSectionsByIds,
 	getStudentEnrollmentInfo,
 	getStudentsBySections,
@@ -432,9 +433,11 @@ export const sectionsDashboard = protectedProcedure
 					: Promise.resolve([] as OrgUnitRow[]),
 			]);
 
-			// 5. PO/admin: sections with learners under orgs that have placement packages (not whole tenant)
+			// 5. PO/admin: every section with learners under an org that owns a placement package.
+			// Tenant-wide on purpose — an officer supervises the whole tenant, so this must not be
+			// narrowed by placement_instructor_unit_assignments (see getOfficerSections).
 			if (sections.length === 0 && scope === "po" && tenantId && tenantId !== "default") {
-				sections = await getPlacementScopedSections(tenantId);
+				sections = await getOfficerSections(tenantId);
 			}
 
 			// 6. For faculty scope, restrict allOrgUnits to only units relevant to their assigned sections
@@ -485,7 +488,11 @@ export const sectionsDashboard = protectedProcedure
 
 			let placementBoundarySet: Set<string> | null = null;
 			if (scope === "po" && tenantId && tenantId !== "default") {
-				const pIds = await getPlacementSubtreeOrgUnitIds(tenantId);
+				// Must match the tenant-wide section resolution above: a boundary still derived from
+				// placement_instructor_unit_assignments would re-filter out the students those
+				// sections just admitted (profilePassesFilters rejects a learner whose unitIds fall
+				// outside this set).
+				const pIds = await getOfficerOrgUnitIds(tenantId);
 				placementBoundarySet = pIds.length > 0 ? new Set(pIds) : null;
 			}
 

@@ -17,9 +17,9 @@ import {
 	getEngLabsUserByEmail,
 	getInstructorPackages,
 	getInstructorSections,
+	getOfficerOrgUnitIds,
+	getOfficerSections,
 	getPlacementPackages,
-	getPlacementScopedSections,
-	getPlacementSubtreeOrgUnitIds,
 	getSectionsByIds,
 	getStudentsBySections,
 	getTenantIdForOrgUnits,
@@ -166,7 +166,9 @@ async function handler({ request }: { request: Request }) {
 		]);
 
 		if (sectionRows.length === 0 && tenantId !== "default") {
-			sectionRows = scope === "po" ? await getPlacementScopedSections(tenantId) : [];
+			// Officers are tenant-wide; see getOfficerSections for why this must not be derived
+			// from placement_instructor_unit_assignments.
+			sectionRows = scope === "po" ? await getOfficerSections(tenantId) : [];
 		}
 
 		// Scope for faculty
@@ -198,7 +200,9 @@ async function handler({ request }: { request: Request }) {
 
 		let placementBoundarySet: Set<string> | null = null;
 		if (scope === "po" && tenantId !== "default") {
-			const pIds = await getPlacementSubtreeOrgUnitIds(tenantId);
+			// Must match the tenant-wide section resolution above, or the boundary check below
+			// filters out the students those sections just admitted.
+			const pIds = await getOfficerOrgUnitIds(tenantId);
 			placementBoundarySet = pIds.length > 0 ? new Set(pIds) : null;
 		}
 
