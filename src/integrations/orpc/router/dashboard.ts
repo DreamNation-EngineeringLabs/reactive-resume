@@ -28,6 +28,7 @@ import {
 	getOfficerSections,
 	getPlacementPackages,
 	getPlacementScopedSections,
+	getSectionPackageIds,
 	getSectionsByIds,
 	getStudentEnrollmentInfo,
 	getStudentsBySections,
@@ -215,6 +216,13 @@ function computeUnitStatsRow(
 	descendantSectionIds: Set<string>,
 	students: SectionsDashboardStudent[],
 	packageMeta: { packageId: string | null; packageName: string | null },
+	/**
+	 * Real placement packages this row's learners belong to, unioned over its descendant sections.
+	 * The package filter matches against this, NOT packageId — see getSectionPackageIds.
+	 */
+	packageIdsBySection: Record<string, string[]> = {},
+	/** Parent org unit (department / stream) name, rendered as the card subtitle. */
+	parentName: string | null = null,
 ) {
 	const unitStudents = students.filter((s) => {
 		const ids = s.engLabsUnitIds.length > 0 ? s.engLabsUnitIds : [s.sectionId];
@@ -251,12 +259,18 @@ function computeUnitStatsRow(
 
 	const scores = unitResumes.filter((r) => r.evaluationScore !== null).map((r) => r.evaluationScore!);
 
+	const packageIds = [
+		...new Set([...descendantSectionIds].flatMap((sectionId) => packageIdsBySection[sectionId] ?? [])),
+	];
+
 	return {
 		id: unit.id,
 		name: unit.name,
 		unitType: unit.type,
 		packageId: packageMeta.packageId,
 		packageName: packageMeta.packageName,
+		packageIds,
+		parentName,
 		stats: {
 			totalStudents: unitStudents.length,
 			totalResumes: unitResumes.length,
@@ -682,7 +696,20 @@ export const sectionsDashboard = protectedProcedure
 				};
 			});
 
-			// 11. Calculate stats for ALL org units (hierarchical aggregation)
+			// 11. Calculate stats for ALL org units (hierarchical aggregation).
+			// Package membership is resolved from enrolments, once for every section in scope, because
+			// a section's own packageId is a parent-org-unit id and cannot be filtered against.
+			const packageIdsBySection = await getSectionPackageIds(
+				sections.map((s) => s.id),
+				tenantId ?? "",
+			);
+			// Department/stream name per unit, for the card subtitle. Taken from the org-unit tree
+			// rather than Section.packageName, which holds a package name for unit-assigned faculty
+			// and a parent-unit name for everyone else — the subtitle should read the same for all.
+			const orgUnitNameById = new Map(allOrgUnits.map((u) => [u.id, u.name] as const));
+			const parentNameOf = (parentId: string | null | undefined) =>
+				(parentId ? orgUnitNameById.get(parentId) : null) ?? null;
+
 			let unitStats = scopedOrgUnits.map((unit) => {
 				// Find all descendant CLASS-level section IDs for this unit
 				const descendantSectionIds = new Set<string>();
@@ -709,6 +736,8 @@ export const sectionsDashboard = protectedProcedure
 					descendantSectionIds,
 					students,
 					resolveSectionPackageMeta(unit.id, descendantSectionIds, sections),
+					packageIdsBySection,
+					parentNameOf(unit.parentId),
 				);
 			});
 
@@ -716,10 +745,16 @@ export const sectionsDashboard = protectedProcedure
 			// getInstructorSections still returned rows — build one card per assigned section so the UI isn't blank.
 			if (unitStats.length === 0 && scope === "faculty" && sections.length > 0) {
 				unitStats = sections.map((sec) =>
-					computeUnitStatsRow({ id: sec.id, name: sec.name, type: sec.type }, new Set([sec.id]), students, {
-						packageId: sec.packageId,
-						packageName: sec.packageName,
-					}),
+					computeUnitStatsRow(
+						{ id: sec.id, name: sec.name, type: sec.type },
+						new Set([sec.id]),
+						students,
+						{ packageId: sec.packageId, packageName: sec.packageName },
+						packageIdsBySection,
+						// No org-unit tree in this fallback, so the parent name has to come from the
+						// section row itself.
+						parentNameOf(sec.parentUnitId) ?? sec.packageName,
+					),
 				);
 			}
 

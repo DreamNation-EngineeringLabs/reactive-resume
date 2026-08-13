@@ -311,6 +311,40 @@ export async function getTenantPlacementSections(tenantId: string): Promise<Sect
 }
 
 /**
+ * Real placement packages each section's learners are enrolled in, keyed by section (unit) id.
+ *
+ * The `packageId` on a Section row cannot be used to filter by package: two of the three producers
+ * fill it with the section's parent org unit (see sectionRowSelect and getSectionsByIds), so it is
+ * a department id, never a placement_packages id. Membership is also genuinely many-to-many — a
+ * class can hold learners from more than one package — so a single id could not express it anyway.
+ *
+ * Scoped to the tenant through both the learner mapping and the package itself. Enrolments pointing
+ * at a combo package are excluded: the filter UI lists placement_packages only.
+ */
+export async function getSectionPackageIds(
+	sectionIds: string[],
+	tenantId: string,
+): Promise<Record<string, string[]>> {
+	const pool = getEngLabsPool();
+	if (!pool || sectionIds.length === 0 || !tenantId || tenantId === "default") return {};
+
+	const { rows } = await pool.query<{ section_id: string; package_ids: string[] }>(
+		`SELECT um.unit_id AS section_id,
+		        array_agg(DISTINCT e.package_id) AS package_ids
+		   FROM package_enrollments e
+		   JOIN user_mappings um ON um.user_id = e.user_id AND um.tenant_id = $2
+		   JOIN placement_packages p ON p.id = e.package_id AND p.tenant_id = $2
+		  WHERE um.unit_id = ANY($1)
+		  GROUP BY um.unit_id`,
+		[sectionIds, tenantId],
+	);
+
+	const out: Record<string, string[]> = {};
+	for (const r of rows) out[r.section_id] = r.package_ids ?? [];
+	return out;
+}
+
+/**
  * Sections an officer (placement admin / PO) supervises. An officer is tenant-wide by definition,
  * so this must NOT be narrowed by placement_instructor_unit_assignments: that table describes which
  * classes a *faculty member* was handed, and deriving the officer's view from it collapses them to

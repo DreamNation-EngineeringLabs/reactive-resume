@@ -181,7 +181,12 @@ export function SectionMetricsView({
 	const sectionsTabFilteredRows = useMemo(() => {
 		const rows = dashboard?.sections ?? [];
 		return rows.filter((s) => {
-			if (filter.packageId && s.packageId !== filter.packageId) return false;
+			// Match on packageIds (real placement packages, resolved from enrolments), never on
+			// packageId — that holds the parent org unit for most callers, so comparing it against a
+			// package id from the dropdown never matched and emptied the list. A class whose learners
+			// span two packages legitimately appears under both.
+			if (filter.packageId && !((s as { packageIds?: string[] }).packageIds ?? []).includes(filter.packageId))
+				return false;
 			const level = viewLevel || (filterUnitTypes.includes("CLASS") ? "CLASS" : filterUnitTypes[0]);
 			if (filterUnitTypes.length === 0) return true;
 			return s.unitType === level;
@@ -648,8 +653,13 @@ export function SectionMetricsView({
 									<div className="mb-4 flex items-start justify-between gap-2">
 										<div className="min-w-0 flex-1">
 											<h3 className="line-clamp-1 font-bold text-foreground text-lg">{unit.name}</h3>
-											{unit.packageName ? (
-												<p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{unit.packageName}</p>
+											{/* Department / stream, from the org-unit tree. packageName is only a fallback:
+											    it carries a package name for unit-assigned faculty and a parent-unit name
+											    for everyone else, so relying on it showed different things per role. */}
+											{((unit as { parentName?: string | null }).parentName ?? unit.packageName) ? (
+												<p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
+													{(unit as { parentName?: string | null }).parentName ?? unit.packageName}
+												</p>
 											) : null}
 										</div>
 										<span className="shrink-0 rounded-lg bg-muted px-2 py-1 font-bold text-[10px] text-muted-foreground uppercase">
