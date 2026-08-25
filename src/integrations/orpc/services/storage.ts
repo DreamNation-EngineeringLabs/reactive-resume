@@ -68,8 +68,23 @@ function buildPdfKey(userId: string, resumeId: string): string {
 	return `uploads/${userId}/pdfs/${resumeId}/${timestamp}.pdf`;
 }
 
-function buildPublicUrl(path: string): string {
-	return new URL(path, env.APP_URL).toString();
+/**
+ * The app is mounted under a base path (vite `base: "/resume/"`, router `basepath: "/resume"`) and
+ * APP_URL holds only the origin — every other caller appends the base path itself, e.g.
+ * `${env.APP_URL}/resume/api/auth/...` in integrations/auth/config.ts.
+ */
+const APP_BASE_PATH = "/resume";
+
+/**
+ * Absolute URL for a stored object, served by routes/uploads/$userId.$.tsx.
+ *
+ * The base path is required. Without it the URL resolved to /uploads/... — outside the mounted
+ * app — so "Download PDF" saved the dev server's "did you mean to visit /resume/uploads/... ?"
+ * message under a .pdf filename instead of the generated PDF. Screenshots and profile pictures
+ * were built the same way and were equally unreachable.
+ */
+export function buildPublicUrl(path: string): string {
+	return new URL(`${APP_BASE_PATH}/${path.replace(/^\/+/, "")}`, env.APP_URL).toString();
 }
 
 export function inferContentType(filename: string): string {

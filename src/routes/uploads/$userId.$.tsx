@@ -128,11 +128,24 @@ function buildResponseHeaders({
 }: BuildResponseHeaderArgs): Headers {
 	const headers = new Headers();
 
-	headers.set("Content-Type", shouldForceDownload ? "application/octet-stream" : contentType);
+	// Serve the real media type (application/pdf for a PDF). Declaring application/octet-stream
+	// while also sending X-Content-Type-Options: nosniff leaves the browser no way to learn what
+	// the file is: it saves with no usable type association, so the download will not open and the
+	// extension can be dropped. `Content-Disposition: attachment` below is what forces a download —
+	// mislabelling the media type is not needed for that.
+	headers.set("Content-Type", contentType);
 	headers.set("Content-Length", storedFile.size.toString());
 
 	if (shouldForceDownload) {
-		headers.set("Content-Disposition", `attachment; filename="${encodeURIComponent(basename(filename))}"`);
+		// RFC 6266: quoted ASCII fallback plus the percent-encoded UTF-8 form. Percent-encoding
+		// inside filename="…" on its own is not decoded by browsers, so a name containing a space
+		// previously arrived literally as my%20resume.pdf.
+		const name = basename(filename);
+		const asciiFallback = name.replace(/[^ -~]/g, "_").replace(/["\\]/g, "");
+		headers.set(
+			"Content-Disposition",
+			`attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(name)}`,
+		);
 	}
 
 	headers.set("Cache-Control", "public, max-age=31536000, immutable");
