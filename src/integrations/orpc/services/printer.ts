@@ -6,7 +6,7 @@ import { pageDimensionsAsPixels } from "@/schema/page";
 import { printMarginTemplates } from "@/schema/templates";
 import { env } from "@/utils/env";
 import { generatePrinterToken } from "@/utils/printer-token";
-import { getStorageService, uploadFile } from "./storage";
+import { buildPublicUrl, getStorageService, uploadFile } from "./storage";
 
 const SCREENSHOT_TTL = 1000 * 60 * 60 * 6; // 6 hours
 
@@ -266,13 +266,13 @@ export const printerService = {
 				const age = now - latest.timestamp;
 
 				// Return existing screenshot if it's still fresh (within TTL)
-				if (age < SCREENSHOT_TTL) return new URL(latest.path, env.APP_URL).toString();
+				if (age < SCREENSHOT_TTL) return buildPublicUrl(latest.path);
 
 				// Screenshot is stale (past TTL), but only regenerate if the resume
 				// was updated after the screenshot was taken. If the resume hasn't
 				// changed, keep using the existing screenshot to avoid unnecessary work.
 				if (resumeUpdatedAt <= latest.timestamp) {
-					return new URL(latest.path, env.APP_URL).toString();
+					return buildPublicUrl(latest.path);
 				}
 
 				// Resume was updated after the screenshot - delete old ones and regenerate

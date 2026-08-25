@@ -1,13 +1,14 @@
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import { CheckCircle2, Download, Lock, MoreVertical, RefreshCw, Share2, Star } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { CheckCircle2, Download, Lock, MoreVertical, RefreshCw, Share2, Star } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/integrations/auth/client";
 import { orpc, type RouterOutput } from "@/integrations/orpc/client";
 import { downloadFromUrl } from "@/utils/file";
+import { publicResumeUrl } from "@/utils/resume-url";
 import { cn } from "@/utils/style";
 import { ResumeContextMenu } from "../menus/context-menu";
 import { ResumeDropdownMenu } from "../menus/dropdown-menu";
@@ -83,7 +84,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 			toast.error(t`Make this resume public from the builder before sharing.`);
 			return;
 		}
-		const link = `${window.location.origin}/${username}/${resume.slug}`;
+		const link = publicResumeUrl(username, resume.slug);
 		try {
 			await navigator.clipboard.writeText(link);
 			toast.success(t`Share link copied to clipboard.`);
@@ -143,8 +144,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 
 					<div className="flex items-center justify-between gap-2">
 						<p className="select-text text-[11px] text-slate-400">
-							{t`Updated`}{" "}
-							<span className="font-semibold text-slate-600">{updatedAt}</span>
+							{t`Updated`} <span className="font-semibold text-slate-600">{updatedAt}</span>
 						</p>
 
 						<div className="flex items-center gap-1">

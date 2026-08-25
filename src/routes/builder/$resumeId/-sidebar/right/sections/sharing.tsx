@@ -15,6 +15,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { usePrompt } from "@/hooks/use-prompt";
 import { authClient } from "@/integrations/auth/client";
 import { orpc } from "@/integrations/orpc/client";
+import { publicResumeUrl } from "@/utils/resume-url";
 import { SectionBase } from "../shared/section-base";
 
 export function SharingSectionBuilder() {
@@ -31,7 +32,7 @@ export function SharingSectionBuilder() {
 
 	const publicUrl = useMemo(() => {
 		if (!session) return "";
-		return `${window.location.origin}/${session.user.username}/${resume.slug}`;
+		return publicResumeUrl(session.user.username, resume.slug);
 	}, [session, resume]);
 
 	const onCopyUrl = useCallback(async () => {

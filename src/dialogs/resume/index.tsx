@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFormBlocker } from "@/hooks/use-form-blocker";
 import { authClient } from "@/integrations/auth/client";
 import { orpc, type RouterInput } from "@/integrations/orpc/client";
+import { publicResumeUrlPrefix } from "@/utils/resume-url";
 import { generateId, generateRandomName, slugify } from "@/utils/string";
 import { type DialogProps, useDialogStore } from "../store";
 
@@ -353,7 +354,7 @@ function ResumeForm() {
 	const { data: session } = authClient.useSession();
 
 	const slugPrefix = useMemo(() => {
-		return `${window.location.origin}/${session?.user.username ?? ""}/`;
+		return publicResumeUrlPrefix(session?.user.username ?? "");
 	}, [session]);
 
 	const onGenerateName = () => {

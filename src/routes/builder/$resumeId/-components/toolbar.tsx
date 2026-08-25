@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { authClient } from "@/integrations/auth/client";
 import { orpc } from "@/integrations/orpc/client";
 import { downloadFromUrl, generateFilename } from "@/utils/file";
+import { publicResumeUrl } from "@/utils/resume-url";
 import { cn } from "@/utils/style";
 
 export function BuilderToolbar() {
@@ -48,7 +49,7 @@ export function BuilderToolbar() {
 
 	const publicUrl = useMemo(() => {
 		if (!session?.user.username || !resume?.slug) return "";
-		return `${window.location.origin}/${session.user.username}/${resume.slug}`;
+		return publicResumeUrl(session.user.username, resume.slug);
 	}, [session?.user.username, resume?.slug]);
 
 	const onCopyUrl = useCallback(async () => {
