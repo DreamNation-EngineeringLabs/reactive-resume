@@ -7,6 +7,7 @@ import {
 	LockSimpleOpenIcon,
 	PencilSimpleLineIcon,
 	ProhibitIcon,
+	StarIcon,
 	TrashSimpleIcon,
 } from "@phosphor-icons/react";
 
@@ -37,6 +38,7 @@ export function ResumeDropdownMenu({ resume, children, ...props }: Props) {
 
 	const { mutate: deleteResume } = useMutation(orpc.resume.delete.mutationOptions());
 	const { mutate: setLockedResume } = useMutation(orpc.resume.setLocked.mutationOptions());
+	const { mutate: setPrimaryResume } = useMutation(orpc.resume.setPrimary.mutationOptions());
 
 	const handleUpdate = () => {
 		openDialog("resume.update", resume);
@@ -60,6 +62,22 @@ export function ResumeDropdownMenu({ resume, children, ...props }: Props) {
 			{
 				onError: (error) => {
 					toast.error(error.message);
+				},
+			},
+		);
+	};
+
+	const handleSetPrimary = () => {
+		const toastId = toast.loading(t`Setting as Master Resume...`);
+
+		setPrimaryResume(
+			{ id: resume.id },
+			{
+				onSuccess: () => {
+					toast.success(t`Successfully set as Master Resume.`, { id: toastId });
+				},
+				onError: (error) => {
+					toast.error(error.message, { id: toastId });
 				},
 			},
 		);
@@ -120,6 +138,19 @@ export function ResumeDropdownMenu({ resume, children, ...props }: Props) {
 					<DropdownMenuItem onSelect={handleToggleLock}>
 						{resume.isLocked ? <LockSimpleOpenIcon /> : <LockSimpleIcon />}
 						{resume.isLocked ? <Trans>Unlock</Trans> : <Trans>Lock</Trans>}
+					</DropdownMenuItem>
+				)}
+
+				{/*
+					Mirrors the right-click context menu. "Mark as Master" existed only there, and a
+					context menu cannot be opened by touch — so on a phone there was no way to mark a
+					resume as Master at all. Every other item was already in both menus; this was the
+					one that was not.
+				*/}
+				{!resume.isPrimary && (
+					<DropdownMenuItem onSelect={handleSetPrimary}>
+						<StarIcon weight="duotone" className="text-amber-500" />
+						<Trans>Mark as Master</Trans>
 					</DropdownMenuItem>
 				)}
 
