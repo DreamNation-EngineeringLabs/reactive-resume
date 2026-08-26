@@ -86,6 +86,13 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 
 	const setLeftSidebar = useBuilderSidebarStore((state) => state.setLeftSidebar);
 	const setRightSidebar = useBuilderSidebarStore((state) => state.setRightSidebar);
+	const mobilePanel = useBuilderSidebarStore((state) => state.mobilePanel);
+	const setMobilePanel = useBuilderSidebarStore((state) => state.setMobilePanel);
+
+	// Leaving a panel "open" behind a desktop layout would strand it invisibly, so close on resize out.
+	useEffect(() => {
+		if (!isMobile) setMobilePanel(null);
+	}, [isMobile, setMobilePanel]);
 
 	const { getSidebarMaxSize } = useBuilderSidebar((state) => ({
 		getSidebarMaxSize: state.getSidebarMaxSize,
@@ -114,6 +121,47 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 	);
 	const isLocked = resume.isLocked;
 
+	const lockedOverlay = isLocked ? (
+		<div className="absolute inset-0 z-[100] flex cursor-not-allowed flex-col items-center justify-center gap-3 bg-white/70 backdrop-blur-sm">
+			<div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-center shadow-lg">
+				<CheckCircleIcon className="size-6 text-emerald-500" />
+				<p className="font-bold text-slate-700 text-xs uppercase tracking-wider">{t`View Only`}</p>
+				<p className="max-w-[160px] text-[11px] text-slate-400 leading-snug">
+					{t`This resume is locked and cannot be edited.`}
+				</p>
+			</div>
+		</div>
+	) : null;
+
+	/*
+		Mobile shows exactly one surface at a time: the resume, or one panel full-screen.
+		The panels are the same components as desktop and are reached by the same two header
+		buttons — only the presentation differs, so nothing has to be relearned between devices.
+
+		They are deliberately NOT ResizablePanels here: as docked columns they could only ever
+		expand *within* the 390px row, squeezing the preview to a sliver rather than opening.
+	*/
+	if (isMobile) {
+		return (
+			<div className="flex h-svh flex-col" {...props}>
+				<BuilderHeader />
+
+				<div className="relative mt-14 flex-1 overflow-hidden">
+					<Outlet />
+
+					{mobilePanel && (
+						<div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-background">
+							<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+								{mobilePanel === "left" ? <BuilderSidebarLeft /> : <BuilderSidebarRight />}
+							</div>
+							{mobilePanel === "left" && lockedOverlay}
+						</div>
+					)}
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex h-svh flex-col" {...props}>
 			<BuilderHeader />
@@ -130,17 +178,7 @@ function BuilderLayout({ initialLayout, ...props }: BuilderLayoutProps) {
 					className="relative h-[calc(100svh-3.5rem)] overflow-hidden"
 				>
 					<BuilderSidebarLeft />
-					{isLocked && (
-						<div className="absolute inset-0 z-[100] flex cursor-not-allowed flex-col items-center justify-center gap-3 bg-white/70 backdrop-blur-sm">
-							<div className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-center shadow-lg">
-								<CheckCircleIcon className="size-6 text-emerald-500" />
-								<p className="font-bold text-slate-700 text-xs uppercase tracking-wider">{t`View Only`}</p>
-								<p className="max-w-[160px] text-[11px] text-slate-400 leading-snug">
-									{t`This resume is locked and cannot be edited.`}
-								</p>
-							</div>
-						</div>
-					)}
+					{lockedOverlay}
 				</ResizablePanel>
 				<ResizableSeparator withHandle className="z-50 border-s" />
 				<ResizablePanel id="artboard" defaultSize={artboardSize} className="relative h-[calc(100svh-3.5rem)]">

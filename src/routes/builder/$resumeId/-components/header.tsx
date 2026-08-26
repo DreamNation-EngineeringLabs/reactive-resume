@@ -10,6 +10,7 @@ import {
 	ProhibitIcon,
 	SidebarSimpleIcon,
 	TrashSimpleIcon,
+	XIcon,
 } from "@phosphor-icons/react";
 
 const PO_LOCKED_STATUSES = new Set(["FINALIZED_BY_FACULTY", "RESUBMITTED_TO_PO", "PO_VERIFIED", "APPROVED"]);
@@ -29,17 +30,30 @@ import {
 import { useDialogStore } from "@/dialogs/store";
 import { useConfirm } from "@/hooks/use-confirm";
 import { orpc } from "@/integrations/orpc/client";
-import { useBuilderSidebar } from "../-store/sidebar";
+import { useBuilderSidebar, useBuilderSidebarStore } from "../-store/sidebar";
 
 export function BuilderHeader() {
 	const name = useResumeStore((state) => state.resume.name);
 	const isLocked = useResumeStore((state) => state.resume.isLocked);
 	const toggleSidebar = useBuilderSidebar((state) => state.toggleSidebar);
+	const mobilePanel = useBuilderSidebarStore((state) => state.mobilePanel);
+
+	// While a panel covers the screen on mobile, its own toggle becomes the way back to the resume.
+	// Swapping the icon to an X is what makes that obvious — a highlighted sidebar glyph reads as
+	// "this is open", not "tap here to leave".
+	const leftIsOpen = mobilePanel === "left";
+	const rightIsOpen = mobilePanel === "right";
 
 	return (
-		<div className="absolute inset-x-0 top-0 z-10 flex h-14 items-center justify-between border-b bg-popover px-1.5">
-			<Button size="icon" variant="ghost" onClick={() => toggleSidebar("left")}>
-				<SidebarSimpleIcon />
+		<div className="absolute inset-x-0 top-0 z-[60] flex h-14 items-center justify-between border-b bg-popover px-1.5">
+			<Button
+				size="icon"
+				variant="ghost"
+				aria-label={leftIsOpen ? t`Close content editor` : t`Edit resume content`}
+				aria-expanded={leftIsOpen}
+				onClick={() => toggleSidebar("left")}
+			>
+				{leftIsOpen ? <XIcon /> : <SidebarSimpleIcon />}
 			</Button>
 
 			<div className="flex items-center gap-x-1">
@@ -59,8 +73,14 @@ export function BuilderHeader() {
 				<BuilderHeaderDropdown />
 			</div>
 
-			<Button size="icon" variant="ghost" onClick={() => toggleSidebar("right")}>
-				<SidebarSimpleIcon className="-scale-x-100" />
+			<Button
+				size="icon"
+				variant="ghost"
+				aria-label={rightIsOpen ? t`Close design and tools` : t`Design and tools`}
+				aria-expanded={rightIsOpen}
+				onClick={() => toggleSidebar("right")}
+			>
+				{rightIsOpen ? <XIcon /> : <SidebarSimpleIcon className="-scale-x-100" />}
 			</Button>
 		</div>
 	);

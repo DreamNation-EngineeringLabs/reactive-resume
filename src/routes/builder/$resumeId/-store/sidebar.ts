@@ -9,12 +9,22 @@ interface BuilderSidebarState {
 	rightSidebar: PanelImperativeHandle | null;
 	/** When true the right sidebar is in wide-inline ATS mode (≈38% width). */
 	atsInlineExpanded: boolean;
+	/**
+	 * Which panel is open as a full-screen overlay on mobile, if any.
+	 *
+	 * A single value rather than two booleans, so "only one thing on screen at a time" is structural:
+	 * opening one panel inherently closes the other and there is no state in which both are visible.
+	 * Ignored on desktop, where both panels dock side by side via the resizable group instead.
+	 */
+	mobilePanel: "left" | "right" | null;
 }
 
 interface BuilderSidebarActions {
 	setLeftSidebar: (ref: PanelImperativeHandle | null) => void;
 	setRightSidebar: (ref: PanelImperativeHandle | null) => void;
 	setAtsInlineExpanded: (v: boolean) => void;
+	setMobilePanel: (panel: "left" | "right" | null) => void;
+	toggleMobilePanel: (panel: "left" | "right") => void;
 }
 
 type BuilderSidebar = BuilderSidebarState & BuilderSidebarActions;
@@ -23,9 +33,12 @@ export const useBuilderSidebarStore = create<BuilderSidebar>((set) => ({
 	leftSidebar: null,
 	rightSidebar: null,
 	atsInlineExpanded: false,
+	mobilePanel: null,
 	setLeftSidebar: (ref) => set({ leftSidebar: ref }),
 	setRightSidebar: (ref) => set({ rightSidebar: ref }),
 	setAtsInlineExpanded: (v) => set({ atsInlineExpanded: v }),
+	setMobilePanel: (panel) => set({ mobilePanel: panel }),
+	toggleMobilePanel: (panel) => set((state) => ({ mobilePanel: state.mobilePanel === panel ? null : panel })),
 }));
 
 type UseBuilderSidebarReturn = {
@@ -50,6 +63,19 @@ export function useBuilderSidebar<T = UseBuilderSidebarReturn>(selector?: (build
 
 	const toggleSidebar = useCallback((side: "left" | "right", forceExpand?: boolean) => {
 		const state = useBuilderSidebarStore.getState();
+
+		// On mobile the panels are full-screen overlays rather than docked columns, so the resizable
+		// panel handles do not apply — expanding one there only squeezed the preview into a sliver
+		// instead of opening. Checked at call time (not via useIsMobile) because this runs from an
+		// event handler and must reflect the viewport as it is at that moment.
+		const isMobileViewport = typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+
+		if (isMobileViewport) {
+			if (forceExpand) state.setMobilePanel(side);
+			else state.toggleMobilePanel(side);
+			return;
+		}
+
 		const sidebar = side === "left" ? state.leftSidebar?.current : state.rightSidebar?.current;
 
 		if (!sidebar) return;
