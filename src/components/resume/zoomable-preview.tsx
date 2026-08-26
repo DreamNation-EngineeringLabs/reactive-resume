@@ -16,8 +16,15 @@ import { cn } from "@/utils/style";
 
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 3;
-/** Below this the fit scale is < 1 and zoom controls earn their place; above it the page fits anyway. */
-const FIT_PADDING = 16;
+/**
+ * Breathing room either side of the page when scaling to fit.
+ *
+ * Kept small on purpose: a 1366px laptop gives the artboard 818px for a 794px page, so anything
+ * larger than 12px here would scale a page that actually fits and pop the zoom controls up at 99%.
+ */
+const FIT_PADDING = 8;
+/** Ignore scale differences under this — 0.99 is imperceptible and not worth showing controls for. */
+const FIT_EPSILON = 0.02;
 
 type Props = {
 	children: ReactNode;
@@ -167,6 +174,9 @@ export function ZoomablePreview({ children, contentWidth, enabled = true, classN
 	if (!enabled) return <div className={className}>{children}</div>;
 
 	const isZoomed = scale > fitScale + 0.001;
+	// Controls only earn their place when the page cannot fit unaided, or the reader has zoomed in.
+	// On a wide desktop the page fits at 1:1 and the bar would be pure clutter.
+	const showControls = fitScale < 1 - FIT_EPSILON || isZoomed;
 
 	return (
 		<div className={cn("relative flex-1 overflow-hidden", className)} ref={containerRef}>
@@ -199,7 +209,10 @@ export function ZoomablePreview({ children, contentWidth, enabled = true, classN
 			</div>
 
 			{/* Explicit controls: pinch is undiscoverable, and plenty of students never try it. */}
-			<div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/90 p-1 shadow-lg backdrop-blur-sm">
+			<div
+				hidden={!showControls}
+				className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-background/90 p-1 shadow-lg backdrop-blur-sm"
+			>
 				<button
 					type="button"
 					aria-label="Zoom out"

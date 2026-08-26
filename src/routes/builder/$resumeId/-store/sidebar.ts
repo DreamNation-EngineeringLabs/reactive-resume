@@ -7,7 +7,13 @@ type PanelImperativeHandle = ReturnType<typeof usePanelRef>;
 interface BuilderSidebarState {
 	leftSidebar: PanelImperativeHandle | null;
 	rightSidebar: PanelImperativeHandle | null;
-	/** When true the right sidebar is in wide-inline ATS mode (≈38% width). */
+	/**
+	 * When true the ATS section renders its wide inline body instead of the compact panel.
+	 *
+	 * Despite the name this does not resize anything: `getSidebarMaxSize` returns a flat 20%, so the
+	 * right sidebar never exceeds that and the artboard is never squeezed below 60%. (An earlier
+	 * comment here claimed ≈38% width, which was never true of the code.)
+	 */
 	atsInlineExpanded: boolean;
 	/**
 	 * Which panel is open as a full-screen overlay on mobile, if any.
