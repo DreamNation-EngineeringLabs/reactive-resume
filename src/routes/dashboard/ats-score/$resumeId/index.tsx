@@ -107,6 +107,18 @@ function ATSResultPage() {
 	const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 	const [selectedCategory, setSelectedCategory] = useState<string>("keywordMatch");
 
+	/**
+	 * Which of the three columns is on screen below md.
+	 *
+	 * The desktop layout is three fixed columns — w-72 + w-[28rem] + flex-1, all shrink-0 — inside an
+	 * overflow-hidden parent. That needs ~1000px. At 390px only the first column fitted and the other
+	 * two sat off-screen with no horizontal scroll to reach them, so the score was visible but the
+	 * suggestions and the resume itself were not reachable at all.
+	 *
+	 * Desktop still shows all three side by side; this only drives the mobile switcher.
+	 */
+	const [mobileColumn, setMobileColumn] = useState<"score" | "suggestions" | "resume">("score");
+
 	useEffect(() => {
 		try {
 			localStorage.setItem(storageKey, JSON.stringify({ result, jd: jobDescription }));
@@ -272,10 +284,41 @@ function ATSResultPage() {
 				</div>
 			</div>
 
+			{/* ── Mobile column switcher — the only way to reach columns 2 and 3 below md ── */}
+			<div className="flex shrink-0 border-b bg-background md:hidden">
+				{(
+					[
+						["score", t`Score`],
+						["suggestions", t`Suggestions`],
+						["resume", t`Resume`],
+					] as const
+				).map(([key, label]) => (
+					<button
+						key={key}
+						type="button"
+						aria-pressed={mobileColumn === key}
+						onClick={() => setMobileColumn(key)}
+						className={cn(
+							"flex-1 border-b-2 px-2 py-3 font-medium text-sm transition-colors",
+							mobileColumn === key
+								? "border-primary text-foreground"
+								: "border-transparent text-muted-foreground hover:text-foreground",
+						)}
+					>
+						{label}
+					</button>
+				))}
+			</div>
+
 			{/* ── 3-column body ── */}
 			<div className="flex flex-1 overflow-hidden">
 				{/* ═══ Column 1 — Score + Categories + Keywords ═══ */}
-				<div className="flex w-72 shrink-0 flex-col overflow-y-auto border-r bg-slate-50 dark:bg-slate-950/30">
+				<div
+					className={cn(
+						"flex w-full flex-col overflow-y-auto border-r bg-slate-50 md:w-72 md:shrink-0 dark:bg-slate-950/30",
+						mobileColumn === "score" ? "flex" : "hidden md:flex",
+					)}
+				>
 					{/* Score ring */}
 					<div className="flex flex-col items-center gap-1 border-b px-5 py-5">
 						<ScoreRing score={result?.overall ?? 0} hasResult={!!result} />
@@ -395,7 +438,12 @@ function ATSResultPage() {
 				</div>
 
 				{/* ═══ Column 2 — Feedback + Suggestions ═══ */}
-				<div className="flex w-[28rem] shrink-0 flex-col overflow-y-auto border-r">
+				<div
+					className={cn(
+						"flex w-full flex-col overflow-y-auto border-r md:w-[28rem] md:shrink-0",
+						mobileColumn === "suggestions" ? "flex" : "hidden md:flex",
+					)}
+				>
 					{result ? (
 						<div className="space-y-5 p-5">
 							{/* Gradient bar + score headline + description */}
@@ -523,7 +571,12 @@ function ATSResultPage() {
 				</div>
 
 				{/* ═══ Column 3 — Actual Resume (iframe) ═══ */}
-				<div className="relative flex flex-1 flex-col overflow-hidden bg-slate-100 dark:bg-slate-900">
+				<div
+					className={cn(
+						"relative w-full flex-1 flex-col overflow-hidden bg-slate-100 dark:bg-slate-900",
+						mobileColumn === "resume" ? "flex" : "hidden md:flex",
+					)}
+				>
 					<div className="border-b bg-background/80 px-4 py-2 backdrop-blur-sm">
 						<div className="flex items-center justify-between">
 							<p className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">
