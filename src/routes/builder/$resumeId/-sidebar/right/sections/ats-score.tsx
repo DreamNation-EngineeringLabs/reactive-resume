@@ -68,12 +68,26 @@ export function ATSScoreSectionBuilder() {
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>
+							{/* size-11 on mobile: this is the only route to the category breakdown, and at 28px
+							    it was both under the tap target and unlabelled for screen readers. */}
 							{atsInlineExpanded ? (
-								<Button size="icon" variant="ghost" className="size-8" onClick={handleCollapse}>
+								<Button
+									size="icon"
+									variant="ghost"
+									aria-label={t`Collapse ATS details`}
+									className="size-11 md:size-8"
+									onClick={handleCollapse}
+								>
 									<ArrowsInIcon className="size-4" />
 								</Button>
 							) : (
-								<Button size="icon" variant="ghost" className="size-8" onClick={handleExpand}>
+								<Button
+									size="icon"
+									variant="ghost"
+									aria-label={t`Expand ATS details`}
+									className="size-11 md:size-8"
+									onClick={handleExpand}
+								>
 									<ArrowsOutIcon className="size-4" />
 								</Button>
 							)}
@@ -381,11 +395,27 @@ function ATSScorePanel({ state, onExpand }: { state: ATSPanelState; onExpand: ()
 						</div>
 					)}
 
-					{pendingSuggestions.length === 0 && result && (
-						<p className="text-center text-muted-foreground text-xs">
-							<Trans>All suggestions applied or dismissed. Re-score to refresh.</Trans>
-						</p>
-					)}
+					{/*
+						Zero pending suggestions has two very different causes, and saying "all applied or
+						dismissed" for both is wrong: when the AI rewrites could not be generated at all the
+						student never had any suggestions to act on, and telling them otherwise sends them
+						looking for work they have already done. The inline body already distinguishes these
+						via result.metadata.aiRewriteUnavailable — the compact panel did not.
+					*/}
+					{pendingSuggestions.length === 0 &&
+						result &&
+						(result.metadata.aiRewriteUnavailable ? (
+							<p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-amber-900 text-xs dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+								<Trans>
+									AI rewrite suggestions are unavailable right now. Your score and category breakdown are still
+									accurate.
+								</Trans>
+							</p>
+						) : (
+							<p className="text-center text-muted-foreground text-xs">
+								<Trans>All suggestions applied or dismissed. Re-score to refresh.</Trans>
+							</p>
+						))}
 				</>
 			)}
 		</div>
