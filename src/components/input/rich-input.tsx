@@ -151,7 +151,9 @@ export function RichInput({ value, onChange, style, className, editorClassName, 
 			<Button
 				size="icon"
 				variant="secondary"
-				className="absolute right-2 bottom-2 size-7"
+				// size-11 on mobile meets the 44px tap target; size-7 (28px) from md up keeps desktop density.
+				// Fullscreen matters most on a phone, where the inline editor is only a few lines tall.
+				className="absolute right-2 bottom-2 size-11 md:size-7"
 				title={isFullscreen ? t`Exit Fullscreen` : t`Fullscreen`}
 				onClick={() => setIsFullscreen(!isFullscreen)}
 			>

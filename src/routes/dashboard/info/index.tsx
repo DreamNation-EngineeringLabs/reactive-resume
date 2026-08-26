@@ -82,7 +82,7 @@ function RouteComponent() {
 
 	if (isLoading) {
 		return (
-			<div className="-m-10 md:-m-12 min-h-full bg-slate-50 p-10 md:p-12">
+			<div className="-m-10 min-h-full bg-slate-50 p-10 md:-m-12 md:p-12">
 				<div className="space-y-6">
 					<MasterProfileHeader isPending={false} onSave={() => undefined} />
 					<div className="flex items-center justify-center py-12">
@@ -94,7 +94,7 @@ function RouteComponent() {
 	}
 
 	return (
-		<div className="-m-10 md:-m-12 min-h-full bg-slate-50 p-10 md:p-12">
+		<div className="-m-10 min-h-full bg-slate-50 p-10 md:-m-12 md:p-12">
 			<div className="space-y-6">
 				<MasterProfileHeader isPending={isPending} onSave={form.handleSubmit(onSubmit)} />
 
@@ -344,7 +344,11 @@ function ProfilesSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -443,7 +447,11 @@ function ExperienceSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -586,7 +594,11 @@ function EducationSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -754,7 +766,11 @@ function ProjectsSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -862,7 +878,11 @@ function SkillsSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -948,7 +968,11 @@ function LanguagesSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1032,7 +1056,11 @@ function InterestsSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1100,7 +1128,11 @@ function AwardsSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1228,7 +1260,11 @@ function CertificationsSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1356,7 +1392,11 @@ function PublicationsSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1484,7 +1524,11 @@ function VolunteerSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1612,7 +1656,11 @@ function ReferencesSection() {
 							type="button"
 							variant="ghost"
 							size="icon"
-							className="-top-1 absolute right-0 z-10 size-7 bg-white text-slate-400 opacity-0 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 group-hover:opacity-100 focus-visible:opacity-100"
+							// Always visible on touch, hover-revealed from md up. `group-hover` never fires on a
+							// touch device, so `opacity-0` left every delete button permanently invisible on a
+							// phone — items could be added but never removed. size-11 also meets the 44px tap
+							// target; size-7 (28px) was well under it.
+							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />

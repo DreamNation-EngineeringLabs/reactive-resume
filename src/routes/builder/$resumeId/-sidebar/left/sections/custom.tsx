@@ -235,7 +235,7 @@ function CustomSectionDropdownMenu({ section }: { section: CustomSection }) {
 			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
-					className="flex cursor-context-menu items-center px-1.5 opacity-40 transition-[background-color,opacity] hover:bg-secondary/40 focus:outline-none focus-visible:ring-1 group-hover:opacity-100"
+					className="flex cursor-context-menu items-center px-1.5 opacity-100 transition-[background-color,opacity] hover:bg-secondary/40 focus:outline-none focus-visible:ring-1 md:opacity-40 md:group-hover:opacity-100"
 				>
 					<DotsThreeVerticalIcon />
 				</button>
