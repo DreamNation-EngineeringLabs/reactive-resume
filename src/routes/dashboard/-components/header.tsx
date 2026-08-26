@@ -1,5 +1,4 @@
 import type { Icon as IconType } from "@phosphor-icons/react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/utils/style";
 
 type Props = {
@@ -14,7 +13,10 @@ export function DashboardHeader({ title, description, icon: IconComponent, class
 	return (
 		<div className={cn("flex items-center justify-between gap-x-4", className)}>
 			<div className="flex items-center gap-x-3">
-				<SidebarTrigger className="shrink-0 md:hidden" />
+				{/* The mobile sidebar trigger moved to the dashboard layout (routes/dashboard/route.tsx).
+				    It lived here, but this header is opt-in per page and the student-facing pages never
+				    rendered it — leaving the sidebar unreachable on mobile. Keeping a copy here as well
+				    would show two triggers on the pages that do render a header. */}
 				{IconComponent && (
 					<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
 						<IconComponent weight="duotone" className="size-6" />

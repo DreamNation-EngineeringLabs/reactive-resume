@@ -1,6 +1,7 @@
+import { Trans } from "@lingui/react/macro";
 import { createFileRoute, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { dlog } from "@/utils/debug";
 import { getPlacementsUrl, redirectToPlacements } from "@/utils/source-url";
 import { getDashboardSidebarServerFn, setDashboardSidebarServerFn } from "./-components/functions";
@@ -87,6 +88,26 @@ function RouteComponent() {
 				<DashboardSidebar />
 
 				<div className="flex flex-1 flex-col overflow-hidden p-0">
+					{/*
+						Mobile-only app bar. This is the ONLY way to reach the sidebar on a phone, so it has
+						to live in the layout rather than in DashboardHeader.
+
+						DashboardHeader is rendered per-page, and the three pages a student actually uses —
+						resumes, info, ats-score — never rendered it. On mobile the sidebar is an off-canvas
+						Sheet, so with no trigger anywhere on the landing page, My Info, ATS Analysis and
+						Feedback Summary were completely unreachable: no menu button and no links to them.
+
+						Kept on review pages too. `SidebarProvider open` only drives the desktop column; the
+						mobile Sheet has its own `openMobile` state, so forcing `open={false}` for review
+						mode does not disable this.
+					*/}
+					<div className="flex h-14 flex-none items-center gap-2 border-b bg-background px-2 md:hidden">
+						<SidebarTrigger className="size-11" />
+						<span className="truncate font-semibold text-sm">
+							<Trans>Resume Builder</Trans>
+						</span>
+					</div>
+
 					<main className="@container flex-1 overflow-hidden bg-background">
 						{isReviewPage ? (
 							/* Review mode: full bleed, no max-width, no padding — the page handles its own layout */
