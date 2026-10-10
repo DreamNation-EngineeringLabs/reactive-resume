@@ -1,6 +1,7 @@
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import { create } from "zustand";
-import { type CommentAnchor, findQuote } from "@/schema/resume/comment-anchor";
+import { type CommentAnchor, commentHighlight, findQuote } from "@/schema/resume/comment-anchor";
 import type { ResumeData } from "@/schema/resume/data";
 import { getSectionTitle, type LeftSidebarSection } from "@/utils/resume/section";
 
@@ -17,21 +18,35 @@ import { getSectionTitle, type LeftSidebarSection } from "@/utils/resume/section
  */
 
 export type AnchorStatus = "ok" | "changed" | "missing";
-type AnchoredComment = { id: string; anchor: CommentAnchor | null };
+type AnchoredComment = { id: string; anchor: CommentAnchor | null; severity?: string | null; status?: string };
 
-/** Comments that should be highlighted: open (not resolved) top-level comments that point somewhere. */
-export function openAnchoredComments(comments: (AnchoredComment & { parentId: string | null; status: string })[]) {
+/** Top-level comments that point somewhere on the resume (only the open ones are painted, see `commentHighlight`). */
+export function anchoredComments(comments: (AnchoredComment & { parentId: string | null })[]) {
 	return comments
-		.filter((c) => !c.parentId && c.anchor && c.status !== "RESOLVED")
-		.map(({ id, anchor }) => ({ id, anchor }));
+		.filter((c) => !c.parentId && c.anchor)
+		.map(({ id, anchor, severity, status }) => ({ id, anchor, severity, status }));
 }
+
+/** Badge colours match the highlighter colours on the resume. */
+export const SEVERITY_BADGE: Record<string, string> = {
+	HIGH: "bg-rose-100 text-rose-700",
+	MEDIUM: "bg-amber-100 text-amber-800",
+	LOW: "bg-emerald-100 text-emerald-700",
+};
+
+/** Left edge of a comment's quote, in its highlighter colour (no severity = yellow). */
+export const severityEdge = (severity?: string | null) =>
+	severity === "HIGH" ? "border-rose-400" : severity === "LOW" ? "border-emerald-400" : "border-amber-400";
+
+export const severityLabel = (severity: string) =>
+	({ HIGH: t`High`, MEDIUM: t`Medium`, LOW: t`Low` })[severity] ?? severity;
 
 const ROOT = ".resume-preview-container";
 const HEADER = "page-header";
 const CONTEXT = 32;
 // `experience-item-description`, `basics-headline`, `basics-item-email` — not the generic `section-item-*` or `*-item-header`.
 const FIELD_CLASS = /^(?!section-)[a-z]+(?:-[a-z]+)*-item-(?!header$)[a-z]+$|^basics-(?:name|headline|item-[a-z]+)$/;
-const HIGHLIGHT = "review-comment";
+const HIGHLIGHTS = ["review-comment-high", "review-comment-medium", "review-comment-low"];
 const HIGHLIGHT_ACTIVE = "review-comment-active";
 const HIGHLIGHT_CHANGE = "review-change";
 
@@ -222,7 +237,8 @@ export function useChangeHighlights(anchors: CommentAnchor[]) {
 export const useAnchorStatusStore = create<{ statuses: Record<string, AnchorStatus> }>(() => ({ statuses: {} }));
 
 /**
- * Highlights every anchored comment in the preview and keeps them in place while the resume re-renders.
+ * Highlights anchored comments in the preview (coloured by severity; addressed and resolved ones only while
+ * selected) and keeps them in place while the resume re-renders.
  * Mount once per page, next to the preview. Scrolls the active comment into view when it changes, and
  * clicking highlighted text calls `onActivate` with that comment's id. Returns each comment's status.
  */
@@ -241,12 +257,16 @@ export function useReviewHighlights(
 
 		const paint = () => {
 			const next: Record<string, AnchorStatus> = {};
+			const painted = new Map<string, Range[]>(HIGHLIGHTS.map((name) => [name, []]));
 			ranges.current.clear();
-			for (const { id, anchor } of comments) {
-				if (!anchor) continue;
-				const { status, range } = resolveAnchor(anchor);
-				next[id] = status;
-				if (range) ranges.current.set(id, range);
+			for (const comment of comments) {
+				if (!comment.anchor) continue;
+				const { status, range } = resolveAnchor(comment.anchor);
+				next[comment.id] = status;
+				const name = commentHighlight(comment, comment.id === activeId);
+				if (!range || !name) continue;
+				ranges.current.set(comment.id, range);
+				painted.get(name)?.push(range);
 			}
 			const prev = useAnchorStatusStore.getState().statuses;
 			if (JSON.stringify(prev) !== JSON.stringify(next)) useAnchorStatusStore.setState({ statuses: next });
@@ -259,9 +279,11 @@ export function useReviewHighlights(
 			}
 
 			if (!supported) return;
-			const rest = [...ranges.current].filter(([id]) => id !== activeId).map(([, r]) => r);
-			CSS.highlights.set(HIGHLIGHT, new Highlight(...rest));
-			CSS.highlights.set(HIGHLIGHT_ACTIVE, new Highlight(...(active ? [active] : [])));
+			for (const [name, list] of painted) CSS.highlights.set(name, new Highlight(...list));
+			// Drawn over its severity colour.
+			const selected = new Highlight(...(active ? [active] : []));
+			selected.priority = 1;
+			CSS.highlights.set(HIGHLIGHT_ACTIVE, selected);
 		};
 
 		if (activeId !== scrolledTo.current) scrolledTo.current = null;
@@ -270,10 +292,7 @@ export function useReviewHighlights(
 
 		return () => {
 			stop();
-			if (supported) {
-				CSS.highlights.delete(HIGHLIGHT);
-				CSS.highlights.delete(HIGHLIGHT_ACTIVE);
-			}
+			if (supported) for (const name of [...HIGHLIGHTS, HIGHLIGHT_ACTIVE]) CSS.highlights.delete(name);
 		};
 	}, [comments, activeId]);
 

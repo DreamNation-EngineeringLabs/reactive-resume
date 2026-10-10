@@ -3,7 +3,7 @@
  * Handles all database operations for resume comments, checklists, and evaluations
  */
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { DEFAULT_RESUME_USER_ORG_ID } from "@/integrations/auth/config";
 import { db } from "@/integrations/drizzle/client";
 import {
@@ -45,6 +45,22 @@ export async function createComment({
 	severity?: CommentSeverity;
 	suggestion?: string;
 }) {
+	// A review round's first comment keeps the resume as the reviewer saw it; the Changes tab and each
+	// comment's before/after compare against it. Skipped while the resume is unchanged since the last copy.
+	let snapshot: typeof resume.$inferSelect.data | undefined;
+	if (!parentId) {
+		const [[current], [last]] = await Promise.all([
+			db.select({ data: resume.data, updatedAt: resume.updatedAt }).from(resume).where(eq(resume.id, resumeId)),
+			db
+				.select({ createdAt: resumeComment.createdAt })
+				.from(resumeComment)
+				.where(and(eq(resumeComment.resumeId, resumeId), isNotNull(resumeComment.snapshot)))
+				.orderBy(desc(resumeComment.createdAt))
+				.limit(1),
+		]);
+		if (current && (!last || last.createdAt < current.updatedAt)) snapshot = current.data;
+	}
+
 	const result = await db
 		.insert(resumeComment)
 		.values({
@@ -60,6 +76,7 @@ export async function createComment({
 			anchor,
 			severity,
 			suggestion,
+			snapshot,
 			status: "OPEN",
 			createdAt: new Date(),
 			updatedAt: new Date(),

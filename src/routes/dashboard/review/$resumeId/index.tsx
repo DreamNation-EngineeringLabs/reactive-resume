@@ -18,23 +18,26 @@ import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-ro
 import { zodValidator } from "@tanstack/zod-adapter";
 // Default import: fast-json-patch is CommonJS, and a named import breaks server rendering of this page.
 import jsonpatch from "fast-json-patch";
-import { useHotkeys } from "react-hotkeys-hook";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { useResizeObserver } from "usehooks-ts";
 import { z } from "zod";
 import { ResumePreview } from "@/components/resume/preview";
 import {
+	anchoredComments,
 	anchorFromRange,
 	anchorLabel,
-	openAnchoredComments,
+	SEVERITY_BADGE,
 	scrollToAnchor,
+	severityEdge,
+	severityLabel,
 	useChangeHighlights,
 	useReviewHighlights,
 } from "@/components/resume/review-anchors";
 import { useResumeStore } from "@/components/resume/store/resume";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
-import { type CommentAnchor, changedAnchors } from "@/schema/resume/comment-anchor";
+import { anchorText, type CommentAnchor, changedAnchors } from "@/schema/resume/comment-anchor";
 import type { ResumeData } from "@/schema/resume/data";
 import { getOrganisationUnits } from "@/utils/sso-context";
 import { cn } from "@/utils/style";
@@ -74,6 +77,7 @@ function ReviewPage() {
 	const [replyTo, setReplyTo] = useState<string | null>(null);
 	const [anchor, setAnchor] = useState<CommentAnchor | null>(null);
 	const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+	const [compareId, setCompareId] = useState<string | null>(null);
 	const commentInputRef = useRef<HTMLTextAreaElement>(null);
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
@@ -185,10 +189,10 @@ function ReviewPage() {
 		},
 	});
 
-	// Open anchored comments (plus the selection being commented on) are highlighted on the resume.
+	// Anchored comments (plus the selection being commented on) are highlighted on the resume.
 	const highlightTargets = useMemo(() => {
-		const open = openAnchoredComments(data?.comments ?? []);
-		return anchor ? [...open, { id: PENDING_ANCHOR, anchor }] : open;
+		const anchored = anchoredComments(data?.comments ?? []);
+		return anchor ? [...anchored, { id: PENDING_ANCHOR, anchor }] : anchored;
 	}, [data?.comments, anchor]);
 
 	const anchorStatuses = useReviewHighlights(highlightTargets, anchor ? PENDING_ANCHOR : activeCommentId, (id) => {
@@ -205,8 +209,9 @@ function ReviewPage() {
 	useHotkeys("alt+left", () => prevResume && handleNavigate(prevResume), [prevResume]);
 	useHotkeys("escape", () => setAnchor(null));
 
-	// "What changed since the last review": compared with the latest evaluation or review verdict.
-	const baseline = useMemo(() => (data ? latestReviewBaseline(data.evaluations, data.history) : null), [data]);
+	// "What changed since the last review": compared with the resume as last reviewed (comment, evaluation or verdict).
+	const copies = useMemo(() => (data ? reviewCopies(data.evaluations, data.history, data.comments) : []), [data]);
+	const baseline = copies[0] ?? null;
 	const changes = useMemo(
 		() => (baseline && data ? changedAnchors(baseline.data, data.resume.data as ResumeData) : []),
 		[baseline, data],
@@ -317,7 +322,7 @@ function ReviewPage() {
 							<CaretRightIcon weight="bold" className="size-4" />
 						</button>
 					</div>
-					{!!latestEval?.snapshot && (
+					{!!baseline && (
 						<button
 							type="button"
 							onClick={() => setShowDiff(true)}
@@ -341,14 +346,14 @@ function ReviewPage() {
 			</div>
 
 			{/* Comparison State */}
-			<ComparisonOverlay evaluations={evaluations} currentData={resume.data} onTabChange={setActiveTab} />
+			<ComparisonOverlay baseline={baseline} currentData={resume.data} onTabChange={setActiveTab} />
 
 			{/* Revision Diff Overlay */}
-			{showDiff && !!latestEval?.snapshot && (
+			{showDiff && !!baseline && (
 				<RevisionDiffOverlay
-					snapshot={latestEval.snapshot}
+					snapshot={baseline.data}
 					currentData={resume.data}
-					evaluatedAt={latestEval.evaluatedAt}
+					evaluatedAt={baseline.at}
 					onClose={() => setShowDiff(false)}
 				/>
 			)}
@@ -625,7 +630,10 @@ function ReviewPage() {
 																			? scrollToAnchor(c.anchor)
 																			: setActiveCommentId(c.id)
 																	}
-																	className="mb-2 block w-full rounded-lg border-amber-400 border-l-4 bg-amber-50/60 px-3 py-1.5 text-start hover:bg-amber-50"
+																	className={cn(
+																		"mb-2 block w-full rounded-lg border-l-4 bg-amber-50/60 px-3 py-1.5 text-start hover:bg-amber-50",
+																		severityEdge(c.severity),
+																	)}
 																>
 																	<span className="flex flex-wrap items-center gap-1.5 font-semibold text-[11px] text-slate-500">
 																		{anchorLabel(c.anchor, resume.data)}
@@ -650,12 +658,10 @@ function ReviewPage() {
 																<span
 																	className={cn(
 																		"mb-1.5 inline-block rounded-md px-1.5 py-0.5 font-semibold text-[10px]",
-																		c.severity === "MUST_FIX"
-																			? "bg-rose-50 text-rose-700"
-																			: "bg-slate-100 text-slate-600",
+																		SEVERITY_BADGE[c.severity],
 																	)}
 																>
-																	{c.severity === "MUST_FIX" ? t`Must fix` : t`Suggestion`}
+																	{t`${severityLabel(c.severity)} severity`}
 																</span>
 															)}
 															<p
@@ -673,6 +679,13 @@ function ReviewPage() {
 																	<ins className="text-slate-800 no-underline">{c.suggestion}</ins>
 																</p>
 															)}
+															{compareId === c.id && c.anchor && (
+																<BeforeAfter
+																	anchor={c.anchor}
+																	before={copies.find((copy) => copy.at <= new Date(c.createdAt))?.data}
+																	now={resume.data as ResumeData}
+																/>
+															)}
 															<div className="mt-3 flex items-center justify-between">
 																<div className="flex items-center gap-3">
 																	<p className="text-[10px] text-slate-400">
@@ -689,6 +702,17 @@ function ReviewPage() {
 																	>
 																		{t`Reply`}
 																	</button>
+																	{c.anchor && (
+																		<button
+																			type="button"
+																			aria-expanded={compareId === c.id}
+																			onClick={() => setCompareId(compareId === c.id ? null : c.id)}
+																			className="flex items-center gap-1 font-bold text-[10px] text-violet-600 hover:underline"
+																		>
+																			<GitDiffIcon className="size-3" />
+																			{t`Before / after`}
+																		</button>
+																	)}
 																</div>
 																<div className="flex items-center gap-2">
 																	{c.status === "OPEN" && (
@@ -1500,16 +1524,73 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 
 type ReviewBaseline = { data: ResumeData; at: Date };
 
-/** The resume as it was at the latest evaluation or review verdict (request revision / verify / approve). */
-function latestReviewBaseline(
+/**
+ * Copies of the resume as reviewers saw it, newest first: kept with a review round's first comment, an
+ * evaluation, or a verdict (request revision / verify / approve).
+ */
+function reviewCopies(
 	evaluations: { snapshot?: unknown; evaluatedAt: Date | string }[],
 	history: { currentData?: unknown; createdAt: Date | string }[],
-): ReviewBaseline | null {
-	const candidates = [
+	comments: { snapshot?: unknown; createdAt: Date | string }[],
+): ReviewBaseline[] {
+	return [
 		...evaluations.filter((e) => e.snapshot).map((e) => ({ data: e.snapshot, at: new Date(e.evaluatedAt) })),
 		...history.filter((h) => h.currentData).map((h) => ({ data: h.currentData, at: new Date(h.createdAt) })),
-	].sort((a, b) => b.at.getTime() - a.at.getTime());
-	return (candidates[0] as ReviewBaseline | undefined) ?? null;
+		...comments.filter((c) => c.snapshot).map((c) => ({ data: c.snapshot, at: new Date(c.createdAt) })),
+	].sort((a, b) => b.at.getTime() - a.at.getTime()) as ReviewBaseline[];
+}
+
+/** A comment's spot as it was when the comment was made, next to how it reads now. */
+function BeforeAfter({ anchor, before, now }: { anchor: CommentAnchor; before?: ResumeData; now: ResumeData }) {
+	// Comments made before resume copies were kept only know the highlighted text.
+	const was = before ? anchorText(before, anchor) : (anchor.quote?.exact ?? null);
+	const is = anchorText(now, anchor);
+	const tokens = before && was && is ? computeWordDiff(was, is) : null;
+
+	const row = (label: string, body: React.ReactNode) => (
+		<div className="grid grid-cols-[3.5rem_1fr] gap-2">
+			<span className="font-semibold text-slate-400">{label}</span>
+			<p className="text-slate-700 leading-relaxed">{body}</p>
+		</div>
+	);
+
+	return (
+		<div className="mt-3 space-y-1.5 rounded-lg border border-violet-100 bg-violet-50/40 p-3 text-xs">
+			{row(
+				t`Before`,
+				tokens
+					? tokens.map((tok, i) =>
+							tok.type === "add" ? null : tok.type === "remove" ? (
+								<del key={i} className="bg-rose-100 text-rose-800">
+									{tok.text}
+								</del>
+							) : (
+								tok.text
+							),
+						)
+					: (was ?? "—"),
+			)}
+			{row(
+				t`Now`,
+				is === null ? (
+					<span className="text-slate-400 italic">{t`Removed from the resume`}</span>
+				) : tokens ? (
+					tokens.map((tok, i) =>
+						tok.type === "remove" ? null : tok.type === "add" ? (
+							<ins key={i} className="bg-emerald-100 text-emerald-800 no-underline">
+								{tok.text}
+							</ins>
+						) : (
+							tok.text
+						),
+					)
+				) : (
+					is
+				),
+			)}
+			{was === is && <p className="text-slate-400">{t`Not changed yet.`}</p>}
+		</div>
+	);
 }
 
 function ChangesPanel({
@@ -1613,19 +1694,18 @@ function ChangesPanel({
 }
 
 function ComparisonOverlay({
-	evaluations,
+	baseline,
 	currentData,
 	onTabChange,
 }: {
-	evaluations: any[];
+	baseline: ReviewBaseline | null;
 	currentData: any;
 	onTabChange: (tab: ReviewTab) => void;
 }) {
-	const latestEvalWithSnapshot = useMemo(() => evaluations.find((e) => e.snapshot), [evaluations]);
 	const diff = useMemo(() => {
-		if (!latestEvalWithSnapshot?.snapshot || !currentData) return [];
-		return jsonpatch.compare(latestEvalWithSnapshot.snapshot, currentData);
-	}, [latestEvalWithSnapshot, currentData]);
+		if (!baseline || !currentData) return [];
+		return jsonpatch.compare(baseline.data, currentData);
+	}, [baseline, currentData]);
 
 	if (diff.length === 0) return null;
 
@@ -1633,7 +1713,7 @@ function ComparisonOverlay({
 		<div className="flex h-9 shrink-0 items-center justify-between bg-amber-500 px-6 text-white text-xs shadow-inner">
 			<div className="flex items-center gap-2 font-medium">
 				<PlusMinusIcon weight="bold" className="size-4" />
-				<span>{diff.length} changes detected since last evaluation</span>
+				<span>{diff.length} changes detected since your last review</span>
 			</div>
 			<button type="button" onClick={() => onTabChange("changes")} className="font-bold hover:underline">
 				Review Changes →

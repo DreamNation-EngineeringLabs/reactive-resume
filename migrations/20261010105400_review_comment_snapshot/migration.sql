@@ -1,0 +1,1 @@
+ALTER TABLE "resume_comment" ADD COLUMN "snapshot" jsonb;

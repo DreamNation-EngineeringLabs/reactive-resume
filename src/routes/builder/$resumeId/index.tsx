@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { ResumePreview } from "@/components/resume/preview";
-import { openAnchoredComments, useReviewHighlights } from "@/components/resume/review-anchors";
+import { anchoredComments, useReviewHighlights } from "@/components/resume/review-anchors";
 import { SectionEditOverlay } from "@/components/resume/section-edit-overlay";
 import { useResumeStore } from "@/components/resume/store/resume";
 import { ZoomablePreview } from "@/components/resume/zoomable-preview";
@@ -82,7 +82,7 @@ function ReviewHighlights() {
 		...orpc.resume.comments.list.queryOptions({ input: { resumeId } }),
 		enabled: isPrimary,
 	});
-	const targets = useMemo(() => openAnchoredComments(comments), [comments]);
+	const targets = useMemo(() => anchoredComments(comments), [comments]);
 
 	useReviewHighlights(targets, comment ?? null, (id) =>
 		navigate({

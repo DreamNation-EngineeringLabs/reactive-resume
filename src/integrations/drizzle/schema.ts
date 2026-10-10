@@ -317,8 +317,9 @@ export const resumeComment = pg.pgTable(
 		scope: pg.text("scope").notNull().default("INDIVIDUAL"), // INDIVIDUAL | SECTION
 		status: pg.text("status").notNull().default("OPEN"), // OPEN | ADDRESSED | RESOLVED
 		anchor: pg.jsonb("anchor").$type<CommentAnchor>(), // null = general comment on the whole resume
-		severity: pg.text("severity"), // MUST_FIX | SUGGESTION, null for general comments and replies
+		severity: pg.text("severity"), // HIGH | MEDIUM | LOW, optional (null for general comments and replies)
 		suggestion: pg.text("suggestion"), // reviewer's replacement for the anchored quote; student can apply it
+		snapshot: pg.jsonb("snapshot").$type<ResumeData>(), // resume as reviewed; on the first comment of a review round
 		resolvedAt: pg.timestamp("resolved_at", { withTimezone: true }),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: pg

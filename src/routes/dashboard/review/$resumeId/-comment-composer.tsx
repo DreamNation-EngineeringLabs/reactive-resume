@@ -2,11 +2,19 @@ import { t } from "@lingui/core/macro";
 import { BookmarkSimpleIcon, PaperPlaneTiltIcon, PencilSimpleLineIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type RefObject, useMemo, useState } from "react";
-import { anchorLabel } from "@/components/resume/review-anchors";
+import { anchorLabel, severityLabel } from "@/components/resume/review-anchors";
 import { orpc } from "@/integrations/orpc/client";
 import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
 import type { ResumeData } from "@/schema/resume/data";
 import { cn } from "@/utils/style";
+
+// Same colours as the highlighter on the resume.
+const SEVERITY_ON = {
+	LOW: "bg-emerald-50 text-emerald-800 ring-emerald-500",
+	MEDIUM: "bg-amber-50 text-amber-800 ring-amber-500",
+	HIGH: "bg-rose-50 text-rose-800 ring-rose-500",
+};
+const SEVERITY_DOT = { LOW: "bg-emerald-500", MEDIUM: "bg-amber-400", HIGH: "bg-rose-500" };
 
 type Props = {
 	resumeData: ResumeData;
@@ -38,7 +46,7 @@ export function CommentComposer({
 	const queryClient = useQueryClient();
 	const [content, setContent] = useState("");
 	const [caret, setCaret] = useState(0);
-	const [severity, setSeverity] = useState<CommentSeverity>("MUST_FIX");
+	const [severity, setSeverity] = useState<CommentSeverity | null>(null);
 	const [suggestion, setSuggestion] = useState<string | null>(null);
 	const [managing, setManaging] = useState(false);
 	const [pick, setPick] = useState(0);
@@ -83,11 +91,12 @@ export function CommentComposer({
 		const rewrite = suggestion?.trim();
 		await onSubmit({
 			content: content.trim(),
-			severity: isReply ? undefined : severity,
+			severity: isReply ? undefined : (severity ?? undefined),
 			suggestion: !isReply && quote && rewrite && rewrite !== quote ? rewrite : undefined,
 		});
 		setContent("");
 		setSuggestion(null);
+		setSeverity(null);
 	};
 
 	const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -152,22 +161,20 @@ export function CommentComposer({
 
 			{!isReply && (
 				<div className="mb-3 flex flex-wrap items-center gap-1.5">
-					{(["MUST_FIX", "SUGGESTION"] as const).map((level) => (
+					<span className="text-slate-500 text-xs">{t`Severity (optional)`}</span>
+					{(["LOW", "MEDIUM", "HIGH"] as const).map((level) => (
 						<button
 							key={level}
 							type="button"
 							aria-pressed={severity === level}
-							onClick={() => setSeverity(level)}
+							onClick={() => setSeverity(severity === level ? null : level)}
 							className={cn(
-								"rounded-lg px-2.5 py-1 font-semibold text-xs ring-1 transition-all",
-								severity === level
-									? level === "MUST_FIX"
-										? "bg-rose-600 text-white ring-rose-600"
-										: "bg-slate-700 text-white ring-slate-700"
-									: "bg-white text-slate-600 ring-slate-200 hover:bg-slate-100",
+								"flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold text-xs ring-1 transition-all",
+								severity === level ? SEVERITY_ON[level] : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-100",
 							)}
 						>
-							{level === "MUST_FIX" ? t`Must fix` : t`Suggestion`}
+							<span className={cn("size-2 rounded-full", SEVERITY_DOT[level])} />
+							{severityLabel(level)}
 						</button>
 					))}
 

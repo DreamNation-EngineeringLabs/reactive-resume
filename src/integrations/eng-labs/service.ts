@@ -674,6 +674,55 @@ export async function getEngLabsUserByEmail(
 }
 
 /**
+ * Tenants a staff member works in through user_mappings or unit assignments. Their own users row may have
+ * no tenant (switched-org / mapped staff), which the dashboards already allow for.
+ */
+export async function getStaffTenantIds(userId: string): Promise<string[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
+	const { rows } = await pool.query<{ tenant_id: string }>(
+		`SELECT tenant_id::text AS tenant_id FROM user_mappings WHERE user_id = $1
+		 UNION
+		 SELECT ou.tenant_id::text AS tenant_id
+		 FROM placement_instructor_unit_assignments piua
+		 JOIN organisation_units ou ON ou.id = piua.unit_id
+		 WHERE piua.user_id = $1`,
+		[userId],
+	);
+	return rows.map((r) => r.tenant_id);
+}
+
+/** Tenant per email (lower-cased), picking the same row per email as getEngLabsUserByEmail. One query for many users. */
+export async function getEngLabsTenantsByEmails(emails: string[]): Promise<Map<string, string>> {
+	const pool = getEngLabsPool();
+	const tenants = new Map<string, string>();
+	if (!pool || emails.length === 0) return tenants;
+
+	const { rows } = await pool.query<{ email: string; tenant_id: string | null }>(
+		`SELECT LOWER(TRIM(u.email)) AS email, u.tenant_id
+		 FROM users u
+		 WHERE LOWER(TRIM(u.email)) = ANY($1)
+		 ORDER BY CASE UPPER(u.type::text)
+		   WHEN 'INSTRUCTOR' THEN 0
+		   WHEN 'FACULTY' THEN 0
+		   WHEN 'PLACEMENT_OFFICER' THEN 0
+		   WHEN 'ADMIN' THEN 0
+		   ELSE 1
+		 END,
+		 u.id`,
+		[[...new Set(emails.map((e) => e.trim().toLowerCase()))]],
+	);
+	const seen = new Set<string>();
+	for (const r of rows) {
+		if (seen.has(r.email)) continue;
+		seen.add(r.email);
+		if (r.tenant_id) tenants.set(r.email, r.tenant_id);
+	}
+	return tenants;
+}
+
+/**
  * Get a student's enrollment context: their enrolled org unit + its parent (package-level) unit.
  */
 export async function getStudentEnrollmentInfo(engLabsUserId: string): Promise<{

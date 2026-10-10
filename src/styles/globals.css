@@ -195,17 +195,26 @@
 	}
 }
 
-/* Reviewer comment highlights on the resume preview (see components/resume/review-anchors.ts) */
-::highlight(review-comment) {
-	background-color: rgb(250 204 21 / 0.35);
+/* Reviewer comment highlights on the resume preview, by severity (see components/resume/review-anchors.ts) */
+::highlight(review-comment-high) {
+	background-color: rgb(248 113 113 / 0.4);
+}
+
+::highlight(review-comment-medium) {
+	background-color: rgb(250 204 21 / 0.4);
+}
+
+::highlight(review-comment-low) {
+	background-color: rgb(74 222 128 / 0.4);
+}
+
+/* The selected comment: drawn over its severity colour */
+::highlight(review-comment-active) {
+	background-color: rgb(15 23 42 / 0.12);
+	text-decoration: underline 2px rgb(15 23 42);
 }
 
 /* Entries changed since the last review (Changes tab → Show in Resume) */
 ::highlight(review-change) {
-	background-color: rgb(134 239 172 / 0.45);
-}
-
-::highlight(review-comment-active) {
-	background-color: rgb(250 204 21 / 0.8);
-	text-decoration: underline 2px rgb(161 98 7);
+	background-color: rgb(125 211 252 / 0.45);
 }

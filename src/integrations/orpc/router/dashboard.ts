@@ -36,10 +36,10 @@ import {
 	getUnitSchemaTypes,
 } from "@/integrations/eng-labs";
 import type { EngLabsLearnerProfile, OrgUnitRow, PlacementPackage, Section } from "@/integrations/eng-labs/types";
-import { derror, dlog } from "@/utils/debug";
-import { protectedProcedure } from "../context";
 import { reviewSummaryEmail } from "@/schema/resume/comment-anchor";
+import { derror, dlog } from "@/utils/debug";
 import { env } from "@/utils/env";
+import { protectedProcedure } from "../context";
 import { assertReviewStaff } from "../helpers/review-access";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1120,7 +1120,8 @@ export const updateStatus = protectedProcedure
 		});
 
 		const verdict = REVIEW_VERDICTS[input.status];
-		if (verdict) await emailReviewSummary(input.resumeId, context.user.name, verdict === "approved");
+		// Not awaited: the verdict is saved; a slow mail server shouldn't hold up the reviewer (errors are logged).
+		if (verdict) void emailReviewSummary(input.resumeId, context.user.name, verdict === "approved");
 
 		return { success: true };
 	});
@@ -1187,7 +1188,7 @@ export const bulkUpdateResumes = protectedProcedure
 	)
 	.handler(async ({ context, input }) => {
 		const { bulkUpdateSectionResumes } = await import("@/integrations/drizzle/services/resume-feedback.service");
-		for (const r of input.resumes) await assertReviewStaff(context.user, r.id);
+		await assertReviewStaff(context.user, input.resumes.map((r) => r.id));
 
 		const actorType =
 			input.status === "APPROVED" || input.status === "PO_VERIFIED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
@@ -1463,6 +1464,7 @@ export const reviewResume = protectedProcedure
 				anchor: c.anchor,
 				severity: c.severity,
 				suggestion: c.suggestion,
+				snapshot: c.snapshot,
 				createdAt: c.createdAt,
 			})),
 			evaluations: evaluations.slice(0, 5),

@@ -144,6 +144,7 @@ function ColorSectionForm() {
 }
 
 const quickColorOptions = [
+	"rgba(0, 0, 0, 1)", // black (the default)
 	"rgba(231, 0, 11, 1)", // red-600
 	"rgba(245, 73, 0, 1)", // orange-600
 	"rgba(225, 113, 0, 1)", // amber-600

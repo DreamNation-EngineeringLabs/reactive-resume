@@ -11,7 +11,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { anchorLabel, scrollToAnchor, useAnchorStatusStore } from "@/components/resume/review-anchors";
+import {
+	anchorLabel,
+	SEVERITY_BADGE,
+	scrollToAnchor,
+	severityEdge,
+	severityLabel,
+	useAnchorStatusStore,
+} from "@/components/resume/review-anchors";
 import { flushResumeSync, useResumeStore } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
 import { useDialogStore } from "@/dialogs/store";
@@ -240,7 +247,10 @@ function ReviewerFeedbackForm() {
 									<button
 										type="button"
 										onClick={() => comment.anchor && showComment(comment.id, comment.anchor)}
-										className="min-w-0 flex-1 rounded-lg border-amber-400 border-l-4 bg-amber-50/60 px-2.5 py-1.5 text-start hover:bg-amber-50"
+										className={cn(
+											"min-w-0 flex-1 rounded-lg border-l-4 bg-amber-50/60 px-2.5 py-1.5 text-start hover:bg-amber-50",
+											severityEdge(comment.severity),
+										)}
 									>
 										<span className="flex flex-wrap items-center gap-1.5 font-semibold text-[10px] text-slate-500">
 											{anchorLabel(comment.anchor, resume.data)}
@@ -275,10 +285,10 @@ function ReviewerFeedbackForm() {
 								<span
 									className={cn(
 										"mb-1 inline-block rounded-md px-1.5 py-0.5 font-semibold text-[10px]",
-										comment.severity === "MUST_FIX" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600",
+										SEVERITY_BADGE[comment.severity],
 									)}
 								>
-									{comment.severity === "MUST_FIX" ? t`Must fix` : t`Suggestion`}
+									{t`${severityLabel(comment.severity)} severity`}
 								</span>
 							)}
 							<div className="flex items-start justify-between gap-2">

@@ -24,9 +24,19 @@ export const commentAnchorSchema = z.object({
 
 export type CommentAnchor = z.infer<typeof commentAnchorSchema>;
 
-export const commentSeveritySchema = z.enum(["MUST_FIX", "SUGGESTION"]);
+/** Optional. Sets the highlighter colour: high red, medium yellow, low green (no severity looks like medium). */
+export const commentSeveritySchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
 
 export type CommentSeverity = z.infer<typeof commentSeveritySchema>;
+
+/**
+ * The CSS highlight a comment is painted with on the resume, or null when it isn't painted:
+ * only open feedback stays highlighted; addressed or resolved feedback shows again while it is selected.
+ */
+export function commentHighlight(comment: { severity?: string | null; status?: string }, selected: boolean) {
+	if (!selected && comment.status && comment.status !== "OPEN") return null;
+	return `review-comment-${comment.severity === "HIGH" ? "high" : comment.severity === "LOW" ? "low" : "medium"}`;
+}
 
 /** Best index of `quote.exact` in `text`: matching context wins, then closeness to where it was. -1 if gone. */
 export function findQuote(text: string, quote: NonNullable<CommentAnchor["quote"]>, hint = 0) {
@@ -65,6 +75,42 @@ export function anchorTarget(data: ResumeData, anchor: CommentAnchor): Record<st
 		data.customSections.find((s) => s.id === anchor.section) ??
 		data.sections[anchor.section as keyof ResumeData["sections"]];
 	return section?.items.find((item) => item.id === anchor.itemId);
+}
+
+const plainText = (html: string) =>
+	html
+		.replace(/<\/?(p|li|ul|ol|div|br|h[1-6])\b[^>]*>/gi, " ")
+		.replace(/<[^>]+>/g, "")
+		.replace(/&nbsp;/g, " ")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&amp;/g, "&")
+		.replace(/\s+/g, " ")
+		.trim();
+
+const strings = (node: unknown): string[] =>
+	typeof node === "string"
+		? [node]
+		: node && typeof node === "object"
+			? Object.entries(node).flatMap(([key, value]) => (key === "id" || key === "icon" ? [] : strings(value)))
+			: [];
+
+/** The text an anchor points at (its field, entry or whole section), or null if it's no longer on the resume. */
+export function anchorText(data: ResumeData, anchor: CommentAnchor): string | null {
+	let target: unknown;
+	if (anchor.section === "summary") target = data.summary.content;
+	else if (anchor.section === "basics" || anchor.itemId) target = anchorTarget(data, anchor);
+	else {
+		const section =
+			data.customSections.find((s) => s.id === anchor.section) ??
+			data.sections[anchor.section as keyof ResumeData["sections"]];
+		target = section?.items.filter((item) => !item.hidden);
+	}
+	if (!target || (target as { hidden?: boolean }).hidden) return null;
+
+	const key = anchor.field?.split("-").pop();
+	if (key && typeof target === "object" && key in target) target = (target as Record<string, unknown>)[key];
+	return plainText(strings(target).join(" "));
 }
 
 /**
@@ -128,7 +174,7 @@ export function reviewSummaryEmail(input: {
 	builderUrl: string;
 }) {
 	const lines = input.comments.map((c, i) => {
-		const tag = c.severity === "MUST_FIX" ? "[Must fix] " : c.severity === "SUGGESTION" ? "[Suggestion] " : "";
+		const tag = { HIGH: "[High] ", MEDIUM: "[Medium] ", LOW: "[Low] " }[c.severity ?? ""] ?? "";
 		const quote = c.anchor?.quote ? `On "${c.anchor.quote.exact}": ` : "";
 		const link = c.anchor ? `\n   ${input.builderUrl}?comment=${c.id}` : "";
 		return `${i + 1}. ${tag}${quote}${c.content}${link}`;

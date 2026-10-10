@@ -17,19 +17,21 @@ import { dashboardRouter } from "./dashboard";
 // Resolve both id and tenantId server-side — the client-supplied tenantId comes from
 // localStorage (sso_context) and can drift from the user's real tenant.
 async function resolveEngLabsActor(email: string): Promise<{ id: string; tenantId: string }> {
-	const { getEngLabsUserByEmail } = await import("@/integrations/eng-labs");
+	const { getEngLabsUserByEmail, getStaffTenantIds } = await import("@/integrations/eng-labs");
 	const engUser = await getEngLabsUserByEmail(email);
 	if (!engUser) {
 		throw new ORPCError("FORBIDDEN", {
 			message: "Authenticated user is not provisioned in the institutional directory.",
 		});
 	}
-	if (!engUser.tenantId) {
+	// Mapped staff can have no tenant on their own users row; their mapping / unit assignment gives it.
+	const tenantId = engUser.tenantId ?? (await getStaffTenantIds(engUser.id))[0];
+	if (!tenantId) {
 		throw new ORPCError("FORBIDDEN", {
 			message: "Authenticated user has no tenant assignment.",
 		});
 	}
-	return { id: engUser.id, tenantId: engUser.tenantId };
+	return { id: engUser.id, tenantId };
 }
 
 const commentOutputSchema = z.object({

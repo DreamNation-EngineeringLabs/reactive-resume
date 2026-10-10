@@ -628,7 +628,7 @@ export const defaultResumeData: ResumeData = {
 		page: { gapX: 4, gapY: 6, marginX: 14, marginY: 12, format: "a4", locale: "en-US", hideIcons: false },
 		design: {
 			colors: {
-				primary: "rgba(220, 38, 38, 1)",
+				primary: "rgba(0, 0, 0, 1)", // new resumes start black and white; students pick colours in Design
 				text: "rgba(0, 0, 0, 1)",
 				background: "rgba(255, 255, 255, 1)",
 			},
