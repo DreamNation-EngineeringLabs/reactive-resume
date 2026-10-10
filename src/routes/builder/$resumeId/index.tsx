@@ -1,12 +1,16 @@
 import { t } from "@lingui/core/macro";
 import { FloppyDiskIcon } from "@phosphor-icons/react";
-import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { ResumePreview } from "@/components/resume/preview";
+import { openAnchoredComments, useReviewHighlights } from "@/components/resume/review-anchors";
 import { SectionEditOverlay } from "@/components/resume/section-edit-overlay";
 import { useResumeStore } from "@/components/resume/store/resume";
 import { ZoomablePreview } from "@/components/resume/zoomable-preview";
+import { orpc } from "@/integrations/orpc/client";
 import { pageDimensionsAsPixels } from "@/schema/page";
 import { BuilderToolbar } from "./-components/toolbar";
 
@@ -48,6 +52,8 @@ function RouteComponent() {
 				ZoomablePreview keeps the scale at 1:1 whenever there is room and hides its controls,
 				so a wide desktop looks and behaves exactly as before.
 			*/}
+			<ReviewHighlights />
+
 			<ZoomablePreview contentWidth={pageWidth} className="flex flex-1 flex-col">
 				{/* Vertical padding only — horizontal breathing room is FIT_PADDING inside ZoomablePreview,
 				    because anything wider than `contentWidth` here would break the scale maths. */}
@@ -63,4 +69,29 @@ function RouteComponent() {
 			</ZoomablePreview>
 		</div>
 	);
+}
+
+/** Reviewer comments highlighted on the student's own preview; `?comment=<id>` marks the one being viewed. */
+function ReviewHighlights() {
+	const resumeId = useResumeStore((state) => state.resume.id);
+	const isPrimary = useResumeStore((state) => state.resume.isPrimary);
+	const { comment } = useSearch({ from: "/builder/$resumeId" });
+	const navigate = useNavigate({ from: "/builder/$resumeId" });
+
+	const { data: comments = [] } = useQuery({
+		...orpc.resume.comments.list.queryOptions({ input: { resumeId } }),
+		enabled: isPrimary,
+	});
+	const targets = useMemo(() => openAnchoredComments(comments), [comments]);
+
+	useReviewHighlights(targets, comment ?? null, (id) =>
+		navigate({
+			search: (prev) => ({ ...prev, comment: id }),
+			replace: true,
+			resetScroll: false,
+			viewTransition: false,
+		}),
+	);
+
+	return null;
 }

@@ -38,6 +38,7 @@ import {
 import type { EngLabsLearnerProfile, OrgUnitRow, PlacementPackage, Section } from "@/integrations/eng-labs/types";
 import { derror, dlog } from "@/utils/debug";
 import { protectedProcedure } from "../context";
+import { assertReviewStaff } from "../helpers/review-access";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -1361,8 +1362,9 @@ export const reviewResume = protectedProcedure
 		description: "Returns resume metadata, comments, evaluations, and history for faculty review page.",
 	})
 	.input(z.object({ resumeId: z.string() }))
-	.handler(async ({ input }) => {
+	.handler(async ({ context, input }) => {
 		const { getEvaluationsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
+		await assertReviewStaff(context.user, input.resumeId);
 
 		const [resume, comments, evaluations, history] = await Promise.all([
 			db.select().from(schema.resume).where(eq(schema.resume.id, input.resumeId)).limit(1),
@@ -1407,6 +1409,8 @@ export const reviewResume = protectedProcedure
 				authorId: c.authorId,
 				status: c.status,
 				parentId: c.parentId,
+				anchor: c.anchor,
+				severity: c.severity,
 				createdAt: c.createdAt,
 			})),
 			evaluations: evaluations.slice(0, 5),

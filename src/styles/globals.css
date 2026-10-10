@@ -194,3 +194,13 @@
 		break-inside: avoid;
 	}
 }
+
+/* Reviewer comment highlights on the resume preview (see components/resume/review-anchors.ts) */
+::highlight(review-comment) {
+	background-color: rgb(250 204 21 / 0.35);
+}
+
+::highlight(review-comment-active) {
+	background-color: rgb(250 204 21 / 0.8);
+	text-decoration: underline 2px rgb(161 98 7);
+}

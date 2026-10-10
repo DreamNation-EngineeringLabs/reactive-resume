@@ -1,10 +1,12 @@
 import { ORPCError } from "@orpc/client";
 import z from "zod";
+import { commentAnchorSchema, commentSeveritySchema } from "@/schema/resume/comment-anchor";
 import { sampleResumeData } from "@/schema/resume/sample";
 import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
 import { resumeDto } from "../dto/resume";
 import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
+import { assertReviewStaff, getReviewAccess } from "../helpers/review-access";
 import { resumeService } from "../services/resume";
 import { aiService as resumeAiService } from "../services/resume-ai";
 import { userInfoService } from "../services/user-info";
@@ -29,6 +31,20 @@ async function resolveEngLabsActor(email: string): Promise<{ id: string; tenantI
 	}
 	return { id: engUser.id, tenantId: engUser.tenantId };
 }
+
+const commentOutputSchema = z.object({
+	id: z.string(),
+	resumeId: z.string(),
+	parentId: z.string().uuid().nullable(),
+	content: z.string(),
+	scope: z.string(),
+	status: z.string(),
+	authorId: z.string(),
+	anchor: commentAnchorSchema.nullable(),
+	severity: z.string().nullable(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
 
 const tagsRouter = {
 	list: protectedProcedure
@@ -494,26 +510,17 @@ export const resumeRouter = {
 					parentId: z.string().uuid().optional().describe("Parent comment ID for replies"),
 					content: z.string().min(1).max(5000).describe("Comment content"),
 					scope: z.enum(["INDIVIDUAL", "SECTION"]).default("INDIVIDUAL").describe("Comment visibility scope"),
+					anchor: commentAnchorSchema.optional().describe("Where on the resume the comment points"),
+					severity: commentSeveritySchema.optional(),
 				}),
 			)
-			.output(
-				z.object({
-					id: z.string(),
-					resumeId: z.string(),
-					parentId: z.string().uuid().nullable(),
-					content: z.string(),
-					scope: z.string(),
-					status: z.string(),
-					authorId: z.string(),
-					createdAt: z.date(),
-					updatedAt: z.date(),
-				}),
-			)
+			.output(commentOutputSchema)
 			.handler(async ({ context, input }) => {
 				const { createComment } = await import("@/integrations/drizzle/services/resume-feedback.service");
 				const { getStudentById } = await import("@/integrations/eng-labs");
 				const { sendEmail } = await import("@/integrations/email/service");
 
+				await assertReviewStaff(context.user, input.resumeId);
 				const { id: authorId, tenantId } = await resolveEngLabsActor(context.user.email);
 
 				const comment = await createComment({
@@ -524,6 +531,8 @@ export const resumeRouter = {
 					parentId: input.parentId,
 					content: input.content,
 					scope: input.scope,
+					anchor: input.anchor,
+					severity: input.severity,
 				});
 
 				// Trigger email notification to student (Phase 8)
@@ -557,23 +566,10 @@ export const resumeRouter = {
 				summary: "List comments on a resume",
 			})
 			.input(z.object({ resumeId: z.string() }))
-			.output(
-				z.array(
-					z.object({
-						id: z.string(),
-						resumeId: z.string(),
-						parentId: z.string().uuid().nullable(),
-						content: z.string(),
-						scope: z.string(),
-						status: z.string(),
-						authorId: z.string(),
-						createdAt: z.date(),
-						updatedAt: z.date(),
-					}),
-				),
-			)
-			.handler(async ({ input }) => {
+			.output(z.array(commentOutputSchema))
+			.handler(async ({ context, input }) => {
 				const { getCommentsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				await getReviewAccess(context.user, input.resumeId);
 				return await getCommentsByResumeId(input.resumeId);
 			}),
 
@@ -591,8 +587,19 @@ export const resumeRouter = {
 					status: z.enum(["OPEN", "ADDRESSED", "RESOLVED"]),
 				}),
 			)
-			.handler(async ({ input }) => {
-				const { updateCommentStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
+			.handler(async ({ context, input }) => {
+				const { getCommentById, updateCommentStatus } = await import(
+					"@/integrations/drizzle/services/resume-feedback.service"
+				);
+				const comment = await getCommentById(input.id);
+				if (!comment) throw new ORPCError("NOT_FOUND", { message: "Comment not found." });
+
+				// Students can only flag their own feedback as addressed (or undo that); reviewers decide RESOLVED.
+				const access = await getReviewAccess(context.user, comment.resumeId);
+				if (access === "owner" && input.status === "RESOLVED") {
+					throw new ORPCError("FORBIDDEN", { message: "Only reviewers can resolve feedback." });
+				}
+
 				return await updateCommentStatus(input.id, input.status);
 			}),
 	},

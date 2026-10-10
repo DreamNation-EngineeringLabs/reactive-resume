@@ -359,6 +359,19 @@ function ResumeCard({
 						<div className="space-y-2">
 							{commentsData.map((comment) => (
 								<div key={comment.id} className="rounded-xl bg-white p-3 shadow-sm">
+									{comment.anchor && (
+										<Link
+											to="/builder/$resumeId"
+											params={{ resumeId: resume.id }}
+											search={{ comment: comment.id }}
+											className="mb-2 block rounded-lg border-amber-400 border-l-4 bg-amber-50/60 px-3 py-1.5 text-xs hover:bg-amber-50"
+										>
+											<span className="line-clamp-2 text-slate-700">
+												{comment.anchor.quote ? `“${comment.anchor.quote.exact}”` : "Whole section"}
+											</span>
+											<span className="font-semibold text-indigo-600">Show in resume</span>
+										</Link>
+									)}
 									<p className="text-slate-700 text-sm">{comment.content}</p>
 									<p className="mt-1.5 text-slate-400 text-xs">
 										{new Date(comment.createdAt).toLocaleDateString()} ·{" "}

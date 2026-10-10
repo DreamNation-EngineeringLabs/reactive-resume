@@ -22,9 +22,17 @@ import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "usehooks-ts";
 import { z } from "zod";
 import { ResumePreview } from "@/components/resume/preview";
+import {
+	anchorFromRange,
+	anchorLabel,
+	openAnchoredComments,
+	scrollToAnchor,
+	useReviewHighlights,
+} from "@/components/resume/review-anchors";
 import { useResumeStore } from "@/components/resume/store/resume";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
+import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
 import { getOrganisationUnits } from "@/utils/sso-context";
 import { cn } from "@/utils/style";
 import { StudentTimeline } from "../../-components/student-timeline";
@@ -50,6 +58,18 @@ export const Route = createFileRoute("/dashboard/review/$resumeId/")({
 
 type ReviewTab = "comments" | "evaluate" | "changes" | "timeline";
 
+const PENDING_ANCHOR = "pending";
+
+// A function, not a constant: `t` must run after the locale is loaded.
+const getQuickComments = () => [
+	t`Quantify the impact: add numbers, percentages or scale.`,
+	t`Start this line with a strong action verb.`,
+	t`Too long. Cut this to one line.`,
+	t`Not relevant for placements. Remove it.`,
+	t`Fix the grammar or spelling here.`,
+	t`Add more detail here.`,
+];
+
 function ReviewPage() {
 	const { resumeId } = Route.useParams();
 	const { engLabsStudentId, tenantId, packageId, unitType, unitId, sectionId, scope } = Route.useSearch();
@@ -59,6 +79,10 @@ function ReviewPage() {
 	const [showDiff, setShowDiff] = useState(false);
 	const [newComment, setNewComment] = useState("");
 	const [replyTo, setReplyTo] = useState<string | null>(null);
+	const [anchor, setAnchor] = useState<CommentAnchor | null>(null);
+	const [severity, setSeverity] = useState<CommentSeverity>("MUST_FIX");
+	const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+	const commentInputRef = useRef<HTMLTextAreaElement>(null);
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 
@@ -140,9 +164,11 @@ function ReviewPage() {
 
 	const addCommentMutation = useMutation({
 		...orpc.resume.comments.create.mutationOptions(),
-		onSuccess: () => {
+		onSuccess: (comment) => {
 			setNewComment("");
 			setReplyTo(null);
+			setAnchor(null);
+			if (comment.anchor) setActiveCommentId(comment.id);
 			queryClient.invalidateQueries(reviewQueryKey);
 		},
 	});
@@ -167,6 +193,37 @@ function ReviewPage() {
 			queryClient.invalidateQueries(reviewQueryKey);
 		},
 	});
+
+	// Open anchored comments (plus the selection being commented on) are highlighted on the resume.
+	const highlightTargets = useMemo(() => {
+		const open = openAnchoredComments(data?.comments ?? []);
+		return anchor ? [...open, { id: PENDING_ANCHOR, anchor }] : open;
+	}, [data?.comments, anchor]);
+
+	const anchorStatuses = useReviewHighlights(highlightTargets, anchor ? PENDING_ANCHOR : activeCommentId, (id) => {
+		if (id === PENDING_ANCHOR) return;
+		setActiveCommentId(id);
+		setActiveTab("comments");
+	});
+
+	useEffect(() => {
+		if (activeCommentId) document.getElementById(`comment-${activeCommentId}`)?.scrollIntoView({ block: "nearest" });
+	}, [activeCommentId]);
+
+	// Selecting text on the resume attaches it to the comment box.
+	const captureSelection = () => {
+		const selection = window.getSelection();
+		if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
+		const next = anchorFromRange(selection.getRangeAt(0));
+		if (!next) return;
+		// The pending highlight now marks the text. Dropping the native selection makes sure typing
+		// lands in the comment box even if it already had focus.
+		selection.removeAllRanges();
+		setAnchor(next);
+		setReplyTo(null);
+		setActiveTab("comments");
+		commentInputRef.current?.focus();
+	};
 
 	if (isLoading) {
 		return (
@@ -322,7 +379,12 @@ function ReviewPage() {
 					</div>
 
 					{/* Resume preview — scrollable, scaled to fit container width */}
-					<div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-200 py-6">
+					<div
+						ref={previewContainerRef}
+						onMouseUp={captureSelection}
+						onKeyUp={captureSelection}
+						className="flex-1 overflow-y-auto overflow-x-hidden bg-slate-200 py-6"
+					>
 						<div
 							style={{
 								width: PAGE_NATURAL_WIDTH,
@@ -519,7 +581,56 @@ function ReviewPage() {
 											</button>
 										)}
 									</div>
+
+									{!replyTo &&
+										(anchor ? (
+											<div className="mb-3 flex items-start gap-2 rounded-xl border-amber-400 border-l-4 bg-white px-3 py-2">
+												<div className="min-w-0 flex-1">
+													<p className="font-semibold text-[11px] text-slate-500">{anchorLabel(anchor, resume.data)}</p>
+													<p className="line-clamp-2 text-slate-800 text-xs">
+														{anchor.quote ? `“${anchor.quote.exact}”` : t`Whole section`}
+													</p>
+												</div>
+												<button
+													type="button"
+													aria-label={t`Remove the selected text from this comment`}
+													onClick={() => setAnchor(null)}
+													className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+												>
+													<XIcon className="size-3.5" />
+												</button>
+											</div>
+										) : (
+											<p className="mb-3 text-slate-500 text-xs">
+												{t`Select text on the resume to comment on that exact spot. Select a section title to comment on the whole section.`}
+											</p>
+										))}
+
+									{!replyTo && (
+										<div className="mb-3 flex flex-wrap items-center gap-1.5">
+											{(["MUST_FIX", "SUGGESTION"] as const).map((level) => (
+												<button
+													key={level}
+													type="button"
+													aria-pressed={severity === level}
+													onClick={() => setSeverity(level)}
+													className={cn(
+														"rounded-lg px-2.5 py-1 font-semibold text-xs ring-1 transition-all",
+														severity === level
+															? level === "MUST_FIX"
+																? "bg-rose-600 text-white ring-rose-600"
+																: "bg-slate-700 text-white ring-slate-700"
+															: "bg-white text-slate-600 ring-slate-200 hover:bg-slate-100",
+													)}
+												>
+													{level === "MUST_FIX" ? t`Must fix` : t`Suggestion`}
+												</button>
+											))}
+										</div>
+									)}
+
 									<textarea
+										ref={commentInputRef}
 										value={newComment}
 										onChange={(e) => setNewComment(e.target.value)}
 										placeholder={
@@ -528,6 +639,27 @@ function ReviewPage() {
 										rows={4}
 										className="mb-3 w-full resize-none rounded-xl border-0 bg-white px-4 py-3 text-slate-900 text-sm outline-none ring-1 ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
 									/>
+									{!replyTo && (
+										<div className="mb-3 flex flex-wrap gap-1.5">
+											{getQuickComments().map((text) => (
+												<button
+													key={text}
+													type="button"
+													onClick={() => {
+														setNewComment((current) => (current.trim() ? `${current.trim()} ${text}` : text));
+														requestAnimationFrame(() => {
+															const input = commentInputRef.current;
+															input?.focus();
+															input?.setSelectionRange(input.value.length, input.value.length);
+														});
+													}}
+													className="rounded-full bg-white px-2.5 py-1 text-[11px] text-slate-600 ring-1 ring-slate-200 transition-all hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200"
+												>
+													{text}
+												</button>
+											))}
+										</div>
+									)}
 									<button
 										type="button"
 										disabled={!newComment.trim() || addCommentMutation.isPending}
@@ -539,6 +671,8 @@ function ReviewPage() {
 												tenantId,
 												content: newComment.trim(),
 												parentId: replyTo ?? undefined,
+												anchor: replyTo ? undefined : (anchor ?? undefined),
+												severity: replyTo ? undefined : severity,
 											});
 										}}
 										className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-indigo-700 disabled:opacity-50"
@@ -560,16 +694,59 @@ function ReviewPage() {
 											.reverse()
 											.map((c) => {
 												const replies = comments.filter((r) => r.parentId === c.id);
+												const anchorStatus = anchorStatuses[c.id];
 												return (
-													<div key={c.id} className="space-y-2">
+													<div key={c.id} id={`comment-${c.id}`} className="space-y-2">
 														<div
 															className={cn(
 																"rounded-2xl border p-4 shadow-sm transition-all",
 																c.status === "RESOLVED"
 																	? "border-emerald-100 bg-emerald-50/20"
 																	: "border-slate-100 bg-white",
+																activeCommentId === c.id && "ring-2 ring-amber-400",
 															)}
 														>
+															{c.anchor && (
+																<button
+																	type="button"
+																	onClick={() =>
+																		activeCommentId === c.id && c.anchor
+																			? scrollToAnchor(c.anchor)
+																			: setActiveCommentId(c.id)
+																	}
+																	className="mb-2 block w-full rounded-lg border-amber-400 border-l-4 bg-amber-50/60 px-3 py-1.5 text-start hover:bg-amber-50"
+																>
+																	<span className="flex flex-wrap items-center gap-1.5 font-semibold text-[11px] text-slate-500">
+																		{anchorLabel(c.anchor, resume.data)}
+																		{anchorStatus === "changed" && (
+																			<span className="rounded bg-sky-100 px-1.5 text-sky-700">{t`Text changed`}</span>
+																		)}
+																		{anchorStatus === "missing" && (
+																			<span className="rounded bg-slate-200 px-1.5 text-slate-600">{t`Removed from resume`}</span>
+																		)}
+																	</span>
+																	<span
+																		className={cn(
+																			"line-clamp-2 text-slate-700 text-xs",
+																			anchorStatus && anchorStatus !== "ok" && "line-through opacity-70",
+																		)}
+																	>
+																		{c.anchor.quote ? `“${c.anchor.quote.exact}”` : t`Whole section`}
+																	</span>
+																</button>
+															)}
+															{c.severity && (
+																<span
+																	className={cn(
+																		"mb-1.5 inline-block rounded-md px-1.5 py-0.5 font-semibold text-[10px]",
+																		c.severity === "MUST_FIX"
+																			? "bg-rose-50 text-rose-700"
+																			: "bg-slate-100 text-slate-600",
+																	)}
+																>
+																	{c.severity === "MUST_FIX" ? t`Must fix` : t`Suggestion`}
+																</span>
+															)}
 															<p
 																className={cn(
 																	"text-slate-800 text-sm leading-relaxed",

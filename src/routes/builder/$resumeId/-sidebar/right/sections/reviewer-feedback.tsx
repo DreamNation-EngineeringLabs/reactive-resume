@@ -1,10 +1,18 @@
 import { t } from "@lingui/core/macro";
-import { ChatDotsIcon, CheckCircleIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
+import { ChatDotsIcon, CheckCircleIcon, ClockCounterClockwiseIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { anchorLabel, scrollToAnchor, useAnchorStatusStore } from "@/components/resume/review-anchors";
 import { useResumeStore } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
+import { useDialogStore } from "@/dialogs/store";
 import { orpc } from "@/integrations/orpc/client";
+import type { CommentAnchor } from "@/schema/resume/comment-anchor";
+import type { SidebarSection } from "@/utils/resume/section";
 import { cn } from "@/utils/style";
+import { useSectionStore } from "../../../-store/section";
+import { useBuilderSidebar, useBuilderSidebarStore } from "../../../-store/sidebar";
 import { SectionBase } from "../shared/section-base";
 
 export function ReviewerFeedbackSectionBuilder() {
@@ -21,6 +29,54 @@ function ReviewerFeedbackForm() {
 	const resumeId = resume.id;
 
 	const { data: comments = [] } = useQuery(orpc.resume.comments.list.queryOptions({ input: { resumeId } }));
+	const { comment: activeId } = useSearch({ from: "/builder/$resumeId" });
+	const navigate = useNavigate({ from: "/builder/$resumeId" });
+	const { toggleSidebar } = useBuilderSidebar();
+
+	// Highlights are painted by the preview (builder/$resumeId/index.tsx), which also reports their status.
+	const anchorStatuses = useAnchorStatusStore((state) => state.statuses);
+
+	// Shows a comment's text on the resume. On phones the panel covers the resume, so close it first.
+	const showComment = (id: string, anchor: CommentAnchor) => {
+		useBuilderSidebarStore.getState().setMobilePanel(null);
+		if (id === activeId) return scrollToAnchor(anchor);
+		// A search-param change, not a page change: no cross-fade, no scroll reset.
+		navigate({
+			search: (prev) => ({ ...prev, comment: id }),
+			replace: true,
+			resetScroll: false,
+			viewTransition: false,
+		});
+	};
+
+	useEffect(() => {
+		if (activeId) document.getElementById(`feedback-${activeId}`)?.scrollIntoView({ block: "nearest" });
+	}, [activeId]);
+
+	// Opens the editor for the exact entry a comment points at; basics/summary/whole sections open their panel.
+	const openEditor = (anchor: CommentAnchor) => {
+		const custom = resume.data.customSections.find((s) => s.id === anchor.section);
+		const section = resume.data.sections[anchor.section as keyof typeof resume.data.sections];
+		const items: { id: string }[] = custom?.items ?? (section && "items" in section ? section.items : []);
+		const item = items.find((i) => i.id === anchor.itemId);
+
+		if (item) {
+			// Same call the left sidebar makes when an item is clicked.
+			useDialogStore.getState().openDialog(
+				`resume.sections.${custom?.type ?? anchor.section}.update` as never,
+				{
+					item,
+					customSectionId: custom?.id,
+				} as never,
+			);
+			return;
+		}
+
+		const panel = (custom ? "custom" : anchor.section) as SidebarSection;
+		toggleSidebar("left", true);
+		useSectionStore.getState().setCollapsed(panel, false);
+		requestAnimationFrame(() => document.getElementById(`sidebar-${panel}`)?.scrollIntoView({ block: "start" }));
+	};
 
 	const updateCommentStatusMutation = useMutation({
 		...orpc.resume.comments.updateStatus.mutationOptions(),
@@ -63,6 +119,7 @@ function ReviewerFeedbackForm() {
 	const getReplies = (parentId: string) => comments.filter((c) => c.parentId === parentId).reverse();
 
 	const unaddressedCount = comments.filter((c) => c.status === "OPEN" || c.status === "PUBLISHED").length;
+	const doneCount = topLevelComments.filter((c) => c.status === "ADDRESSED" || c.status === "RESOLVED").length;
 
 	return (
 		<div className="space-y-4">
@@ -117,10 +174,26 @@ function ReviewerFeedbackForm() {
 					)}
 				</div>
 			)}
+			<div>
+				<div className="mb-1 flex justify-between text-slate-500 text-xs">
+					<span>{t`Feedback addressed`}</span>
+					<span className="font-semibold text-slate-700">
+						{doneCount} / {topLevelComments.length}
+					</span>
+				</div>
+				<div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+					<div
+						className="h-full rounded-full bg-emerald-500 transition-all"
+						style={{ width: `${(doneCount / Math.max(1, topLevelComments.length)) * 100}%` }}
+					/>
+				</div>
+			</div>
+
 			{[...topLevelComments].reverse().map((comment) => {
 				const replies = getReplies(comment.id);
+				const anchorStatus = anchorStatuses[comment.id];
 				return (
-					<div key={comment.id} className="space-y-2">
+					<div key={comment.id} id={`feedback-${comment.id}`} className="space-y-2">
 						<div
 							className={cn(
 								"rounded-xl border p-3 transition-all",
@@ -129,8 +202,55 @@ function ReviewerFeedbackForm() {
 									: comment.status === "ADDRESSED"
 										? "border-amber-100 bg-amber-50"
 										: "border-slate-100 bg-white",
+								activeId === comment.id && "ring-2 ring-amber-400",
 							)}
 						>
+							{comment.anchor && (
+								<div className="mb-2 flex items-stretch gap-1.5">
+									<button
+										type="button"
+										onClick={() => comment.anchor && showComment(comment.id, comment.anchor)}
+										className="min-w-0 flex-1 rounded-lg border-amber-400 border-l-4 bg-amber-50/60 px-2.5 py-1.5 text-start hover:bg-amber-50"
+									>
+										<span className="flex flex-wrap items-center gap-1.5 font-semibold text-[10px] text-slate-500">
+											{anchorLabel(comment.anchor, resume.data)}
+											{anchorStatus === "changed" && (
+												<span className="rounded bg-sky-100 px-1 text-sky-700">{t`Edited`}</span>
+											)}
+											{anchorStatus === "missing" && (
+												<span className="rounded bg-slate-200 px-1 text-slate-600">{t`Removed`}</span>
+											)}
+										</span>
+										<span
+											className={cn(
+												"line-clamp-2 text-[11px] text-slate-700",
+												anchorStatus && anchorStatus !== "ok" && "line-through opacity-70",
+											)}
+										>
+											{comment.anchor.quote ? `“${comment.anchor.quote.exact}”` : t`Whole section`}
+										</span>
+									</button>
+									<button
+										type="button"
+										onClick={() => comment.anchor && openEditor(comment.anchor)}
+										aria-label={t`Edit ${anchorLabel(comment.anchor, resume.data)}`}
+										className="flex shrink-0 items-center gap-1 rounded-lg bg-white px-2 font-semibold text-[10px] text-indigo-600 ring-1 ring-slate-200 hover:bg-indigo-50"
+									>
+										<PencilSimpleIcon className="size-3" />
+										{t`Edit`}
+									</button>
+								</div>
+							)}
+							{comment.severity && (
+								<span
+									className={cn(
+										"mb-1 inline-block rounded-md px-1.5 py-0.5 font-semibold text-[10px]",
+										comment.severity === "MUST_FIX" ? "bg-rose-50 text-rose-700" : "bg-slate-100 text-slate-600",
+									)}
+								>
+									{comment.severity === "MUST_FIX" ? t`Must fix` : t`Suggestion`}
+								</span>
+							)}
 							<div className="flex items-start justify-between gap-2">
 								<p
 									className={cn(

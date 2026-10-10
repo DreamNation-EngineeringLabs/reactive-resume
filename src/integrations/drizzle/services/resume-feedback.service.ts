@@ -16,6 +16,7 @@ import {
 	resumeEvaluationItem,
 	resumeHistory,
 } from "@/integrations/drizzle/schema";
+import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
 
 /**
  * CREATE: Add a comment to a resume
@@ -28,6 +29,8 @@ export async function createComment({
 	content,
 	scope = "INDIVIDUAL",
 	parentId,
+	anchor,
+	severity,
 }: {
 	resumeId: string;
 	studentId: string;
@@ -36,6 +39,8 @@ export async function createComment({
 	content: string;
 	scope?: "INDIVIDUAL" | "SECTION";
 	parentId?: string;
+	anchor?: CommentAnchor;
+	severity?: CommentSeverity;
 }) {
 	const result = await db
 		.insert(resumeComment)
@@ -49,6 +54,8 @@ export async function createComment({
 			content,
 			scope,
 			parentId,
+			anchor,
+			severity,
 			status: "OPEN",
 			createdAt: new Date(),
 			updatedAt: new Date(),
@@ -80,6 +87,11 @@ export async function updateCommentStatus(id: string, status: "OPEN" | "ADDRESSE
 		.returning();
 
 	return result[0];
+}
+
+export async function getCommentById(id: string) {
+	const [comment] = await db.select().from(resumeComment).where(eq(resumeComment.id, id)).limit(1);
+	return comment;
 }
 
 /**

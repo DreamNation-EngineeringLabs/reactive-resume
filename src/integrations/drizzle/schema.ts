@@ -1,4 +1,5 @@
 import * as pg from "drizzle-orm/pg-core";
+import type { CommentAnchor } from "@/schema/resume/comment-anchor";
 import { defaultResumeData, type ResumeData } from "@/schema/resume/data";
 import type { UserInfoData } from "@/schema/resume/user-info";
 import { generateId } from "@/utils/string";
@@ -315,6 +316,8 @@ export const resumeComment = pg.pgTable(
 		content: pg.text("content").notNull(),
 		scope: pg.text("scope").notNull().default("INDIVIDUAL"), // INDIVIDUAL | SECTION
 		status: pg.text("status").notNull().default("OPEN"), // OPEN | ADDRESSED | RESOLVED
+		anchor: pg.jsonb("anchor").$type<CommentAnchor>(), // null = general comment on the whole resume
+		severity: pg.text("severity"), // MUST_FIX | SUGGESTION, null for general comments and replies
 		resolvedAt: pg.timestamp("resolved_at", { withTimezone: true }),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: pg
