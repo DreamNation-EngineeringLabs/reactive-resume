@@ -33,6 +33,7 @@ const CONTEXT = 32;
 const FIELD_CLASS = /^(?!section-)[a-z]+(?:-[a-z]+)*-item-(?!header$)[a-z]+$|^basics-(?:name|headline|item-[a-z]+)$/;
 const HIGHLIGHT = "review-comment";
 const HIGHLIGHT_ACTIVE = "review-comment-active";
+const HIGHLIGHT_CHANGE = "review-change";
 
 function sectionKey(el: HTMLElement) {
 	return el.classList.contains(HEADER) ? "basics" : (el.dataset.sectionId ?? el.dataset.sectionType ?? "");
@@ -186,6 +187,37 @@ export function scrollToAnchor(anchor: CommentAnchor) {
 	if (range) scrollToRange(range);
 }
 
+/** Re-anchors whenever the preview changes (student edits, template switch, data loading in). */
+function whenPreviewChanges(callback: () => void) {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const observer = new MutationObserver(() => {
+		clearTimeout(timer);
+		timer = setTimeout(callback, 150);
+	});
+	observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+	return () => {
+		observer.disconnect();
+		clearTimeout(timer);
+	};
+}
+
+/** Marks entries that changed since the last review, in green, while `anchors` is non-empty. */
+export function useChangeHighlights(anchors: CommentAnchor[]) {
+	useEffect(() => {
+		if (anchors.length === 0 || typeof CSS === "undefined" || !("highlights" in CSS)) return;
+		const paint = () => {
+			const ranges = anchors.map((a) => resolveAnchor(a).range).filter((r): r is Range => !!r);
+			CSS.highlights.set(HIGHLIGHT_CHANGE, new Highlight(...ranges));
+		};
+		paint();
+		const stop = whenPreviewChanges(paint);
+		return () => {
+			stop();
+			CSS.highlights.delete(HIGHLIGHT_CHANGE);
+		};
+	}, [anchors]);
+}
+
 /** Latest anchor status per comment id, written by `useReviewHighlights` so other panels can show it. */
 export const useAnchorStatusStore = create<{ statuses: Record<string, AnchorStatus> }>(() => ({ statuses: {} }));
 
@@ -206,7 +238,6 @@ export function useReviewHighlights(
 
 	useEffect(() => {
 		const supported = typeof CSS !== "undefined" && "highlights" in CSS;
-		let timer: ReturnType<typeof setTimeout> | undefined;
 
 		const paint = () => {
 			const next: Record<string, AnchorStatus> = {};
@@ -235,16 +266,10 @@ export function useReviewHighlights(
 
 		if (activeId !== scrolledTo.current) scrolledTo.current = null;
 		paint();
-		// Re-anchor whenever the preview changes (student edits, template switch, data loading in).
-		const observer = new MutationObserver(() => {
-			clearTimeout(timer);
-			timer = setTimeout(paint, 150);
-		});
-		observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+		const stop = whenPreviewChanges(paint);
 
 		return () => {
-			observer.disconnect();
-			clearTimeout(timer);
+			stop();
 			if (supported) {
 				CSS.highlights.delete(HIGHLIGHT);
 				CSS.highlights.delete(HIGHLIGHT_ACTIVE);

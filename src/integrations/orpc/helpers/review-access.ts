@@ -39,6 +39,16 @@ export async function getReviewAccess(
 	throw new ORPCError("FORBIDDEN", { message: "You do not have access to this resume's feedback." });
 }
 
+/** The signed-in reviewer's eng-labs id and tenant; FORBIDDEN for students and unprovisioned users. */
+export async function requireReviewer(email: string): Promise<{ id: string; tenantId: string }> {
+	const { getEngLabsUserByEmail } = await import("@/integrations/eng-labs");
+	const reviewer = await getEngLabsUserByEmail(email);
+	if (!reviewer?.tenantId || (reviewer.userType ?? "LEARNER") === "LEARNER") {
+		throw new ORPCError("FORBIDDEN", { message: "Only reviewers can do this." });
+	}
+	return { id: reviewer.id, tenantId: reviewer.tenantId };
+}
+
 export async function assertReviewStaff(user: { id: string; email: string }, resumeId: string) {
 	if ((await getReviewAccess(user, resumeId)) !== "staff") {
 		throw new ORPCError("FORBIDDEN", { message: "Only reviewers can do this." });

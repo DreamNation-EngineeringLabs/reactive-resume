@@ -1,14 +1,23 @@
 import { t } from "@lingui/core/macro";
-import { ChatDotsIcon, CheckCircleIcon, ClockCounterClockwiseIcon, PencilSimpleIcon } from "@phosphor-icons/react";
+import {
+	ChatDotsIcon,
+	CheckCircleIcon,
+	CheckIcon,
+	ClockCounterClockwiseIcon,
+	CopyIcon,
+	PencilSimpleIcon,
+} from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { anchorLabel, scrollToAnchor, useAnchorStatusStore } from "@/components/resume/review-anchors";
-import { useResumeStore } from "@/components/resume/store/resume";
+import { flushResumeSync, useResumeStore } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
 import { useDialogStore } from "@/dialogs/store";
 import { orpc } from "@/integrations/orpc/client";
-import type { CommentAnchor } from "@/schema/resume/comment-anchor";
+import { anchorTarget, applySuggestion, type CommentAnchor } from "@/schema/resume/comment-anchor";
+import type { ResumeData } from "@/schema/resume/data";
 import type { SidebarSection } from "@/utils/resume/section";
 import { cn } from "@/utils/style";
 import { useSectionStore } from "../../../-store/section";
@@ -79,11 +88,32 @@ function ReviewerFeedbackForm() {
 	};
 
 	const updateCommentStatusMutation = useMutation({
-		...orpc.resume.comments.updateStatus.mutationOptions(),
+		// No global invalidation: refetching the resume here re-initializes the builder from the server
+		// and drops edits still waiting for the debounced save (e.g. a suggestion applied a moment ago).
+		...orpc.resume.comments.updateStatus.mutationOptions({ meta: { noInvalidate: true } }),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: orpc.resume.comments.list.queryKey({ input: { resumeId } }) });
 		},
 	});
+
+	// Where a reviewer's rewrite would go, or null when it can't be applied safely (text edited, repeated, or formatted).
+	const suggestionEdit = (anchor: CommentAnchor, suggestion: string) =>
+		anchor.quote ? applySuggestion(anchorTarget(resume.data, anchor), anchor.quote.exact, suggestion) : null;
+
+	const updateResumeData = useResumeStore((state) => state.updateResumeData);
+	const applyRewrite = (commentId: string, anchor: CommentAnchor, suggestion: string) => {
+		const edit = suggestionEdit(anchor, suggestion);
+		if (!edit) return;
+		updateResumeData((draft) => {
+			const target = anchorTarget(draft as ResumeData, anchor);
+			let node = target as Record<string, unknown> | undefined;
+			for (const key of edit.path.slice(0, -1)) node = node?.[key] as Record<string, unknown> | undefined;
+			if (node) node[edit.path[edit.path.length - 1]] = edit.value;
+		});
+		flushResumeSync();
+		updateCommentStatusMutation.mutate({ id: commentId, status: "ADDRESSED" });
+		toast.success(t`Suggestion applied and marked as addressed.`);
+	};
 
 	const submitMutation = useMutation({
 		...orpc.resume.dashboard.submitResume.mutationOptions(),
@@ -262,6 +292,14 @@ function ReviewerFeedbackForm() {
 								</p>
 							</div>
 
+							{comment.suggestion && comment.anchor?.quote && comment.status !== "RESOLVED" && (
+								<SuggestedRewrite
+									suggestion={comment.suggestion}
+									canApply={!resume.isLocked && !!suggestionEdit(comment.anchor, comment.suggestion)}
+									onApply={() => comment.anchor && applyRewrite(comment.id, comment.anchor, comment.suggestion ?? "")}
+								/>
+							)}
+
 							<div className="mt-2 flex items-center justify-between">
 								<span className="text-[10px] text-slate-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
 
@@ -368,6 +406,36 @@ function ReviewerFeedbackForm() {
 					</div>
 				);
 			})}
+		</div>
+	);
+}
+
+function SuggestedRewrite({
+	suggestion,
+	canApply,
+	onApply,
+}: {
+	suggestion: string;
+	canApply: boolean;
+	onApply: () => void;
+}) {
+	const copy = async () => {
+		await navigator.clipboard.writeText(suggestion);
+		toast.success(t`Suggestion copied. Paste it where the highlighted text is.`);
+	};
+
+	return (
+		<div className="mt-2 rounded-lg bg-emerald-50/70 px-2.5 py-2">
+			<p className="font-semibold text-[10px] text-emerald-700">{t`Suggested rewrite`}</p>
+			<p className="mt-0.5 text-[11px] text-slate-800">{suggestion}</p>
+			<button
+				type="button"
+				onClick={canApply ? onApply : copy}
+				className="mt-1.5 flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 font-bold text-[10px] text-white hover:bg-emerald-700"
+			>
+				{canApply ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
+				{canApply ? t`Apply suggestion` : t`Copy suggestion`}
+			</button>
 		</div>
 	);
 }

@@ -318,6 +318,7 @@ export const resumeComment = pg.pgTable(
 		status: pg.text("status").notNull().default("OPEN"), // OPEN | ADDRESSED | RESOLVED
 		anchor: pg.jsonb("anchor").$type<CommentAnchor>(), // null = general comment on the whole resume
 		severity: pg.text("severity"), // MUST_FIX | SUGGESTION, null for general comments and replies
+		suggestion: pg.text("suggestion"), // reviewer's replacement for the anchored quote; student can apply it
 		resolvedAt: pg.timestamp("resolved_at", { withTimezone: true }),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: pg
@@ -333,6 +334,24 @@ export const resumeComment = pg.pgTable(
 		pg.index().on(t.authorId),
 		pg.index().on(t.parentId),
 	],
+);
+
+// Reusable review comments shared by every reviewer in a tenant (the "comment bank").
+export const reviewSnippet = pg.pgTable(
+	"review_snippet",
+	{
+		id: pg
+			.uuid("id")
+			.notNull()
+			.primaryKey()
+			.$defaultFn(() => generateId()),
+		tenantId: pg.text("tenant_id").notNull(),
+		authorId: pg.text("author_id").notNull(), // eng-labs user ID, or "system" for the starter set
+		content: pg.text("content").notNull(),
+		usageCount: pg.integer("usage_count").notNull().default(0),
+		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [pg.unique().on(t.tenantId, t.content)],
 );
 
 export const resumeChecklist = pg.pgTable(

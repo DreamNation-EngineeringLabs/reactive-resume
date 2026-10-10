@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trans } from "@lingui/react/macro";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import type z from "zod";
 import { URLInput } from "@/components/input/url-input";
@@ -32,7 +33,19 @@ function BasicsSectionForm() {
 		mode: "onChange",
 	});
 
+	// Every change below writes the whole form back, so changes made elsewhere (undo/redo, an applied
+	// reviewer suggestion) must be loaded into the form first or the next keystroke would undo them.
+	// Our own writes are skipped, so a save that lags behind fast typing never resets the input.
+	const lastWritten = useRef(basics);
+	useEffect(() => {
+		if (JSON.stringify(basics) !== JSON.stringify(lastWritten.current)) {
+			lastWritten.current = basics;
+			form.reset(basics);
+		}
+	}, [basics, form]);
+
 	const onSubmit = (data: FormValues) => {
+		lastWritten.current = data;
 		updateResumeData((draft) => {
 			draft.basics = data;
 		});

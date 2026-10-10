@@ -38,6 +38,8 @@ import {
 import type { EngLabsLearnerProfile, OrgUnitRow, PlacementPackage, Section } from "@/integrations/eng-labs/types";
 import { derror, dlog } from "@/utils/debug";
 import { protectedProcedure } from "../context";
+import { reviewSummaryEmail } from "@/schema/resume/comment-anchor";
+import { env } from "@/utils/env";
 import { assertReviewStaff } from "../helpers/review-access";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1025,6 +1027,7 @@ export const approveResume = protectedProcedure
 	)
 	.handler(async ({ context, input }) => {
 		const { updateResumeStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
+		await assertReviewStaff(context.user, input.resumeId);
 
 		const tenantId = await resolveServerTenantId(context.user.email, input.tenantId);
 
@@ -1058,8 +1061,9 @@ export const toggleResumeLock = protectedProcedure
 			reason: z.string().optional(),
 		}),
 	)
-	.handler(async ({ input }) => {
+	.handler(async ({ context, input }) => {
 		const { toggleLock } = await import("@/integrations/drizzle/services/resume-feedback.service");
+		await assertReviewStaff(context.user, input.resumeId);
 
 		await toggleLock({
 			resumeId: input.resumeId,
@@ -1099,6 +1103,7 @@ export const updateStatus = protectedProcedure
 	)
 	.handler(async ({ context, input }) => {
 		const { updateResumeStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
+		await assertReviewStaff(context.user, input.resumeId);
 
 		const actorType =
 			input.status.startsWith("PO_") || input.status === "APPROVED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
@@ -1114,8 +1119,52 @@ export const updateStatus = protectedProcedure
 			actorType,
 		});
 
+		const verdict = REVIEW_VERDICTS[input.status];
+		if (verdict) await emailReviewSummary(input.resumeId, context.user.name, verdict === "approved");
+
 		return { success: true };
 	});
+
+const REVIEW_VERDICTS: Partial<Record<string, "changes" | "approved">> = {
+	FACULTY_REVISION_REQUESTED: "changes",
+	PO_REVISION_REQUESTED: "changes",
+	FACULTY_VERIFIED: "approved",
+	PO_VERIFIED: "approved",
+	APPROVED: "approved",
+};
+
+/** Emails the student once per review, listing every open comment with a link straight to it. */
+async function emailReviewSummary(resumeId: string, reviewerName: string, approved: boolean) {
+	try {
+		const { sendEmail } = await import("@/integrations/email/service");
+		const [row] = await db
+			.select({ name: schema.resume.name, studentName: schema.user.name, email: schema.user.email })
+			.from(schema.resume)
+			.innerJoin(schema.user, eq(schema.user.id, schema.resume.userId))
+			.where(eq(schema.resume.id, resumeId))
+			.limit(1);
+		if (!row) return;
+
+		const comments = await db
+			.select()
+			.from(schema.resumeComment)
+			.where(eq(schema.resumeComment.resumeId, resumeId))
+			.orderBy(schema.resumeComment.createdAt);
+		const open = comments.filter((c) => !c.parentId && c.status !== "RESOLVED");
+
+		const mail = reviewSummaryEmail({
+			studentName: row.studentName,
+			reviewerName: reviewerName || "Your reviewer",
+			resumeName: row.name,
+			approved,
+			comments: open,
+			builderUrl: `${env.APP_URL}/resume/builder/${resumeId}`,
+		});
+		await sendEmail({ to: row.email, ...mail });
+	} catch (error) {
+		console.error("[REVIEW] Failed to email the review summary:", error);
+	}
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Bulk Update Resumes (Faculty/PO action)
@@ -1138,6 +1187,7 @@ export const bulkUpdateResumes = protectedProcedure
 	)
 	.handler(async ({ context, input }) => {
 		const { bulkUpdateSectionResumes } = await import("@/integrations/drizzle/services/resume-feedback.service");
+		for (const r of input.resumes) await assertReviewStaff(context.user, r.id);
 
 		const actorType =
 			input.status === "APPROVED" || input.status === "PO_VERIFIED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
@@ -1287,6 +1337,7 @@ export const forwardResume = protectedProcedure
 	)
 	.handler(async ({ context, input }) => {
 		const { addToHistory } = await import("@/integrations/drizzle/services/resume-feedback.service");
+		await assertReviewStaff(context.user, input.resumeId);
 
 		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
 
@@ -1411,6 +1462,7 @@ export const reviewResume = protectedProcedure
 				parentId: c.parentId,
 				anchor: c.anchor,
 				severity: c.severity,
+				suggestion: c.suggestion,
 				createdAt: c.createdAt,
 			})),
 			evaluations: evaluations.slice(0, 5),

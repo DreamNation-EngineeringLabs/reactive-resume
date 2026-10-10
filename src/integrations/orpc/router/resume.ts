@@ -6,7 +6,7 @@ import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
 import { resumeDto } from "../dto/resume";
 import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
-import { assertReviewStaff, getReviewAccess } from "../helpers/review-access";
+import { assertReviewStaff, getReviewAccess, requireReviewer } from "../helpers/review-access";
 import { resumeService } from "../services/resume";
 import { aiService as resumeAiService } from "../services/resume-ai";
 import { userInfoService } from "../services/user-info";
@@ -42,6 +42,7 @@ const commentOutputSchema = z.object({
 	authorId: z.string(),
 	anchor: commentAnchorSchema.nullable(),
 	severity: z.string().nullable(),
+	suggestion: z.string().nullable(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });
@@ -512,18 +513,19 @@ export const resumeRouter = {
 					scope: z.enum(["INDIVIDUAL", "SECTION"]).default("INDIVIDUAL").describe("Comment visibility scope"),
 					anchor: commentAnchorSchema.optional().describe("Where on the resume the comment points"),
 					severity: commentSeveritySchema.optional(),
+					suggestion: z.string().min(1).max(2000).optional().describe("Replacement for the anchored quote"),
 				}),
 			)
 			.output(commentOutputSchema)
 			.handler(async ({ context, input }) => {
 				const { createComment } = await import("@/integrations/drizzle/services/resume-feedback.service");
-				const { getStudentById } = await import("@/integrations/eng-labs");
-				const { sendEmail } = await import("@/integrations/email/service");
 
 				await assertReviewStaff(context.user, input.resumeId);
 				const { id: authorId, tenantId } = await resolveEngLabsActor(context.user.email);
 
-				const comment = await createComment({
+				// The student is emailed once per review (when the reviewer requests changes or verifies),
+				// with every open comment listed — see dashboard.updateStatus — not once per comment.
+				return await createComment({
 					resumeId: input.resumeId,
 					studentId: input.studentId,
 					tenantId,
@@ -533,28 +535,8 @@ export const resumeRouter = {
 					scope: input.scope,
 					anchor: input.anchor,
 					severity: input.severity,
+					suggestion: input.anchor?.quote ? input.suggestion : undefined,
 				});
-
-				// Trigger email notification to student (Phase 8)
-				try {
-					const [student, resume] = await Promise.all([
-						getStudentById(input.studentId),
-						resumeService.getById({ id: input.resumeId, userId: context.user.id }),
-					]);
-
-					if (student?.email) {
-						const authorName = context.user.name || "A faculty member";
-						await sendEmail({
-							to: student.email,
-							subject: `New Feedback on your Resume: ${resume.name}`,
-							text: `Hello ${student.name},\n\nYou have received new feedback on your resume "${resume.name}" from ${authorName}.\n\nFeedback Content:\n"${input.content}"\n\nLogin to the dashboard to view more details.`,
-						});
-					}
-				} catch (error) {
-					console.error("[COMMENTS] Failed to send student notification email:", error);
-				}
-
-				return comment;
 			}),
 
 		list: protectedProcedure
@@ -601,6 +583,50 @@ export const resumeRouter = {
 				}
 
 				return await updateCommentStatus(input.id, input.status);
+			}),
+	},
+
+	// Comment bank shared by a tenant's reviewers. Reviewer-only; tenant comes from eng-labs, not the client.
+	reviewSnippets: {
+		list: protectedProcedure
+			.route({ method: "GET", path: "/review-snippets", tags: ["Resume Feedback"], summary: "List the comment bank" })
+			.output(z.array(z.object({ id: z.string(), content: z.string(), usageCount: z.number() })))
+			.handler(async ({ context }) => {
+				const { listSnippets } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { tenantId } = await requireReviewer(context.user.email);
+				return await listSnippets(tenantId);
+			}),
+
+		create: protectedProcedure
+			.route({ method: "POST", path: "/review-snippets", tags: ["Resume Feedback"], summary: "Save to comment bank" })
+			.input(z.object({ content: z.string().trim().min(1).max(500) }))
+			.handler(async ({ context, input }) => {
+				const { createSnippet } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { id, tenantId } = await requireReviewer(context.user.email);
+				await createSnippet(tenantId, id, input.content);
+			}),
+
+		delete: protectedProcedure
+			.route({
+				method: "DELETE",
+				path: "/review-snippets/{id}",
+				tags: ["Resume Feedback"],
+				summary: "Remove from bank",
+			})
+			.input(z.object({ id: z.string() }))
+			.handler(async ({ context, input }) => {
+				const { deleteSnippet } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { tenantId } = await requireReviewer(context.user.email);
+				await deleteSnippet(tenantId, input.id);
+			}),
+
+		use: protectedProcedure
+			.route({ method: "POST", path: "/review-snippets/{id}/use", tags: ["Resume Feedback"], summary: "Count a use" })
+			.input(z.object({ id: z.string() }))
+			.handler(async ({ context, input }) => {
+				const { useSnippet } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { tenantId } = await requireReviewer(context.user.email);
+				await useSnippet(tenantId, input.id);
 			}),
 	},
 

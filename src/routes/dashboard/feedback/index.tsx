@@ -373,6 +373,9 @@ function ResumeCard({
 										</Link>
 									)}
 									<p className="text-slate-700 text-sm">{comment.content}</p>
+									{comment.suggestion && (
+										<p className="mt-1 text-emerald-700 text-xs">Suggested rewrite: “{comment.suggestion}”</p>
+									)}
 									<p className="mt-1.5 text-slate-400 text-xs">
 										{new Date(comment.createdAt).toLocaleDateString()} ·{" "}
 										{comment.status === "RESOLVED" ? (

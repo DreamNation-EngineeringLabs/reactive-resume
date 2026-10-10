@@ -3,7 +3,7 @@
  * Handles all database operations for resume comments, checklists, and evaluations
  */
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { DEFAULT_RESUME_USER_ORG_ID } from "@/integrations/auth/config";
 import { db } from "@/integrations/drizzle/client";
 import {
@@ -15,8 +15,9 @@ import {
 	resumeEvaluation,
 	resumeEvaluationItem,
 	resumeHistory,
+	reviewSnippet,
 } from "@/integrations/drizzle/schema";
-import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
+import { type CommentAnchor, type CommentSeverity, STARTER_SNIPPETS } from "@/schema/resume/comment-anchor";
 
 /**
  * CREATE: Add a comment to a resume
@@ -31,6 +32,7 @@ export async function createComment({
 	parentId,
 	anchor,
 	severity,
+	suggestion,
 }: {
 	resumeId: string;
 	studentId: string;
@@ -41,6 +43,7 @@ export async function createComment({
 	parentId?: string;
 	anchor?: CommentAnchor;
 	severity?: CommentSeverity;
+	suggestion?: string;
 }) {
 	const result = await db
 		.insert(resumeComment)
@@ -56,6 +59,7 @@ export async function createComment({
 			parentId,
 			anchor,
 			severity,
+			suggestion,
 			status: "OPEN",
 			createdAt: new Date(),
 			updatedAt: new Date(),
@@ -87,6 +91,36 @@ export async function updateCommentStatus(id: string, status: "OPEN" | "ADDRESSE
 		.returning();
 
 	return result[0];
+}
+
+/**
+ * Comment bank: reusable review comments shared by a tenant's reviewers, most used first.
+ * A tenant's first visit seeds the starter set; the unique (tenant, content) index keeps it single.
+ */
+export async function listSnippets(tenantId: string) {
+	const rows = await db.select().from(reviewSnippet).where(eq(reviewSnippet.tenantId, tenantId));
+	if (rows.length > 0) return rows.sort((a, b) => b.usageCount - a.usageCount || a.content.localeCompare(b.content));
+
+	await db
+		.insert(reviewSnippet)
+		.values(STARTER_SNIPPETS.map((content) => ({ tenantId, authorId: "system", content })))
+		.onConflictDoNothing();
+	return db.select().from(reviewSnippet).where(eq(reviewSnippet.tenantId, tenantId));
+}
+
+export async function createSnippet(tenantId: string, authorId: string, content: string) {
+	await db.insert(reviewSnippet).values({ tenantId, authorId, content }).onConflictDoNothing();
+}
+
+export async function deleteSnippet(tenantId: string, id: string) {
+	await db.delete(reviewSnippet).where(and(eq(reviewSnippet.id, id), eq(reviewSnippet.tenantId, tenantId)));
+}
+
+export async function useSnippet(tenantId: string, id: string) {
+	await db
+		.update(reviewSnippet)
+		.set({ usageCount: sql`${reviewSnippet.usageCount} + 1` })
+		.where(and(eq(reviewSnippet.id, id), eq(reviewSnippet.tenantId, tenantId)));
 }
 
 export async function getCommentById(id: string) {
@@ -579,6 +613,15 @@ export async function updateResumeStatus({
 		APPROVED: "PO_APPROVED",
 	};
 
+	// A reviewer's verdict keeps a copy of the resume they reviewed, so the next review can show what changed.
+	const reviewVerdicts = [
+		"FACULTY_REVISION_REQUESTED",
+		"FACULTY_VERIFIED",
+		"PO_REVISION_REQUESTED",
+		"PO_VERIFIED",
+		"APPROVED",
+	];
+
 	if (actionMap[status]) {
 		await addToHistory({
 			resumeId,
@@ -587,6 +630,7 @@ export async function updateResumeStatus({
 			action: actionMap[status] as any,
 			changedBy,
 			actorType,
+			currentData: reviewVerdicts.includes(status) ? result[0]?.data : undefined,
 		});
 	}
 

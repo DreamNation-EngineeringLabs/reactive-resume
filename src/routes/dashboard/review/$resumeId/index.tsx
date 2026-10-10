@@ -9,7 +9,6 @@ import {
 	ExamIcon,
 	GitDiffIcon,
 	ListChecksIcon,
-	PaperPlaneTiltIcon,
 	PlusMinusIcon,
 	ShootingStarIcon,
 	XIcon,
@@ -17,7 +16,9 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { compare } from "fast-json-patch";
+// Default import: fast-json-patch is CommonJS, and a named import breaks server rendering of this page.
+import jsonpatch from "fast-json-patch";
+import { useHotkeys } from "react-hotkeys-hook";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "usehooks-ts";
 import { z } from "zod";
@@ -27,15 +28,18 @@ import {
 	anchorLabel,
 	openAnchoredComments,
 	scrollToAnchor,
+	useChangeHighlights,
 	useReviewHighlights,
 } from "@/components/resume/review-anchors";
 import { useResumeStore } from "@/components/resume/store/resume";
 import { Skeleton } from "@/components/ui/skeleton";
 import { orpc } from "@/integrations/orpc/client";
-import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
+import { type CommentAnchor, changedAnchors } from "@/schema/resume/comment-anchor";
+import type { ResumeData } from "@/schema/resume/data";
 import { getOrganisationUnits } from "@/utils/sso-context";
 import { cn } from "@/utils/style";
 import { StudentTimeline } from "../../-components/student-timeline";
+import { CommentComposer } from "./-comment-composer";
 
 const searchSchema = z.object({
 	engLabsStudentId: z.string().catch(""),
@@ -60,16 +64,6 @@ type ReviewTab = "comments" | "evaluate" | "changes" | "timeline";
 
 const PENDING_ANCHOR = "pending";
 
-// A function, not a constant: `t` must run after the locale is loaded.
-const getQuickComments = () => [
-	t`Quantify the impact: add numbers, percentages or scale.`,
-	t`Start this line with a strong action verb.`,
-	t`Too long. Cut this to one line.`,
-	t`Not relevant for placements. Remove it.`,
-	t`Fix the grammar or spelling here.`,
-	t`Add more detail here.`,
-];
-
 function ReviewPage() {
 	const { resumeId } = Route.useParams();
 	const { engLabsStudentId, tenantId, packageId, unitType, unitId, sectionId, scope } = Route.useSearch();
@@ -77,10 +71,8 @@ function ReviewPage() {
 	const [activeTab, setActiveTab] = useState<ReviewTab>("comments");
 	const [showHighlights, setShowHighlights] = useState(true);
 	const [showDiff, setShowDiff] = useState(false);
-	const [newComment, setNewComment] = useState("");
 	const [replyTo, setReplyTo] = useState<string | null>(null);
 	const [anchor, setAnchor] = useState<CommentAnchor | null>(null);
-	const [severity, setSeverity] = useState<CommentSeverity>("MUST_FIX");
 	const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 	const commentInputRef = useRef<HTMLTextAreaElement>(null);
 	const queryClient = useQueryClient();
@@ -165,7 +157,6 @@ function ReviewPage() {
 	const addCommentMutation = useMutation({
 		...orpc.resume.comments.create.mutationOptions(),
 		onSuccess: (comment) => {
-			setNewComment("");
 			setReplyTo(null);
 			setAnchor(null);
 			if (comment.anchor) setActiveCommentId(comment.id);
@@ -209,6 +200,18 @@ function ReviewPage() {
 	useEffect(() => {
 		if (activeCommentId) document.getElementById(`comment-${activeCommentId}`)?.scrollIntoView({ block: "nearest" });
 	}, [activeCommentId]);
+
+	useHotkeys("alt+right", () => nextResume && handleNavigate(nextResume), [nextResume]);
+	useHotkeys("alt+left", () => prevResume && handleNavigate(prevResume), [prevResume]);
+	useHotkeys("escape", () => setAnchor(null));
+
+	// "What changed since the last review": compared with the latest evaluation or review verdict.
+	const baseline = useMemo(() => (data ? latestReviewBaseline(data.evaluations, data.history) : null), [data]);
+	const changes = useMemo(
+		() => (baseline && data ? changedAnchors(baseline.data, data.resume.data as ResumeData) : []),
+		[baseline, data],
+	);
+	useChangeHighlights(activeTab === "changes" && showHighlights ? changes : []);
 
 	// Selecting text on the resume attaches it to the comment box.
 	const captureSelection = () => {
@@ -570,117 +573,25 @@ function ReviewPage() {
 						{/* ── Comments ── */}
 						{activeTab === "comments" && (
 							<div className="space-y-4">
-								<div className="rounded-2xl bg-slate-50 p-4">
-									<div className="mb-2 flex items-center justify-between">
-										<p className="font-semibold text-slate-700 text-sm">
-											{replyTo ? t`Reply to Thread` : t`Add Feedback Comment`}
-										</p>
-										{replyTo && (
-											<button onClick={() => setReplyTo(null)} className="text-indigo-600 text-xs hover:underline">
-												{t`Cancel Reply`}
-											</button>
-										)}
-									</div>
-
-									{!replyTo &&
-										(anchor ? (
-											<div className="mb-3 flex items-start gap-2 rounded-xl border-amber-400 border-l-4 bg-white px-3 py-2">
-												<div className="min-w-0 flex-1">
-													<p className="font-semibold text-[11px] text-slate-500">{anchorLabel(anchor, resume.data)}</p>
-													<p className="line-clamp-2 text-slate-800 text-xs">
-														{anchor.quote ? `“${anchor.quote.exact}”` : t`Whole section`}
-													</p>
-												</div>
-												<button
-													type="button"
-													aria-label={t`Remove the selected text from this comment`}
-													onClick={() => setAnchor(null)}
-													className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-												>
-													<XIcon className="size-3.5" />
-												</button>
-											</div>
-										) : (
-											<p className="mb-3 text-slate-500 text-xs">
-												{t`Select text on the resume to comment on that exact spot. Select a section title to comment on the whole section.`}
-											</p>
-										))}
-
-									{!replyTo && (
-										<div className="mb-3 flex flex-wrap items-center gap-1.5">
-											{(["MUST_FIX", "SUGGESTION"] as const).map((level) => (
-												<button
-													key={level}
-													type="button"
-													aria-pressed={severity === level}
-													onClick={() => setSeverity(level)}
-													className={cn(
-														"rounded-lg px-2.5 py-1 font-semibold text-xs ring-1 transition-all",
-														severity === level
-															? level === "MUST_FIX"
-																? "bg-rose-600 text-white ring-rose-600"
-																: "bg-slate-700 text-white ring-slate-700"
-															: "bg-white text-slate-600 ring-slate-200 hover:bg-slate-100",
-													)}
-												>
-													{level === "MUST_FIX" ? t`Must fix` : t`Suggestion`}
-												</button>
-											))}
-										</div>
-									)}
-
-									<textarea
-										ref={commentInputRef}
-										value={newComment}
-										onChange={(e) => setNewComment(e.target.value)}
-										placeholder={
-											replyTo ? t`Write your reply...` : t`Write specific, actionable feedback for the student...`
-										}
-										rows={4}
-										className="mb-3 w-full resize-none rounded-xl border-0 bg-white px-4 py-3 text-slate-900 text-sm outline-none ring-1 ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
-									/>
-									{!replyTo && (
-										<div className="mb-3 flex flex-wrap gap-1.5">
-											{getQuickComments().map((text) => (
-												<button
-													key={text}
-													type="button"
-													onClick={() => {
-														setNewComment((current) => (current.trim() ? `${current.trim()} ${text}` : text));
-														requestAnimationFrame(() => {
-															const input = commentInputRef.current;
-															input?.focus();
-															input?.setSelectionRange(input.value.length, input.value.length);
-														});
-													}}
-													className="rounded-full bg-white px-2.5 py-1 text-[11px] text-slate-600 ring-1 ring-slate-200 transition-all hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200"
-												>
-													{text}
-												</button>
-											))}
-										</div>
-									)}
-									<button
-										type="button"
-										disabled={!newComment.trim() || addCommentMutation.isPending}
-										onClick={() => {
-											if (!newComment.trim()) return;
-											addCommentMutation.mutate({
-												resumeId,
-												studentId: engLabsStudentId,
-												tenantId,
-												content: newComment.trim(),
-												parentId: replyTo ?? undefined,
-												anchor: replyTo ? undefined : (anchor ?? undefined),
-												severity: replyTo ? undefined : severity,
-											});
-										}}
-										className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-indigo-700 disabled:opacity-50"
-									>
-										<PaperPlaneTiltIcon weight="duotone" className="size-4" />
-										{addCommentMutation.isPending ? t`Posting…` : replyTo ? t`Post Reply` : t`Post Comment`}
-									</button>
-								</div>
+								<CommentComposer
+									resumeData={resume.data as ResumeData}
+									anchor={replyTo ? null : anchor}
+									onClearAnchor={() => setAnchor(null)}
+									replyTo={replyTo}
+									onCancelReply={() => setReplyTo(null)}
+									inputRef={commentInputRef}
+									isPending={addCommentMutation.isPending}
+									onSubmit={(input) =>
+										addCommentMutation.mutateAsync({
+											resumeId,
+											studentId: engLabsStudentId,
+											tenantId,
+											parentId: replyTo ?? undefined,
+											anchor: replyTo ? undefined : (anchor ?? undefined),
+											...input,
+										})
+									}
+								/>
 
 								{comments.length === 0 ? (
 									<div className="rounded-2xl bg-slate-50 py-10 text-center">
@@ -755,6 +666,13 @@ function ReviewPage() {
 															>
 																{c.content}
 															</p>
+															{c.suggestion && c.anchor?.quote && (
+																<p className="mt-2 rounded-lg bg-emerald-50/60 px-3 py-1.5 text-xs">
+																	<span className="font-semibold text-emerald-700">{t`Suggested rewrite`} </span>
+																	<del className="text-slate-400">{c.anchor.quote.exact}</del>{" "}
+																	<ins className="text-slate-800 no-underline">{c.suggestion}</ins>
+																</p>
+															)}
 															<div className="mt-3 flex items-center justify-between">
 																<div className="flex items-center gap-3">
 																	<p className="text-[10px] text-slate-400">
@@ -919,7 +837,7 @@ function ReviewPage() {
 						{activeTab === "changes" && (
 							<ChangesPanel
 								currentData={resume.data}
-								evaluations={evaluations}
+								baseline={baseline}
 								showHighlights={showHighlights}
 								onToggleHighlights={setShowHighlights}
 							/>
@@ -1242,7 +1160,7 @@ function buildDiffHtml(tokens: WordToken[]): string {
  * Unchanged fields render as plain text. Every section is always shown.
  * Uses schema-correct field names (no data loss).
  */
-function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<typeof compare>): string {
+function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<typeof jsonpatch.compare>): string {
 	// 1. Build diff map: JSON path → diff HTML
 	const diffMap = new Map<string, string>();
 	for (const op of ops) {
@@ -1580,36 +1498,53 @@ function buildFullDiffHtml(currentData: any, snapshot: any, ops: ReturnType<type
 
 // ---------------------------------------------------------------------------
 
+type ReviewBaseline = { data: ResumeData; at: Date };
+
+/** The resume as it was at the latest evaluation or review verdict (request revision / verify / approve). */
+function latestReviewBaseline(
+	evaluations: { snapshot?: unknown; evaluatedAt: Date | string }[],
+	history: { currentData?: unknown; createdAt: Date | string }[],
+): ReviewBaseline | null {
+	const candidates = [
+		...evaluations.filter((e) => e.snapshot).map((e) => ({ data: e.snapshot, at: new Date(e.evaluatedAt) })),
+		...history.filter((h) => h.currentData).map((h) => ({ data: h.currentData, at: new Date(h.createdAt) })),
+	].sort((a, b) => b.at.getTime() - a.at.getTime());
+	return (candidates[0] as ReviewBaseline | undefined) ?? null;
+}
+
 function ChangesPanel({
 	currentData,
-	evaluations,
+	baseline,
 	showHighlights,
 	onToggleHighlights,
 }: {
 	currentData: any;
-	evaluations: any[];
+	baseline: ReviewBaseline | null;
 	showHighlights: boolean;
 	onToggleHighlights: (v: boolean) => void;
 }) {
-	const latestEvalWithSnapshot = useMemo(() => evaluations.find((e) => e.snapshot), [evaluations]);
+	// Same shape the rest of this panel used when only evaluations had snapshots.
+	const latestEvalWithSnapshot = baseline && { snapshot: baseline.data, evaluatedAt: baseline.at };
 
 	const diff = useMemo(() => {
-		if (!latestEvalWithSnapshot?.snapshot || !currentData) return [];
-		return compare(latestEvalWithSnapshot.snapshot, currentData);
-	}, [latestEvalWithSnapshot, currentData]);
+		if (!baseline || !currentData) return [];
+		return jsonpatch.compare(baseline.data, currentData);
+	}, [baseline, currentData]);
 
 	// Full HTML resume with <ins>/<del> markers at every changed field
 	const fullDiffHtml = useMemo(() => {
-		if (!latestEvalWithSnapshot?.snapshot || !currentData || diff.length === 0) return null;
-		return buildFullDiffHtml(currentData, latestEvalWithSnapshot.snapshot, diff);
-	}, [currentData, latestEvalWithSnapshot, diff]);
+		if (!baseline || !currentData || diff.length === 0) return null;
+		return buildFullDiffHtml(currentData, baseline.data, diff);
+	}, [currentData, baseline, diff]);
 
 	if (!latestEvalWithSnapshot) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center">
 				<ShootingStarIcon weight="duotone" className="mb-3 size-10 text-slate-300" />
 				<p className="font-semibold text-slate-600">{t`No comparison available`}</p>
-				<p className="mt-1 text-slate-400 text-sm">{t`Complete at least one evaluation to start tracking changes.`}</p>
+				<p className="mt-1 text-slate-400 text-sm">
+					{t`Changes show up here after you request a revision, verify, or evaluate this resume.`}
+				</p>
 			</div>
 		);
 	}
@@ -1620,7 +1555,7 @@ function ChangesPanel({
 				<CheckCircleIcon weight="duotone" className="mb-3 size-10 text-emerald-300" />
 				<p className="font-semibold text-slate-600">{t`No new changes`}</p>
 				<p className="mt-1 text-slate-400 text-sm">
-					{t`The student hasn't made any changes since the evaluation on ${new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()}.`}
+					{t`The student hasn't made any changes since the review on ${new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()}.`}
 				</p>
 			</div>
 		);
@@ -1649,7 +1584,7 @@ function ChangesPanel({
 					Snapshot from {new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()}
 				</p>
 				<p className="opacity-80">
-					{diff.length} change{diff.length !== 1 ? "s" : ""} detected since that evaluation.
+					{diff.length} change{diff.length !== 1 ? "s" : ""} detected since that review.
 				</p>
 			</div>
 
@@ -1689,7 +1624,7 @@ function ComparisonOverlay({
 	const latestEvalWithSnapshot = useMemo(() => evaluations.find((e) => e.snapshot), [evaluations]);
 	const diff = useMemo(() => {
 		if (!latestEvalWithSnapshot?.snapshot || !currentData) return [];
-		return compare(latestEvalWithSnapshot.snapshot, currentData);
+		return jsonpatch.compare(latestEvalWithSnapshot.snapshot, currentData);
 	}, [latestEvalWithSnapshot, currentData]);
 
 	if (diff.length === 0) return null;
