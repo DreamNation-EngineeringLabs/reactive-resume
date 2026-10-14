@@ -97,8 +97,8 @@ export async function generateSuggestions(
 	const bullets = getAllBullets(data);
 	const resumeSkills = getResumeSkills(data).map((s: string) => s.toLowerCase());
 	const kwCategoryScore = scoringContext?.categories.keywordMatch;
-	const taxonomyCount = getIndustryTaxonomyMatchCount(data);
 	const profile: AtsProfile = scoringContext?.profile ?? { home: "general", focus: "general", skills: [] };
+	const taxonomyCount = getIndustryTaxonomyMatchCount(data, profile.extra);
 	const branch = profile.focus;
 	const b = BRANCHES[branch];
 
@@ -150,10 +150,18 @@ export async function generateSuggestions(
 			["react", "angular", "vue", "node", "spring", "django", "flask", "express", "next.js"].includes(s),
 		);
 		// Outside software, the basics are any named skill or tool, not a programming language plus a framework
-		const hasBasics = branch === "software" ? hasLanguage && hasFramework : resumeSkills.some(namesSkill);
+		const hasBasics =
+			branch === "software" ? hasLanguage && hasFramework : resumeSkills.some((s) => namesSkill(s, profile.extra));
 
 		const scoreRatio = kwCategoryScore && kwCategoryScore.max > 0 ? kwCategoryScore.score / kwCategoryScore.max : 1;
 		const needsDensityHelp = taxonomyCount < 12 || scoreRatio < 0.55 || !hasBasics || resumeSkills.length < 10;
+		// Learned from students of the same branch (3 or more list it): shown next to the examples, or on its own.
+		const peerSection: SuggestionBodySection | undefined = profile.peers?.length
+			? {
+					title: "Skills students in your branch list that aren't on your resume yet",
+					items: profile.peers.map((p) => `${p.skill} (${p.students} students)`),
+				}
+			: undefined;
 
 		if (needsDensityHelp) {
 			const skillsSectionHidden = data.sections.skills.hidden;
@@ -173,6 +181,7 @@ export async function generateSuggestions(
 						"Next step: add each important tool as its own line under Skills, and mention the same tools when you describe what you built or shipped.",
 					],
 				},
+				...(peerSection ? [peerSection] : []),
 				{
 					title: "Examples of what to list",
 					items: b.examples.map(([group, examples]) => `${group}: ${examples}`),
@@ -198,6 +207,25 @@ export async function generateSuggestions(
 							context: `Add skills one per row (e.g. ${b.tools}). The examples above are inspiration — use what you truly know.`,
 						},
 					],
+				},
+			});
+		} else if (peerSection) {
+			suggestions.push({
+				id: "KW-S-peer-skills",
+				ruleId: "KW-1",
+				category: "keywordMatch",
+				severity: "info",
+				title: "Skills other students in your branch list",
+				description:
+					"Students of your branch list these skills and your resume doesn't yet. Add the ones you actually know.",
+				bodySections: [peerSection],
+				autoApplicable: false,
+				estimatedScoreGain: 2,
+				diff: {
+					type: "add_item",
+					location: "Skills",
+					fieldPath: "/sections/skills/items/-",
+					hunks: [{ context: "Add skills one per row. Only list what you truly know." }],
 				},
 			});
 		}
@@ -400,7 +428,7 @@ export async function generateSuggestions(
 		const rawDesc = "description" in project ? (project as { description: string }).description : "";
 		const desc = stripHtml(rawDesc).trim();
 		const descWords = desc.split(/\s+/).filter(Boolean).length;
-		const hasTechStack = namesSkill(desc);
+		const hasTechStack = namesSkill(desc, profile.extra);
 		const hasOutcome =
 			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
 				desc,
@@ -1353,7 +1381,7 @@ export async function generateSuggestions(
 		const desc = stripHtml(rawDesc).trim();
 		const descWords = desc.split(/\s+/).filter(Boolean).length;
 
-		const hasTechStack = namesSkill(desc);
+		const hasTechStack = namesSkill(desc, profile.extra);
 		const hasOutcome =
 			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
 				desc,
@@ -1514,7 +1542,7 @@ export async function generateSuggestions(
 		];
 		const summaryLower = summaryPlain.toLowerCase();
 		const boilerplateCount = boilerplateTerms.filter((t) => summaryLower.includes(t)).length;
-		const summaryHasTech = namesSkill(summaryPlain);
+		const summaryHasTech = namesSkill(summaryPlain, profile.extra);
 		const summaryHasMetric = /\d+[%+]|\d+\s*(years?|months?|projects?|apps?|systems?)/i.test(summaryPlain);
 
 		if (boilerplateCount >= 2 || (!summaryHasTech && !summaryHasMetric && summaryPlain.length > 20)) {

@@ -5,7 +5,8 @@ import type { ResumeData } from "@/schema/resume/data";
  * Department-aware ATS content. Without a job description the keyword score counts skill terms from every field
  * (the software taxonomy plus the lists here), and the suggestions show examples from the student's own branch,
  * so a Civil student is no longer told to add Java and React.
- * The skill lists are drafts: faculty of each department should review them.
+ * The lists are a starting point, not the limit: `skill-lexicon.ts` adds the skills students of the same branch list
+ * and the ones an AI check confirms, so skills missing here still count.
  */
 type Branch = {
 	label: string;
@@ -398,6 +399,29 @@ function homeBranch(units: string[], data: ResumeData): { key: BranchKey; from: 
 	}
 }
 
+/** The branch the resume's own field of study points to, if any. */
+export const resumeBranch = (data: ResumeData): BranchKey | undefined => homeBranch([], data)?.key;
+
+/** "STAAD.Pro", "STAAD Pro" and "staad-pro" are one skill: lowercase letters, digits, + and # only. */
+export const skillKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#]/g, "");
+
+/** Keys of every run of 1–4 words in the text, so a skill is found however it is spaced or punctuated. */
+export function keysIn(text: string): Set<string> {
+	const words = text
+		.split(/[\s,;|/•·()[\]{}:]+/)
+		.map(skillKey)
+		.filter(Boolean);
+	const keys = new Set<string>();
+	words.forEach((_, i) => {
+		let key = "";
+		for (const w of words.slice(i, i + 4)) {
+			key += w;
+			keys.add(key);
+		}
+	});
+	return keys;
+}
+
 const softwareForms = new Set(
 	Object.values(skillsTaxonomy.categories).flatMap((c) =>
 		Object.entries(c).flatMap(([skill, aliases]) => [skill, ...aliases].map((f) => f.toLowerCase())),
@@ -440,8 +464,15 @@ const SOFTWARE_EVIDENCE = new RegExp(
 	"gi",
 );
 
-/** Does the text name a skill or tool of any field? Project, summary and bullet checks use it. */
-export const namesSkill = (text: string) => SOFTWARE_TERMS.test(text) || branchTerms.some((re) => re.test(text));
+/** Does the text name a skill or tool of any field? `extra`: skills the lists above miss (see `skill-lexicon.ts`). */
+export const namesSkill = (text: string, extra: string[] = []) => {
+	if (SOFTWARE_TERMS.test(text) || branchTerms.some((re) => re.test(text))) return true;
+	const keys = extra.length > 0 ? keysIn(text) : undefined;
+	return !!keys && extra.some((e) => keys.has(skillKey(e)));
+};
+
+/** A skill that students of the student's branch list, and how many do. */
+export type Peer = { skill: string; students: number };
 
 export type AtsProfile = {
 	/** Department, else field of study; "general" when neither is known. */
@@ -450,6 +481,10 @@ export type AtsProfile = {
 	focus: BranchKey;
 	/** Skills found on the resume, any field (for the AI prompts). */
 	skills: string[];
+	/** On the resume and counted although the lists miss them: listed by peers, or confirmed by the AI check. */
+	extra?: string[];
+	/** Skills peers of the same branch list that are not on this resume yet, most common first. */
+	peers?: Peer[];
 };
 
 /**

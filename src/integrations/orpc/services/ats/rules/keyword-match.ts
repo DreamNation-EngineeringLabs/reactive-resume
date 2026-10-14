@@ -26,7 +26,7 @@ function buildAliasMap(): Map<string, string[]> {
 const aliasMap = buildAliasMap();
 
 /** Unique skill terms in the text: the software taxonomy (matched as before) plus every branch list. */
-function countSkillTerms(text: string): number {
+export function countSkillTerms(text: string): number {
 	const software = new Set<string>();
 	for (const [skill, forms] of aliasMap) if (keywordFoundInText(skill, text)) software.add(forms[0]);
 	return software.size + branchTerms.filter((re) => re.test(text)).length;
@@ -106,6 +106,8 @@ export async function scoreKeywordMatch(
 	jdKeywords: string[],
 	softKeywords: string[] = [],
 	branch: BranchKey = "general",
+	/** Skills the lists miss (see `skill-lexicon.ts`); each counts like a listed one. */
+	extra: string[] = [],
 ): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
 
@@ -135,7 +137,7 @@ export async function scoreKeywordMatch(
 
 	if (jdKeywords.length === 0 && softKeywords.length === 0) {
 		// No JD provided — count skill terms of every field for industry density
-		const count = countSkillTerms(allContent);
+		const count = countSkillTerms(allContent) + extra.length;
 		const b = BRANCHES[branch];
 		// Scoring curve: requires minimum 5 recognizable skills to earn any points.
 		// Uses a sub-linear power curve (exponent 0.9) so early skills are worth less.
@@ -249,14 +251,14 @@ export async function scoreKeywordMatch(
 }
 
 /** Count unique taxonomy skills detected in resume text (same basis as no-JD scoring). */
-export function getIndustryTaxonomyMatchCount(data: ResumeData): number {
+export function getIndustryTaxonomyMatchCount(data: ResumeData, extra: string[] = []): number {
 	const resumeSkills = getResumeSkills(data);
 	const bullets = getAllBullets(data);
 	const summaryText = stripHtml(data.summary.content);
 	const headlineText = data.basics.headline;
 	const allContent = [...resumeSkills, ...bullets.map((b) => b.text), summaryText, headlineText].join(" ");
 	if (allContent.trim().length < 50) return 0;
-	return countSkillTerms(allContent);
+	return countSkillTerms(allContent) + extra.length;
 }
 
 /** JD keywords that appear somewhere on the resume but not in experience/project/volunteer bullet text (KW-2 gap). */

@@ -24,7 +24,7 @@ const contentQualitySchema = z.object({
  * Heuristic fallback for content quality scoring (no LLM available).
  * Intentionally strict — rewards only genuinely specific, substantive content.
  */
-function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualitySchema> {
+function heuristicContentQuality(data: ResumeData, extra: string[] = []): z.infer<typeof contentQualitySchema> {
 	const bullets = getAllBullets(data);
 	const summary = stripHtml(data.summary.content).trim();
 	const skills = getResumeSkills(data);
@@ -39,7 +39,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	let vagueBullets = 0;
 	for (const b of bullets) {
 		const hasMetric = metricRegex.test(b.text);
-		const hasTech = namesSkill(b.text);
+		const hasTech = namesSkill(b.text, extra);
 		const isVague = vagueRegex.test(b.text) || b.text.split(/\s+/).length < 7;
 		if (isVague) vagueBullets++;
 		else if (hasMetric || hasTech) specificBullets++;
@@ -76,7 +76,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	const summaryLower = summary.toLowerCase();
 	const boilerplateCount = boilerplatePhrases.filter((p) => summaryLower.includes(p)).length;
 	const summaryWords = summary.split(/\s+/).filter(Boolean).length;
-	const summaryHasTech = namesSkill(summary);
+	const summaryHasTech = namesSkill(summary, extra);
 	const summaryHasMetric = metricRegex.test(summary);
 
 	let summaryScore = 0;
@@ -98,7 +98,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	for (const project of projects.slice(0, 3)) {
 		const desc = stripHtml("description" in project ? (project as { description: string }).description : "").trim();
 		const words = desc.split(/\s+/).filter(Boolean).length;
-		const hasTech = namesSkill(desc);
+		const hasTech = namesSkill(desc, extra);
 		if (words >= 20 && hasTech) projectScore += 1;
 		else if (words >= 10) projectScore += 0.5;
 		// "a simple project" or similar → 0
@@ -228,7 +228,7 @@ Also provide 1-sentence feedback for each dimension explaining the specific issu
 
 		scoring = result.output;
 	} catch {
-		scoring = heuristicContentQuality(data);
+		scoring = heuristicContentQuality(data, profile.extra);
 	}
 
 	const totalScore = Math.min(
