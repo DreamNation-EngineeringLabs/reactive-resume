@@ -17,21 +17,21 @@ export function getStatusBadgeClass(status: string): { bg: string; text: string;
 			return { bg: "bg-emerald-50", text: "text-emerald-700", label: "Verified" };
 		case "submitted":
 		case "SUBMITTED_TO_FACULTY":
-			return { bg: "bg-blue-50", text: "text-blue-700", label: "Submitted for Review" };
+			return { bg: "bg-primary/10", text: "text-primary", label: "Submitted for Review" };
 		case "has_comments":
 		case "FACULTY_REVISION_REQUESTED":
 			return { bg: "bg-amber-50", text: "text-amber-700", label: "Revision Requested" };
 		case "FINALIZED_BY_FACULTY":
-			return { bg: "bg-indigo-50", text: "text-indigo-700", label: "Finalized / Pending PO" };
+			return { bg: "bg-primary/10", text: "text-primary", label: "Finalized / Pending PO" };
 		case "SUBMITTED_TO_PO":
-			return { bg: "bg-orange-50", text: "text-orange-700", label: "Submitted to PO" };
+			return { bg: "bg-primary/10", text: "text-primary", label: "Submitted to PO" };
 		case "PO_REVISION_REQUESTED":
-			return { bg: "bg-rose-50", text: "text-rose-700", label: "PO: Revision Requested" };
+			return { bg: "bg-amber-50", text: "text-amber-700", label: "PO: Revision Requested" };
 		case "RESUBMITTED_TO_PO":
-			return { bg: "bg-purple-50", text: "text-purple-700", label: "Resubmitted to PO" };
+			return { bg: "bg-primary/10", text: "text-primary", label: "Resubmitted to PO" };
 		case "APPROVED":
-			return { bg: "bg-teal-50", text: "text-teal-700", label: "Approved" };
+			return { bg: "bg-emerald-50", text: "text-emerald-700", label: "Approved" };
 		default:
-			return { bg: "bg-slate-100", text: "text-slate-500", label: "Not Reviewed" };
+			return { bg: "bg-muted", text: "text-muted-foreground", label: "Not Reviewed" };
 	}
 }
