@@ -315,11 +315,10 @@ export function SectionMetricsView({
 			{activeTab === "overview" && (
 				<div className="space-y-6">
 					{/* Filter — above metrics */}
-					{(filterPackages.length > 0 || filterUnitTypes.length > 0) && (
+					{(filterPackages.length > 0 || filterAllOrgUnits.length > 0) && (
 						<div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
 							<OrgUnitFilter
 								packages={filterPackages}
-								unitTypes={filterUnitTypes}
 								allOrgUnits={filterAllOrgUnits}
 								value={filter}
 								onChange={(next) => {
@@ -790,11 +789,10 @@ export function SectionMetricsView({
 			{activeTab === "students" && (
 				<div className="space-y-5">
 					{/* Filter */}
-					{(filterPackages.length > 0 || filterUnitTypes.length > 0) && (
+					{(filterPackages.length > 0 || filterAllOrgUnits.length > 0) && (
 						<div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
 							<OrgUnitFilter
 								packages={filterPackages}
-								unitTypes={filterUnitTypes}
 								allOrgUnits={filterAllOrgUnits}
 								value={filter}
 								onChange={(next) => {

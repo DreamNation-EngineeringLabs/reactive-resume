@@ -309,6 +309,20 @@ function computeUnitStatsRow(
 	};
 }
 
+/** `units` plus every ancestor of them found in `all`. */
+function withAncestors(units: OrgUnitRow[], all: OrgUnitRow[]) {
+	const byId = new Map(all.map((u) => [u.id, u]));
+	const out = new Map(units.map((u) => [u.id, u]));
+	for (const unit of units) {
+		let parent = byId.get(unit.parentId ?? "");
+		while (parent && !out.has(parent.id)) {
+			out.set(parent.id, parent);
+			parent = byId.get(parent.parentId ?? "");
+		}
+	}
+	return [...out.values()];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Unified Section-Scoped Dashboard (Faculty & PO)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -851,10 +865,11 @@ export const sectionsDashboard = protectedProcedure
 			});
 
 			const response = {
-				// Filter UI data (scoped to instructor's sections for faculty role)
+				// Filter UI data (scoped to instructor's sections for faculty role, plus their parents so the
+				// Branch filter has departments; picking one still only shows the instructor's own students)
 				packages: filterPackages,
 				unitTypes: scopedUnitTypes,
-				allOrgUnits: scopedOrgUnits,
+				allOrgUnits: scope === "faculty" ? withAncestors(scopedOrgUnits, allOrgUnits) : scopedOrgUnits,
 				// Section-level stats (CLASS leaf nodes)
 				sections: unitStats,
 				students,
