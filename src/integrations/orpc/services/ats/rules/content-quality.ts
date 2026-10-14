@@ -3,7 +3,7 @@ import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
-import { type BranchKey, branchPromptLine, namesSkill } from "../branches";
+import { type AtsProfile, branchPromptLine, namesSkill } from "../branches";
 import type { CategoryScore, RuleResult } from "../index";
 import { getAllBullets, getResumeSkills, SCORING_LLM_CONFIG, stripHtml } from "../index";
 
@@ -157,7 +157,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
  * LLM-powered content quality scoring. Used when no job description is provided.
  * Evaluates the inherent quality of the resume content regardless of target role.
  */
-export async function scoreContentQuality(data: ResumeData, branch: BranchKey = "general"): Promise<CategoryScore> {
+export async function scoreContentQuality(data: ResumeData, profile: AtsProfile): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
 
 	const bullets = getAllBullets(data);
@@ -198,7 +198,7 @@ export async function scoreContentQuality(data: ResumeData, branch: BranchKey = 
 Your job is to score the CONTENT QUALITY — not the format, but the actual substance.
 Be STRICT. Generic boilerplate summaries, vague bullets ("developed a website", "a simple project"),
 and placeholder content should score 0. Only reward specific, verifiable, technical, quantified content.
-A recent graduate with 1 vague bullet and a boilerplate summary should score 1-3/10 total.${branchPromptLine(branch)}`,
+A recent graduate with 1 vague bullet and a boilerplate summary should score 1-3/10 total.${branchPromptLine(profile)}`,
 				},
 				{
 					role: "user",

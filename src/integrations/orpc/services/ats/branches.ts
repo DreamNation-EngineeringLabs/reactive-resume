@@ -24,6 +24,9 @@ type Branch = {
 	project: string;
 	impact: string;
 	measures: string;
+	/** Metric coaching: "What was the scale — …?" and how to estimate. */
+	scale: string;
+	estimate: string;
 	summary: string;
 	coach: { who: string; built: string; example: string };
 	/** Weak → strong bullet pairs, and bullets in the XYZ formula. */
@@ -36,6 +39,7 @@ type Branch = {
 const NON_SOFTWARE = {
 	counted: "skill terms (software, tools, methods and codes from any field)",
 	stack: "tools and methods",
+	estimate: "if your project was tested or used, say how many times or by how many people",
 };
 
 export const BRANCHES = {
@@ -56,6 +60,7 @@ export const BRANCHES = {
 		project: "A 5 kW rooftop solar system sized for the college hostel.",
 		impact: "Cut simulated grid energy use by 30%; tested on a lab prototype.",
 		measures: "Power, efficiency, losses, cost, or energy saved",
+		scale: "kW, efficiency, losses, or energy saved",
 		summary:
 			"Final-year Electrical and Electronics Engineering student with project work in power electronics and MATLAB/Simulink. Looking for electrical design or power systems roles.",
 		coach: {
@@ -111,6 +116,7 @@ export const BRANCHES = {
 		project: "An IoT soil-moisture monitor that switches a water pump automatically.",
 		impact: "Cut water use by 25% across 3 test beds; ran 4 weeks on battery.",
 		measures: "Accuracy, power, range, latency, or cost",
+		scale: "power drawn, range, accuracy, or data rate",
 		summary:
 			"Final-year Electronics and Communication Engineering student with hands-on embedded systems and VLSI design. Looking for embedded or VLSI engineer roles.",
 		coach: {
@@ -173,6 +179,7 @@ export const BRANCHES = {
 		project: "A G+3 residential building designed for a 30 m × 15 m plot.",
 		impact: "Bill of quantities for 1,200 m² of slab; design checked as per IS 456.",
 		measures: "Area, quantities, cost, loads, or time saved",
+		scale: "area, quantities, loads, or budget",
 		summary:
 			"Final-year Civil Engineering student with site experience in residential construction and structural design in STAAD.Pro. Looking for site or design engineer roles.",
 		coach: {
@@ -236,6 +243,7 @@ export const BRANCHES = {
 		project: "A go-kart chassis designed to take a 4g front impact load.",
 		impact: "Cut part weight by 15%; prototype built and tested in the college workshop.",
 		measures: "Weight, cost, efficiency, cycle time, or temperature",
+		scale: "parts, cycle time, tolerances, or cost",
 		summary:
 			"Final-year Mechanical Engineering student with hands-on design in SolidWorks and FEA in ANSYS. Looking for design or manufacturing engineer roles.",
 		coach: {
@@ -283,7 +291,7 @@ export const BRANCHES = {
 		},
 	},
 	software: {
-		label: "Computer Science",
+		label: "Computer Science & IT",
 		study:
 			/\b(cse|csbs|aiml|aids|ai\s*&\s*ml|ai\s*&\s*ds)\b|computer|information technology|data science|artificial intelligence|machine learning|cyber|software/i,
 		codes: /\b(cs|it|ds|iot|cys|csm|csd|csc|cso|mca|bca)\b/i,
@@ -296,12 +304,14 @@ export const BRANCHES = {
 			["Cloud & DevOps", "AWS, Docker, Kubernetes, Git"],
 		],
 		tools: "React, Node.js, PostgreSQL",
+		estimate: "if your app was used in class, mention how many students",
 		stack: "tech stack",
 		depth:
 			"Add depth: frameworks (e.g. React, Spring), databases (PostgreSQL, MongoDB), cloud (AWS, GCP), and everyday tools (Docker, Git, CI/CD).",
 		project: "A web app that helps students track internship applications.",
 		impact: "Used by 200+ students; deployed on Vercel.",
 		measures: "Users, uptime, accuracy, latency, GitHub stars, or class size",
+		scale: "requests/sec, GB of data, number of endpoints",
 		summary:
 			"Final-year CS student with experience building full-stack apps using React and Node.js. Looking for backend or full-stack roles.",
 		coach: {
@@ -338,6 +348,7 @@ export const BRANCHES = {
 		project: "A low-cost water filter designed for a village school.",
 		impact: "Used by 120 students; cost under ₹2,000 to build.",
 		measures: "Users, cost, time saved, accuracy, or scale",
+		scale: "people, cost, time, or size",
 		summary:
 			"Final-year B.Tech student with hands-on project and internship experience. Looking for graduate engineer roles.",
 		coach: {
@@ -367,26 +378,24 @@ export const BRANCHES = {
 export type BranchKey = keyof typeof BRANCHES;
 const order: BranchKey[] = ["electrical", "electronics", "civil", "mechanical", "software"];
 
-/**
- * The student's branch: their eng-labs units first (nearest first, e.g. class → department), then the field of
- * study on the resume, else "general". Checks EEE before ECE ("Electrical and Electronics").
- */
-export function detectBranch(units: string[], data: ResumeData): BranchKey {
-	const study = data.sections.education.items.filter((i) => !i.hidden).map((i) => `${i.degree} ${i.area}`);
+/** Home branch: eng-labs units first (nearest first, class → department), then the field of study on the resume. */
+function homeBranch(units: string[], data: ResumeData): { key: BranchKey; from: "department" | "resume" } | undefined {
+	// EEE before ECE ("Electrical and Electronics"); short codes only on eng-labs units.
 	const find = (text: string, trustCodes: boolean) =>
 		order.find((k) => {
 			const b: Branch = BRANCHES[k];
 			return b.study.test(text) || (trustCodes && !!b.codes?.test(text));
 		});
 	for (const u of units) {
-		const k = find(u, true);
-		if (k) return k;
+		const key = find(u, true);
+		if (key) return { key, from: "department" };
 	}
-	for (const s of study) {
-		const k = find(s, false);
-		if (k) return k;
+	for (const i of data.sections.education.items.filter((i) => !i.hidden)) {
+		const s = `${i.degree} ${i.area}`;
+		// "IT" on a resume only in capitals: it is also an English word.
+		const key = find(s, false) ?? (/\bIT\b/.test(s) ? "software" : undefined);
+		if (key) return { key, from: "resume" };
 	}
-	return "general";
 }
 
 const softwareForms = new Set(
@@ -400,34 +409,79 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * Skills of the non-software branches, one whole-word regex each: "Excel" must not match "excellent", "AutoCAD." at
  * the end of a sentence still counts. Forms the software taxonomy already has are left to it (matched as before).
  */
-export const branchTerms = (() => {
-	const skills = new Map<string, string[]>();
-	for (const b of Object.values(BRANCHES) as Branch[])
-		for (const [skill, aliases] of Object.entries(b.skills ?? {})) skills.set(skill.toLowerCase(), [skill, ...aliases]);
+const branchSkills = (() => {
+	const skills = new Map<string, { skill: string; forms: string[]; branches: Set<BranchKey> }>();
+	for (const [key, b] of Object.entries(BRANCHES) as [BranchKey, Branch][])
+		for (const [skill, aliases] of Object.entries(b.skills ?? {})) {
+			const s = skills.get(skill.toLowerCase()) ?? { skill, forms: [skill, ...aliases], branches: new Set() };
+			s.branches.add(key);
+			skills.set(skill.toLowerCase(), s);
+		}
 	return [...skills.values()]
-		.map((forms) => forms.filter((f) => !softwareForms.has(f.toLowerCase())))
-		.filter((forms) => forms.length > 0)
-		.map(
-			(forms) =>
-				new RegExp(
-					`(?<![a-z0-9])(?:${forms.map((f) => escapeRe(f).replace(/\s+/g, "\\s+")).join("|")})(?![a-z0-9])`,
-					"i",
-				),
-		);
+		.map((s) => ({ ...s, forms: s.forms.filter((f) => !softwareForms.has(f.toLowerCase())) }))
+		.filter((s) => s.forms.length > 0)
+		.map(({ skill, forms, branches }) => ({
+			skill,
+			branches,
+			re: new RegExp(
+				`(?<![a-z0-9])(?:${forms.map((f) => escapeRe(f).replace(/\s+/g, "\\s+")).join("|")})(?![a-z0-9])`,
+				"i",
+			),
+		}));
 })();
+export const branchTerms = branchSkills.map((s) => s.re);
 
-const SOFTWARE_TERMS =
-	/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify|machine learning|deep learning|ci\/cd|agile|scrum)\b/i;
+const SOFTWARE_WORDS =
+	"react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify|machine learning|deep learning|ci\\/cd|agile|scrum";
+const SOFTWARE_TERMS = new RegExp(`\\b(${SOFTWARE_WORDS})\\b`, "i");
+/** Profile evidence only: the same words plus a few unambiguous ones the checks above never used. */
+const SOFTWARE_EVIDENCE = new RegExp(
+	`(?<![a-z0-9])(?:${SOFTWARE_WORDS}|c\\+\\+|c#|html|css|php|mysql|linux|unity|unreal|power bi|tableau)(?![a-z0-9])`,
+	"gi",
+);
 
 /** Does the text name a skill or tool of any field? Project, summary and bullet checks use it. */
 export const namesSkill = (text: string) => SOFTWARE_TERMS.test(text) || branchTerms.some((re) => re.test(text));
 
-/** A line (with a leading newline) for the AI prompts so rewrites stay in the student's field. Empty for software. */
-export function branchPromptLine(key: BranchKey): string {
+export type AtsProfile = {
+	/** Department, else field of study; "general" when neither is known. */
+	home: BranchKey;
+	/** What the suggestions follow: the home branch, unless the resume's skills clearly point to another field. */
+	focus: BranchKey;
+	/** Skills found on the resume, any field (for the AI prompts). */
+	skills: string[];
+};
+
+/**
+ * Step 1 of the ATS pipeline: understand the student before suggesting anything.
+ * `text`: the resume's skills, bullets, summary and headline.
+ * A Civil student whose resume is all Python and Java is aiming at IT roles: suggestions follow the resume.
+ */
+export function understandProfile(units: string[], data: ResumeData, text: string): AtsProfile {
+	const home = homeBranch(units, data)?.key;
+	const software = [...new Set((text.match(SOFTWARE_EVIDENCE) ?? []).map((s) => s.toLowerCase()))];
+	const found = branchSkills.filter((s) => s.re.test(text));
+	const evidence = (k: BranchKey) =>
+		k === "software" ? software.length : found.filter((s) => s.branches.has(k)).length;
+	const top = [...order].sort((a, b) => evidence(b) - evidence(a))[0];
+	// ponytail: fixed thresholds (4 terms, twice the home branch); tune once real resumes are scored.
+	const elsewhere = top !== home && evidence(top) >= 4 && evidence(top) >= 2 * (home ? evidence(home) : 0);
+	const focus = home ? (elsewhere ? top : home) : evidence(top) >= 3 ? top : "general";
+	return { home: home ?? "general", focus, skills: [...found.map((s) => s.skill), ...software].slice(0, 12) };
+}
+
+/** A line (with a leading newline) for the AI prompts so rewrites follow the profile. Empty for CSE students. */
+export function branchPromptLine({ home, focus, skills }: AtsProfile): string {
 	const noPush =
 		"Don't add programming languages or software tools that aren't already on the resume unless the job description asks for them.";
-	if (key === "software") return "";
-	if (key === "general") return `\nThe student's branch is not known. ${noPush}`;
-	const { label } = BRANCHES[key];
-	return `\nThe student studies ${label}. "Technical skills" and "tech stack" here mean the software, tools and methods of ${label}. ${noPush}`;
+	const found = skills.length > 0 ? ` Skills on the resume: ${skills.join(", ")}.` : "";
+	if (focus === "software" && home === "software") return "";
+	if (focus === "general") return `\nThe student's branch is not known.${found} ${noPush}`;
+	const { label } = BRANCHES[focus];
+	if (focus !== home) {
+		const studies =
+			home === "general" ? "The student's branch is not known" : `The student studies ${BRANCHES[home].label}`;
+		return `\n${studies}, but the resume targets ${label} roles.${found} Keep suggestions to the skills and tools of that field.`;
+	}
+	return `\nThe student studies ${label}.${found} "Technical skills" and "tech stack" here mean the software, tools and methods of ${label}. ${noPush}`;
 }

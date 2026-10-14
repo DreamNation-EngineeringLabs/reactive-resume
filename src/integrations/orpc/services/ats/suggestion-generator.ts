@@ -3,7 +3,7 @@ import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
-import { BRANCHES, type BranchKey, branchPromptLine, namesSkill } from "./branches";
+import { type AtsProfile, BRANCHES, branchPromptLine, namesSkill } from "./branches";
 import type { AtsScoringContext, JDAnalysis, Suggestion, SuggestionBodySection } from "./index";
 import { estimatePageCount, getAllBullets, getResumeSkills, SCORING_LLM_CONFIG, stripHtml } from "./index";
 import { countResumeWords, RECOMMENDED_BULLET_RANGE, RECOMMENDED_WORD_RANGE } from "./rules/brevity";
@@ -98,7 +98,8 @@ export async function generateSuggestions(
 	const resumeSkills = getResumeSkills(data).map((s: string) => s.toLowerCase());
 	const kwCategoryScore = scoringContext?.categories.keywordMatch;
 	const taxonomyCount = getIndustryTaxonomyMatchCount(data);
-	const branch = scoringContext?.branch ?? "general";
+	const profile: AtsProfile = scoringContext?.profile ?? { home: "general", focus: "general", skills: [] };
+	const branch = profile.focus;
 	const b = BRANCHES[branch];
 
 	const cqSuggestionCategory = jdAnalysis ? "impactMetrics" : "tailoring";
@@ -438,7 +439,7 @@ export async function generateSuggestions(
 			needsTailoredSummary,
 			projectsToRewrite,
 			keywordsNotInBullets,
-			branch,
+			profile,
 		);
 
 		if (!llmResult) {
@@ -1458,7 +1459,7 @@ export async function generateSuggestions(
 			category: "impactMetrics",
 			severity: "warning",
 			title: `${bulletsLackingMetric.length} bullet${bulletsLackingMetric.length !== 1 ? "s" : ""} have no measurable outcome`,
-			description: `Quantified bullets are 40% more likely to pass ATS filters and get recruiter attention. Add specific numbers to show the scale and impact of your work.\n\nAsk yourself for each bullet:\n• How many users/customers/records were affected?\n• What percentage did something improve, reduce, or increase?\n• How long did it save? How much faster?\n• What was the scale — requests/sec, GB of data, number of endpoints?\n\nExamples:\n${b.metrics.map((e) => `• ${e}`).join("\n")}\n\nFor student projects, even estimates are better than nothing — if your app was used in class, mention how many students.`,
+			description: `Quantified bullets are 40% more likely to pass ATS filters and get recruiter attention. Add specific numbers to show the scale and impact of your work.\n\nAsk yourself for each bullet:\n• How many users/customers/records were affected?\n• What percentage did something improve, reduce, or increase?\n• How long did it save? How much faster?\n• What was the scale — ${b.scale}?\n\nExamples:\n${b.metrics.map((e) => `• ${e}`).join("\n")}\n\nFor student projects, even estimates are better than nothing — ${b.estimate}.`,
 			autoApplicable: false,
 			estimatedScoreGain: 4,
 			diff: {
@@ -1804,7 +1805,7 @@ async function getComprehensiveSuggestions(
 	needsTailoredSummary: boolean,
 	projectsToRewrite: Array<{ itemIndex: number; name: string; plain: string; rawHtml: string }>,
 	keywordsNotInBullets: string[] = [],
-	branch: BranchKey = "general",
+	profile: AtsProfile = { home: "general", focus: "general", skills: [] },
 ): Promise<z.infer<typeof comprehensiveSchema> | null> {
 	try {
 		const apiKey = env.OPENAI_API_KEY;
@@ -2026,7 +2027,7 @@ ${contextItems.map((c) => `[${c.sectionKey}][${c.itemIndex}] ${c.label}${c.bulle
 			messages: [
 				{
 					role: "system",
-					content: `You are an expert resume writer. Return ALL requested fixes in ONE structured response: bullet rewrites, date corrections, brevity edits, optional summaries, optional project description HTML — only for sections provided below.${jdAnalysis ? "" : branchPromptLine(branch)}
+					content: `You are an expert resume writer. Return ALL requested fixes in ONE structured response: bullet rewrites, date corrections, brevity edits, optional summaries, optional project description HTML — only for sections provided below.${jdAnalysis ? "" : branchPromptLine(profile)}
 
 ${promptParts.join("\n\n")}`,
 				},

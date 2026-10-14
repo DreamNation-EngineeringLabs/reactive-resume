@@ -7,7 +7,13 @@ export function AtsBranchNote({ metadata }: { metadata: ScoringResult["metadata"
 	if (metadata.jdProvided || !metadata.branch) return null;
 	return (
 		<p className="text-center text-[11px] text-muted-foreground leading-snug">
-			<Trans>Suggestions tailored for {metadata.branch}. Applying for IT roles? Paste the job description.</Trans>
+			{metadata.branchFrom === "skills" ? (
+				<Trans>
+					Suggestions follow the skills on your resume ({metadata.branch}). For a specific job, paste its description.
+				</Trans>
+			) : (
+				<Trans>Suggestions tailored for {metadata.branch}. Applying for IT roles? Paste the job description.</Trans>
+			)}
 		</p>
 	);
 }
