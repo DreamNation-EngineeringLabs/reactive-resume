@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { KeywordCurveChart } from "@/components/ats/keyword-curve-chart";
 import { AtsScoreHistoryChart } from "@/components/ats/score-history-chart";
-import { AtsSuggestionDescription } from "@/components/ats/suggestion-description";
+import { AtsBranchNote, AtsSuggestionDescription } from "@/components/ats/suggestion-description";
 import { flushResumeSync, useResumeStore } from "@/components/resume/store/resume";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -731,6 +731,7 @@ function ScoreOverview({ result }: { result: ScoringResult }) {
 			>
 				{result.metadata.jdProvided ? <Trans>Job Match</Trans> : <Trans>General ATS</Trans>}
 			</span>
+			<AtsBranchNote metadata={result.metadata} />
 		</div>
 	);
 }

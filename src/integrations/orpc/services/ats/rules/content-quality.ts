@@ -3,6 +3,7 @@ import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
+import { type BranchKey, branchPromptLine, namesSkill } from "../branches";
 import type { CategoryScore, RuleResult } from "../index";
 import { getAllBullets, getResumeSkills, SCORING_LLM_CONFIG, stripHtml } from "../index";
 
@@ -29,8 +30,6 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	const skills = getResumeSkills(data);
 
 	// CQ-1: Bullet specificity — check for metrics, tech names, specific outcomes
-	const technicalTermRegex =
-		/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|rest|graphql|machine learning|deep learning|tensorflow|pytorch|spring|django|flask|express|mongodb|postgresql|redis|git|ci\/cd|agile|scrum)\b/i;
 	const metricRegex =
 		/\d+[%x]|\$[\d,.]+[KMB]?|\d+\s*(users|customers|ms|seconds|hours|requests|endpoints|records|transactions)/i;
 	const vagueRegex =
@@ -40,7 +39,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	let vagueBullets = 0;
 	for (const b of bullets) {
 		const hasMetric = metricRegex.test(b.text);
-		const hasTech = technicalTermRegex.test(b.text);
+		const hasTech = namesSkill(b.text);
 		const isVague = vagueRegex.test(b.text) || b.text.split(/\s+/).length < 7;
 		if (isVague) vagueBullets++;
 		else if (hasMetric || hasTech) specificBullets++;
@@ -77,7 +76,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	const summaryLower = summary.toLowerCase();
 	const boilerplateCount = boilerplatePhrases.filter((p) => summaryLower.includes(p)).length;
 	const summaryWords = summary.split(/\s+/).filter(Boolean).length;
-	const summaryHasTech = technicalTermRegex.test(summary);
+	const summaryHasTech = namesSkill(summary);
 	const summaryHasMetric = metricRegex.test(summary);
 
 	let summaryScore = 0;
@@ -99,7 +98,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
 	for (const project of projects.slice(0, 3)) {
 		const desc = stripHtml("description" in project ? (project as { description: string }).description : "").trim();
 		const words = desc.split(/\s+/).filter(Boolean).length;
-		const hasTech = technicalTermRegex.test(desc);
+		const hasTech = namesSkill(desc);
 		if (words >= 20 && hasTech) projectScore += 1;
 		else if (words >= 10) projectScore += 0.5;
 		// "a simple project" or similar → 0
@@ -158,7 +157,7 @@ function heuristicContentQuality(data: ResumeData): z.infer<typeof contentQualit
  * LLM-powered content quality scoring. Used when no job description is provided.
  * Evaluates the inherent quality of the resume content regardless of target role.
  */
-export async function scoreContentQuality(data: ResumeData): Promise<CategoryScore> {
+export async function scoreContentQuality(data: ResumeData, branch: BranchKey = "general"): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
 
 	const bullets = getAllBullets(data);
@@ -199,7 +198,7 @@ export async function scoreContentQuality(data: ResumeData): Promise<CategorySco
 Your job is to score the CONTENT QUALITY — not the format, but the actual substance.
 Be STRICT. Generic boilerplate summaries, vague bullets ("developed a website", "a simple project"),
 and placeholder content should score 0. Only reward specific, verifiable, technical, quantified content.
-A recent graduate with 1 vague bullet and a boilerplate summary should score 1-3/10 total.`,
+A recent graduate with 1 vague bullet and a boilerplate summary should score 1-3/10 total.${branchPromptLine(branch)}`,
 				},
 				{
 					role: "user",

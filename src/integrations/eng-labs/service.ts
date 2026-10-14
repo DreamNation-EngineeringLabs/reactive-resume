@@ -674,6 +674,35 @@ export async function getEngLabsUserByEmail(
 }
 
 /**
+ * Name + code of every unit a learner sits in and every unit above it, nearest first
+ * (class → year → department → stream → root). Students may sit on any level, so the walk goes all the way up.
+ */
+export async function getLearnerUnitNames(email: string): Promise<string[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
+	const { rows } = await pool.query<{ label: string }>(
+		`WITH RECURSIVE learner AS (
+		   SELECT id, enrollment_unit_id FROM users
+		   WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND type = 'LEARNER'
+		 ),
+		 chain AS (
+		   SELECT ou.id, ou.parent_unit_id, ou.name, ou.code, 0 AS depth
+		   FROM organisation_units ou
+		   WHERE ou.id IN (SELECT enrollment_unit_id FROM learner)
+		      OR ou.id IN (SELECT um.unit_id FROM user_mappings um JOIN learner l ON um.user_id = l.id)
+		   UNION ALL
+		   SELECT p.id, p.parent_unit_id, p.name, p.code, c.depth + 1
+		   FROM organisation_units p JOIN chain c ON p.id = c.parent_unit_id
+		   WHERE c.depth < 8
+		 )
+		 SELECT CONCAT_WS(' ', name, code) AS label FROM chain ORDER BY depth`,
+		[email],
+	);
+	return rows.map((r) => r.label);
+}
+
+/**
  * Get a student's enrollment context: their enrolled org unit + its parent (package-level) unit.
  */
 export async function getStudentEnrollmentInfo(engLabsUserId: string): Promise<{

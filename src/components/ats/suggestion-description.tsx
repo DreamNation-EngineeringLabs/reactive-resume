@@ -1,5 +1,16 @@
-import type { Suggestion } from "@/integrations/orpc/services/ats";
+import { Trans } from "@lingui/react/macro";
+import type { ScoringResult, Suggestion } from "@/integrations/orpc/services/ats";
 import { cn } from "@/utils/style";
+
+/** Says which department the general (no job description) suggestions were tailored to. */
+export function AtsBranchNote({ metadata }: { metadata: ScoringResult["metadata"] }) {
+	if (metadata.jdProvided || !metadata.branch) return null;
+	return (
+		<p className="text-center text-[11px] text-muted-foreground leading-snug">
+			<Trans>Suggestions tailored for {metadata.branch}. Applying for IT roles? Paste the job description.</Trans>
+		</p>
+	);
+}
 
 export function AtsSuggestionDescription({ suggestion: s, className }: { suggestion: Suggestion; className?: string }) {
 	const hasStructure = (s.bodySections?.length ?? 0) > 0;

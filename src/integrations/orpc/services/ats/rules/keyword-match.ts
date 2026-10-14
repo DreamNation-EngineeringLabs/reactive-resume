@@ -1,5 +1,6 @@
 import skillsTaxonomy from "@/data/skills-taxonomy.json";
 import type { ResumeData } from "@/schema/resume/data";
+import { BRANCHES, type BranchKey, branchTerms } from "../branches";
 import type { CategoryScore, RuleResult } from "../index";
 import { getAllBullets, getResumeSkills, stripHtml } from "../index";
 
@@ -23,6 +24,13 @@ function buildAliasMap(): Map<string, string[]> {
 }
 
 const aliasMap = buildAliasMap();
+
+/** Unique skill terms in the text: the software taxonomy (matched as before) plus every branch list. */
+function countSkillTerms(text: string): number {
+	const software = new Set<string>();
+	for (const [skill, forms] of aliasMap) if (keywordFoundInText(skill, text)) software.add(forms[0]);
+	return software.size + branchTerms.filter((re) => re.test(text)).length;
+}
 
 /**
  * Normalize text for matching: lowercase, replace non-alphanumeric/special chars with spaces.
@@ -97,6 +105,7 @@ export async function scoreKeywordMatch(
 	data: ResumeData,
 	jdKeywords: string[],
 	softKeywords: string[] = [],
+	branch: BranchKey = "general",
 ): Promise<CategoryScore> {
 	const details: RuleResult[] = [];
 
@@ -125,18 +134,9 @@ export async function scoreKeywordMatch(
 	}
 
 	if (jdKeywords.length === 0 && softKeywords.length === 0) {
-		// No JD provided — score against general skills taxonomy for industry density
-		const allSkillKeys = Array.from(aliasMap.keys());
-		const matchedSkills = allSkillKeys.filter((skill) => keywordFoundInText(skill, allContent));
-
-		// Use a unique set of skills (since aliasMap has multiple entries per skill)
-		const uniqueMatched = new Set<string>();
-		for (const skill of matchedSkills) {
-			const aliases = aliasMap.get(skill);
-			if (aliases) uniqueMatched.add(aliases[0]); // Add the primary alias
-		}
-
-		const count = uniqueMatched.size;
+		// No JD provided — count skill terms of every field for industry density
+		const count = countSkillTerms(allContent);
+		const b = BRANCHES[branch];
 		// Scoring curve: requires minimum 5 recognizable skills to earn any points.
 		// Uses a sub-linear power curve (exponent 0.9) so early skills are worth less.
 		// Explicit thresholds: 0-4→0pts | 5→1pt | 8→6pts | 12→12pts | 17→18pts | 21→22pts | 25+→25pts
@@ -161,11 +161,11 @@ export async function scoreKeywordMatch(
 			maxScore: MAX_SCORE,
 			details:
 				count < 5
-					? `We only picked up ${count} familiar technical term${count !== 1 ? "s" : ""} across your whole resume (headline, summary, bullets, and skills list). That is very low — scores 0/25 below 5 terms. Add a Skills section with languages, frameworks, and tools, and repeat important ones in your experience bullets.${curveNote}`
+					? `We only picked up ${count} familiar technical term${count !== 1 ? "s" : ""} across your whole resume (headline, summary, bullets, and skills list). That is very low — scores 0/25 below 5 terms. Add a Skills section with ${b.hint}, and repeat important ones in your experience bullets.${curveNote}`
 					: count < 8
 						? `We picked up about ${count} familiar technical terms resume-wide — still low (${score}/25). Strong resumes usually show 15–25 specific tools and technologies. Add more in your Skills section and in project or work bullets.${curveNote}`
 						: count < 12
-							? `About ${count} familiar technical terms detected — below average (${score}/25). Add depth: frameworks (e.g. React, Spring), databases (PostgreSQL, MongoDB), cloud (AWS, GCP), and everyday tools (Docker, Git, CI/CD).${curveNote}`
+							? `About ${count} familiar technical terms detected — below average (${score}/25). ${b.depth}${curveNote}`
 							: count < 17
 								? `About ${count} familiar technical terms (${score}/25) — decent. Aim for 20–25 to stand out: add domain tools, certifications, or stack details in bullets.${curveNote}`
 								: `About ${count} familiar technical terms (${score}/25) — strong coverage for a general ATS check.${curveNote}`,
@@ -256,15 +256,7 @@ export function getIndustryTaxonomyMatchCount(data: ResumeData): number {
 	const headlineText = data.basics.headline;
 	const allContent = [...resumeSkills, ...bullets.map((b) => b.text), summaryText, headlineText].join(" ");
 	if (allContent.trim().length < 50) return 0;
-
-	const allSkillKeys = Array.from(aliasMap.keys());
-	const matchedSkills = allSkillKeys.filter((skill) => keywordFoundInText(skill, allContent));
-	const uniqueMatched = new Set<string>();
-	for (const skill of matchedSkills) {
-		const aliases = aliasMap.get(skill);
-		if (aliases) uniqueMatched.add(aliases[0]);
-	}
-	return uniqueMatched.size;
+	return countSkillTerms(allContent);
 }
 
 /** JD keywords that appear somewhere on the resume but not in experience/project/volunteer bullet text (KW-2 gap). */

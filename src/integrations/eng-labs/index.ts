@@ -11,6 +11,7 @@ export {
 	getInstructorPackages,
 	getInstructorSections,
 	getInstructorsForUnits,
+	getLearnerUnitNames,
 	getMenteeStudents,
 	getOfficerOrgUnitIds,
 	getOfficerSections,
