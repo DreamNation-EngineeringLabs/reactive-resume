@@ -9,7 +9,7 @@
  * - Submit resume for review (student action)
  */
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@/integrations/drizzle";
 import { db } from "@/integrations/drizzle/client";
@@ -77,6 +77,29 @@ async function getCommentCountsByResumeIds(resumeIds: string[]) {
 		counts.set(c.resumeId, (counts.get(c.resumeId) ?? 0) + 1);
 	}
 	return counts;
+}
+
+/** The reviewer's own top-level comments per resume, by status. Replies are left out: they stay OPEN forever. */
+async function getMyCommentStatsByResumeIds(resumeIds: string[], authorId: string | undefined) {
+	const stats = new Map<string, { OPEN: number; ADDRESSED: number; RESOLVED: number }>();
+	if (resumeIds.length === 0 || !authorId) return stats;
+	const comments = await db
+		.select({ resumeId: schema.resumeComment.resumeId, status: schema.resumeComment.status })
+		.from(schema.resumeComment)
+		.where(
+			and(
+				inArray(schema.resumeComment.resumeId, resumeIds),
+				eq(schema.resumeComment.authorId, authorId),
+				isNull(schema.resumeComment.parentId),
+			),
+		);
+
+	for (const c of comments) {
+		const s = stats.get(c.resumeId) ?? { OPEN: 0, ADDRESSED: 0, RESOLVED: 0 };
+		if (c.status in s) s[c.status as keyof typeof s]++;
+		stats.set(c.resumeId, s);
+	}
+	return stats;
 }
 
 async function getLatestEvaluationsByResumeIds(resumeIds: string[]) {
@@ -644,10 +667,11 @@ export const sectionsDashboard = protectedProcedure
 			const resumeIds = resumes.map((r) => r.id);
 
 			// 9. Get feedback data + submission status
-			const [commentCounts, latestScores, submissionStatus] = await Promise.all([
+			const [commentCounts, latestScores, submissionStatus, myComments] = await Promise.all([
 				getCommentCountsByResumeIds(resumeIds),
 				getLatestEvaluationsByResumeIds(resumeIds),
 				getSubmissionStatusByResumeIds(resumeIds),
+				getMyCommentStatsByResumeIds(resumeIds, engLabsUser?.id),
 			]);
 
 			// 10. Build per-user resume data
@@ -689,6 +713,7 @@ export const sectionsDashboard = protectedProcedure
 							updatedAt: r.updatedAt,
 							evaluationScore: score,
 							commentCount: comments,
+							myComments: myComments.get(r.id) ?? null,
 							isSubmitted,
 							status,
 							reviewStatus: (r as any).reviewStatus ?? "DRAFT",
@@ -835,6 +860,8 @@ export const sectionsDashboard = protectedProcedure
 				// Section-level stats (CLASS leaf nodes)
 				sections: unitStats,
 				students,
+				/** eng-labs id of the viewer; comments store it as authorId ("my comments" on the Overview). */
+				reviewerId: engLabsUser?.id ?? null,
 				aggregateStats: {
 					totalStudents: students.length,
 					totalResumes: allResumes.length,

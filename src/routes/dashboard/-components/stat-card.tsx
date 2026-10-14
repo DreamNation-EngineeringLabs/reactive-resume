@@ -115,13 +115,24 @@ type RateCardProps = {
 	iconBg: string;
 	iconColor: string;
 	label: string;
-	value: number;
+	/** null = nothing to rate yet: shows a grey dash. */
+	value: number | null;
 	tooltip?: string;
+	/** Small line under the bar, e.g. the counts behind the rate. */
+	detail?: string;
 };
 
-export function RateCard({ icon, iconBg, iconColor, label, value, tooltip }: RateCardProps) {
-	const barColor = value > 75 ? "bg-emerald-500" : value >= 25 ? "bg-amber-500" : "bg-rose-500";
-	const textColor = value > 75 ? "text-emerald-600" : value >= 25 ? "text-amber-600" : "text-rose-600";
+export function RateCard({ icon, iconBg, iconColor, label, value, tooltip, detail }: RateCardProps) {
+	const rate = value ?? 0;
+	const barColor = rate > 75 ? "bg-emerald-500" : rate >= 25 ? "bg-amber-500" : "bg-rose-500";
+	const textColor =
+		value === null
+			? "text-muted-foreground/50"
+			: rate > 75
+				? "text-emerald-600"
+				: rate >= 25
+					? "text-amber-600"
+					: "text-rose-600";
 
 	return (
 		<div className="relative rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md">
@@ -130,13 +141,14 @@ export function RateCard({ icon, iconBg, iconColor, label, value, tooltip }: Rat
 				{tooltip && <InfoTooltip text={tooltip} />}
 			</div>
 			<p className="font-medium text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
-			<p className={cn("mt-0.5 font-bold text-2xl", textColor)}>{value.toFixed(1)}%</p>
+			<p className={cn("mt-0.5 font-bold text-2xl", textColor)}>{value === null ? "—" : `${rate.toFixed(1)}%`}</p>
 			<div className="mt-3 h-1 overflow-hidden rounded-full bg-muted">
 				<div
 					className={cn("h-full rounded-full transition-all duration-200", barColor)}
-					style={{ width: `${value}%` }}
+					style={{ width: `${rate}%` }}
 				/>
 			</div>
+			{detail && <p className="mt-2 text-[11px] text-muted-foreground">{detail}</p>}
 		</div>
 	);
 }

@@ -35,7 +35,7 @@ type InboxViewProps = {
 	onReview?: (resumeId: string, engLabsStudentId: string) => void;
 };
 
-function timeAgo(date: Date): string {
+export function timeAgo(date: Date): string {
 	const now = Date.now();
 	const diff = now - new Date(date).getTime();
 	const minutes = Math.floor(diff / 60_000);

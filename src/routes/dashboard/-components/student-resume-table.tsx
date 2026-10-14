@@ -10,6 +10,8 @@ type ResumeEntry = {
 	updatedAt: Date;
 	evaluationScore: number | null;
 	commentCount: number;
+	/** The viewing reviewer's own top-level comments, by status (Overview → My reviews). */
+	myComments?: { OPEN: number; ADDRESSED: number; RESOLVED: number } | null;
 	isSubmitted: boolean;
 	status: "not_reviewed" | "submitted" | "evaluated" | "has_comments";
 	reviewStatus: string | null;

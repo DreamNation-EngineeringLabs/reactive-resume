@@ -10,6 +10,7 @@ import {
 	HourglassIcon,
 	ListChecksIcon,
 	MagnifyingGlassIcon,
+	SealCheckIcon,
 	TargetIcon,
 	TrayIcon,
 	UsersIcon,
@@ -37,6 +38,7 @@ import { POSectionCardActions } from "./po-section-card-actions";
 import { POSectionFeedbackBanner } from "./po-section-feedback-banner";
 import { POSectionReviewDialog } from "./po-section-review-dialog";
 import { RecentActivity } from "./recent-activity";
+import { ReviewTracker, reviewRate } from "./review-tracker";
 import { SectionIntelligence } from "./section-intelligence";
 import { DetailStatCard, RateCard, ScoreCard, StatCard } from "./stat-card";
 import { StudentDetailPanel } from "./student-detail-panel";
@@ -160,6 +162,21 @@ export function SectionMetricsView({
 	// Students are already filtered server-side via activeUnitId
 	const filteredStudents = dashboard?.students ?? [];
 
+	const openReview = (resumeId: string, engLabsStudentId: string) => {
+		navigate({
+			to: "/dashboard/review/$resumeId",
+			params: { resumeId },
+			search: {
+				engLabsStudentId,
+				tenantId,
+				packageId: filter.packageId,
+				unitType: filter.unitType,
+				unitId: filter.unitId,
+				scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
+			},
+		});
+	};
+
 	// ── Section drill-down derived state ─────────────────────────────────────
 	const activeSection = useMemo(
 		() => (sectionId ? dashboard?.sections.find((s) => s.id === sectionId) : undefined),
@@ -281,6 +298,7 @@ export function SectionMetricsView({
 	});
 
 	const hasStudents = dashboard.students.length > 0;
+	const review = reviewRate(filteredStudents, scope);
 
 	return (
 		<div className="space-y-6">
@@ -323,7 +341,7 @@ export function SectionMetricsView({
 					)}
 
 					{/* ── Key Metrics ── */}
-					<div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+					<div className={cn("grid gap-4 md:grid-cols-3", scope === "faculty" ? "lg:grid-cols-6" : "lg:grid-cols-7")}>
 						<StatCard
 							icon={<UsersIcon weight="duotone" className="size-5" />}
 							iconBg="bg-violet-50"
@@ -358,6 +376,15 @@ export function SectionMetricsView({
 							label={t`Evaluation Rate`}
 							value={detailedStats.withResumes > 0 ? (detailedStats.evaluated / detailedStats.withResumes) * 100 : 0}
 							tooltip="Percentage of resumes evaluated from the total submitted resumes"
+						/>
+						<RateCard
+							icon={<SealCheckIcon weight="duotone" className="size-5" />}
+							iconBg="bg-indigo-50"
+							iconColor="text-indigo-600"
+							label={t`Review rate`}
+							value={review.total > 0 ? (review.reviewed / review.total) * 100 : null}
+							detail={review.total > 0 ? t`${review.reviewed} of ${review.total} reviewed` : t`Nothing sent to you yet`}
+							tooltip={t`Resumes sent to you for review that already have your decision: sent back, verified or approved. Counts resumes, from their review status.`}
 						/>
 						<ScoreCard
 							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
@@ -444,9 +471,15 @@ export function SectionMetricsView({
 
 					{/* Recent Activity */}
 					{dashboard?.recentActivity && (
-						<RecentActivity
-							recentEvaluations={dashboard.recentActivity.recentEvaluations}
-							recentComments={dashboard.recentActivity.recentComments}
+						<RecentActivity recentEvaluations={dashboard.recentActivity.recentEvaluations} />
+					)}
+
+					{hasStudents && (
+						<ReviewTracker
+							students={filteredStudents}
+							scope={scope}
+							reviewerId={dashboard.reviewerId}
+							onReview={openReview}
 						/>
 					)}
 				</div>
@@ -472,20 +505,7 @@ export function SectionMetricsView({
 									: r.reviewStatus === "SUBMITTED_TO_PO" || r.reviewStatus === "RESUBMITTED_TO_PO",
 							),
 						}))}
-					onReview={(resumeId, engLabsStudentId) => {
-						navigate({
-							to: "/dashboard/review/$resumeId",
-							params: { resumeId },
-							search: {
-								engLabsStudentId,
-								tenantId,
-								packageId: filter.packageId,
-								unitType: filter.unitType,
-								unitId: filter.unitId,
-								scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
-							},
-						});
-					}}
+					onReview={openReview}
 				/>
 			)}
 
@@ -822,20 +842,7 @@ export function SectionMetricsView({
 					) : (
 						<StudentResumeTable
 							students={filteredStudents}
-							onReview={(resumeId, engLabsStudentId) => {
-								navigate({
-									to: "/dashboard/review/$resumeId",
-									params: { resumeId },
-									search: {
-										engLabsStudentId,
-										tenantId,
-										packageId: filter.packageId,
-										unitType: filter.unitType,
-										unitId: filter.unitId,
-										scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
-									},
-								});
-							}}
+							onReview={openReview}
 							onStudentClick={(student) => setSelectedStudent(student)}
 						/>
 					)}
