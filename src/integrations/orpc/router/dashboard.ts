@@ -341,7 +341,7 @@ export const sectionsDashboard = protectedProcedure
 		z.object({
 			sectionIds: z.array(z.string()).describe("Organisation unit IDs from SSO JWT (fallback)"),
 			tenantId: z.string().describe("Eng-labs tenant ID"),
-			activeUnitId: z.string().optional().describe("Selected org unit ID for filtering students"),
+			activeUnitId: z.string().optional().describe("Selected org unit ID(s) for filtering students, comma-separated"),
 			scope: z.enum(["faculty", "po"]).describe("Determines section scoping"),
 		}),
 	)
@@ -519,13 +519,13 @@ export const sectionsDashboard = protectedProcedure
 			//     This matches department-only and class-only enrollments for default overview and filters.
 			let activeDescendantSet: Set<string> | null = null;
 			if (activeUnitId) {
+				const activeUnitIds = activeUnitId.split(",");
 				if (tenantId && tenantId !== "default") {
-					activeDescendantSet = new Set(await getDescendantOrgUnitIds([activeUnitId], tenantId));
+					activeDescendantSet = new Set(await getDescendantOrgUnitIds(activeUnitIds, tenantId));
 				} else {
-					const selectedUnit = scopedOrgUnits.find((u) => u.id === activeUnitId);
-					if (selectedUnit) {
+					const queue = activeUnitIds.filter((id) => scopedOrgUnits.some((u) => u.id === id));
+					if (queue.length > 0) {
 						const childIds = new Set<string>();
-						const queue = [activeUnitId];
 						while (queue.length > 0) {
 							const current = queue.shift()!;
 							childIds.add(current);

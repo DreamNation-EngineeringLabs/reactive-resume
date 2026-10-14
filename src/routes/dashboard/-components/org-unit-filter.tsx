@@ -1,8 +1,9 @@
 /**
  * OrgUnitFilter — [Batch ▾] [Branch ▾] [Section ▾] in a single row.
  *
- * Batch is the placement package. Branch (department) and Section (class) both set `unitId`, and the
- * server shows that unit's subtree; Section lists only the chosen branch's classes.
+ * Batch is the admission year of the tenant's YEAR units ("Civil Engineering 2024" → 2024); a tenant without
+ * them falls back to its placement packages. Branch is a department, Section a class.
+ * The choice becomes `unitId`: one unit, or a batch's YEAR units comma-separated; the server shows their subtrees.
  * For instructor scope the server sends only their assigned units (and those units' parents).
  */
 
@@ -33,31 +34,51 @@ type OrgUnitFilterProps = {
 	onChange: (next: OrgUnitFilterValue) => void;
 };
 
-// ponytail: eng-labs' unit types for a branch and a section (VNR, demo tenant). A tenant that names its
-// levels differently gets the Batch filter only; read the levels from unit_schemas if one shows up.
+// ponytail: eng-labs' level names (VNR: STREAM > DEPARTMENT > YEAR > CLASS). A tenant that names its levels
+// differently gets packages only; read the levels from unit_schemas if one shows up.
 const BRANCH = "DEPARTMENT";
+const YEAR = "YEAR";
 const SECTION = "CLASS";
+
+const yearOf = (unit?: FilterOrgUnit) => unit?.name.match(/\b(?:19|20)\d{2}\b/g)?.at(-1);
 
 const dropdownClass =
 	"h-8 min-w-[160px] rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-50";
 
 export function OrgUnitFilter({ packages, allOrgUnits, value, onChange }: OrgUnitFilterProps) {
-	const { branchId, branches, sections } = useMemo(() => {
+	const f = useMemo(() => {
 		const byId = new Map(allOrgUnits.map((u) => [u.id, u]));
-		const branchOf = (unit?: FilterOrgUnit) => {
-			for (let u = unit; u; u = byId.get(u.parentId ?? "")) if (u.type === BRANCH) return u.id;
+		const up = (unit: FilterOrgUnit | undefined, type: string) => {
+			for (let u = unit; u; u = byId.get(u.parentId ?? "")) if (u.type === type) return u;
 		};
-		const options = (type: string) => allOrgUnits.filter((u) => u.type === type);
-		const branchId = branchOf(byId.get(value.unitId ?? ""));
+		const ofType = (type: string) => allOrgUnits.filter((u) => u.type === type);
+		const years = ofType(YEAR);
+		const selected = (value.unitId?.split(",") ?? []).flatMap((id) => byId.get(id) ?? []);
+		const branchIds = new Set(selected.map((u) => up(u, BRANCH)?.id));
+		const branch = branchIds.size === 1 ? [...branchIds][0] : undefined;
+		const batch = yearOf(up(selected[0], YEAR));
 		return {
-			branchId,
-			branches: options(BRANCH),
-			sections: options(SECTION).filter((u) => !branchId || branchOf(u) === branchId),
+			up,
+			years,
+			branch,
+			batch,
+			section: selected.length === 1 && selected[0].type === SECTION ? selected[0].id : undefined,
+			batches: [...new Set(years.flatMap((y) => yearOf(y) ?? []))].sort().reverse(),
+			branches: ofType(BRANCH),
+			sections: ofType(SECTION).filter(
+				(c) => (!branch || up(c, BRANCH)?.id === branch) && (!batch || yearOf(up(c, YEAR)) === batch),
+			),
 		};
 	}, [allOrgUnits, value.unitId]);
 
-	const pickUnit = (unitId: string | undefined, unitType: string) =>
-		onChange({ packageId: value.packageId, unitId, unitType: unitId && unitType });
+	/** A section, else the batch's YEAR units (within the branch), else the branch. */
+	const pick = (batch?: string, branch?: string, section?: string) => {
+		const years = f.years.filter((y) => batch && yearOf(y) === batch && (!branch || f.up(y, BRANCH)?.id === branch));
+		onChange({
+			packageId: value.packageId,
+			unitId: section ?? (years.length > 0 ? years.map((y) => y.id).join(",") : branch),
+		});
+	};
 
 	const picker = (
 		label: string,
@@ -86,11 +107,17 @@ export function OrgUnitFilter({ packages, allOrgUnits, value, onChange }: OrgUni
 				<FunnelSimpleIcon weight="duotone" className="size-3.5" />
 				<span className="font-medium">{t`Filters`}</span>
 			</div>
-			{picker(t`Batch`, packages, value.packageId, t`All batches`, (id) => onChange({ packageId: id }))}
-			{picker(t`Branch`, branches, branchId, t`All branches`, (id) => pickUnit(id, BRANCH))}
-			{picker(t`Section`, sections, value.unitType === SECTION ? value.unitId : undefined, t`All sections`, (id) =>
-				id ? pickUnit(id, SECTION) : pickUnit(branchId, BRANCH),
-			)}
+			{f.batches.length > 0
+				? picker(
+						t`Batch`,
+						f.batches.map((y) => ({ id: y, name: y })),
+						f.batch,
+						t`All batches`,
+						(y) => pick(y, f.branch),
+					)
+				: picker(t`Batch`, packages, value.packageId, t`All batches`, (id) => onChange({ packageId: id }))}
+			{picker(t`Branch`, f.branches, f.branch, t`All branches`, (id) => pick(f.batch, id))}
+			{picker(t`Section`, f.sections, f.section, t`All sections`, (id) => pick(f.batch, f.branch, id))}
 		</div>
 	);
 }
