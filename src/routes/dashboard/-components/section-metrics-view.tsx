@@ -1,21 +1,16 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
 	BuildingsIcon,
 	ChartBarIcon,
 	CheckCircleIcon,
-	FileTextIcon,
 	FunnelSimpleIcon,
-	HourglassIcon,
 	ListChecksIcon,
 	MagnifyingGlassIcon,
-	SealCheckIcon,
-	TargetIcon,
 	TrayIcon,
 	UsersIcon,
 	WarningIcon,
-	XCircleIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -24,6 +19,7 @@ import { AdminAtsStats } from "@/components/ats/admin-ats-stats";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Stat, StatStrip } from "@/components/ui/stat";
 import { orpc } from "@/integrations/orpc/client";
 import { dlog } from "@/utils/debug";
 import { cn } from "@/utils/style";
@@ -34,13 +30,13 @@ import { DashboardHeader } from "./header";
 import { InboxView } from "./inbox-view";
 import type { OrgUnitFilterValue } from "./org-unit-filter";
 import { OrgUnitFilter } from "./org-unit-filter";
+import { ResumeStatusPanel, ScoreSpreadPanel } from "./overview-panels";
 import { POSectionCardActions } from "./po-section-card-actions";
 import { POSectionFeedbackBanner } from "./po-section-feedback-banner";
 import { POSectionReviewDialog } from "./po-section-review-dialog";
 import { RecentActivity } from "./recent-activity";
 import { ReviewTracker, reviewRate } from "./review-tracker";
 import { SectionIntelligence } from "./section-intelligence";
-import { DetailStatCard, RateCard, ScoreCard, StatCard } from "./stat-card";
 import { StudentDetailPanel } from "./student-detail-panel";
 import type { StudentWithResumes } from "./student-resume-table";
 import { StudentResumeTable } from "./student-resume-table";
@@ -299,10 +295,32 @@ export function SectionMetricsView({
 
 	const hasStudents = dashboard.students.length > 0;
 	const review = reviewRate(filteredStudents, scope);
+	const waiting = review.total - review.reviewed;
+	const evaluationRate = detailedStats.withResumes > 0 ? (detailedStats.evaluated / detailedStats.withResumes) * 100 : 0;
+	const overviewNote =
+		waiting > 0
+			? plural(waiting, { one: "# resume is waiting for your review.", other: "# resumes are waiting for your review." })
+			: review.total > 0
+				? t`You're all caught up.`
+				: t`Nothing has been sent to you for review yet.`;
 
 	return (
 		<div className="space-y-6">
-			<DashboardHeader icon={header.icon} title={header.title}>
+			<DashboardHeader
+				icon={header.icon}
+				title={header.title}
+				description={activeTab === "overview" ? overviewNote : undefined}
+			>
+				{activeTab === "overview" && waiting > 0 && (
+					<Button
+						type="button"
+						className="rounded-xl"
+						onClick={() => navigate({ search: (prev: any) => ({ ...prev, tab: "inbox" }) })}
+					>
+						<TrayIcon weight="duotone" className="size-4" />
+						{t`Open inbox`}
+					</Button>
+				)}
 				{activeTab === "checklists" && (
 					<Button type="button" onClick={() => setShowChecklistCreator(true)} className="rounded-xl">
 						<ListChecksIcon weight="duotone" className="size-4" />
@@ -339,86 +357,49 @@ export function SectionMetricsView({
 						</div>
 					)}
 
-					{/* ── Key Metrics ── */}
-					<div className={cn("grid gap-4 md:grid-cols-2", scope === "faculty" ? "lg:grid-cols-4" : "lg:grid-cols-5")}>
-						<StatCard
-							icon={<UsersIcon weight="duotone" className="size-5" />}
-							iconBg="bg-violet-50"
-							iconColor="text-violet-600"
-							label={t`Total Students`}
+					{/* ── Key metrics ── */}
+					<StatStrip>
+						<Stat
+							label={t`Total students`}
 							value={stats.totalStudents}
 							tooltip="Learners in your placement scope who also have a resume builder (Polymath) account — eng-labs and resume DB joined by email."
 						/>
-						<RateCard
-							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
-							iconBg="bg-emerald-50"
-							iconColor="text-emerald-600"
-							label={t`Evaluation Rate`}
-							value={detailedStats.withResumes > 0 ? (detailedStats.evaluated / detailedStats.withResumes) * 100 : 0}
+						<Stat
+							label={t`Evaluation rate`}
+							value={`${Math.round(evaluationRate)}%`}
+							progress={evaluationRate}
+							hint={t`${detailedStats.evaluated} of ${detailedStats.withResumes} evaluated`}
 							tooltip="Percentage of resumes evaluated from the total submitted resumes"
 						/>
-						<RateCard
-							icon={<SealCheckIcon weight="duotone" className="size-5" />}
-							iconBg="bg-indigo-50"
-							iconColor="text-indigo-600"
+						<Stat
 							label={t`Review rate`}
-							value={review.total > 0 ? (review.reviewed / review.total) * 100 : null}
-							detail={review.total > 0 ? t`${review.reviewed} of ${review.total} reviewed` : t`Nothing sent to you yet`}
+							value={review.total > 0 ? `${Math.round((review.reviewed / review.total) * 100)}%` : null}
+							progress={review.total > 0 ? (review.reviewed / review.total) * 100 : null}
+							hint={review.total > 0 ? t`${review.reviewed} of ${review.total} reviewed` : t`Nothing sent to you yet`}
 							tooltip={t`Resumes sent to you for review that already have your decision: sent back, verified or approved. Counts resumes, from their review status.`}
 						/>
-						<ScoreCard
-							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
-							iconBg="bg-amber-50"
-							iconColor="text-amber-600"
-							label={t`Avg Score`}
-							value={stats.averageScore}
+						<Stat
+							label={t`Average score`}
+							value={
+								stats.averageScore === null ? null : (
+									<>
+										{stats.averageScore.toFixed(1)}
+										<span className="ml-0.5 font-medium text-base text-muted-foreground">/5</span>
+									</>
+								)
+							}
+							hint={stats.averageScore === null ? t`No evaluations yet` : undefined}
 						/>
 						{/* ats.adminStats is tenant-wide by design (it only rejects learners), so this
 						    count is not confined to a faculty member's own students. Restricted to
 						    PO/admin for the same reason AtsImprovementsSection below is. */}
 						{scope !== "faculty" && <AtsChecksCard />}
-					</div>
+					</StatStrip>
 
-					{/* ── Breakdown + Charts ── */}
-					<div className="grid gap-6 lg:grid-cols-3">
-						{/* Left: compact breakdown counters */}
-						<div className="flex flex-col gap-3">
-							<h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Submission Breakdown`}</h4>
-							<DetailStatCard
-								icon={<FileTextIcon weight="duotone" className="size-5 text-emerald-600" />}
-								iconBg="bg-emerald-50"
-								value={detailedStats.withResumes}
-								label={t`With Resumes`}
-							/>
-							<DetailStatCard
-								icon={<XCircleIcon weight="duotone" className="size-5 text-rose-500" />}
-								iconBg="bg-rose-50"
-								value={detailedStats.noResumes}
-								label={t`No Resume Yet`}
-							/>
-							<DetailStatCard
-								icon={<HourglassIcon weight="duotone" className="size-5 text-primary" />}
-								iconBg="bg-primary/10"
-								value={detailedStats.pendingReview}
-								label={t`Pending Review`}
-							/>
-							<DetailStatCard
-								icon={<CheckCircleIcon weight="duotone" className="size-5 text-emerald-600" />}
-								iconBg="bg-emerald-50"
-								value={detailedStats.evaluated}
-								label={t`Verified / Evaluated`}
-							/>
-						</div>
-
-						{/* Center: Donut chart */}
-						<SubmissionDonutChart
-							submitted={detailedStats.withResumes}
-							notSubmitted={detailedStats.noResumes}
-							total={stats.totalStudents}
-						/>
-
-						{/* Right: Score distribution */}
-						<ScoreDistributionChart students={filteredStudents} evaluatedCount={detailedStats.evaluated} />
+					{/* ── Where resumes stand + scores ── */}
+					<div className="grid gap-6 lg:grid-cols-2">
+						<ResumeStatusPanel students={filteredStudents} />
+						<ScoreSpreadPanel students={filteredStudents} />
 					</div>
 
 					{/* Empty state */}
@@ -874,184 +855,6 @@ export function SectionMetricsView({
 }
 
 // ---------------------------------------------------------------------------
-// Submission Donut Chart (SVG)
-// ---------------------------------------------------------------------------
-
-function SubmissionDonutChart({
-	submitted,
-	notSubmitted,
-	total,
-}: {
-	submitted: number;
-	notSubmitted: number;
-	total: number;
-}) {
-	const [hovered, setHovered] = useState<"submitted" | "notSubmitted" | null>(null);
-
-	if (total === 0) {
-		return (
-			<div className={cn(uiSurface.card, "flex flex-col items-center justify-center p-6")}>
-				<h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Resume Submission</h4>
-				<p className="mt-6 text-muted-foreground text-sm">No data available yet</p>
-			</div>
-		);
-	}
-
-	const submittedPct = (submitted / total) * 100;
-	const notSubmittedPct = (notSubmitted / total) * 100;
-
-	const R = 64;
-	const STROKE = 20;
-	const C = 2 * Math.PI * R;
-	const submittedArc = (submitted / total) * C;
-	const notSubmittedArc = C - submittedArc;
-
-	return (
-		<div className={cn(uiSurface.card, "flex flex-col p-6")}>
-			<h4 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Resume Submission</h4>
-			<div className="flex flex-1 flex-col items-center justify-center">
-				<div className="relative">
-					<svg width="170" height="170" viewBox="0 0 170 170">
-						<circle
-							cx="85"
-							cy="85"
-							r={R}
-							fill="none"
-							stroke="#E24B4A"
-							strokeWidth={STROKE}
-							strokeDasharray={`${notSubmittedArc} ${C}`}
-							strokeDashoffset={0}
-							transform="rotate(-90 85 85)"
-							opacity={hovered === "submitted" ? 0.35 : 1}
-							onMouseEnter={() => setHovered("notSubmitted")}
-							onMouseLeave={() => setHovered(null)}
-							style={{ transition: "opacity 0.3s" }}
-						/>
-						<circle
-							cx="85"
-							cy="85"
-							r={R}
-							fill="none"
-							stroke="#1D9E75"
-							strokeWidth={STROKE}
-							strokeDasharray={`${submittedArc} ${C}`}
-							strokeDashoffset={-notSubmittedArc}
-							transform="rotate(-90 85 85)"
-							opacity={hovered === "notSubmitted" ? 0.35 : 1}
-							onMouseEnter={() => setHovered("submitted")}
-							onMouseLeave={() => setHovered(null)}
-							style={{ transition: "opacity 0.3s" }}
-						/>
-						<text x="85" y="80" textAnchor="middle" className="fill-foreground" fontSize="26" fontWeight="700">
-							{total}
-						</text>
-						<text x="85" y="98" textAnchor="middle" className="fill-muted-foreground" fontSize="11">
-							students
-						</text>
-					</svg>
-
-					{hovered && (
-						<div
-							className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-primary px-2.5 py-1 text-primary-foreground text-xs shadow-lg"
-							style={{ marginTop: -48 }}
-						>
-							{hovered === "submitted"
-								? `Submitted: ${submitted} (${submittedPct.toFixed(1)}%)`
-								: `Not submitted: ${notSubmitted} (${notSubmittedPct.toFixed(1)}%)`}
-						</div>
-					)}
-				</div>
-			</div>
-			<div className="mt-auto flex items-center justify-center gap-5 pt-3 text-xs">
-				<div className="flex items-center gap-1.5">
-					<div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#1D9E75" }} />
-					<span className="text-muted-foreground">Submitted ({submitted})</span>
-				</div>
-				<div className="flex items-center gap-1.5">
-					<div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#E24B4A" }} />
-					<span className="text-muted-foreground">Not Submitted ({notSubmitted})</span>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-// ---------------------------------------------------------------------------
-// Score Distribution Bar Chart (SVG)
-// ---------------------------------------------------------------------------
-
-function ScoreDistributionChart({
-	students,
-	evaluatedCount,
-}: {
-	students: StudentWithResumes[];
-	evaluatedCount: number;
-}) {
-	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-
-	const buckets = [
-		{ label: "0-1", color: "#E24B4A", min: 0, max: 1 },
-		{ label: "1-2", color: "#EF9F27", min: 1, max: 2 },
-		{ label: "2-3", color: "#FAC775", min: 2, max: 3 },
-		{ label: "3-4", color: "#9FE1CB", min: 3, max: 4 },
-		{ label: "4-5", color: "#1D9E75", min: 4, max: 5 },
-	];
-
-	const scores = students.flatMap((s) =>
-		s.resumes.filter((r) => r.evaluationScore !== null).map((r) => r.evaluationScore as number),
-	);
-
-	const counts = buckets.map((b) => scores.filter((s) => s >= b.min && (b.max === 5 ? s <= b.max : s < b.max)).length);
-	const max = Math.max(...counts, 1);
-
-	if (evaluatedCount === 0) {
-		return (
-			<div className={cn(uiSurface.card, "flex flex-col items-center justify-center p-6")}>
-				<h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">Score Distribution</h4>
-				<p className="mt-6 text-muted-foreground text-sm">No data available yet</p>
-			</div>
-		);
-	}
-
-	return (
-		<div className={cn(uiSurface.card, "flex flex-col p-6")}>
-			<h4 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Score Distribution</h4>
-			<div className="flex flex-1 items-end justify-center gap-2 pt-4 pb-2">
-				{buckets.map((b, i) => {
-					const heightPct = Math.max(6, (counts[i] / max) * 100);
-					return (
-						<div
-							key={b.label}
-							className="flex flex-1 flex-col items-center gap-1"
-							onMouseEnter={() => setHoveredIdx(i)}
-							onMouseLeave={() => setHoveredIdx(null)}
-						>
-							<span className="font-semibold text-[11px] text-muted-foreground tabular-nums">
-								{counts[i] > 0 ? counts[i] : ""}
-							</span>
-							<div className="flex w-full justify-center" style={{ height: 110 }}>
-								<div
-									className="w-full max-w-[36px] self-end rounded-t-xl transition-all duration-200"
-									style={{
-										height: `${heightPct}%`,
-										backgroundColor: b.color,
-										opacity: hoveredIdx !== null && hoveredIdx !== i ? 0.35 : 1,
-									}}
-								/>
-							</div>
-							<span className="font-medium text-[11px] text-muted-foreground">{b.label}</span>
-						</div>
-					);
-				})}
-			</div>
-			<p className="mt-auto pt-2 text-center text-muted-foreground text-xs">
-				Based on {evaluatedCount} evaluated resume{evaluatedCount !== 1 ? "s" : ""}
-			</p>
-		</div>
-	);
-}
-
-// ---------------------------------------------------------------------------
 // ATS Checks Card — queries ATS admin stats for the total checks count
 // ---------------------------------------------------------------------------
 
@@ -1059,11 +862,8 @@ function AtsChecksCard() {
 	const { data: atsStats } = useQuery(orpc.ats.adminStats.queryOptions({ input: {} }));
 
 	return (
-		<StatCard
-			icon={<TargetIcon weight="duotone" className="size-5" />}
-			iconBg="bg-blue-50"
-			iconColor="text-blue-600"
-			label={t`ATS Checks`}
+		<Stat
+			label={t`ATS checks`}
 			value={atsStats?.totalChecks ?? 0}
 			tooltip="Total number of ATS checks done by the students"
 		/>
@@ -1130,51 +930,41 @@ function SectionStudentsPage({ section, students, onBack, onReview, onStudentCli
 			</button>
 
 			{/* Highlights */}
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<StatCard
-					icon={<UsersIcon weight="duotone" className="size-5" />}
-					iconBg="bg-violet-50"
-					iconColor="text-violet-600"
-					label={t`Total Students`}
-					value={stats.totalStudents}
-				/>
-				<StatCard
-					icon={<FileTextIcon weight="duotone" className="size-5" />}
-					iconBg="bg-emerald-50"
-					iconColor="text-emerald-600"
-					label={t`With Resumes`}
+			<StatStrip>
+				<Stat label={t`Total students`} value={stats.totalStudents} />
+				<Stat
+					label={t`With resumes`}
 					value={withResumes}
 					tooltip={t`Students who have created at least one resume`}
 				/>
-				<StatCard
-					icon={<XCircleIcon weight="duotone" className="size-5" />}
-					iconBg="bg-rose-50"
-					iconColor="text-rose-600"
-					label={t`No Resume Yet`}
-					value={noResumes}
+				<Stat label={t`No resume yet`} value={noResumes} />
+				<Stat
+					label={t`Average score`}
+					value={
+						stats.averageScore === null ? null : (
+							<>
+								{stats.averageScore.toFixed(1)}
+								<span className="ml-0.5 font-medium text-base text-muted-foreground">/5</span>
+							</>
+						)
+					}
+					hint={stats.averageScore === null ? t`No evaluations yet` : undefined}
 				/>
-				<ScoreCard
-					icon={<CheckCircleIcon weight="duotone" className="size-5" />}
-					iconBg="bg-amber-50"
-					iconColor="text-amber-600"
-					label={t`Avg Score`}
-					value={stats.averageScore}
-				/>
-			</div>
+			</StatStrip>
 
 			{/* Verified progress bar */}
 			<div className={cn(uiSurface.card, "p-5")}>
-				<div className="mb-2 flex items-center justify-between">
+				<div className="mb-3 flex items-end justify-between">
 					<div>
-						<p className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">{t`Verified Progress`}</p>
-						<p className="mt-1 font-bold text-foreground text-sm">
+						<p className="font-semibold text-foreground text-sm">{t`Verified progress`}</p>
+						<p className="mt-0.5 text-muted-foreground text-xs">
 							{stats.evaluatedResumes} / {stats.totalResumes} {t`resumes verified`}
 						</p>
 					</div>
-					<span className="font-bold text-emerald-600 text-sm tabular-nums">{verifiedPct.toFixed(0)}%</span>
+					<span className="font-semibold text-2xl text-foreground tabular-nums">{verifiedPct.toFixed(0)}%</span>
 				</div>
-				<div className="h-2 overflow-hidden rounded-full bg-muted">
-					<div className="h-full bg-emerald-500 transition-all" style={{ width: `${verifiedPct}%` }} />
+				<div className="h-1.5 overflow-hidden rounded-full bg-muted">
+					<div className="h-full rounded-full bg-emerald-500 transition-[width] duration-500" style={{ width: `${verifiedPct}%` }} />
 				</div>
 			</div>
 
@@ -1197,22 +987,10 @@ function SectionStudentsPage({ section, students, onBack, onReview, onStudentCli
 
 function AtsImprovementsSection() {
 	return (
-		<div className={cn(uiSurface.card, "space-y-3 p-5")}>
-			<div className="flex items-center gap-2">
-				<div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						className="size-4 text-emerald-600"
-						viewBox="0 0 256 256"
-						fill="currentColor"
-					>
-						<path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1,0-16H224A8,8,0,0,1,232,208ZM48,168a8,8,0,0,0,8-8V128a8,8,0,0,0-16,0v32A8,8,0,0,0,48,168Zm40,0a8,8,0,0,0,8-8V80a8,8,0,0,0-16,0v80A8,8,0,0,0,88,168Zm40,0a8,8,0,0,0,8-8V104a8,8,0,0,0-16,0v56A8,8,0,0,0,128,168Zm40,0a8,8,0,0,0,8-8V56a8,8,0,0,0-16,0v104A8,8,0,0,0,168,168Z" />
-					</svg>
-				</div>
-				<div>
-					<h3 className="font-semibold text-foreground text-sm">ATS Score Improvements</h3>
-					<p className="text-muted-foreground text-xs">Platform-wide ATS scoring activity and improvement trends</p>
-				</div>
+		<div className={cn(uiSurface.card, "space-y-4 p-6")}>
+			<div>
+				<h3 className="font-semibold text-foreground">{t`ATS score improvements`}</h3>
+				<p className="text-muted-foreground text-xs">{t`How students' ATS scores change as they work through the suggestions.`}</p>
 			</div>
 			<AdminAtsStats />
 		</div>

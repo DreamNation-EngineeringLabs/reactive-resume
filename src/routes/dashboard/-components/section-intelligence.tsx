@@ -1,17 +1,15 @@
-import { t } from "@lingui/core/macro";
+import { plural, t } from "@lingui/core/macro";
 import {
 	ArrowRightIcon,
 	BellRingingIcon,
 	ClipboardTextIcon,
-	MedalIcon,
 	SealCheckIcon,
-	UsersIcon,
 	WarningCircleIcon,
 	WarningIcon,
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { cn } from "@/utils/style";
-import { uiControl, uiSurface } from "@/utils/ui-tokens";
+import { uiSurface } from "@/utils/ui-tokens";
 import type { DashboardTab } from "./section-metrics-view";
 import type { StudentWithResumes } from "./student-resume-table";
 
@@ -147,25 +145,24 @@ function UnitTypeSelector({
 	if (types.length <= 1) return null;
 
 	return (
-		<div className={cn(uiSurface.card, "flex flex-wrap items-center gap-3 px-5 py-3")}>
-			<span className="shrink-0 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`View by unit`}</span>
-			<div className="flex flex-wrap gap-1.5">
-				{types.map((type) => {
-					const isSelected = type === selectedType;
-					return (
-						<button
-							key={type}
-							type="button"
-							onClick={() => onSelect(type)}
-							className={cn(
-								"uppercase tracking-wide transition-[transform,colors] duration-200 active:scale-[0.97]",
-								isSelected ? uiControl.pillSelected : uiControl.pillIdle,
-							)}
-						>
-							{type}
-						</button>
-					);
-				})}
+		<div className="flex flex-wrap items-center gap-3">
+			<span className="shrink-0 font-medium text-muted-foreground text-sm">{t`Group sections by`}</span>
+			<div className="inline-flex gap-1 rounded-xl bg-muted p-1">
+				{types.map((type) => (
+					<button
+						key={type}
+						type="button"
+						onClick={() => onSelect(type)}
+						className={cn(
+							"rounded-lg px-3 py-1 font-medium text-sm transition-colors duration-200",
+							type === selectedType
+								? "bg-card text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground",
+						)}
+					>
+						{type.charAt(0) + type.slice(1).toLowerCase()}
+					</button>
+				))}
 			</div>
 		</div>
 	);
@@ -210,18 +207,18 @@ function ActionAlerts({
 		alerts.push({
 			id: "pending_po",
 			icon: <ClipboardTextIcon weight="duotone" className="size-4" />,
-			message: t`${pendingPO} resume${pendingPO !== 1 ? "s" : ""} finalized by faculty and waiting for your review`,
+			message: plural(pendingPO, { one: "# resume finalized by faculty is waiting for your review", other: "# resumes finalized by faculty are waiting for your review" }),
 			accent: "border-l-primary",
 			iconBg: "bg-primary/10 text-primary",
 			tab: "inbox",
-			cta: t`Go to Inbox`,
+			cta: t`Go to inbox`,
 		});
 
 	if (resubmitted > 0)
 		alerts.push({
 			id: "resubmitted",
 			icon: <BellRingingIcon weight="duotone" className="size-4" />,
-			message: t`${resubmitted} resume${resubmitted !== 1 ? "s" : ""} resubmitted by students after your revision request`,
+			message: plural(resubmitted, { one: "# resume was resubmitted after your revision request", other: "# resumes were resubmitted after your revision request" }),
 			accent: "border-l-amber-500",
 			iconBg: "bg-amber-50 text-amber-600",
 			tab: "inbox",
@@ -232,7 +229,7 @@ function ActionAlerts({
 		alerts.push({
 			id: "no_resume",
 			icon: <WarningCircleIcon weight="duotone" className="size-4" />,
-			message: t`${noResume} student${noResume !== 1 ? "s" : ""} haven't created a resume yet`,
+			message: plural(noResume, { one: "# student hasn't created a resume yet", other: "# students haven't created a resume yet" }),
 			accent: "border-l-rose-500",
 			iconBg: "bg-rose-50 text-rose-600",
 			tab: "students",
@@ -243,7 +240,7 @@ function ActionAlerts({
 		alerts.push({
 			id: "no_submission",
 			icon: <WarningIcon weight="duotone" className="size-4" />,
-			message: t`${noSubmission} section${noSubmission !== 1 ? "s" : ""} have no submissions yet`,
+			message: plural(noSubmission, { one: "# section has no submissions yet", other: "# sections have no submissions yet" }),
 			accent: "border-l-rose-400",
 			iconBg: "bg-rose-50 text-rose-500",
 			tab: "sections",
@@ -254,7 +251,7 @@ function ActionAlerts({
 		alerts.push({
 			id: "fully_approved",
 			icon: <SealCheckIcon weight="duotone" className="size-4" />,
-			message: t`${fullyApproved} section${fullyApproved !== 1 ? "s" : ""} are fully approved`,
+			message: plural(fullyApproved, { one: "# section is fully approved", other: "# sections are fully approved" }),
 			accent: "border-l-emerald-500",
 			iconBg: "bg-emerald-50 text-emerald-600",
 			tab: "sections",
@@ -267,7 +264,7 @@ function ActionAlerts({
 		<div className={cn(uiSurface.card, "space-y-3 p-5")}>
 			<div className="mb-1 flex items-center gap-2">
 				<BellRingingIcon weight="duotone" className="size-4 text-muted-foreground" />
-				<h3 className="font-bold text-base text-foreground">{t`Action Alerts`}</h3>
+				<h3 className="font-semibold text-base text-foreground">{t`Needs attention`}</h3>
 			</div>
 			<div className="space-y-2">
 				{alerts.map((alert) => (
@@ -309,41 +306,25 @@ function TopPerformingSections({ sections }: { sections: UnitStat[] }) {
 
 	if (ranked.length === 0) return null;
 
-	const medals = ["🥇", "🥈", "🥉"];
-	const medalColors = [
-		{ ring: "ring-amber-200", bg: "bg-amber-50" },
-		{ ring: "ring-border", bg: "bg-muted/50" },
-		{ ring: "ring-orange-200", bg: "bg-orange-50" },
-	];
-
 	return (
 		<div className={cn(uiSurface.card, "p-5")}>
-			<div className="mb-4 flex items-center gap-2">
-				<MedalIcon weight="duotone" className="size-4 text-amber-500" />
-				<h3 className="font-bold text-base text-foreground">{t`Top Performing`}</h3>
-			</div>
+			<h3 className="mb-4 font-semibold text-base text-foreground">{t`Highest average scores`}</h3>
 			<div className="grid gap-3 sm:grid-cols-3">
 				{ranked.map((section, i) => {
 					const score = section.stats.averageScore!;
-					const sc = scoreColor(score);
 					return (
-						<div
-							key={section.id}
-							className={cn("flex flex-col gap-2 rounded-xl p-4 ring-2", medalColors[i].bg, medalColors[i].ring)}
-						>
-							<div className="flex items-start justify-between gap-2">
-								<span className="text-xl leading-none">{medals[i]}</span>
-								<span className={cn("rounded-full px-2.5 py-0.5 font-bold text-sm", sc.bg, sc.text)}>
-									{score.toFixed(1)}/5
-								</span>
-							</div>
+						<div key={section.id} className="flex flex-col gap-1 rounded-xl border border-border bg-surface-inset p-4">
+							<span className="font-medium text-muted-foreground text-xs">#{i + 1}</span>
 							<p className="line-clamp-2 font-semibold text-foreground text-sm leading-snug">{section.name}</p>
-							<div className="flex items-center gap-1 text-muted-foreground text-xs">
-								<UsersIcon weight="duotone" className="size-3" />
-								<span>
-									{section.stats.totalStudents} {t`students`}
+							<p className="mt-1 flex items-baseline justify-between gap-2">
+								<span className="font-semibold text-2xl text-foreground tabular-nums">
+									{score.toFixed(1)}
+									<span className="ml-0.5 font-medium text-base text-muted-foreground">/5</span>
 								</span>
-							</div>
+								<span className="text-muted-foreground text-xs">
+									{plural(section.stats.totalStudents, { one: "# student", other: "# students" })}
+								</span>
+							</p>
 						</div>
 					);
 				})}
@@ -371,8 +352,8 @@ function SectionHealthTable({
 	return (
 		<div className={cn(uiSurface.card, "overflow-hidden p-0 shadow-sm")}>
 			<div className="flex items-center gap-2 px-5 pt-5 pb-4">
-				<h3 className="font-bold text-base text-foreground">{t`Section Health`}</h3>
-				<span className="rounded-full bg-muted px-2 py-0.5 font-bold text-muted-foreground text-xs">{active.length}</span>
+				<h3 className="font-semibold text-base text-foreground">{t`Section health`}</h3>
+				<span className="rounded-full bg-muted px-2 py-0.5 font-semibold text-muted-foreground text-xs">{active.length}</span>
 			</div>
 
 			{/* Desktop table */}
@@ -380,12 +361,12 @@ function SectionHealthTable({
 				<table className="w-full text-sm">
 					<thead>
 						<tr className="border-border border-t bg-muted/40 text-left">
-							<th className="px-5 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Section`}</th>
-							<th className="px-4 py-2.5 text-center font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Students`}</th>
-							<th className="px-4 py-2.5 text-center font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Resumes`}</th>
-							<th className="w-48 px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Pipeline`}</th>
-							<th className="px-4 py-2.5 text-center font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Avg Score`}</th>
-							<th className="px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider">{t`Stage`}</th>
+							<th className="px-5 py-2.5 font-medium text-muted-foreground text-xs">{t`Section`}</th>
+							<th className="px-4 py-2.5 text-center font-medium text-muted-foreground text-xs">{t`Students`}</th>
+							<th className="px-4 py-2.5 text-center font-medium text-muted-foreground text-xs">{t`Resumes`}</th>
+							<th className="w-48 px-4 py-2.5 font-medium text-muted-foreground text-xs">{t`Pipeline`}</th>
+							<th className="px-4 py-2.5 text-center font-medium text-muted-foreground text-xs">{t`Avg Score`}</th>
+							<th className="px-4 py-2.5 font-medium text-muted-foreground text-xs">{t`Stage`}</th>
 						</tr>
 					</thead>
 					<tbody className="divide-y divide-border">
@@ -539,13 +520,9 @@ export function SectionIntelligence({ sections, students, allOrgUnits, onNavigat
 
 	return (
 		<div className="space-y-4">
-			{/* Section label */}
-			<div className="flex items-center gap-3">
-				<div className="h-px flex-1 bg-border" />
-				<span className="font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
-					{t`Section Intelligence`}
-				</span>
-				<div className="h-px flex-1 bg-border" />
+			<div className="pt-2">
+				<h2 className="font-bold text-foreground text-xl tracking-tight">{t`How each section is doing`}</h2>
+				<p className="text-muted-foreground text-sm">{t`Where reviews are stuck, and which sections are ahead.`}</p>
 			</div>
 
 			{/* Unit type selector — controls ALL blocks below */}
@@ -553,10 +530,7 @@ export function SectionIntelligence({ sections, students, allOrgUnits, onNavigat
 
 			<ActionAlerts sections={activeSections} students={activeStudents} onNavigateToTab={onNavigateToTab} />
 
-			<div className="grid gap-4 lg:grid-cols-2">
-				<TopPerformingSections sections={activeSections} />
-				<div className="hidden lg:block" />
-			</div>
+			<TopPerformingSections sections={activeSections} />
 
 			<SectionHealthTable sections={activeSections} onNavigateToTab={onNavigateToTab} />
 		</div>

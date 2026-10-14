@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { ChartLineUpIcon, TargetIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
+import { Stat, StatStrip } from "@/components/ui/stat";
 import { orpc } from "@/integrations/orpc/client";
 import { cn } from "@/utils/style";
 
@@ -27,9 +27,9 @@ function MiniBarChart({
 					const heightPct = (d.value / max) * BAR_H;
 					return (
 						<div key={i} className="flex flex-1 flex-col items-center gap-0.5" title={`${d.label}: ${d.value}`}>
-							<span className="text-[8px] text-muted-foreground tabular-nums">{d.value > 0 ? d.value : ""}</span>
+							<span className="text-[10px] text-muted-foreground tabular-nums">{d.value > 0 ? d.value : ""}</span>
 							<div
-								className={cn("w-full rounded-t transition-all", d.color ?? "bg-primary/60")}
+								className={cn("w-full rounded-t transition-all", d.color ?? "bg-primary")}
 								style={{ height: Math.max(2, heightPct) }}
 							/>
 						</div>
@@ -39,7 +39,7 @@ function MiniBarChart({
 			<div className="flex gap-1">
 				{data.map((d, i) => (
 					<div key={i} className="flex-1 text-center">
-						<span className="block truncate text-[8px] text-muted-foreground">{d.label}</span>
+						<span className="block truncate text-[10px] text-muted-foreground">{d.label}</span>
 					</div>
 				))}
 			</div>
@@ -99,16 +99,7 @@ export function AdminAtsStats() {
 
 	if (!stats) return null;
 
-	const distributionBars = stats.scoreDistribution.map((b) => ({
-		label: b.bucket,
-		value: b.count,
-		color:
-			b.bucket.startsWith("81") || b.bucket.startsWith("61")
-				? "bg-green-400/70"
-				: b.bucket.startsWith("41")
-					? "bg-amber-400/70"
-					: "bg-red-400/70",
-	}));
+	const distributionBars = stats.scoreDistribution.map((b) => ({ label: b.bucket, value: b.count }));
 
 	const improvementBars = stats.topImprovedCategories.map((c) => ({
 		label: c.label.split(" ")[0], // Shortened label
@@ -118,50 +109,43 @@ export function AdminAtsStats() {
 	return (
 		<div className="space-y-6">
 			{/* KPI row */}
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-				<StatCard
-					title={t`Total ATS Checks`}
-					value={stats.totalChecks.toLocaleString()}
-					icon={<TargetIcon className="size-5" />}
-					color="text-blue-600"
+			<StatStrip className="bg-surface-inset shadow-none">
+				<Stat label={t`Total ATS checks`} value={stats.totalChecks.toLocaleString()} />
+				<Stat
+					label={t`Average score`}
+					value={
+						<>
+							{stats.avgCurrentScore}
+							<span className="ml-0.5 font-medium text-base text-muted-foreground">/100</span>
+						</>
+					}
 				/>
-				<StatCard
-					title={t`Avg Score`}
-					value={String(stats.avgCurrentScore)}
-					suffix="/100"
-					icon={<TargetIcon className="size-5" />}
-					color="text-purple-600"
-				/>
-				<StatCard
-					title={t`Avg Improvement`}
+				<Stat
+					label={t`Average improvement`}
 					value={stats.avgScoreImprovement >= 0 ? `+${stats.avgScoreImprovement}` : String(stats.avgScoreImprovement)}
-					suffix=" pts / check"
-					icon={<ChartLineUpIcon className="size-5" />}
-					color={stats.avgScoreImprovement >= 0 ? "text-green-600" : "text-red-500"}
+					hint={t`points per check`}
 				/>
-				<StatCard
-					title={t`Top Category Gained`}
-					value={stats.topImprovedCategories[0]?.label.split(" ")[0] ?? "—"}
-					suffix={stats.topImprovedCategories[0] ? ` +${stats.topImprovedCategories[0].avgDelta}%` : ""}
-					icon={<ChartLineUpIcon className="size-5" />}
-					color="text-amber-600"
+				<Stat
+					label={t`Biggest gain`}
+					value={stats.topImprovedCategories[0]?.label.split(" ")[0] ?? null}
+					hint={stats.topImprovedCategories[0] ? `+${stats.topImprovedCategories[0].avgDelta}%` : undefined}
 				/>
-			</div>
+			</StatStrip>
 
 			{/* Charts row */}
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 				{/* Score distribution */}
-				<div className="space-y-2 rounded-xl border p-4">
+				<div className="space-y-2 rounded-xl border border-border bg-card p-4">
 					<p className="font-semibold text-sm">
-						<Trans>Score Distribution</Trans>
+						<Trans>Score distribution</Trans>
 					</p>
 					<MiniBarChart data={distributionBars} label={t`Number of scoring runs by score range`} />
 				</div>
 
 				{/* Top improved categories */}
-				<div className="space-y-2 rounded-xl border p-4">
+				<div className="space-y-2 rounded-xl border border-border bg-card p-4">
 					<p className="font-semibold text-sm">
-						<Trans>Most Improved Categories</Trans>
+						<Trans>Most improved categories</Trans>
 					</p>
 					{improvementBars.length > 0 ? (
 						<MiniBarChart data={improvementBars} label={t`Avg % gain per check`} />
@@ -173,9 +157,9 @@ export function AdminAtsStats() {
 				</div>
 
 				{/* Daily activity */}
-				<div className="space-y-2 rounded-xl border p-4">
+				<div className="space-y-2 rounded-xl border border-border bg-card p-4">
 					<p className="font-semibold text-sm">
-						<Trans>Daily ATS Checks (14 days)</Trans>
+						<Trans>Daily ATS checks (14 days)</Trans>
 					</p>
 					{stats.checksByDay.length >= 2 ? (
 						<>
@@ -195,9 +179,9 @@ export function AdminAtsStats() {
 
 			{/* Top improvements detail */}
 			{stats.topImprovedCategories.length > 0 && (
-				<div className="space-y-3 rounded-xl border p-4">
+				<div className="space-y-3 rounded-xl border border-border bg-card p-4">
 					<p className="font-semibold text-sm">
-						<Trans>Category Improvement Breakdown</Trans>
+						<Trans>Category improvement breakdown</Trans>
 					</p>
 					<div className="space-y-2">
 						{stats.topImprovedCategories.map((cat) => (
@@ -205,11 +189,11 @@ export function AdminAtsStats() {
 								<span className="w-40 truncate font-medium text-xs">{cat.label}</span>
 								<div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
 									<div
-										className="h-full rounded-full bg-green-500/70 transition-all"
+										className="h-full rounded-full bg-primary transition-all"
 										style={{ width: `${Math.min(100, cat.avgDelta * 2)}%` }}
 									/>
 								</div>
-								<span className="w-12 text-right font-semibold text-green-600 text-xs dark:text-green-400">
+								<span className="w-12 text-right font-semibold text-foreground text-xs tabular-nums">
 									+{cat.avgDelta}%
 								</span>
 							</div>
@@ -217,33 +201,6 @@ export function AdminAtsStats() {
 					</div>
 				</div>
 			)}
-		</div>
-	);
-}
-
-function StatCard({
-	title,
-	value,
-	suffix,
-	icon,
-	color,
-}: {
-	title: string;
-	value: string;
-	suffix?: string;
-	icon: React.ReactNode;
-	color: string;
-}) {
-	return (
-		<div className="space-y-2 rounded-xl border p-4">
-			<div className={cn("flex size-8 items-center justify-center rounded-lg bg-muted/50", color)}>{icon}</div>
-			<div>
-				<p className="font-bold text-2xl tabular-nums">
-					{value}
-					{suffix && <span className="font-normal text-muted-foreground text-sm">{suffix}</span>}
-				</p>
-				<p className="text-muted-foreground text-xs">{title}</p>
-			</div>
 		</div>
 	);
 }
