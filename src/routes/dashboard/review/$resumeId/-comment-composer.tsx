@@ -127,11 +127,11 @@ export function CommentComposer({
 	};
 
 	return (
-		<div className="rounded-2xl bg-slate-50 p-4">
+		<div className="rounded-2xl bg-muted/50 p-4">
 			<div className="mb-2 flex items-center justify-between">
-				<p className="font-semibold text-slate-700 text-sm">{isReply ? t`Reply to Thread` : t`Add Feedback Comment`}</p>
+				<p className="font-semibold text-foreground text-sm">{isReply ? t`Reply to Thread` : t`Add Feedback Comment`}</p>
 				{isReply && (
-					<button type="button" onClick={onCancelReply} className="text-indigo-600 text-xs hover:underline">
+					<button type="button" onClick={onCancelReply} className="text-primary text-xs hover:underline">
 						{t`Cancel Reply`}
 					</button>
 				)}
@@ -139,29 +139,29 @@ export function CommentComposer({
 
 			{!isReply &&
 				(anchor ? (
-					<div className="mb-3 flex items-start gap-2 rounded-xl border-amber-400 border-l-4 bg-white px-3 py-2">
+					<div className="mb-3 flex items-start gap-2 rounded-xl border-amber-400 border-l-4 bg-card px-3 py-2">
 						<div className="min-w-0 flex-1">
-							<p className="font-semibold text-[11px] text-slate-500">{anchorLabel(anchor, resumeData)}</p>
-							<p className="line-clamp-2 text-slate-800 text-xs">{quote ? `“${quote}”` : t`Whole section`}</p>
+							<p className="font-semibold text-[11px] text-muted-foreground">{anchorLabel(anchor, resumeData)}</p>
+							<p className="line-clamp-2 text-foreground text-xs">{quote ? `“${quote}”` : t`Whole section`}</p>
 						</div>
 						<button
 							type="button"
 							aria-label={t`Remove the selected text from this comment`}
 							onClick={onClearAnchor}
-							className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+							className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-muted-foreground"
 						>
 							<XIcon className="size-3.5" />
 						</button>
 					</div>
 				) : (
-					<p className="mb-3 text-slate-500 text-xs">
+					<p className="mb-3 text-muted-foreground text-xs">
 						{t`Select text on the resume to comment on that exact spot. Select a section title to comment on the whole section.`}
 					</p>
 				))}
 
 			{!isReply && (
 				<div className="mb-3 flex flex-wrap items-center gap-1.5">
-					<span className="text-slate-500 text-xs">{t`Severity (optional)`}</span>
+					<span className="text-muted-foreground text-xs">{t`Severity (optional)`}</span>
 					{(["LOW", "MEDIUM", "HIGH"] as const).map((level) => (
 						<button
 							key={level}
@@ -170,7 +170,7 @@ export function CommentComposer({
 							onClick={() => setSeverity(severity === level ? null : level)}
 							className={cn(
 								"flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold text-xs ring-1 transition-all",
-								severity === level ? SEVERITY_ON[level] : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-100",
+								severity === level ? SEVERITY_ON[level] : "bg-card text-muted-foreground ring-border hover:bg-muted",
 							)}
 						>
 							<span className={cn("size-2 rounded-full", SEVERITY_DOT[level])} />
@@ -182,7 +182,7 @@ export function CommentComposer({
 						<button
 							type="button"
 							onClick={() => setSuggestion(quote)}
-							className="ms-auto flex items-center gap-1 rounded-lg px-2 py-1 font-semibold text-indigo-600 text-xs hover:bg-indigo-50"
+							className="ms-auto flex items-center gap-1 rounded-lg px-2 py-1 font-semibold text-primary text-xs hover:bg-primary/5"
 						>
 							<PencilSimpleLineIcon className="size-3.5" />
 							{t`Suggest a rewrite`}
@@ -192,7 +192,7 @@ export function CommentComposer({
 			)}
 
 			{!isReply && quote && suggestion !== null && (
-				<div className="mb-3 rounded-xl bg-white p-3 ring-1 ring-emerald-200">
+				<div className="mb-3 rounded-xl bg-card p-3 ring-1 ring-emerald-200">
 					<div className="mb-1.5 flex items-center justify-between">
 						<label htmlFor="review-suggestion" className="font-semibold text-[11px] text-emerald-700">
 							{t`Replace the selected text with`}
@@ -201,7 +201,7 @@ export function CommentComposer({
 							type="button"
 							aria-label={t`Remove the suggested rewrite`}
 							onClick={() => setSuggestion(null)}
-							className="rounded-md p-0.5 text-slate-400 hover:text-slate-600"
+							className="rounded-md p-0.5 text-muted-foreground hover:text-muted-foreground"
 						>
 							<XIcon className="size-3.5" />
 						</button>
@@ -211,9 +211,9 @@ export function CommentComposer({
 						value={suggestion}
 						onChange={(e) => setSuggestion(e.target.value)}
 						rows={2}
-						className="w-full resize-none rounded-lg border-0 bg-emerald-50/50 px-3 py-2 text-slate-900 text-xs outline-none ring-1 ring-emerald-100 focus:ring-2 focus:ring-emerald-500"
+						className="w-full resize-none rounded-lg border-0 bg-emerald-50/50 px-3 py-2 text-foreground text-xs outline-none ring-1 ring-emerald-100 focus:ring-2 focus:ring-emerald-500"
 					/>
-					<p className="mt-1 text-[10px] text-slate-400">{t`The student can apply this with one click.`}</p>
+					<p className="mt-1 text-[10px] text-muted-foreground">{t`The student can apply this with one click.`}</p>
 				</div>
 			)}
 
@@ -237,13 +237,13 @@ export function CommentComposer({
 					rows={4}
 					aria-autocomplete="list"
 					aria-expanded={matches.length > 0}
-					className="mb-3 w-full resize-none rounded-xl border-0 bg-white px-4 py-3 text-slate-900 text-sm outline-none ring-1 ring-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500"
+					className="mb-3 w-full resize-none rounded-xl border-0 bg-card px-4 py-3 text-foreground text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:ring-primary"
 				/>
 				{matches.length > 0 && (
 					<div
 						role="listbox"
 						aria-label={t`Saved comments`}
-						className="absolute inset-x-0 top-full z-20 -mt-2 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-slate-200"
+						className="absolute inset-x-0 top-full z-20 -mt-2 overflow-hidden rounded-xl bg-card shadow-lg ring-1 ring-border"
 					>
 						{matches.map((snippet, i) => (
 							<button
@@ -256,8 +256,8 @@ export function CommentComposer({
 									insertSnippet(snippet, true);
 								}}
 								className={cn(
-									"block w-full px-3 py-2 text-start text-slate-700 text-xs",
-									i === pick ? "bg-indigo-50 text-indigo-800" : "hover:bg-slate-50",
+									"block w-full px-3 py-2 text-start text-foreground text-xs",
+									i === pick ? "bg-primary/5 text-primary" : "hover:bg-muted/50",
 								)}
 							>
 								{snippet.content}
@@ -274,7 +274,7 @@ export function CommentComposer({
 							key={snippet.id}
 							type="button"
 							onClick={() => insertSnippet(snippet, false)}
-							className="rounded-full bg-white px-2.5 py-1 text-[11px] text-slate-600 ring-1 ring-slate-200 transition-all hover:bg-indigo-50 hover:text-indigo-700 hover:ring-indigo-200"
+							className="rounded-full bg-card px-2.5 py-1 text-[11px] text-muted-foreground ring-1 ring-border transition-all hover:bg-primary/5 hover:text-primary hover:ring-primary/20"
 						>
 							{snippet.content}
 						</button>
@@ -283,20 +283,20 @@ export function CommentComposer({
 			)}
 
 			{!isReply && managing && (
-				<div className="mb-3 rounded-xl bg-white p-2 ring-1 ring-slate-200">
-					<p className="px-1 pb-1.5 text-[11px] text-slate-500">
+				<div className="mb-3 rounded-xl bg-card p-2 ring-1 ring-border">
+					<p className="px-1 pb-1.5 text-[11px] text-muted-foreground">
 						{t`Saved comments for your whole team, most used first. Frequent ones are good workshop topics.`}
 					</p>
-					<ul className="max-h-56 divide-y divide-slate-100 overflow-y-auto">
+					<ul className="max-h-56 divide-y divide-border overflow-y-auto">
 						{snippets.map((snippet) => (
 							<li key={snippet.id} className="flex items-center gap-2 px-1 py-1.5">
-								<span className="min-w-0 flex-1 text-slate-700 text-xs">{snippet.content}</span>
-								<span className="shrink-0 text-[10px] text-slate-400">{t`Used ${snippet.usageCount}×`}</span>
+								<span className="min-w-0 flex-1 text-foreground text-xs">{snippet.content}</span>
+								<span className="shrink-0 text-[10px] text-muted-foreground">{t`Used ${snippet.usageCount}×`}</span>
 								<button
 									type="button"
 									aria-label={t`Delete saved comment: ${snippet.content}`}
 									onClick={() => deleteSnippet.mutate({ id: snippet.id })}
-									className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+									className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-rose-50 hover:text-rose-600"
 								>
 									<TrashIcon className="size-3.5" />
 								</button>
@@ -311,7 +311,7 @@ export function CommentComposer({
 					type="button"
 					disabled={!content.trim() || isPending}
 					onClick={() => void submit()}
-					className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-indigo-700 disabled:opacity-50"
+					className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-primary/90 disabled:opacity-50"
 				>
 					<PaperPlaneTiltIcon weight="duotone" className="size-4" />
 					{isPending ? t`Posting…` : isReply ? t`Post Reply` : t`Post Comment`}
@@ -322,7 +322,7 @@ export function CommentComposer({
 							type="button"
 							disabled={!content.trim() || saveSnippet.isPending}
 							onClick={() => saveSnippet.mutate({ content: content.trim() })}
-							className="flex items-center gap-1 rounded-lg px-2 py-1.5 font-semibold text-slate-600 text-xs hover:bg-slate-100 disabled:opacity-40"
+							className="flex items-center gap-1 rounded-lg px-2 py-1.5 font-semibold text-muted-foreground text-xs hover:bg-muted disabled:opacity-40"
 						>
 							<BookmarkSimpleIcon className="size-3.5" />
 							{t`Save for reuse`}
@@ -331,14 +331,14 @@ export function CommentComposer({
 							type="button"
 							aria-pressed={managing}
 							onClick={() => setManaging((m) => !m)}
-							className="rounded-lg px-2 py-1.5 font-semibold text-slate-600 text-xs hover:bg-slate-100"
+							className="rounded-lg px-2 py-1.5 font-semibold text-muted-foreground text-xs hover:bg-muted"
 						>
 							{managing ? t`Done` : t`Manage saved`}
 						</button>
 					</>
 				)}
 			</div>
-			<p className="mt-2 text-[10px] text-slate-400">
+			<p className="mt-2 text-[10px] text-muted-foreground">
 				{t`Ctrl+Enter posts. Esc clears the selection. Alt+← and Alt+→ open the previous or next student.`}
 			</p>
 		</div>

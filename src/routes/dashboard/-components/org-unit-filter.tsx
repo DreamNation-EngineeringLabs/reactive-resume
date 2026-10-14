@@ -43,7 +43,7 @@ const SECTION = "CLASS";
 const yearOf = (unit?: FilterOrgUnit) => unit?.name.match(/\b(?:19|20)\d{2}\b/g)?.at(-1);
 
 const dropdownClass =
-	"h-8 min-w-[160px] rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-none hover:bg-slate-50";
+	"h-8 min-w-[160px] rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground shadow-none hover:bg-muted/50";
 
 export function OrgUnitFilter({ packages, allOrgUnits, value, onChange }: OrgUnitFilterProps) {
 	const f = useMemo(() => {
@@ -89,7 +89,7 @@ export function OrgUnitFilter({ packages, allOrgUnits, value, onChange }: OrgUni
 	) =>
 		items.length > 0 && (
 			<div className="flex items-center gap-2">
-				<span className="font-medium text-slate-500 text-xs">{label}</span>
+				<span className="font-medium text-muted-foreground text-xs">{label}</span>
 				<Combobox
 					options={items.map((i) => ({ value: i.id, label: i.name }))}
 					value={current ?? null}
@@ -103,7 +103,7 @@ export function OrgUnitFilter({ packages, allOrgUnits, value, onChange }: OrgUni
 
 	return (
 		<div className="flex flex-wrap items-center gap-3">
-			<div className="flex items-center gap-1.5 text-slate-400 text-xs">
+			<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
 				<FunnelSimpleIcon weight="duotone" className="size-3.5" />
 				<span className="font-medium">{t`Filters`}</span>
 			</div>

@@ -116,12 +116,12 @@ export function POSectionCardActions({
 						poVerifiedResumes + stats.approvedResumes >= stats.totalResumes &&
 							stats.approvedResumes < stats.totalResumes &&
 							stats.totalResumes > 0
-							? "bg-indigo-600 text-white hover:bg-indigo-700"
+							? "bg-primary text-white hover:bg-primary/90"
 							: stats.approvedResumes === stats.totalResumes && stats.totalResumes > 0
 								? "cursor-default border border-emerald-100 bg-emerald-50 text-emerald-600"
 								: passedFaculty === stats.totalResumes && stats.totalResumes > 0
 									? "cursor-help border border-amber-200 bg-amber-50 text-amber-600"
-									: "cursor-not-allowed border border-slate-100 bg-slate-50 text-slate-400",
+									: "cursor-not-allowed border border-border bg-muted/50 text-muted-foreground",
 					)}
 				>
 					{stats.approvedResumes === stats.totalResumes && stats.totalResumes > 0 ? (

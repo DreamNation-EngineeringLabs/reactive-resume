@@ -18,17 +18,17 @@ function CreditMeter({ label, used, total, remaining }: CreditMeterProps) {
 	const isOut = !isUnlimited && remaining === 0;
 
 	const barColor = isOut ? "bg-rose-500" : isLow ? "bg-amber-400" : "bg-primary";
-	const valueColor = isOut ? "text-rose-600" : isLow ? "text-amber-600" : "text-slate-900";
+	const valueColor = isOut ? "text-rose-600" : isLow ? "text-amber-600" : "text-foreground";
 
 	return (
 		<div className="flex min-w-[160px] flex-col gap-1.5">
 			<div className="flex items-center justify-between gap-3">
-				<span className="font-semibold text-[11px] text-slate-500 uppercase tracking-wider">{label}</span>
+				<span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">{label}</span>
 				<span className={cn("font-bold text-sm tabular-nums", valueColor)}>
 					{isUnlimited ? "∞" : `${used} / ${total}`}
 				</span>
 			</div>
-			<div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+			<div className="h-1.5 overflow-hidden rounded-full bg-muted">
 				<div
 					className={cn("h-full rounded-full transition-all duration-500", barColor)}
 					style={{ width: `${pct}%` }}
@@ -60,8 +60,8 @@ export function CreditUsageBanner() {
 					<Zap fill="currentColor" strokeWidth={0} className="size-5" />
 				</div>
 				<div className="min-w-0">
-					<p className="font-bold text-slate-900 text-base"><Trans>Credits</Trans></p>
-					<p className="text-slate-500 text-xs">
+					<p className="font-bold text-base text-foreground"><Trans>Credits</Trans></p>
+					<p className="text-muted-foreground text-xs">
 						<Trans>Credits replenish at the start of each cycle.</Trans>
 					</p>
 				</div>
