@@ -12,7 +12,8 @@ import type { StudentWithResumes } from "./student-resume-table";
 
 type ResumeEntry = StudentWithResumes["resumes"][number];
 
-type Bucket = "review" | "check" | "student" | "verified" | "approved";
+/** review: the student acted (submitted, resubmitted or marked a comment fixed); student: not acted on yet; done: decided. */
+type Bucket = "review" | "student" | "done";
 
 type Scope = "faculty" | "po" | "admin";
 
@@ -40,11 +41,10 @@ const stageOf = (scope: Scope) => STAGES[scope === "faculty" ? "faculty" : "po"]
 
 /** Where a resume stands for this reviewer. Action first, like a code-review inbox; null = nothing to track. */
 function bucketOf(status: string, mine: ResumeEntry["myComments"], stage: (typeof STAGES)["po"]): Bucket | null {
-	if (status === "APPROVED") return "approved";
-	if (stage.waiting.includes(status)) return "review";
-	if (mine?.ADDRESSED) return "check";
+	if (status === "APPROVED") return "done";
+	if (stage.waiting.includes(status) || mine?.ADDRESSED) return "review";
 	if (stage.sentBack.includes(status) || mine?.OPEN) return "student";
-	if (stage.verified.includes(status)) return "verified";
+	if (stage.verified.includes(status) || mine) return "done";
 	return null;
 }
 
@@ -71,14 +71,12 @@ export function ReviewTracker({ students, scope, reviewerId, onReview }: Props) 
 	const [filter, setFilter] = useState<Bucket | "all">("all");
 	const [open, setOpen] = useState<string | null>(null);
 
+	// "done" (verified / approved / comments all settled) only shows under All.
 	const buckets: { id: Bucket; label: string }[] = [
 		{ id: "review", label: t`Needs your review` },
-		{ id: "check", label: t`Fixes to check` },
-		{ id: "student", label: t`With student` },
-		{ id: "verified", label: t`Verified by you` },
-		{ id: "approved", label: t`Approved` },
+		{ id: "student", label: t`Not acted on yet` },
 	];
-	const order = buckets.map((b) => b.id);
+	const order: Bucket[] = ["review", "student", "done"];
 
 	const rows = students
 		.flatMap((student) =>

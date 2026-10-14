@@ -341,7 +341,7 @@ export function SectionMetricsView({
 					)}
 
 					{/* ── Key Metrics ── */}
-					<div className={cn("grid gap-4 md:grid-cols-3", scope === "faculty" ? "lg:grid-cols-6" : "lg:grid-cols-7")}>
+					<div className={cn("grid gap-4 md:grid-cols-2", scope === "faculty" ? "lg:grid-cols-4" : "lg:grid-cols-5")}>
 						<StatCard
 							icon={<UsersIcon weight="duotone" className="size-5" />}
 							iconBg="bg-violet-50"
@@ -349,25 +349,6 @@ export function SectionMetricsView({
 							label={t`Total Students`}
 							value={stats.totalStudents}
 							tooltip="Learners in your placement scope who also have a resume builder (Polymath) account — eng-labs and resume DB joined by email."
-						/>
-						<StatCard
-							icon={<FileTextIcon weight="duotone" className="size-5" />}
-							iconBg="bg-primary/10"
-							iconColor="text-primary"
-							label={t`With primary resume`}
-							value={dashboard.aggregateStats.withPrimaryResume ?? stats.totalResumes}
-							tooltip="How many enrolled students have created their primary resume document in the builder."
-						/>
-						<RateCard
-							icon={<ChartBarIcon weight="duotone" className="size-5" />}
-							iconBg="bg-blue-50"
-							iconColor="text-blue-600"
-							label={t`Primary resume rate`}
-							value={
-								dashboard.aggregateStats.primaryResumeRate ??
-								(stats.totalStudents > 0 ? (detailedStats.withResumes / stats.totalStudents) * 100 : 0)
-							}
-							tooltip="Share of resume-builder enrollees who have a primary resume."
 						/>
 						<RateCard
 							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
