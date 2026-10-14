@@ -21,10 +21,8 @@ export type AnchorStatus = "ok" | "changed" | "missing";
 type AnchoredComment = { id: string; anchor: CommentAnchor | null; severity?: string | null; status?: string };
 
 /** Top-level comments that point somewhere on the resume (only the open ones are painted, see `commentHighlight`). */
-export function anchoredComments(comments: (AnchoredComment & { parentId: string | null })[]) {
-	return comments
-		.filter((c) => !c.parentId && c.anchor)
-		.map(({ id, anchor, severity, status }) => ({ id, anchor, severity, status }));
+export function anchoredComments<T extends AnchoredComment & { parentId: string | null }>(comments: T[]) {
+	return comments.filter((c) => !c.parentId && c.anchor);
 }
 
 /** Badge colours match the highlighter colours on the resume. */

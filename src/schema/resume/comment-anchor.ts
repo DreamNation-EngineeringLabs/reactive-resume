@@ -55,6 +55,15 @@ export function findQuote(text: string, quote: NonNullable<CommentAnchor["quote"
 	return best;
 }
 
+/** Statuses that are a reviewer's verdict: the student gets the review email, the resume copy is kept. */
+export const REVIEW_VERDICTS: Partial<Record<string, "changes" | "approved">> = {
+	FACULTY_REVISION_REQUESTED: "changes",
+	PO_REVISION_REQUESTED: "changes",
+	FACULTY_VERIFIED: "approved",
+	PO_VERIFIED: "approved",
+	APPROVED: "approved",
+};
+
 /** Starter comment bank for a tenant; reviewers add, use and delete their own from there. */
 export const STARTER_SNIPPETS = [
 	"Quantify the impact: add numbers, percentages or scale.",
@@ -67,14 +76,14 @@ export const STARTER_SNIPPETS = [
 
 const escapeHtml = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+const anchorSection = (data: ResumeData, id: string) =>
+	data.customSections.find((s) => s.id === id) ?? data.sections[id as keyof ResumeData["sections"]];
+
 /** The object an anchor points at inside resume data: one entry, the basics, or the summary. */
 export function anchorTarget(data: ResumeData, anchor: CommentAnchor): Record<string, unknown> | undefined {
 	if (anchor.section === "basics") return data.basics;
 	if (anchor.section === "summary") return data.summary;
-	const section =
-		data.customSections.find((s) => s.id === anchor.section) ??
-		data.sections[anchor.section as keyof ResumeData["sections"]];
-	return section?.items.find((item) => item.id === anchor.itemId);
+	return anchorSection(data, anchor.section)?.items.find((item) => item.id === anchor.itemId);
 }
 
 const plainText = (html: string) =>
@@ -100,12 +109,7 @@ export function anchorText(data: ResumeData, anchor: CommentAnchor): string | nu
 	let target: unknown;
 	if (anchor.section === "summary") target = data.summary.content;
 	else if (anchor.section === "basics" || anchor.itemId) target = anchorTarget(data, anchor);
-	else {
-		const section =
-			data.customSections.find((s) => s.id === anchor.section) ??
-			data.sections[anchor.section as keyof ResumeData["sections"]];
-		target = section?.items.filter((item) => !item.hidden);
-	}
+	else target = anchorSection(data, anchor.section)?.items.filter((item) => !item.hidden);
 	if (!target || (target as { hidden?: boolean }).hidden) return null;
 
 	const key = anchor.field?.split("-").pop();

@@ -1604,9 +1604,6 @@ function ChangesPanel({
 	showHighlights: boolean;
 	onToggleHighlights: (v: boolean) => void;
 }) {
-	// Same shape the rest of this panel used when only evaluations had snapshots.
-	const latestEvalWithSnapshot = baseline && { snapshot: baseline.data, evaluatedAt: baseline.at };
-
 	const diff = useMemo(() => {
 		if (!baseline || !currentData) return [];
 		return jsonpatch.compare(baseline.data, currentData);
@@ -1618,7 +1615,7 @@ function ChangesPanel({
 		return buildFullDiffHtml(currentData, baseline.data, diff);
 	}, [currentData, baseline, diff]);
 
-	if (!latestEvalWithSnapshot) {
+	if (!baseline) {
 		return (
 			<div className="flex flex-col items-center justify-center py-12 text-center">
 				<ShootingStarIcon weight="duotone" className="mb-3 size-10 text-slate-300" />
@@ -1636,7 +1633,7 @@ function ChangesPanel({
 				<CheckCircleIcon weight="duotone" className="mb-3 size-10 text-emerald-300" />
 				<p className="font-semibold text-slate-600">{t`No new changes`}</p>
 				<p className="mt-1 text-slate-400 text-sm">
-					{t`The student hasn't made any changes since the review on ${new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()}.`}
+					{t`The student hasn't made any changes since the review on ${baseline.at.toLocaleDateString()}.`}
 				</p>
 			</div>
 		);
@@ -1662,7 +1659,7 @@ function ChangesPanel({
 			<div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-amber-800 text-xs">
 				<p className="mb-1 flex items-center gap-1.5 font-bold">
 					<ShootingStarIcon className="size-4" />
-					Snapshot from {new Date(latestEvalWithSnapshot.evaluatedAt).toLocaleDateString()}
+					Snapshot from {baseline.at.toLocaleDateString()}
 				</p>
 				<p className="opacity-80">
 					{diff.length} change{diff.length !== 1 ? "s" : ""} detected since that review.

@@ -25,15 +25,8 @@ export async function getReviewAccess(
 	if (!row) throw new ORPCError("NOT_FOUND", { message: "Resume not found." });
 	if (row.userId === user.id) return "owner";
 
-	try {
-		await assertReviewStaff(user, resumeId);
-		return "staff";
-	} catch (error) {
-		if (error instanceof ORPCError && error.code === "FORBIDDEN") {
-			throw new ORPCError("FORBIDDEN", { message: "You do not have access to this resume's feedback." });
-		}
-		throw error;
-	}
+	await assertReviewStaff(user, resumeId);
+	return "staff";
 }
 
 /**

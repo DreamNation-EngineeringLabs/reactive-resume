@@ -36,7 +36,7 @@ import {
 	getUnitSchemaTypes,
 } from "@/integrations/eng-labs";
 import type { EngLabsLearnerProfile, OrgUnitRow, PlacementPackage, Section } from "@/integrations/eng-labs/types";
-import { reviewSummaryEmail } from "@/schema/resume/comment-anchor";
+import { REVIEW_VERDICTS, reviewSummaryEmail } from "@/schema/resume/comment-anchor";
 import { derror, dlog } from "@/utils/debug";
 import { env } from "@/utils/env";
 import { protectedProcedure } from "../context";
@@ -1152,14 +1152,6 @@ export const updateStatus = protectedProcedure
 
 		return { success: true };
 	});
-
-const REVIEW_VERDICTS: Partial<Record<string, "changes" | "approved">> = {
-	FACULTY_REVISION_REQUESTED: "changes",
-	PO_REVISION_REQUESTED: "changes",
-	FACULTY_VERIFIED: "approved",
-	PO_VERIFIED: "approved",
-	APPROVED: "approved",
-};
 
 /** Emails the student once per review, listing every open comment with a link straight to it. */
 async function emailReviewSummary(resumeId: string, reviewerName: string, approved: boolean) {

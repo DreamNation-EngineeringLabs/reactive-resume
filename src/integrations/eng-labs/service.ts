@@ -700,10 +700,10 @@ export async function getEngLabsTenantsByEmails(emails: string[]): Promise<Map<s
 	if (!pool || emails.length === 0) return tenants;
 
 	const { rows } = await pool.query<{ email: string; tenant_id: string | null }>(
-		`SELECT LOWER(TRIM(u.email)) AS email, u.tenant_id
+		`SELECT DISTINCT ON (LOWER(TRIM(u.email))) LOWER(TRIM(u.email)) AS email, u.tenant_id
 		 FROM users u
 		 WHERE LOWER(TRIM(u.email)) = ANY($1)
-		 ORDER BY CASE UPPER(u.type::text)
+		 ORDER BY LOWER(TRIM(u.email)), CASE UPPER(u.type::text)
 		   WHEN 'INSTRUCTOR' THEN 0
 		   WHEN 'FACULTY' THEN 0
 		   WHEN 'PLACEMENT_OFFICER' THEN 0
@@ -713,12 +713,7 @@ export async function getEngLabsTenantsByEmails(emails: string[]): Promise<Map<s
 		 u.id`,
 		[[...new Set(emails.map((e) => e.trim().toLowerCase()))]],
 	);
-	const seen = new Set<string>();
-	for (const r of rows) {
-		if (seen.has(r.email)) continue;
-		seen.add(r.email);
-		if (r.tenant_id) tenants.set(r.email, r.tenant_id);
-	}
+	for (const r of rows) if (r.tenant_id) tenants.set(r.email, r.tenant_id);
 	return tenants;
 }
 

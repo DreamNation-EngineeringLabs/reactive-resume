@@ -17,7 +17,12 @@ import {
 	resumeHistory,
 	reviewSnippet,
 } from "@/integrations/drizzle/schema";
-import { type CommentAnchor, type CommentSeverity, STARTER_SNIPPETS } from "@/schema/resume/comment-anchor";
+import {
+	type CommentAnchor,
+	type CommentSeverity,
+	REVIEW_VERDICTS,
+	STARTER_SNIPPETS,
+} from "@/schema/resume/comment-anchor";
 
 /**
  * CREATE: Add a comment to a resume
@@ -630,15 +635,6 @@ export async function updateResumeStatus({
 		APPROVED: "PO_APPROVED",
 	};
 
-	// A reviewer's verdict keeps a copy of the resume they reviewed, so the next review can show what changed.
-	const reviewVerdicts = [
-		"FACULTY_REVISION_REQUESTED",
-		"FACULTY_VERIFIED",
-		"PO_REVISION_REQUESTED",
-		"PO_VERIFIED",
-		"APPROVED",
-	];
-
 	if (actionMap[status]) {
 		await addToHistory({
 			resumeId,
@@ -647,7 +643,8 @@ export async function updateResumeStatus({
 			action: actionMap[status] as any,
 			changedBy,
 			actorType,
-			currentData: reviewVerdicts.includes(status) ? result[0]?.data : undefined,
+			// A verdict keeps a copy of the resume as reviewed, so the next review can show what changed.
+			currentData: status in REVIEW_VERDICTS ? result[0]?.data : undefined,
 		});
 	}
 
