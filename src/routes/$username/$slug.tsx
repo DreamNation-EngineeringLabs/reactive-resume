@@ -25,27 +25,18 @@ export const Route = createFileRoute("/$username/$slug")({
 			);
 
 			return { resume };
-		} catch {
+		} catch (error) {
+			// Redirect here: a catch-all notFound() used to swallow this before onError could see it.
+			if (error instanceof ORPCError && error.code === "NEED_PASSWORD") {
+				throw redirect({ to: "/auth/resume-password", search: { redirect: `/${username}/${slug}` } });
+			}
 			throw notFound();
 		}
 	},
 	head: ({ loaderData }) => ({
 		meta: [{ title: loaderData ? `${loaderData.resume.name} - Polymath Resume Builder` : "Polymath Resume Builder" }],
 	}),
-	onError: (error) => {
-		if (error instanceof ORPCError && error.code === "NEED_PASSWORD") {
-			const data = error.data as { username?: string; slug?: string } | undefined;
-			const username = data?.username;
-			const slug = data?.slug;
-
-			if (username && slug) {
-				throw redirect({
-					to: "/auth/resume-password",
-					search: { redirect: `/${username}/${slug}` },
-				});
-			}
-		}
-
+	onError: () => {
 		throw notFound();
 	},
 });
