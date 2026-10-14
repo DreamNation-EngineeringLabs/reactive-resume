@@ -27,7 +27,7 @@ export function GengarTemplate({ pageIndex, pageLayout }: TemplateProps) {
 		<div className="template-gengar page-content">
 			{/* Sidebar Background */}
 			{(!fullWidth || isFirstPage) && (
-				<div className="page-sidebar-background pointer-events-none absolute inset-y-0 z-0 w-(--page-sidebar-width) shrink-0 bg-(--page-primary-color)/20 ltr:start-0 rtl:end-0" />
+				<div className="page-sidebar-background pointer-events-none absolute inset-y-0 z-0 w-(--page-sidebar-width) shrink-0 bg-(--page-tint-color)/20 ltr:start-0 rtl:end-0" />
 			)}
 
 			<div className="flex">
@@ -56,7 +56,7 @@ export function GengarTemplate({ pageIndex, pageLayout }: TemplateProps) {
 						<PageSummary
 							className={cn(
 								sectionClassName,
-								"bg-(--page-primary-color)/20 px-(--page-margin-x) py-(--page-margin-y) [&>h6]:hidden",
+								"bg-(--page-tint-color)/20 px-(--page-margin-x) py-(--page-margin-y) [&>h6]:hidden",
 							)}
 						/>
 					)}
@@ -80,7 +80,7 @@ function Header() {
 
 	return (
 		<div className="page-header relative flex">
-			<div className="flex w-full shrink-0 flex-col justify-center gap-y-2 bg-(--page-primary-color) px-(--page-margin-x) py-(--page-margin-y) text-(--page-background-color)">
+			<div className="flex w-full shrink-0 flex-col justify-center gap-y-2 bg-(--page-fill-color) px-(--page-margin-x) py-(--page-margin-y) text-(--page-on-fill-color)">
 				<PagePicture />
 
 				<div>
@@ -90,7 +90,7 @@ function Header() {
 
 				<div
 					className="basics-items flex flex-col gap-y-1 *:flex *:items-center *:gap-x-1.5"
-					style={{ "--page-primary-color": "var(--page-background-color)" } as React.CSSProperties}
+					style={{ "--page-primary-color": "var(--page-on-fill-color)" } as React.CSSProperties}
 				>
 					{basics.email && (
 						<div className="basics-item-email">
