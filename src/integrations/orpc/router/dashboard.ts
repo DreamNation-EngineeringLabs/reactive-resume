@@ -4,23 +4,21 @@
  * Provides:
  * - Student feedback dashboard (with comments per resume)
  * - Faculty/PO section-scoped dashboard (with package grouping)
- * - Admin metrics dashboard (with timeline)
  * - Student detail endpoint (for faculty's detail panel)
  * - Submit resume for review (student action)
  */
 
+import { ORPCError } from "@orpc/client";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@/integrations/drizzle";
 import { db } from "@/integrations/drizzle/client";
 import {
-	enrichByEmails,
 	filterEmailsWithResumeBuilderAccess,
 	getAllOrgUnits,
 	getDescendantOrgUnitIds,
 	getEngLabsLearnerProfilesByEmails,
 	getEngLabsUserByEmail,
-	getFacultyList,
 	getInstructorPackages,
 	getInstructorSections,
 	getMenteeStudents,
@@ -40,7 +38,7 @@ import { REVIEW_VERDICTS, reviewSummaryEmail } from "@/schema/resume/comment-anc
 import { derror, dlog } from "@/utils/debug";
 import { env } from "@/utils/env";
 import { protectedProcedure } from "../context";
-import { assertReviewStaff } from "../helpers/review-access";
+import { assertReviewStaff, requireReviewer } from "../helpers/review-access";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -161,22 +159,22 @@ export const studentDashboard = protectedProcedure
 	})
 	.input(
 		z.object({
-			userId: z.string().describe("User ID of the student"),
-			engLabsUserId: z.string().optional().describe("Eng-labs user ID for enrollment lookup"),
+			userId: z.string().describe("Ignored: always the signed-in student (kept for older clients)"),
+			engLabsUserId: z.string().optional().describe("Ignored: resolved from the signed-in user"),
 			tenantId: z.string().optional().describe("Tenant ID (optional)"),
 		}),
 	)
-	.handler(async ({ input }) => {
-		const { userId } = input;
-
-		const resumes = await db.select().from(schema.resume).where(eq(schema.resume.userId, userId));
+	.handler(async ({ context }) => {
+		// Always the caller's own dashboard: the client-sent userId / engLabsUserId are not trusted.
+		const resumes = await db.select().from(schema.resume).where(eq(schema.resume.userId, context.user.id));
+		const engLabsUser = await getEngLabsUserByEmail(context.user.email);
 
 		const resumeIds = resumes.map((r) => r.id);
 		const [commentCounts, latestScores, submissionStatus, enrollment] = await Promise.all([
 			getCommentCountsByResumeIds(resumeIds),
 			getLatestEvaluationsByResumeIds(resumeIds),
 			getSubmissionStatusByResumeIds(resumeIds),
-			input.engLabsUserId ? getStudentEnrollmentInfo(input.engLabsUserId) : Promise.resolve(null),
+			engLabsUser ? getStudentEnrollmentInfo(engLabsUser.id) : Promise.resolve(null),
 		]);
 
 		const resumesWithFeedback = resumes.map((resume) => {
@@ -199,7 +197,7 @@ export const studentDashboard = protectedProcedure
 			scored.length > 0 ? scored.reduce((sum, r) => sum + (r.feedback.evaluationScore ?? 0), 0) / scored.length : null;
 
 		return {
-			user: { id: userId },
+			user: { id: context.user.id },
 			enrollment,
 			resumes: resumesWithFeedback,
 			stats: {
@@ -922,12 +920,19 @@ export const studentResumes = protectedProcedure
 			resumeAppUserId: z.string().describe("Local resume app user ID of the student"),
 		}),
 	)
-	.handler(async ({ input }) => {
+	.handler(async ({ context, input }) => {
 		const resumes = await db
 			.select()
 			.from(schema.resume)
 			.where(and(eq(schema.resume.userId, input.resumeAppUserId), eq(schema.resume.isPrimary, true)))
 			.orderBy(desc(schema.resume.updatedAt));
+		// Full resumes + feedback: staff of the student's tenant only.
+		if (resumes.length === 0) await requireReviewer(context.user.email);
+		else
+			await assertReviewStaff(
+				context.user,
+				resumes.map((r) => r.id),
+			);
 
 		const resumesWithDetail = await Promise.all(
 			resumes.map(async (resume) => {
@@ -1226,117 +1231,6 @@ export const bulkUpdateResumes = protectedProcedure
 	});
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Admin Metrics Dashboard
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const adminDashboard = protectedProcedure
-	.route({
-		method: "GET",
-		path: "/resumes/dashboard/admin",
-		tags: ["Dashboard"],
-		operationId: "getAdminDashboard",
-		summary: "Get admin organization metrics",
-		description:
-			"Returns aggregated metrics across the organization, including faculty performance and section health.",
-	})
-	.input(
-		z.object({
-			tenantId: z.string().describe("Tenant ID to fetch metrics for"),
-		}),
-	)
-	.handler(async ({ input }) => {
-		const { tenantId } = input;
-
-		const allResumes = await db.select().from(schema.resume);
-		const allEvaluations = await db.select().from(schema.resumeEvaluation);
-		const allComments = await db.select().from(schema.resumeComment);
-
-		const resumesWithEvaluation = allResumes.filter((r) => allEvaluations.some((e) => e.resumeId === r.id)).length;
-
-		const averageScore =
-			allEvaluations.length > 0
-				? allEvaluations.reduce((sum, e) => sum + (e.overallScore || 0), 0) / allEvaluations.length
-				: null;
-
-		const [sections, facultyList] = await Promise.all([getPlacementScopedSections(tenantId), getFacultyList(tenantId)]);
-
-		const facultyPerformance = facultyList.map((faculty) => {
-			const evalCount = allEvaluations.filter((e) => e.evaluatedBy === faculty.id).length;
-			const commentCount = allComments.filter((c) => c.authorId === faculty.id).length;
-			return {
-				id: faculty.id,
-				name: faculty.name,
-				email: faculty.email,
-				evaluationsCompleted: evalCount,
-				commentsMade: commentCount,
-			};
-		});
-
-		const localUsers = await db.select().from(schema.user);
-		const localEmails = localUsers.map((u) => u.email);
-		const engLabsInfo = await enrichByEmails(localEmails);
-
-		const sectionHealth = sections.map((section) => {
-			const sectionEmails = new Set<string>();
-			for (const [email, info] of engLabsInfo) {
-				if (info.sectionId === section.id) sectionEmails.add(email);
-			}
-			const sectionLocalUserIds = localUsers.filter((u) => sectionEmails.has(u.email)).map((u) => u.id);
-			const sectionResumes = allResumes.filter((r) => sectionLocalUserIds.includes(r.userId));
-			const sectionEvaluated = sectionResumes.filter((r) => allEvaluations.some((e) => e.resumeId === r.id));
-
-			return {
-				id: section.id,
-				name: section.name,
-				code: section.code,
-				packageId: section.packageId,
-				packageName: section.packageName,
-				totalStudents: sectionEmails.size,
-				totalResumes: sectionResumes.length,
-				evaluatedResumes: sectionEvaluated.length,
-				completionRate:
-					sectionResumes.length > 0 ? Math.round((sectionEvaluated.length / sectionResumes.length) * 100) : 0,
-			};
-		});
-
-		const recentResumes = allResumes
-			.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-			.slice(0, 5);
-		const recentEvaluations = allEvaluations
-			.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-			.slice(0, 5);
-		const recentComments = allComments
-			.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-			.slice(0, 5);
-
-		const recentHistory = await db
-			.select()
-			.from(schema.resumeHistory)
-			.orderBy(desc(schema.resumeHistory.createdAt))
-			.limit(15);
-
-		return {
-			organization: { id: tenantId },
-			stats: {
-				totalResumes: allResumes.length,
-				totalEvaluations: allEvaluations.length,
-				resumesEvaluated: resumesWithEvaluation,
-				completionRate: allResumes.length > 0 ? Math.round((resumesWithEvaluation / allResumes.length) * 100) : 0,
-				totalComments: allComments.length,
-				averageScore,
-			},
-			facultyPerformance,
-			sectionHealth,
-			recentActivity: {
-				recentResumes,
-				recentEvaluations,
-				recentComments,
-			},
-			recentHistory,
-		};
-	});
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Forward Resume to PO
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1523,6 +1417,12 @@ export const poReviewSection = protectedProcedure
 		const { createPoSectionReview, bulkUpdateSectionResumes } = await import(
 			"@/integrations/drizzle/services/resume-feedback.service"
 		);
+		await requireReviewer(context.user.email);
+		if (input.resumes.length > 0)
+			await assertReviewStaff(
+				context.user,
+				input.resumes.map((r) => r.id),
+			);
 
 		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
 
@@ -1568,10 +1468,20 @@ export const updatePoSectionReview = protectedProcedure
 			voiceNoteUrl: z.string().optional().nullable(),
 		}),
 	)
-	.handler(async ({ input }) => {
+	.handler(async ({ context, input }) => {
 		const { updatePoSectionReview: updateReview } = await import(
 			"@/integrations/drizzle/services/resume-feedback.service"
 		);
+		// Only the officer who wrote the note can edit it.
+		const [review] = await db
+			.select({ poId: schema.poSectionReview.poId })
+			.from(schema.poSectionReview)
+			.where(eq(schema.poSectionReview.id, input.id))
+			.limit(1);
+		if (!review) throw new ORPCError("NOT_FOUND", { message: "Review not found." });
+		if (review.poId !== context.user.id) {
+			throw new ORPCError("FORBIDDEN", { message: "Only the placement officer who wrote this can edit it." });
+		}
 		return updateReview(input.id, {
 			reviewNotes: input.reviewNotes,
 			voiceNoteUrl: input.voiceNoteUrl,
@@ -1611,6 +1521,7 @@ export const getPoSectionReviews = protectedProcedure
 		const { getPoSectionReviews: getSectionReviews } = await import(
 			"@/integrations/drizzle/services/resume-feedback.service"
 		);
+		await requireReviewer(context.user.email);
 		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
 		return getSectionReviews(input.sectionId, tenantId);
 	});
@@ -1621,7 +1532,6 @@ export const dashboardRouter = {
 	studentResumes,
 	submitResume,
 	reviewResume,
-	admin: adminDashboard,
 	forward: forwardResume,
 	sectionsList,
 	updateStatus,

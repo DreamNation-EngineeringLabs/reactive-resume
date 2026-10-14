@@ -676,7 +676,8 @@ export const resumeRouter = {
 			.handler(async ({ context, input }) => {
 				const { createChecklist } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
-				const { id: facultyId, tenantId } = await resolveEngLabsActor(context.user.email);
+				// Reviewers only: a student's checklist could be used to score their own resume.
+				const { id: facultyId, tenantId } = await requireReviewer(context.user.email);
 
 				const checklist = await createChecklist({
 					facultyId,
@@ -792,6 +793,8 @@ export const resumeRouter = {
 			.handler(async ({ context, input }) => {
 				const { createEvaluation } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
+				// Staff of the student's tenant only, never the owner: the score shows on staff dashboards.
+				await assertReviewStaff(context.user, input.resumeId);
 				const { id: evaluatedBy, tenantId } = await resolveEngLabsActor(context.user.email);
 
 				const evaluation = await createEvaluation({
@@ -827,8 +830,10 @@ export const resumeRouter = {
 					}),
 				),
 			)
-			.handler(async ({ input }) => {
+			.handler(async ({ context, input }) => {
 				const { getEvaluationsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				// Each evaluation keeps a full copy of the resume: owner or reviewers only.
+				await getReviewAccess(context.user, input.resumeId);
 				return await getEvaluationsByResumeId(input.resumeId);
 			}),
 	},
