@@ -43,6 +43,9 @@ const statistics = {
 			.rightJoin(schema.resume, eq(schema.resumeStatistics.resumeId, schema.resume.id))
 			.where(and(eq(schema.resume.id, input.id), eq(schema.resume.userId, input.userId)));
 
+		// Deleted, missing or someone else's resume: 404, not a 500 from reading `undefined`.
+		if (!statistics) throw new ORPCError("NOT_FOUND");
+
 		return {
 			isPublic: statistics.isPublic,
 			views: statistics.views ?? 0,
