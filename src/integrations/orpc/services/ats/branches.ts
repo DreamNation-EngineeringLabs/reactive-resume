@@ -4,15 +4,13 @@ import type { ResumeData } from "@/schema/resume/data";
 /**
  * Department-aware ATS content. Without a job description the keyword score counts skill terms of the student's own
  * branch (the software taxonomy plus that branch's list; every list when the branch is unknown), and the suggestions
- * show examples from the same branch,
- * so a Civil student is no longer told to add Java and React.
- * The lists are a starting point, not the limit: `skill-lexicon.ts` adds the skills students of the same branch list
- * and the ones an AI check confirms, so skills missing here still count.
+ * show examples from the same branch, so a Civil student is no longer told to add Java and React.
+ * The skill lists are drafts: faculty of each department should review them.
  */
 type Branch = {
 	label: string;
 	/** Field of study as written on a resume or an eng-labs unit (full names and long codes). */
-	study: RegExp;
+	study?: RegExp;
 	/** Short codes, only trusted on eng-labs units ("ME" on a resume can also mean Master of Engineering). */
 	codes?: RegExp;
 	/** What to list under Skills. */
@@ -337,7 +335,6 @@ export const BRANCHES = {
 	general: {
 		...NON_SOFTWARE,
 		label: "your field",
-		study: /$^/,
 		hint: "software, tools, and methods you use",
 		examples: [
 			["Software", "MS Excel, MATLAB, AutoCAD"],
@@ -381,7 +378,7 @@ export type BranchKey = keyof typeof BRANCHES;
 const order: BranchKey[] = ["electrical", "electronics", "civil", "mechanical", "software"];
 
 /** Home branch: eng-labs units first (nearest first, class → department), then the field of study on the resume. */
-function homeBranch(units: string[], data: ResumeData): { key: BranchKey; from: "department" | "resume" } | undefined {
+function homeBranch(units: string[], data: ResumeData): BranchKey | undefined {
 	// EEE before ECE ("Electrical and Electronics"); short codes only on eng-labs units, and within one unit a field
 	// named in full wins over another branch's code ("Computer Engineering CE" is not Civil).
 	const find = (text: string, codes: boolean) =>
@@ -391,37 +388,14 @@ function homeBranch(units: string[], data: ResumeData): { key: BranchKey; from: 
 		});
 	for (const u of units) {
 		const key = find(u, false) ?? find(u, true);
-		if (key) return { key, from: "department" };
+		if (key) return key;
 	}
 	for (const i of data.sections.education.items.filter((i) => !i.hidden)) {
 		const s = `${i.degree} ${i.area}`;
 		// "IT" on a resume only in capitals: it is also an English word.
 		const key = find(s, false) ?? (/\bIT\b/.test(s) ? "software" : undefined);
-		if (key) return { key, from: "resume" };
+		if (key) return key;
 	}
-}
-
-/** The branch the resume's own field of study points to, if any. */
-export const resumeBranch = (data: ResumeData): BranchKey | undefined => homeBranch([], data)?.key;
-
-/** "STAAD.Pro", "STAAD Pro" and "staad-pro" are one skill: lowercase letters, digits, + and # only. */
-export const skillKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#]/g, "");
-
-/** Keys of every run of 1–4 words in the text, so a skill is found however it is spaced or punctuated. */
-export function keysIn(text: string): Set<string> {
-	const words = text
-		.split(/[\s,;|/•·()[\]{}:]+/)
-		.map(skillKey)
-		.filter(Boolean);
-	const keys = new Set<string>();
-	words.forEach((_, i) => {
-		let key = "";
-		for (const w of words.slice(i, i + 4)) {
-			key += w;
-			keys.add(key);
-		}
-	});
-	return keys;
 }
 
 const softwareForms = new Set(
@@ -449,7 +423,6 @@ const branchSkills = (() => {
 		.map(({ skill, forms, branches }) => ({
 			skill,
 			branches,
-			forms,
 			re: new RegExp(
 				`(?<![a-z0-9])(?:${forms.map((f) => escapeRe(f).replace(/\s+/g, "\\s+")).join("|")})(?![a-z0-9])`,
 				"i",
@@ -467,10 +440,6 @@ export const termsOf = (branch: BranchKey) =>
 				.filter((s) => branch === "general" || s.branches.has(branch) || s.branches.has("general"))
 				.map((s) => s.re);
 
-/** "MSExcel", "MS-Excel" and the listed "MS Excel" are one skill: the lists know it under any spelling. */
-const listedKeys = new Set([...softwareForms, ...branchSkills.flatMap((s) => s.forms)].map(skillKey));
-export const isListedSkill = (term: string) => listedKeys.has(skillKey(term));
-
 const SOFTWARE_WORDS =
 	"react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify|machine learning|deep learning|ci\\/cd|agile|scrum";
 const SOFTWARE_TERMS = new RegExp(`\\b(${SOFTWARE_WORDS})\\b`, "i");
@@ -483,15 +452,9 @@ const SOFTWARE_EVIDENCE = new RegExp(
 	"gi",
 );
 
-/** Does the text name a skill or tool of the branch? `extra`: skills the lists above miss (see `skill-lexicon.ts`). */
-export const namesSkill = (text: string, branch: BranchKey, extra: string[] = [], software = SOFTWARE_TERMS) => {
-	if (software.test(text) || termsOf(branch).some((re) => re.test(text))) return true;
-	const keys = extra.length > 0 ? keysIn(text) : undefined;
-	return !!keys && extra.some((e) => keys.has(skillKey(e)));
-};
-
-/** A skill that students of the student's branch list, and how many do. */
-export type Peer = { skill: string; students: number };
+/** Does the text name a skill or tool of the branch? */
+export const namesSkill = (text: string, branch: BranchKey, software = SOFTWARE_TERMS) =>
+	software.test(text) || termsOf(branch).some((re) => re.test(text));
 
 export type AtsProfile = {
 	/** Department, else field of study; "general" when neither is known. */
@@ -500,10 +463,6 @@ export type AtsProfile = {
 	focus: BranchKey;
 	/** Skills found on the resume, any field (for the AI prompts). */
 	skills: string[];
-	/** On the resume and counted although the lists miss them: listed by peers, or confirmed by the AI check. */
-	extra?: string[];
-	/** Skills peers of the same branch list that are not on this resume yet, most common first. */
-	peers?: Peer[];
 };
 
 /**
@@ -512,7 +471,7 @@ export type AtsProfile = {
  * A Civil student whose resume is all Python and Java is aiming at IT roles: suggestions follow the resume.
  */
 export function understandProfile(units: string[], data: ResumeData, text: string): AtsProfile {
-	const home = homeBranch(units, data)?.key;
+	const home = homeBranch(units, data);
 	const software = [...new Set((text.match(SOFTWARE_EVIDENCE) ?? []).map((s) => s.toLowerCase()))];
 	const found = branchSkills.filter((s) => s.re.test(text));
 	const evidence = (k: BranchKey) =>

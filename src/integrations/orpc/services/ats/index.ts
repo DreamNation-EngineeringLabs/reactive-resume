@@ -1,14 +1,13 @@
 import type { ResumeData } from "@/schema/resume/data";
-import { type AtsProfile, BRANCHES, isListedSkill, understandProfile } from "./branches";
+import { type AtsProfile, BRANCHES, understandProfile } from "./branches";
 import { extractKeywords } from "./keyword-extractor";
 import { scoreBrevity } from "./rules/brevity";
 import { scoreContentQuality } from "./rules/content-quality";
 import { scoreFormatting } from "./rules/formatting";
 import { scoreImpactMetrics } from "./rules/impact-metrics";
-import { countSkillTerms, getIndustryTaxonomyMatchCount, scoreKeywordMatch } from "./rules/keyword-match";
+import { getIndustryTaxonomyMatchCount, scoreKeywordMatch } from "./rules/keyword-match";
 import { scoreStructure } from "./rules/structure";
 import { scoreTailoring } from "./rules/tailoring";
-import { learnSkills } from "./skill-lexicon";
 import { generateSuggestions } from "./suggestion-generator";
 
 export interface RuleResult {
@@ -259,34 +258,15 @@ function rescaleCategory(cat: CategoryScore, newMax: number): CategoryScore {
 	};
 }
 
-/**
- * `units`: the student's eng-labs unit names, nearest first; they decide the branch before the resume does.
- * `userId`, `email`: the student; with them, skills the lists miss (peers', AI-confirmed) count too.
- */
+/** `units`: the student's eng-labs unit names, nearest first; they decide the branch before the resume does. */
 export async function scoreResume(
 	resumeData: ResumeData,
 	jobDescription?: string,
 	includeAiSuggestions = true,
 	units: string[] = [],
-	userId?: string,
-	email?: string,
 ): Promise<ScoringResult> {
 	const jdProvided = !!jobDescription && jobDescription.trim().length > 0;
-	// Step 1: understand the student (department, field of study, skills on the resume); step 2 suggests.
-	const text = resumeText(resumeData);
-	const understood = understandProfile(units, resumeData, text);
-	const learned =
-		userId && email
-			? await learnSkills({
-					userId,
-					email,
-					data: resumeData,
-					text,
-					branch: understood.focus,
-					isStatic: (term) => countSkillTerms(term, understood.focus) > 0 || isListedSkill(term),
-				})
-			: undefined;
-	const profile = { ...understood, ...learned };
+	const profile = understandProfile(units, resumeData, resumeText(resumeData));
 	const branch = profile.focus;
 	const tailored = branch !== "general" && !(branch === "software" && profile.home === "software");
 	const branchLabel = tailored ? BRANCHES[branch].label : undefined;
@@ -422,7 +402,7 @@ export async function scoreResume(
 	}
 
 	let [keywordMatch, impactMetrics, structure, formatting, brevity, sixthCategory] = await Promise.all([
-		scoreKeywordMatch(resumeData, requiredKeywords, softKeywords, branch, profile.extra),
+		scoreKeywordMatch(resumeData, requiredKeywords, softKeywords, branch),
 		scoreImpactMetrics(resumeData),
 		scoreStructure(resumeData),
 		scoreFormatting(resumeData),
@@ -489,7 +469,7 @@ export async function scoreResume(
 			totalBullets: bullets.length,
 			estimatedPages: estimatePageCount(resumeData),
 			aiRewriteUnavailable: genResult.aiRewriteUnavailable,
-			taxonomyMatchCount: jdProvided ? undefined : getIndustryTaxonomyMatchCount(resumeData, branch, profile.extra),
+			taxonomyMatchCount: jdProvided ? undefined : getIndustryTaxonomyMatchCount(resumeData, branch),
 			branch: branchLabel,
 			branchFrom,
 		},

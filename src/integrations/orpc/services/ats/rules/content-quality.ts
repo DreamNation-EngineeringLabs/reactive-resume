@@ -24,7 +24,7 @@ const contentQualitySchema = z.object({
  * Heuristic fallback for content quality scoring (no LLM available).
  * Intentionally strict — rewards only genuinely specific, substantive content.
  */
-function heuristicContentQuality(data: ResumeData, { extra, focus }: AtsProfile): z.infer<typeof contentQualitySchema> {
+function heuristicContentQuality(data: ResumeData, { focus }: AtsProfile): z.infer<typeof contentQualitySchema> {
 	const bullets = getAllBullets(data);
 	const summary = stripHtml(data.summary.content).trim();
 	const skills = getResumeSkills(data);
@@ -41,7 +41,7 @@ function heuristicContentQuality(data: ResumeData, { extra, focus }: AtsProfile)
 	let vagueBullets = 0;
 	for (const b of bullets) {
 		const hasMetric = metricRegex.test(b.text);
-		const hasTech = namesSkill(b.text, focus, extra, software);
+		const hasTech = namesSkill(b.text, focus, software);
 		const isVague = vagueRegex.test(b.text) || b.text.split(/\s+/).length < 7;
 		if (isVague) vagueBullets++;
 		else if (hasMetric || hasTech) specificBullets++;
@@ -78,7 +78,7 @@ function heuristicContentQuality(data: ResumeData, { extra, focus }: AtsProfile)
 	const summaryLower = summary.toLowerCase();
 	const boilerplateCount = boilerplatePhrases.filter((p) => summaryLower.includes(p)).length;
 	const summaryWords = summary.split(/\s+/).filter(Boolean).length;
-	const summaryHasTech = namesSkill(summary, focus, extra, software);
+	const summaryHasTech = namesSkill(summary, focus, software);
 	const summaryHasMetric = metricRegex.test(summary);
 
 	let summaryScore = 0;
@@ -100,7 +100,7 @@ function heuristicContentQuality(data: ResumeData, { extra, focus }: AtsProfile)
 	for (const project of projects.slice(0, 3)) {
 		const desc = stripHtml("description" in project ? (project as { description: string }).description : "").trim();
 		const words = desc.split(/\s+/).filter(Boolean).length;
-		const hasTech = namesSkill(desc, focus, extra, software);
+		const hasTech = namesSkill(desc, focus, software);
 		if (words >= 20 && hasTech) projectScore += 1;
 		else if (words >= 10) projectScore += 0.5;
 		// "a simple project" or similar → 0

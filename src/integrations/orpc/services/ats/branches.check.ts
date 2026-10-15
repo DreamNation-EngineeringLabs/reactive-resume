@@ -3,15 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ResumeData } from "@/schema/resume/data";
 import { sampleResumeData } from "@/schema/resume/sample";
-import {
-	type BranchKey,
-	branchPromptLine,
-	isListedSkill,
-	namesSkill,
-	QUALITY_TERMS,
-	termsOf,
-	understandProfile,
-} from "./branches";
+import { type BranchKey, branchPromptLine, namesSkill, QUALITY_TERMS, termsOf, understandProfile } from "./branches";
 
 const studying = (degree: string, area: string) => {
 	const data = structuredClone(sampleResumeData) as ResumeData;
@@ -92,7 +84,7 @@ test("branch skills match whole words only", () => {
 });
 
 test("the no-AI content-quality check names a software skill exactly as it always did", () => {
-	const names = (text: string) => namesSkill(text, "software", [], QUALITY_TERMS);
+	const names = (text: string) => namesSkill(text, "software", QUALITY_TERMS);
 	assert.equal(names("Implemented REST endpoints for the hostel allocation module"), true);
 	assert.equal(names("Built a chat app with Flutter and Firebase for the campus placement cell"), false);
 	assert.equal(names("Built bar bending schedules in MS Excel"), false);
@@ -111,12 +103,6 @@ test("the keyword count adds only the student's own branch; CSE counts the softw
 	assert.equal(count("civil", "Arduino, IoT, Simulink"), 0); // another branch's terms do not count
 	assert.equal(count("civil", "MS Excel, AutoCAD, Revit"), 3); // its own and the general tools do
 	assert.equal(count("electronics", "Arduino, IoT, Revit"), 2);
-});
-
-test("a listed skill is known under any spelling", () => {
-	for (const t of ["MS Excel", "MSExcel", "MS-Excel", "STAADPro", "Auto-CAD", "Solid-Works", "Node.js", "NodeJS"])
-		assert.equal(isListedSkill(t), true, t);
-	for (const t of ["Cavity Wall Tie Design", "Hardworking", "Navisworks"]) assert.equal(isListedSkill(t), false, t);
 });
 
 test("a Civil resume now has enough recognised terms to score (5+), software terms are left to the taxonomy", () => {
