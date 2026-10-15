@@ -1,6 +1,6 @@
 import { ORPCError } from "@orpc/server";
 import type { InferSelectModel } from "drizzle-orm";
-import puppeteer, { type Browser, type ConnectOptions } from "puppeteer-core";
+import puppeteer, { type Browser, type ConnectOptions, type Page } from "puppeteer-core";
 import type { schema } from "@/integrations/drizzle";
 import { pageDimensionsAsPixels } from "@/schema/page";
 import { printMarginTemplates } from "@/schema/templates";
@@ -36,6 +36,30 @@ async function closeBrowser(): Promise<void> {
 	if (browserInstance?.connected) {
 		await browserInstance.close();
 		browserInstance = null;
+	}
+}
+
+/** The printer service ended the session we were reusing (it scales to zero and times sessions out). */
+const isDroppedSession = (error: unknown, browser: Browser) =>
+	!browser.connected || /detached|Target closed|Session closed|Connection closed/i.test(String(error));
+
+/**
+ * Runs `run` on a new page and always closes the page, so a failed print leaves no tab open in the printer.
+ * A dropped session is retried once on a fresh connection; any other error is thrown as is.
+ */
+export async function withPage<T>(run: (page: Page, browser: Browser) => Promise<T>, connect = getBrowser): Promise<T> {
+	for (let attempt = 0; ; attempt++) {
+		const browser = await connect();
+		let page: Page | undefined;
+		try {
+			page = await browser.newPage();
+			return await run(page, browser);
+		} catch (error) {
+			if (attempt > 0 || !isDroppedSession(error, browser)) throw error;
+			await browser.disconnect().catch(() => {}); // getBrowser reconnects once this one is disconnected
+		} finally {
+			await page?.close().catch(() => {});
+		}
 	}
 }
 
@@ -110,119 +134,113 @@ export const printerService = {
 			marginY = Math.round(data.metadata.page.marginY / 0.75);
 		}
 
-		let browser: Browser | null = null;
-
 		try {
 			// Step 4: Connect to the browser and navigate to the printer route
-			browser = await getBrowser();
+			const pdfBuffer = await withPage(async (page, browser) => {
+				// Set locale cookie so the resume renders in the correct language
+				await browser.setCookie({ name: "locale", value: locale, domain });
 
-			// Set locale cookie so the resume renders in the correct language
-			await browser.setCookie({ name: "locale", value: locale, domain });
+				// Wait for the page to fully load (network idle + custom loaded attribute)
+				await page.emulateMediaType("print");
+				await page.setViewport(pageDimensionsAsPixels[format]);
+				await page.goto(url, { waitUntil: "networkidle0" });
+				await page.waitForFunction(() => document.body.getAttribute("data-wf-loaded") === "true", { timeout: 5_000 });
 
-			const page = await browser.newPage();
+				// Step 5: Adjust the DOM for proper PDF pagination
+				// This runs in the browser context to modify CSS before PDF generation
+				// For free-form: measure actual content height, don't add page breaks
+				// For A4/Letter: adjust page height for margins, add page breaks
+				const isFreeForm = format === "free-form";
 
-			// Wait for the page to fully load (network idle + custom loaded attribute)
-			await page.emulateMediaType("print");
-			await page.setViewport(pageDimensionsAsPixels[format]);
-			await page.goto(url, { waitUntil: "networkidle0" });
-			await page.waitForFunction(() => document.body.getAttribute("data-wf-loaded") === "true", { timeout: 5_000 });
+				const contentHeight = await page.evaluate(
+					(marginY: number, isFreeForm: boolean, minPageHeight: number) => {
+						const root = document.documentElement;
+						const pageElements = document.querySelectorAll("[data-page-index]");
+						const container = document.querySelector(".resume-preview-container") as HTMLElement | null;
 
-			// Step 5: Adjust the DOM for proper PDF pagination
-			// This runs in the browser context to modify CSS before PDF generation
-			// For free-form: measure actual content height, don't add page breaks
-			// For A4/Letter: adjust page height for margins, add page breaks
-			const isFreeForm = format === "free-form";
+						if (isFreeForm) {
+							// For free-form: add visual gaps between pages, then measure total height
+							// Convert marginY from PDF points to CSS pixels (1pt = 0.75px)
+							const marginYAsPixels = marginY * 0.75;
+							const numberOfPages = pageElements.length;
 
-			const contentHeight = await page.evaluate(
-				(marginY: number, isFreeForm: boolean, minPageHeight: number) => {
-					const root = document.documentElement;
-					const pageElements = document.querySelectorAll("[data-page-index]");
-					const container = document.querySelector(".resume-preview-container") as HTMLElement | null;
+							// Add margin between pages (except the last one)
+							for (let i = 0; i < numberOfPages - 1; i++) {
+								const pageEl = pageElements[i] as HTMLElement;
+								pageEl.style.marginBottom = `${marginYAsPixels}px`;
+							}
 
-					if (isFreeForm) {
-						// For free-form: add visual gaps between pages, then measure total height
-						// Convert marginY from PDF points to CSS pixels (1pt = 0.75px)
-						const marginYAsPixels = marginY * 0.75;
-						const numberOfPages = pageElements.length;
+							// Now measure the total height (margins are now part of the DOM)
+							let totalHeight = 0;
+							for (const el of pageElements) {
+								const pageEl = el as HTMLElement;
+								// offsetHeight includes padding and border, but not margin
+								const style = getComputedStyle(pageEl);
+								const marginBottom = Number.parseFloat(style.marginBottom) || 0;
+								totalHeight += pageEl.offsetHeight + marginBottom;
+							}
 
-						// Add margin between pages (except the last one)
-						for (let i = 0; i < numberOfPages - 1; i++) {
-							const pageEl = pageElements[i] as HTMLElement;
-							pageEl.style.marginBottom = `${marginYAsPixels}px`;
+							return Math.max(totalHeight, minPageHeight);
 						}
 
-						// Now measure the total height (margins are now part of the DOM)
-						let totalHeight = 0;
+						// For A4/Letter: existing behavior
+						// The --page-height CSS variable controls the height of each resume page.
+						// We need to reduce it by the PDF margins so content fits within the printable area.
+						// Without this, content would overflow and create empty pages.
+						const rootHeight = getComputedStyle(root).getPropertyValue("--page-height").trim();
+						const containerHeight = container
+							? getComputedStyle(container).getPropertyValue("--page-height").trim()
+							: null;
+						const currentHeight = containerHeight || rootHeight;
+						const heightValue = Math.min(Number.parseFloat(currentHeight), minPageHeight);
+
+						if (!Number.isNaN(heightValue)) {
+							// Subtract top + bottom margins from page height
+							const newHeight = `${heightValue - marginY}px`;
+							if (container) container.style.setProperty("--page-height", newHeight);
+							root.style.setProperty("--page-height", newHeight);
+						}
+
+						// Add page break CSS to each resume page element (identified by data-page-index attribute)
+						// This ensures each visual resume page starts a new PDF page
 						for (const el of pageElements) {
-							const pageEl = el as HTMLElement;
-							// offsetHeight includes padding and border, but not margin
-							const style = getComputedStyle(pageEl);
-							const marginBottom = Number.parseFloat(style.marginBottom) || 0;
-							totalHeight += pageEl.offsetHeight + marginBottom;
+							const element = el as HTMLElement;
+							const index = Number.parseInt(element.getAttribute("data-page-index") ?? "0", 10);
+
+							// Force a page break before each page except the first
+							if (index > 0) element.style.breakBefore = "page";
+
+							// Allow content within a page to break naturally if it overflows
+							// (e.g., if a single page has more content than fits on one PDF page)
+							element.style.breakInside = "auto";
 						}
 
-						return Math.max(totalHeight, minPageHeight);
-					}
+						return null; // Fixed height from pageDimensionsAsPixels for A4/Letter
+					},
+					marginY,
+					isFreeForm,
+					pageDimensionsAsPixels[format].height,
+				);
 
-					// For A4/Letter: existing behavior
-					// The --page-height CSS variable controls the height of each resume page.
-					// We need to reduce it by the PDF margins so content fits within the printable area.
-					// Without this, content would overflow and create empty pages.
-					const rootHeight = getComputedStyle(root).getPropertyValue("--page-height").trim();
-					const containerHeight = container
-						? getComputedStyle(container).getPropertyValue("--page-height").trim()
-						: null;
-					const currentHeight = containerHeight || rootHeight;
-					const heightValue = Math.min(Number.parseFloat(currentHeight), minPageHeight);
+				// Step 6: Generate the PDF with the specified dimensions and margins
+				// For free-form: use measured content height (with minimum constraint)
+				// For A4/Letter: use fixed dimensions from pageDimensionsAsPixels
+				const pdfHeight = isFreeForm && contentHeight ? contentHeight : pageDimensionsAsPixels[format].height;
 
-					if (!Number.isNaN(heightValue)) {
-						// Subtract top + bottom margins from page height
-						const newHeight = `${heightValue - marginY}px`;
-						if (container) container.style.setProperty("--page-height", newHeight);
-						root.style.setProperty("--page-height", newHeight);
-					}
-
-					// Add page break CSS to each resume page element (identified by data-page-index attribute)
-					// This ensures each visual resume page starts a new PDF page
-					for (const el of pageElements) {
-						const element = el as HTMLElement;
-						const index = Number.parseInt(element.getAttribute("data-page-index") ?? "0", 10);
-
-						// Force a page break before each page except the first
-						if (index > 0) element.style.breakBefore = "page";
-
-						// Allow content within a page to break naturally if it overflows
-						// (e.g., if a single page has more content than fits on one PDF page)
-						element.style.breakInside = "auto";
-					}
-
-					return null; // Fixed height from pageDimensionsAsPixels for A4/Letter
-				},
-				marginY,
-				isFreeForm,
-				pageDimensionsAsPixels[format].height,
-			);
-
-			// Step 6: Generate the PDF with the specified dimensions and margins
-			// For free-form: use measured content height (with minimum constraint)
-			// For A4/Letter: use fixed dimensions from pageDimensionsAsPixels
-			const pdfHeight = isFreeForm && contentHeight ? contentHeight : pageDimensionsAsPixels[format].height;
-
-			const pdfBuffer = await page.pdf({
-				width: `${pageDimensionsAsPixels[format].width}px`,
-				height: `${pdfHeight}px`,
-				tagged: true, // Adds accessibility tags to the PDF
-				waitForFonts: true, // Ensures all fonts are loaded before rendering
-				printBackground: true, // Includes background colors and images
-				margin: {
-					bottom: 0,
-					top: marginY,
-					right: marginX,
-					left: marginX,
-				},
+				return page.pdf({
+					width: `${pageDimensionsAsPixels[format].width}px`,
+					height: `${pdfHeight}px`,
+					tagged: true, // Adds accessibility tags to the PDF
+					waitForFonts: true, // Ensures all fonts are loaded before rendering
+					printBackground: true, // Includes background colors and images
+					margin: {
+						bottom: 0,
+						top: marginY,
+						right: marginX,
+						left: marginX,
+					},
+				});
 			});
-
-			await page.close();
 
 			// Step 7: Upload the generated PDF to storage
 			const result = await uploadFile({
@@ -288,22 +306,16 @@ export const printerService = {
 		const token = generatePrinterToken(id);
 		const url = `${baseUrl}/resume/printer/${id}?token=${token}`;
 
-		let browser: Browser | null = null;
-
 		try {
-			browser = await getBrowser();
+			const screenshotBuffer = await withPage(async (page, browser) => {
+				await browser.setCookie({ name: "locale", value: locale, domain });
 
-			await browser.setCookie({ name: "locale", value: locale, domain });
+				await page.setViewport(pageDimensionsAsPixels.a4);
+				await page.goto(url, { waitUntil: "networkidle0" });
+				await page.waitForFunction(() => document.body.getAttribute("data-wf-loaded") === "true", { timeout: 5_000 });
 
-			const page = await browser.newPage();
-
-			await page.setViewport(pageDimensionsAsPixels.a4);
-			await page.goto(url, { waitUntil: "networkidle0" });
-			await page.waitForFunction(() => document.body.getAttribute("data-wf-loaded") === "true", { timeout: 5_000 });
-
-			const screenshotBuffer = await page.screenshot({ type: "webp", quality: 80 });
-
-			await page.close();
+				return page.screenshot({ type: "webp", quality: 80 });
+			});
 
 			const result = await uploadFile({
 				userId,
