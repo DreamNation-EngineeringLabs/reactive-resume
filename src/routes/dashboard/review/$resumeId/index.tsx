@@ -79,6 +79,15 @@ function ReviewPage() {
 	const [anchor, setAnchor] = useState<CommentAnchor | null>(null);
 	const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 	const [compareId, setCompareId] = useState<string | null>(null);
+	// Prev/Next keep this page mounted, so what was aimed at one student's resume is dropped when the resume changes.
+	const [shownResumeId, setShownResumeId] = useState(resumeId);
+	if (shownResumeId !== resumeId) {
+		setShownResumeId(resumeId);
+		setReplyTo(null);
+		setAnchor(null);
+		setActiveCommentId(null);
+		setCompareId(null);
+	}
 	const commentInputRef = useRef<HTMLTextAreaElement>(null);
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
@@ -206,13 +215,16 @@ function ReviewPage() {
 		if (activeCommentId) document.getElementById(`comment-${activeCommentId}`)?.scrollIntoView({ block: "nearest" });
 	}, [activeCommentId]);
 
-	useHotkeys("alt+right", () => nextResume && handleNavigate(nextResume), [nextResume]);
-	useHotkeys("alt+left", () => prevResume && handleNavigate(prevResume), [prevResume]);
 	useHotkeys("escape", () => setAnchor(null));
 
 	// "What changed since the last review": compared with the resume as last reviewed (comment, evaluation or verdict).
 	const copies = useMemo(() => (data ? reviewCopies(data.evaluations, data.history, data.comments) : []), [data]);
-	const baseline = copies[0] ?? null;
+	// A copy identical to the resume as it is now, kept with this round's first comment, would hide every change.
+	const baseline = useMemo(() => {
+		if (!data) return null;
+		const seen = data.comments.filter((c) => c.snapshot && jsonpatch.compare(c.snapshot, data.resume.data).length > 0);
+		return reviewCopies(data.evaluations, data.history, seen)[0] ?? null;
+	}, [data]);
 	const changes = useMemo(
 		() => (baseline && data ? changedAnchors(baseline.data, data.resume.data as ResumeData) : []),
 		[baseline, data],
@@ -569,6 +581,7 @@ function ReviewPage() {
 						{activeTab === "comments" && (
 							<div className="space-y-4">
 								<CommentComposer
+									key={resumeId}
 									resumeData={resume.data as ResumeData}
 									anchor={replyTo ? null : anchor}
 									onClearAnchor={() => setAnchor(null)}
@@ -621,7 +634,7 @@ function ReviewPage() {
 																			: setActiveCommentId(c.id)
 																	}
 																	className={cn(
-																		"mb-2 block w-full rounded-lg border-l-4 bg-amber-50/60 px-3 py-1.5 text-start hover:bg-amber-50",
+																		"mb-2 block w-full rounded-lg border-l-4 bg-amber-500/10 px-3 py-1.5 text-start hover:bg-amber-500/20",
 																		severityEdge(c.severity),
 																	)}
 																>
@@ -663,7 +676,7 @@ function ReviewPage() {
 																{c.content}
 															</p>
 															{c.suggestion && c.anchor?.quote && (
-																<p className="mt-2 rounded-lg bg-emerald-50/60 px-3 py-1.5 text-xs">
+																<p className="mt-2 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs">
 																	<span className="font-semibold text-emerald-700">{t`Suggested rewrite`} </span>
 																	<del className="text-muted-foreground">{c.anchor.quote.exact}</del>{" "}
 																	<ins className="text-foreground no-underline">{c.suggestion}</ins>
@@ -839,6 +852,7 @@ function ReviewPage() {
 						{/* ── Evaluate ── */}
 						{activeTab === "evaluate" && (
 							<EvaluatePanel
+								key={resumeId}
 								resumeId={resumeId}
 								engLabsStudentId={engLabsStudentId}
 								tenantId={tenantId}

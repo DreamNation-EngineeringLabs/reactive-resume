@@ -62,6 +62,13 @@ export function CommentComposer({
 	const quote = anchor?.quote?.exact;
 	const isReply = !!replyTo;
 
+	// A rewrite belongs to the text it was written for: selecting other text starts without one.
+	const [rewriteFor, setRewriteFor] = useState(quote);
+	if (rewriteFor !== quote) {
+		setRewriteFor(quote);
+		setSuggestion(null);
+	}
+
 	// `#word` right before the caret searches the comment bank.
 	const hashQuery = useMemo(() => /(?:^|\s)#([^\s#]*)$/.exec(content.slice(0, caret))?.[1] ?? null, [content, caret]);
 	const matches = useMemo(() => {
@@ -338,9 +345,7 @@ export function CommentComposer({
 					</>
 				)}
 			</div>
-			<p className="mt-2 text-[10px] text-muted-foreground">
-				{t`Ctrl+Enter posts. Esc clears the selection. Alt+← and Alt+→ open the previous or next student.`}
-			</p>
+			<p className="mt-2 text-[10px] text-muted-foreground">{t`Ctrl+Enter posts. Esc clears the selection.`}</p>
 		</div>
 	);
 }
