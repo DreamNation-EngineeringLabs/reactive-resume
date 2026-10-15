@@ -211,7 +211,7 @@ export function KeywordCurveChart({ currentCount }: KeywordCurveChartProps) {
 					className="text-zinc-400"
 					textAnchor="middle"
 				>
-					<Trans>Tech terms detected</Trans>
+					<Trans>Skill terms detected</Trans>
 				</text>
 				<text
 					x={10}
