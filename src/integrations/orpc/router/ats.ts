@@ -70,6 +70,7 @@ export const atsRouter = {
 					input.includeAiSuggestions,
 					units,
 					context.user.id,
+					context.user.email,
 				);
 
 				// Consume credit after successful scoring

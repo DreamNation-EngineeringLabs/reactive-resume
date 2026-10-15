@@ -1,5 +1,5 @@
 import type { ResumeData } from "@/schema/resume/data";
-import { type AtsProfile, BRANCHES, understandProfile } from "./branches";
+import { type AtsProfile, BRANCHES, isListedSkill, understandProfile } from "./branches";
 import { extractKeywords } from "./keyword-extractor";
 import { scoreBrevity } from "./rules/brevity";
 import { scoreContentQuality } from "./rules/content-quality";
@@ -261,7 +261,7 @@ function rescaleCategory(cat: CategoryScore, newMax: number): CategoryScore {
 
 /**
  * `units`: the student's eng-labs unit names, nearest first; they decide the branch before the resume does.
- * `userId`: the student; with it, skills the lists miss (peers', AI-confirmed) count too.
+ * `userId`, `email`: the student; with them, skills the lists miss (peers', AI-confirmed) count too.
  */
 export async function scoreResume(
 	resumeData: ResumeData,
@@ -269,20 +269,23 @@ export async function scoreResume(
 	includeAiSuggestions = true,
 	units: string[] = [],
 	userId?: string,
+	email?: string,
 ): Promise<ScoringResult> {
 	const jdProvided = !!jobDescription && jobDescription.trim().length > 0;
 	// Step 1: understand the student (department, field of study, skills on the resume); step 2 suggests.
 	const text = resumeText(resumeData);
 	const understood = understandProfile(units, resumeData, text);
-	const learned = userId
-		? await learnSkills({
-				userId,
-				data: resumeData,
-				text,
-				branch: understood.focus,
-				isStatic: (term) => countSkillTerms(term) > 0,
-			})
-		: undefined;
+	const learned =
+		userId && email
+			? await learnSkills({
+					userId,
+					email,
+					data: resumeData,
+					text,
+					branch: understood.focus,
+					isStatic: (term) => countSkillTerms(term, understood.focus) > 0 || isListedSkill(term),
+				})
+			: undefined;
 	const profile = { ...understood, ...learned };
 	const branch = profile.focus;
 	const tailored = branch !== "general" && !(branch === "software" && profile.home === "software");
@@ -486,7 +489,7 @@ export async function scoreResume(
 			totalBullets: bullets.length,
 			estimatedPages: estimatePageCount(resumeData),
 			aiRewriteUnavailable: genResult.aiRewriteUnavailable,
-			taxonomyMatchCount: jdProvided ? undefined : getIndustryTaxonomyMatchCount(resumeData, profile.extra),
+			taxonomyMatchCount: jdProvided ? undefined : getIndustryTaxonomyMatchCount(resumeData, branch, profile.extra),
 			branch: branchLabel,
 			branchFrom,
 		},

@@ -98,7 +98,7 @@ export async function generateSuggestions(
 	const resumeSkills = getResumeSkills(data).map((s: string) => s.toLowerCase());
 	const kwCategoryScore = scoringContext?.categories.keywordMatch;
 	const profile: AtsProfile = scoringContext?.profile ?? { home: "general", focus: "general", skills: [] };
-	const taxonomyCount = getIndustryTaxonomyMatchCount(data, profile.extra);
+	const taxonomyCount = getIndustryTaxonomyMatchCount(data, profile.focus, profile.extra);
 	const branch = profile.focus;
 	const b = BRANCHES[branch];
 
@@ -142,7 +142,7 @@ export async function generateSuggestions(
 			});
 		}
 	} else if (!jdAnalysis) {
-		// NO JD — align with the keyword score (skill terms of every field), examples from the student's branch
+		// NO JD — align with the keyword score (skill terms of the student's branch), examples from the student's branch
 		const hasLanguage = resumeSkills.some((s: string) =>
 			["python", "javascript", "java", "cpp", "c++", "golang", "ruby", "typescript"].includes(s),
 		);
@@ -151,7 +151,9 @@ export async function generateSuggestions(
 		);
 		// Outside software, the basics are any named skill or tool, not a programming language plus a framework
 		const hasBasics =
-			branch === "software" ? hasLanguage && hasFramework : resumeSkills.some((s) => namesSkill(s, profile.extra));
+			branch === "software"
+				? hasLanguage && hasFramework
+				: resumeSkills.some((s) => namesSkill(s, branch, profile.extra));
 
 		const scoreRatio = kwCategoryScore && kwCategoryScore.max > 0 ? kwCategoryScore.score / kwCategoryScore.max : 1;
 		const needsDensityHelp = taxonomyCount < 12 || scoreRatio < 0.55 || !hasBasics || resumeSkills.length < 10;
@@ -428,7 +430,7 @@ export async function generateSuggestions(
 		const rawDesc = "description" in project ? (project as { description: string }).description : "";
 		const desc = stripHtml(rawDesc).trim();
 		const descWords = desc.split(/\s+/).filter(Boolean).length;
-		const hasTechStack = namesSkill(desc, profile.extra);
+		const hasTechStack = namesSkill(desc, branch, profile.extra);
 		const hasOutcome =
 			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
 				desc,
@@ -1381,7 +1383,7 @@ export async function generateSuggestions(
 		const desc = stripHtml(rawDesc).trim();
 		const descWords = desc.split(/\s+/).filter(Boolean).length;
 
-		const hasTechStack = namesSkill(desc, profile.extra);
+		const hasTechStack = namesSkill(desc, branch, profile.extra);
 		const hasOutcome =
 			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
 				desc,
@@ -1542,7 +1544,7 @@ export async function generateSuggestions(
 		];
 		const summaryLower = summaryPlain.toLowerCase();
 		const boilerplateCount = boilerplateTerms.filter((t) => summaryLower.includes(t)).length;
-		const summaryHasTech = namesSkill(summaryPlain, profile.extra);
+		const summaryHasTech = namesSkill(summaryPlain, branch, profile.extra);
 		const summaryHasMetric = /\d+[%+]|\d+\s*(years?|months?|projects?|apps?|systems?)/i.test(summaryPlain);
 
 		if (boilerplateCount >= 2 || (!summaryHasTech && !summaryHasMetric && summaryPlain.length > 20)) {

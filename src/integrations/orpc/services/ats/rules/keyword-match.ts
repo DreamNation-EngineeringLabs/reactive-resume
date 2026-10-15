@@ -1,6 +1,6 @@
 import skillsTaxonomy from "@/data/skills-taxonomy.json";
 import type { ResumeData } from "@/schema/resume/data";
-import { BRANCHES, type BranchKey, branchTerms } from "../branches";
+import { BRANCHES, type BranchKey, termsOf } from "../branches";
 import type { CategoryScore, RuleResult } from "../index";
 import { getAllBullets, getResumeSkills, stripHtml } from "../index";
 
@@ -25,11 +25,11 @@ function buildAliasMap(): Map<string, string[]> {
 
 const aliasMap = buildAliasMap();
 
-/** Unique skill terms in the text: the software taxonomy (matched as before) plus every branch list. */
-export function countSkillTerms(text: string): number {
+/** Unique skill terms in the text: the software taxonomy (matched as before) plus the student's branch lists. */
+export function countSkillTerms(text: string, branch: BranchKey): number {
 	const software = new Set<string>();
 	for (const [skill, forms] of aliasMap) if (keywordFoundInText(skill, text)) software.add(forms[0]);
-	return software.size + branchTerms.filter((re) => re.test(text)).length;
+	return software.size + termsOf(branch).filter((re) => re.test(text)).length;
 }
 
 /**
@@ -136,8 +136,8 @@ export async function scoreKeywordMatch(
 	}
 
 	if (jdKeywords.length === 0 && softKeywords.length === 0) {
-		// No JD provided — count skill terms of every field for industry density
-		const count = countSkillTerms(allContent) + extra.length;
+		// No JD provided — count skill terms of the student's field for industry density
+		const count = countSkillTerms(allContent, branch) + extra.length;
 		const b = BRANCHES[branch];
 		// Scoring curve: requires minimum 5 recognizable skills to earn any points.
 		// Uses a sub-linear power curve (exponent 0.9) so early skills are worth less.
@@ -251,14 +251,14 @@ export async function scoreKeywordMatch(
 }
 
 /** Count unique taxonomy skills detected in resume text (same basis as no-JD scoring). */
-export function getIndustryTaxonomyMatchCount(data: ResumeData, extra: string[] = []): number {
+export function getIndustryTaxonomyMatchCount(data: ResumeData, branch: BranchKey, extra: string[] = []): number {
 	const resumeSkills = getResumeSkills(data);
 	const bullets = getAllBullets(data);
 	const summaryText = stripHtml(data.summary.content);
 	const headlineText = data.basics.headline;
 	const allContent = [...resumeSkills, ...bullets.map((b) => b.text), summaryText, headlineText].join(" ");
 	if (allContent.trim().length < 50) return 0;
-	return countSkillTerms(allContent) + extra.length;
+	return countSkillTerms(allContent, branch) + extra.length;
 }
 
 /** JD keywords that appear somewhere on the resume but not in experience/project/volunteer bullet text (KW-2 gap). */

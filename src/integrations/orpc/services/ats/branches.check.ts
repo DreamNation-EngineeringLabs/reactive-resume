@@ -3,7 +3,15 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ResumeData } from "@/schema/resume/data";
 import { sampleResumeData } from "@/schema/resume/sample";
-import { branchPromptLine, branchTerms, namesSkill, understandProfile } from "./branches";
+import {
+	type BranchKey,
+	branchPromptLine,
+	isListedSkill,
+	namesSkill,
+	QUALITY_TERMS,
+	termsOf,
+	understandProfile,
+} from "./branches";
 
 const studying = (degree: string, area: string) => {
 	const data = structuredClone(sampleResumeData) as ResumeData;
@@ -26,6 +34,8 @@ test("eng-labs units decide the home branch, nearest unit first", () => {
 		[["CSE-AIML-B", "CSE (AI & ML) CSM"], "software"],
 		[["Civil Engineering CE"], "civil"],
 		[["CE-A CE-A", "CE"], "civil"],
+		[["Computer Engineering CE"], "software"], // a field named in full beats another branch's short code
+		[["ECE-B ECE-B", "Demo Institute of Information Technology"], "electronics"], // the nearest unit decides, not a field word on the institute
 		[["Electrical and Electronics Engineering EEE"], "electrical"],
 		[["ECE-B ECE-B"], "electronics"],
 		[["EIE EIE"], "electronics"],
@@ -54,6 +64,10 @@ test("profile: suggestions follow the resume when it clearly targets another fie
 	assert.equal(understandProfile(["CSE-A"], noStudy, SOFTWARE).focus, "software");
 	assert.equal(understandProfile([], noStudy, CIVIL).focus, "civil"); // no department or field: the skills decide
 	assert.equal(understandProfile([], noStudy, "Communication, teamwork").focus, "general");
+	// the software evidence list is closed, so a CSE student is never moved to another branch by their skills
+	const embedded = "C, Python, Arduino, Raspberry Pi, IoT, Embedded Systems";
+	assert.equal(understandProfile(["CSE-A"], noStudy, embedded).focus, "software");
+	assert.equal(understandProfile(["Civil Engineering CE"], noStudy, embedded).focus, "electronics");
 });
 
 test("AI prompt line follows the profile; CSE students get none", () => {
@@ -68,20 +82,48 @@ test("AI prompt line follows the profile; CSE students get none", () => {
 });
 
 test("branch skills match whole words only", () => {
-	assert.equal(namesSkill("Drafted column layouts in AutoCAD."), true);
-	assert.equal(namesSkill("Analysed the frame in STAAD.Pro"), true);
-	assert.equal(namesSkill("Mapped the site with ArcGIS"), true);
-	assert.equal(namesSkill("Built bar bending schedules in MS Excel"), true);
-	assert.equal(namesSkill("Achieved excellent results in logistics and a decade of casting"), false);
-	assert.equal(namesSkill("Designed beams as per IS 456"), true);
-	assert.equal(namesSkill("this 4560 value"), false);
+	assert.equal(namesSkill("Drafted column layouts in AutoCAD.", "civil"), true);
+	assert.equal(namesSkill("Analysed the frame in STAAD.Pro", "civil"), true);
+	assert.equal(namesSkill("Mapped the site with ArcGIS", "civil"), true);
+	assert.equal(namesSkill("Built bar bending schedules in MS Excel", "civil"), true);
+	assert.equal(namesSkill("Achieved excellent results in logistics and a decade of casting", "civil"), false);
+	assert.equal(namesSkill("Designed beams as per IS 456", "civil"), true);
+	assert.equal(namesSkill("this 4560 value", "civil"), false);
+});
+
+test("the no-AI content-quality check names a software skill exactly as it always did", () => {
+	const names = (text: string) => namesSkill(text, "software", [], QUALITY_TERMS);
+	assert.equal(names("Implemented REST endpoints for the hostel allocation module"), true);
+	assert.equal(names("Built a chat app with Flutter and Firebase for the campus placement cell"), false);
+	assert.equal(names("Built bar bending schedules in MS Excel"), false);
+	assert.equal(names("Wired an Arduino and an IoT sensor to the lab server"), false);
+	assert.equal(names("Built a chat app with Flutter and Python"), true);
+	// the suggestions keep the wider software list
+	assert.equal(namesSkill("Built a chat app with Flutter and Firebase", "software"), true);
+});
+
+test("the keyword count adds only the student's own branch; CSE counts the software taxonomy alone", () => {
+	const count = (b: BranchKey, t: string) => termsOf(b).filter((re) => re.test(t)).length;
+	const generic =
+		"Version Control Systems (Git), data analysis, strive to excel, Arduino, IoT, MS Office, Quality Assurance";
+	assert.equal(count("software", generic), 0);
+	assert.ok(count("general", generic) >= 5); // branch unknown: every list
+	assert.equal(count("civil", "Arduino, IoT, Simulink"), 0); // another branch's terms do not count
+	assert.equal(count("civil", "MS Excel, AutoCAD, Revit"), 3); // its own and the general tools do
+	assert.equal(count("electronics", "Arduino, IoT, Revit"), 2);
+});
+
+test("a listed skill is known under any spelling", () => {
+	for (const t of ["MS Excel", "MSExcel", "MS-Excel", "STAADPro", "Auto-CAD", "Solid-Works", "Node.js", "NodeJS"])
+		assert.equal(isListedSkill(t), true, t);
+	for (const t of ["Cavity Wall Tie Design", "Hardworking", "Navisworks"]) assert.equal(isListedSkill(t), false, t);
 });
 
 test("a Civil resume now has enough recognised terms to score (5+), software terms are left to the taxonomy", () => {
 	const civil = `${CIVIL} MS Excel, Estimation & Costing, bar bending schedules.`;
-	assert.ok(branchTerms.filter((re) => re.test(civil)).length >= 8);
+	assert.ok(termsOf("civil").filter((re) => re.test(civil)).length >= 8);
 	assert.equal(
-		branchTerms.some((re) => re.test("Python")),
+		termsOf("general").some((re) => re.test("Python")),
 		false,
 	);
 });

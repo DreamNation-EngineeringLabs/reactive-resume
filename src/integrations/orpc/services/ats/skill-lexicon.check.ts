@@ -3,8 +3,16 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ResumeData } from "@/schema/resume/data";
 import { sampleResumeData } from "@/schema/resume/sample";
-import { keysIn, skillKey } from "./branches";
-import { buildCorpus, classifySkills, extraSkills, isSkillLike, learnedTerms, MAX_AI_SKILLS } from "./skill-lexicon";
+import { isListedSkill, keysIn, skillKey } from "./branches";
+import {
+	buildCorpus,
+	classifySkills,
+	extraSkills,
+	isSkillLike,
+	learnedTerms,
+	MAX_AI_SKILLS,
+	MAX_VERDICTS,
+} from "./skill-lexicon";
 
 const resumeOf = (userId: string, area: string, skills: string[]) => {
 	const data = structuredClone(sampleResumeData) as ResumeData;
@@ -164,4 +172,52 @@ test("empty corpus and no AI: nothing is added, exactly like the static lists al
 		ask: noAi,
 	});
 	assert.deepEqual(out, { extra: [], peers: [] });
+});
+
+test("a skill the lists know is not counted again under a peer's spelling of it", async () => {
+	const spellings = ["MSExcel", "MS Excel", "MS-Excel"]; // the first one is what the corpus keeps
+	const peers = spellings.map((name, i) => resumeOf(`p${i}`, "Civil Engineering", [name]));
+	const me = resumeOf("me", "Civil Engineering", ["MS Excel"]);
+	const out = await extraSkills({
+		corpus: buildCorpus(peers),
+		branch: "civil",
+		userId: "me",
+		data: me.data,
+		text: "MS Excel",
+		isStatic: isListedSkill,
+		ask: noAi,
+	});
+	assert.deepEqual(out, { extra: [], peers: [] });
+});
+
+/** An AI that confirms every term it is sent, and remembers what it was sent. */
+const sent: string[] = [];
+const confirmAll = async (terms: string[]) => {
+	sent.push(...terms);
+	return terms;
+};
+
+test("AI: only short plain skill names are sent, never free text", async () => {
+	sent.length = 0;
+	await classifySkills(
+		["Navisworks", "Line one\nline two {x}", "a".repeat(31), "Primavera `P6`", "Navisworks Manage 2024"],
+		confirmAll,
+	);
+	assert.deepEqual(sent, ["Navisworks", "Navisworks Manage 2024"]);
+});
+
+test("AI: one student's verdicts never decide another student's terms", async () => {
+	const none = async () => [];
+	assert.equal((await classifySkills(["Scopetool"], none, "student-a")).size, 0);
+	assert.deepEqual([...(await classifySkills(["Scopetool"], confirmAll, "student-b"))], ["scopetool"]);
+});
+
+test("AI: the verdict cache is bounded and drops the oldest verdict first", async () => {
+	const names = Array.from({ length: MAX_VERDICTS + 1 }, (_, i) => `Boundtool${i}`);
+	for (let i = 0; i < names.length; i += 50) await classifySkills(names.slice(i, i + 50), confirmAll);
+	sent.length = 0;
+	await classifySkills([names[names.length - 1]], confirmAll);
+	assert.deepEqual(sent, [], "the newest verdict is still cached");
+	await classifySkills([names[0]], confirmAll);
+	assert.deepEqual(sent, [names[0]], "the oldest was dropped, so it is asked again");
 });

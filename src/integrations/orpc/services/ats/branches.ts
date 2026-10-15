@@ -2,8 +2,9 @@ import skillsTaxonomy from "@/data/skills-taxonomy.json";
 import type { ResumeData } from "@/schema/resume/data";
 
 /**
- * Department-aware ATS content. Without a job description the keyword score counts skill terms from every field
- * (the software taxonomy plus the lists here), and the suggestions show examples from the student's own branch,
+ * Department-aware ATS content. Without a job description the keyword score counts skill terms of the student's own
+ * branch (the software taxonomy plus that branch's list; every list when the branch is unknown), and the suggestions
+ * show examples from the same branch,
  * so a Civil student is no longer told to add Java and React.
  * The lists are a starting point, not the limit: `skill-lexicon.ts` adds the skills students of the same branch list
  * and the ones an AI check confirms, so skills missing here still count.
@@ -38,7 +39,7 @@ type Branch = {
 };
 
 const NON_SOFTWARE = {
-	counted: "skill terms (software, tools, methods and codes from any field)",
+	counted: "skill terms (software, tools, methods and codes for your field)",
 	stack: "tools and methods",
 	estimate: "if your project was tested or used, say how many times or by how many people",
 };
@@ -381,14 +382,15 @@ const order: BranchKey[] = ["electrical", "electronics", "civil", "mechanical", 
 
 /** Home branch: eng-labs units first (nearest first, class → department), then the field of study on the resume. */
 function homeBranch(units: string[], data: ResumeData): { key: BranchKey; from: "department" | "resume" } | undefined {
-	// EEE before ECE ("Electrical and Electronics"); short codes only on eng-labs units.
-	const find = (text: string, trustCodes: boolean) =>
+	// EEE before ECE ("Electrical and Electronics"); short codes only on eng-labs units, and within one unit a field
+	// named in full wins over another branch's code ("Computer Engineering CE" is not Civil).
+	const find = (text: string, codes: boolean) =>
 		order.find((k) => {
 			const b: Branch = BRANCHES[k];
-			return b.study.test(text) || (trustCodes && !!b.codes?.test(text));
+			return (codes ? b.codes : b.study)?.test(text);
 		});
 	for (const u of units) {
-		const key = find(u, true);
+		const key = find(u, false) ?? find(u, true);
 		if (key) return { key, from: "department" };
 	}
 	for (const i of data.sections.education.items.filter((i) => !i.hidden)) {
@@ -447,26 +449,43 @@ const branchSkills = (() => {
 		.map(({ skill, forms, branches }) => ({
 			skill,
 			branches,
+			forms,
 			re: new RegExp(
 				`(?<![a-z0-9])(?:${forms.map((f) => escapeRe(f).replace(/\s+/g, "\\s+")).join("|")})(?![a-z0-9])`,
 				"i",
 			),
 		}));
 })();
-export const branchTerms = branchSkills.map((s) => s.re);
+/**
+ * What the no-JD keyword count adds to the software taxonomy: the student's own branch and the general tools, never
+ * another field's terms. Software students get none (the taxonomy alone); an unknown branch gets every list.
+ */
+export const termsOf = (branch: BranchKey) =>
+	branch === "software"
+		? []
+		: branchSkills
+				.filter((s) => branch === "general" || s.branches.has(branch) || s.branches.has("general"))
+				.map((s) => s.re);
+
+/** "MSExcel", "MS-Excel" and the listed "MS Excel" are one skill: the lists know it under any spelling. */
+const listedKeys = new Set([...softwareForms, ...branchSkills.flatMap((s) => s.forms)].map(skillKey));
+export const isListedSkill = (term: string) => listedKeys.has(skillKey(term));
 
 const SOFTWARE_WORDS =
 	"react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify|machine learning|deep learning|ci\\/cd|agile|scrum";
 const SOFTWARE_TERMS = new RegExp(`\\b(${SOFTWARE_WORDS})\\b`, "i");
+/** The words the no-AI content-quality check has always counted; software students keep exactly this list. */
+export const QUALITY_TERMS =
+	/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|rest|graphql|machine learning|deep learning|tensorflow|pytorch|spring|django|flask|express|mongodb|postgresql|redis|git|ci\/cd|agile|scrum)\b/i;
 /** Profile evidence only: the same words plus a few unambiguous ones the checks above never used. */
 const SOFTWARE_EVIDENCE = new RegExp(
 	`(?<![a-z0-9])(?:${SOFTWARE_WORDS}|c\\+\\+|c#|html|css|php|mysql|linux|unity|unreal|power bi|tableau)(?![a-z0-9])`,
 	"gi",
 );
 
-/** Does the text name a skill or tool of any field? `extra`: skills the lists above miss (see `skill-lexicon.ts`). */
-export const namesSkill = (text: string, extra: string[] = []) => {
-	if (SOFTWARE_TERMS.test(text) || branchTerms.some((re) => re.test(text))) return true;
+/** Does the text name a skill or tool of the branch? `extra`: skills the lists above miss (see `skill-lexicon.ts`). */
+export const namesSkill = (text: string, branch: BranchKey, extra: string[] = [], software = SOFTWARE_TERMS) => {
+	if (software.test(text) || termsOf(branch).some((re) => re.test(text))) return true;
 	const keys = extra.length > 0 ? keysIn(text) : undefined;
 	return !!keys && extra.some((e) => keys.has(skillKey(e)));
 };
@@ -500,7 +519,9 @@ export function understandProfile(units: string[], data: ResumeData, text: strin
 		k === "software" ? software.length : found.filter((s) => s.branches.has(k)).length;
 	const top = [...order].sort((a, b) => evidence(b) - evidence(a))[0];
 	// ponytail: fixed thresholds (4 terms, twice the home branch); tune once real resumes are scored.
-	const elsewhere = top !== home && evidence(top) >= 4 && evidence(top) >= 2 * (home ? evidence(home) : 0);
+	// Software evidence is a closed word list, far narrower than the other branches' lists: it cannot say a CSE student is elsewhere.
+	const elsewhere =
+		home !== "software" && top !== home && evidence(top) >= 4 && evidence(top) >= 2 * (home ? evidence(home) : 0);
 	const focus = home ? (elsewhere ? top : home) : evidence(top) >= 3 ? top : "general";
 	return { home: home ?? "general", focus, skills: [...found.map((s) => s.skill), ...software].slice(0, 12) };
 }
