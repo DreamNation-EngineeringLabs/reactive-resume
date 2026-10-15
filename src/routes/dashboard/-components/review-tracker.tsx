@@ -81,7 +81,9 @@ export function ReviewTracker({ students, scope, reviewerId, onReview }: Props) 
 	const rows = students
 		.flatMap((student) =>
 			student.resumes.flatMap((resume) => {
-				const mine = resume.myComments ?? null;
+				const counts = resume.myComments;
+				// No counted comment (e.g. only an old status) is not "comments that are all settled".
+				const mine = counts && counts.OPEN + counts.ADDRESSED + counts.RESOLVED > 0 ? counts : null;
 				const bucket = bucketOf(resume.reviewStatus ?? "DRAFT", mine, stage);
 				return bucket ? [{ student, resume, mine, bucket }] : [];
 			}),
@@ -200,7 +202,7 @@ function MyCommentList({
 					>
 						<span className="flex flex-wrap items-center gap-2 text-xs">
 							<span className="font-medium">
-								{c.status === "OPEN" ? t`Open` : c.status === "ADDRESSED" ? t`Addressed` : t`Resolved`}
+								{c.status === "RESOLVED" ? t`Resolved` : c.status === "ADDRESSED" ? t`Addressed` : t`Open`}
 							</span>
 							{c.severity && <span className="text-muted-foreground">{t`${severityLabel(c.severity)} severity`}</span>}
 							<span className="text-muted-foreground">{timeAgo(c.createdAt)}</span>

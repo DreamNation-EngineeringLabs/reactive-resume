@@ -1,8 +1,8 @@
 /**
  * OrgUnitFilter — [Batch ▾] [Branch ▾] [Section ▾] in a single row.
  *
- * Batch is the admission year of the tenant's YEAR units ("Civil Engineering 2024" → 2024); a tenant without
- * them falls back to its placement packages. Branch is a department, Section a class.
+ * Batch is the admission year of the tenant's YEAR units ("Civil Engineering 2024" → 2024), limited to the chosen
+ * branch's years; a tenant without them has no Batch filter. Branch is a department, Section a class.
  * The choice becomes `unitId`: one unit, or a batch's YEAR units comma-separated; the server shows their subtrees.
  * For instructor scope the server sends only their assigned units (and those units' parents).
  */
@@ -26,8 +26,6 @@ type FilterOrgUnit = {
 };
 
 type OrgUnitFilterProps = {
-	/** Placement packages from the placement_packages table */
-	packages: { id: string; name: string }[];
 	/** Org units scoped to the current user */
 	allOrgUnits: FilterOrgUnit[];
 	value: OrgUnitFilterValue;
@@ -35,7 +33,7 @@ type OrgUnitFilterProps = {
 };
 
 // ponytail: eng-labs' level names (VNR: STREAM > DEPARTMENT > YEAR > CLASS). A tenant that names its levels
-// differently gets packages only; read the levels from unit_schemas if one shows up.
+// differently gets no filter here; read the levels from unit_schemas if one shows up.
 const BRANCH = "DEPARTMENT";
 const YEAR = "YEAR";
 const SECTION = "CLASS";
@@ -45,31 +43,35 @@ const yearOf = (unit?: FilterOrgUnit) => unit?.name.match(/\b(?:19|20)\d{2}\b/g)
 const dropdownClass =
 	"h-8 min-w-[160px] rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground shadow-none hover:bg-muted/50";
 
-export function OrgUnitFilter({ packages, allOrgUnits, value, onChange }: OrgUnitFilterProps) {
-	const f = useMemo(() => {
-		const byId = new Map(allOrgUnits.map((u) => [u.id, u]));
-		const up = (unit: FilterOrgUnit | undefined, type: string) => {
-			for (let u = unit; u; u = byId.get(u.parentId ?? "")) if (u.type === type) return u;
-		};
-		const ofType = (type: string) => allOrgUnits.filter((u) => u.type === type);
-		const years = ofType(YEAR);
-		const selected = (value.unitId?.split(",") ?? []).flatMap((id) => byId.get(id) ?? []);
-		const branchIds = new Set(selected.map((u) => up(u, BRANCH)?.id));
-		const branch = branchIds.size === 1 ? [...branchIds][0] : undefined;
-		const batch = yearOf(up(selected[0], YEAR));
-		return {
-			up,
-			years,
-			branch,
-			batch,
-			section: selected.length === 1 && selected[0].type === SECTION ? selected[0].id : undefined,
-			batches: [...new Set(years.flatMap((y) => yearOf(y) ?? []))].sort().reverse(),
-			branches: ofType(BRANCH),
-			sections: ofType(SECTION).filter(
-				(c) => (!branch || up(c, BRANCH)?.id === branch) && (!batch || yearOf(up(c, YEAR)) === batch),
-			),
-		};
-	}, [allOrgUnits, value.unitId]);
+/** What the three dropdowns list, and what the current `unitId` selects. */
+export function unitFilterOptions(allOrgUnits: FilterOrgUnit[], unitId?: string) {
+	const byId = new Map(allOrgUnits.map((u) => [u.id, u]));
+	const up = (unit: FilterOrgUnit | undefined, type: string) => {
+		for (let u = unit; u; u = byId.get(u.parentId ?? "")) if (u.type === type) return u;
+	};
+	const ofType = (type: string) => allOrgUnits.filter((u) => u.type === type);
+	const years = ofType(YEAR);
+	const selected = (unitId?.split(",") ?? []).flatMap((id) => byId.get(id) ?? []);
+	const branchIds = new Set(selected.map((u) => up(u, BRANCH)?.id));
+	const branch = branchIds.size === 1 ? [...branchIds][0] : undefined;
+	const batch = yearOf(up(selected[0], YEAR));
+	const branchYears = years.filter((y) => !branch || up(y, BRANCH)?.id === branch);
+	return {
+		up,
+		years,
+		branch,
+		batch,
+		section: selected.length === 1 && selected[0].type === SECTION ? selected[0].id : undefined,
+		batches: [...new Set(branchYears.flatMap((y) => yearOf(y) ?? []))].sort().reverse(),
+		branches: ofType(BRANCH),
+		sections: ofType(SECTION).filter(
+			(c) => (!branch || up(c, BRANCH)?.id === branch) && (!batch || yearOf(up(c, YEAR)) === batch),
+		),
+	};
+}
+
+export function OrgUnitFilter({ allOrgUnits, value, onChange }: OrgUnitFilterProps) {
+	const f = useMemo(() => unitFilterOptions(allOrgUnits, value.unitId), [allOrgUnits, value.unitId]);
 
 	/** A section, else the batch's YEAR units (within the branch), else the branch. */
 	const pick = (batch?: string, branch?: string, section?: string) => {
@@ -107,15 +109,13 @@ export function OrgUnitFilter({ packages, allOrgUnits, value, onChange }: OrgUni
 				<FunnelSimpleIcon weight="duotone" className="size-3.5" />
 				<span className="font-medium">{t`Filters`}</span>
 			</div>
-			{f.batches.length > 0
-				? picker(
-						t`Batch`,
-						f.batches.map((y) => ({ id: y, name: y })),
-						f.batch,
-						t`All batches`,
-						(y) => pick(y, f.branch),
-					)
-				: picker(t`Batch`, packages, value.packageId, t`All batches`, (id) => onChange({ packageId: id }))}
+			{picker(
+				t`Batch`,
+				f.batches.map((y) => ({ id: y, name: y })),
+				f.batch,
+				t`All batches`,
+				(y) => pick(y, f.branch),
+			)}
 			{picker(t`Branch`, f.branches, f.branch, t`All branches`, (id) => pick(f.batch, id))}
 			{picker(t`Section`, f.sections, f.section, t`All sections`, (id) => pick(f.batch, f.branch, id))}
 		</div>

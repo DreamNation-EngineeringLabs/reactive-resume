@@ -333,25 +333,14 @@ export function SectionMetricsView({
 			{activeTab === "overview" && (
 				<div className="space-y-6">
 					{/* Filter — above metrics */}
-					{(filterPackages.length > 0 || filterAllOrgUnits.length > 0) && (
+					{filterAllOrgUnits.length > 0 && (
 						<div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
 							<OrgUnitFilter
-								packages={filterPackages}
 								allOrgUnits={filterAllOrgUnits}
 								value={filter}
 								onChange={(next) => {
-									let updatedFilter = next;
-									if (next.packageId !== filter.packageId) {
-										updatedFilter = { packageId: next.packageId };
-									}
-									setFilter(updatedFilter);
-									navigate({
-										search: (prev: any) =>
-											({
-												...prev,
-												...updatedFilter,
-											}) as any,
-									});
+									setFilter(next);
+									navigate({ search: (prev: any) => ({ ...prev, ...next }) as any });
 								}}
 							/>
 						</div>
@@ -770,25 +759,14 @@ export function SectionMetricsView({
 			{activeTab === "students" && (
 				<div className="space-y-5">
 					{/* Filter */}
-					{(filterPackages.length > 0 || filterAllOrgUnits.length > 0) && (
+					{filterAllOrgUnits.length > 0 && (
 						<div className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-sm">
 							<OrgUnitFilter
-								packages={filterPackages}
 								allOrgUnits={filterAllOrgUnits}
 								value={filter}
 								onChange={(next) => {
-									let updatedFilter = next;
-									if (next.packageId !== filter.packageId) {
-										updatedFilter = { packageId: next.packageId };
-									}
-									setFilter(updatedFilter);
-									navigate({
-										search: (prev: any) =>
-											({
-												...prev,
-												...updatedFilter,
-											}) as any,
-									});
+									setFilter(next);
+									navigate({ search: (prev: any) => ({ ...prev, ...next }) as any });
 								}}
 							/>
 						</div>
