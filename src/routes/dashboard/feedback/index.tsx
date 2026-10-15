@@ -186,7 +186,7 @@ function RouteComponent() {
 							</div>
 						) : (
 							<div className="rounded-2xl border border-border bg-card p-10 text-center shadow-sm">
-								<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-surface-inset text-primary">
+								<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
 									<FileTextIcon weight="duotone" className="size-7" />
 								</div>
 								<p className="font-semibold text-foreground">No resumes yet</p>
@@ -315,7 +315,7 @@ function ResumeCard({
 
 			{/* Expanded: Submit + Comments */}
 			{isExpanded && (
-				<div className="border-border border-t bg-surface-inset px-5 pt-4 pb-5">
+				<div className="border-border border-t bg-muted/50 px-5 pt-4 pb-5">
 					{canSubmit && (
 						<div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
 							<div>
@@ -363,7 +363,7 @@ function ResumeCard({
 											to="/builder/$resumeId"
 											params={{ resumeId: resume.id }}
 											search={{ comment: comment.id }}
-											className="mb-2 block rounded-lg border-amber-400 border-l-4 bg-amber-50/60 px-3 py-1.5 text-xs hover:bg-amber-50"
+											className="mb-2 block rounded-lg border-amber-400 border-l-4 bg-amber-500/10 px-3 py-1.5 text-xs hover:bg-amber-500/20"
 										>
 											<span className="line-clamp-2 text-foreground">
 												{comment.anchor.quote ? `“${comment.anchor.quote.exact}”` : "Whole section"}

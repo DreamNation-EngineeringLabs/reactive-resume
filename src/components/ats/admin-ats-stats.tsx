@@ -109,7 +109,7 @@ export function AdminAtsStats() {
 	return (
 		<div className="space-y-6">
 			{/* KPI row */}
-			<StatStrip className="bg-surface-inset shadow-none">
+			<StatStrip className="bg-muted/50 shadow-none">
 				<Stat label={t`Total ATS checks`} value={stats.totalChecks.toLocaleString()} />
 				<Stat
 					label={t`Average score`}

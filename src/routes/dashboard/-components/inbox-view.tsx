@@ -144,7 +144,7 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-2">
 									<span className="font-bold text-foreground text-sm">{group.label}</span>
-									<span className="rounded-full bg-foreground px-2 py-0.5 font-bold text-[10px] text-white">
+									<span className="rounded-full bg-foreground px-2 py-0.5 font-bold text-[10px] text-background">
 										{group.items.length}
 									</span>
 								</div>

@@ -313,7 +313,7 @@ function TopPerformingSections({ sections }: { sections: UnitStat[] }) {
 				{ranked.map((section, i) => {
 					const score = section.stats.averageScore!;
 					return (
-						<div key={section.id} className="flex flex-col gap-1 rounded-xl border border-border bg-surface-inset p-4">
+						<div key={section.id} className="flex flex-col gap-1 rounded-xl border border-border bg-muted/50 p-4">
 							<span className="font-medium text-muted-foreground text-xs">#{i + 1}</span>
 							<p className="line-clamp-2 font-semibold text-foreground text-sm leading-snug">{section.name}</p>
 							<p className="mt-1 flex items-baseline justify-between gap-2">
