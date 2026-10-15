@@ -222,7 +222,7 @@ export function POSectionReviewDialog({
 
 					{/* Review notes (required) */}
 					<div className="space-y-1.5">
-						<label className="font-semibold text-slate-700 text-sm">{t`Review Notes`} *</label>
+						<label className="font-semibold text-foreground text-sm">{t`Review Notes`} *</label>
 						<Textarea
 							placeholder={t`Describe what needs to be improved across this section — e.g. "Most resumes lack quantified metrics in the experience section. Please ensure every bullet uses the XYZ formula with numbers."`}
 							value={notes}
@@ -234,8 +234,8 @@ export function POSectionReviewDialog({
 					{/* Voice note (optional) */}
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
-							<label className="font-semibold text-slate-700 text-sm">
-								{t`Voice Note`} <span className="font-normal text-slate-400">{t`(optional)`}</span>
+							<label className="font-semibold text-foreground text-sm">
+								{t`Voice Note`} <span className="font-normal text-muted-foreground">{t`(optional)`}</span>
 							</label>
 							{recordingState === "recorded" && audioUrl && (
 								<button
@@ -251,7 +251,7 @@ export function POSectionReviewDialog({
 
 						{/* In edit mode — show existing voice note with option to replace or remove */}
 						{isEditMode && initialVoiceNoteUrl && keepExistingVoiceNote && recordingState === "idle" && (
-							<div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+							<div className="flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-2">
 								<audio src={initialVoiceNoteUrl} controls className="h-8 flex-1" />
 								<button
 									type="button"
@@ -267,7 +267,7 @@ export function POSectionReviewDialog({
 							<button
 								type="button"
 								onClick={startRecording}
-								className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-200 border-dashed py-3 text-slate-500 text-sm transition-all hover:border-indigo-300 hover:text-indigo-600"
+								className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border border-dashed py-3 text-muted-foreground text-sm transition-all hover:border-primary/30 hover:text-primary"
 							>
 								<MicrophoneIcon weight="duotone" className="size-4" />
 								{isEditMode ? t`Record a new voice note` : t`Click to record a voice note`}
@@ -293,8 +293,8 @@ export function POSectionReviewDialog({
 						)}
 
 						{recordingState === "recorded" && audioUrl && (
-							<div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-								<PlayIcon weight="duotone" className="size-4 shrink-0 text-indigo-600" />
+							<div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3">
+								<PlayIcon weight="duotone" className="size-4 shrink-0 text-primary" />
 								<audio src={audioUrl} controls className="h-8 flex-1" />
 							</div>
 						)}

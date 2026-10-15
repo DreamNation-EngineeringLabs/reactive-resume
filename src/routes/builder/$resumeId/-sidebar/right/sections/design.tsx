@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Trans } from "@lingui/react/macro";
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import type z from "zod";
 import { ColorPicker } from "@/components/input/color-picker";
@@ -40,6 +41,13 @@ function ColorSectionForm() {
 			draft.metadata.design.colors = data;
 		});
 	};
+
+	// Colours also change outside this form (Template → Black & white, undo); without this the fields stay stale
+	// and the next edit here writes the old colours back.
+	useEffect(() => {
+		if ((["primary", "text", "background"] as const).some((key) => form.getValues(key) !== colors[key]))
+			form.reset(colors);
+	}, [colors, form]);
 
 	return (
 		<Form {...form}>
@@ -99,7 +107,7 @@ function ColorSectionForm() {
 							</FormLabel>
 							<div className="flex items-center gap-2">
 								<ColorPicker
-									defaultValue={field.value}
+									value={field.value}
 									onValueChange={(color) => {
 										field.onChange(color);
 										form.handleSubmit(onSubmit)();
@@ -124,7 +132,7 @@ function ColorSectionForm() {
 							</FormLabel>
 							<div className="flex items-center gap-2">
 								<ColorPicker
-									defaultValue={field.value}
+									value={field.value}
 									onValueChange={(color) => {
 										field.onChange(color);
 										form.handleSubmit(onSubmit)();
@@ -144,6 +152,7 @@ function ColorSectionForm() {
 }
 
 const quickColorOptions = [
+	"rgba(0, 0, 0, 1)", // black (the default)
 	"rgba(231, 0, 11, 1)", // red-600
 	"rgba(245, 73, 0, 1)", // orange-600
 	"rgba(225, 113, 0, 1)", // amber-600

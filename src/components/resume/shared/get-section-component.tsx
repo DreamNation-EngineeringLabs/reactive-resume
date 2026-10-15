@@ -173,7 +173,10 @@ export function getSectionComponent(
 				if (visibleItems.length === 0) return null;
 
 				return (
-					<section className={cn(`page-section page-section-custom page-section-${id}`, sectionClassName)}>
+					<section
+						data-section-id={id}
+						className={cn(`page-section page-section-custom page-section-${id}`, sectionClassName)}
+					>
 						{customSection.type !== "summary" && customSection.type !== "cover-letter" && (
 							<h6 className="mb-1.5 text-(--page-primary-color)">{customSection.title}</h6>
 						)}
@@ -185,6 +188,7 @@ export function getSectionComponent(
 							{visibleItems.map((item) => (
 								<div
 									key={item.id}
+									data-section-item-id={item.id}
 									className={cn(`section-item section-item-${customSection.type} print:break-inside-avoid`)}
 								>
 									{renderItemByType(customSection.type, item, itemClassName)}

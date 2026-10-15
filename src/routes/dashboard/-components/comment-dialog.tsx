@@ -56,7 +56,7 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="rounded-3xl sm:max-w-[600px]">
 				<DialogHeader>
-					<DialogTitle className="font-semibold text-lg text-slate-900">{t`Resume Feedback`}</DialogTitle>
+					<DialogTitle className="font-semibold text-foreground text-lg">{t`Resume Feedback`}</DialogTitle>
 				</DialogHeader>
 
 				{/* Existing comments */}
@@ -64,24 +64,24 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 					{isLoading && (
 						<div className="space-y-2">
 							{[...Array(2)].map((_, i) => (
-								<div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-50" />
+								<div key={i} className="h-16 animate-pulse rounded-2xl bg-muted/50" />
 							))}
 						</div>
 					)}
 					{topLevelComments.length === 0 && !isLoading && (
-						<p className="py-8 text-center text-slate-400 text-sm">No feedback yet</p>
+						<p className="py-8 text-center text-muted-foreground text-sm">No feedback yet</p>
 					)}
 					{topLevelComments.map((comment) => {
 						const replies = getReplies(comment.id);
 						return (
 							<div key={comment.id} className="space-y-2">
-								<div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+								<div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
 									<div className="mb-2 flex items-center justify-between">
 										<div className="flex items-center gap-2">
 											<span
 												className={cn(
 													"rounded-full px-2 py-0.5 font-medium text-[10px] uppercase tracking-wider",
-													comment.scope === "SECTION" ? "bg-amber-50 text-amber-700" : "bg-indigo-50 text-indigo-700",
+													comment.scope === "SECTION" ? "bg-amber-50 text-amber-700" : "bg-primary/5 text-primary",
 												)}
 											>
 												{comment.scope === "SECTION" ? "Section" : "Individual"}
@@ -97,16 +97,16 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 												{comment.status}
 											</span>
 										</div>
-										<span className="text-[10px] text-slate-400">
+										<span className="text-[10px] text-muted-foreground">
 											{new Date(comment.createdAt).toLocaleDateString()}
 										</span>
 									</div>
-									<p className="mb-2 text-slate-700 text-sm leading-relaxed">{comment.content}</p>
+									<p className="mb-2 text-foreground text-sm leading-relaxed">{comment.content}</p>
 									<div className="flex justify-end">
 										<button
 											type="button"
 											onClick={() => setReplyTo(comment.id)}
-											className="font-bold text-[11px] text-indigo-600 hover:text-indigo-800"
+											className="font-bold text-[11px] text-primary hover:text-primary"
 										>
 											{t`Reply`}
 										</button>
@@ -115,16 +115,16 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 
 								{/* Replies */}
 								{replies.length > 0 && (
-									<div className="ml-8 space-y-2 border-slate-100 border-l pl-4">
+									<div className="ml-8 space-y-2 border-border border-l pl-4">
 										{replies.map((reply) => (
-											<div key={reply.id} className="rounded-xl bg-slate-50 p-3 text-sm">
+											<div key={reply.id} className="rounded-xl bg-muted/50 p-3 text-sm">
 												<div className="mb-1 flex items-center justify-between">
-													<span className="font-semibold text-[10px] text-slate-500 uppercase">{t`Reply`}</span>
-													<span className="text-[10px] text-slate-400">
+													<span className="font-semibold text-[10px] text-muted-foreground uppercase">{t`Reply`}</span>
+													<span className="text-[10px] text-muted-foreground">
 														{new Date(reply.createdAt).toLocaleDateString()}
 													</span>
 												</div>
-												<p className="text-slate-600 text-xs leading-relaxed">{reply.content}</p>
+												<p className="text-muted-foreground text-xs leading-relaxed">{reply.content}</p>
 											</div>
 										))}
 									</div>
@@ -135,7 +135,7 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 				</div>
 
 				{/* New comment form */}
-				<div className="space-y-3 border-slate-100 border-t pt-4">
+				<div className="space-y-3 border-border border-t pt-4">
 					<div className="flex items-center justify-between">
 						<div className="flex gap-2">
 							{(["INDIVIDUAL", "SECTION"] as const).map((s) => (
@@ -146,8 +146,8 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 									className={cn(
 										"rounded-xl px-3 py-1.5 font-semibold text-[11px] uppercase transition-all active:scale-[0.97]",
 										scope === s && !replyTo
-											? "bg-indigo-600 text-white"
-											: "bg-slate-100 text-slate-600 hover:bg-slate-200",
+											? "bg-primary text-white"
+											: "bg-muted text-muted-foreground hover:bg-border",
 										replyTo && "pointer-events-none opacity-50",
 									)}
 								>
@@ -156,9 +156,9 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 							))}
 						</div>
 						{replyTo && (
-							<div className="flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-1 text-indigo-700 text-xs">
+							<div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-1 text-primary text-xs">
 								<span className="font-bold uppercase tracking-tight">{t`Replying to thread`}</span>
-								<button onClick={() => setReplyTo(null)} className="font-bold hover:text-indigo-900">
+								<button onClick={() => setReplyTo(null)} className="font-bold hover:text-primary">
 									✕
 								</button>
 							</div>
@@ -169,13 +169,13 @@ export function CommentDialog({ resumeId, studentId, tenantId, open, onOpenChang
 						onChange={(e) => setContent(e.target.value)}
 						placeholder={replyTo ? "Add your reply..." : "Add your feedback..."}
 						rows={3}
-						className="w-full resize-none rounded-2xl border-0 bg-slate-50 p-4 text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
+						className="w-full resize-none rounded-2xl border-0 bg-muted/50 p-4 text-foreground text-sm outline-none ring-1 ring-border transition-all placeholder:text-muted-foreground focus:bg-card focus:ring-2 focus:ring-primary"
 					/>
 					<button
 						type="button"
 						onClick={handleSubmit}
 						disabled={!content.trim() || createMutation.isPending}
-						className="w-full rounded-xl bg-indigo-600 py-3 font-semibold text-sm text-white transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50"
+						className="w-full rounded-xl bg-primary py-3 font-semibold text-sm text-white transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
 					>
 						{createMutation.isPending ? "Posting..." : replyTo ? "Post Reply" : "Post Comment"}
 					</button>

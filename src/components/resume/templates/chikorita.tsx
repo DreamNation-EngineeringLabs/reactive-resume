@@ -12,15 +12,15 @@ const sectionClassName = cn(
 	"[&>h6]:border-(--page-primary-color) [&>h6]:border-b",
 
 	// Section Heading in Sidebar Layout
-	"group-data-[layout=sidebar]:[&>h6]:text-(--page-background-color)",
-	"group-data-[layout=sidebar]:[&>h6]:border-(--page-background-color)",
+	"group-data-[layout=sidebar]:[&>h6]:text-(--page-on-fill-color)",
+	"group-data-[layout=sidebar]:[&>h6]:border-(--page-on-fill-color)",
 
 	// Icon Colors in Sidebar Layout
-	"group-data-[layout=sidebar]:[&_.section-item_i]:text-(--page-background-color)!",
+	"group-data-[layout=sidebar]:[&_.section-item_i]:text-(--page-on-fill-color)!",
 
 	// Level Display in Sidebar Layout
-	"group-data-[layout=sidebar]:[&_.section-item-level>div]:border-(--page-background-color)",
-	"group-data-[layout=sidebar]:[&_.section-item-level>div]:data-[active=true]:bg-(--page-background-color)",
+	"group-data-[layout=sidebar]:[&_.section-item-level>div]:border-(--page-on-fill-color)",
+	"group-data-[layout=sidebar]:[&_.section-item-level>div]:data-[active=true]:bg-(--page-on-fill-color)",
 
 	// Section Item Header in Sidebar Layout
 	"group-data-[layout=sidebar]:[&_.section-item-header>div]:flex-col",
@@ -38,7 +38,7 @@ export function ChikoritaTemplate({ pageIndex, pageLayout }: TemplateProps) {
 		<div className="template-chikorita page-content">
 			{/* Sidebar Background */}
 			{!fullWidth && (
-				<div className="page-sidebar-background pointer-events-none absolute inset-y-0 z-0 w-(--page-sidebar-width) shrink-0 bg-(--page-primary-color) ltr:end-0 rtl:start-0" />
+				<div className="page-sidebar-background pointer-events-none absolute inset-y-0 z-0 w-(--page-sidebar-width) shrink-0 bg-(--page-fill-color) ltr:end-0 rtl:start-0" />
 			)}
 
 			<div className="flex">
@@ -57,7 +57,7 @@ export function ChikoritaTemplate({ pageIndex, pageLayout }: TemplateProps) {
 				{!fullWidth && (
 					<aside
 						data-layout="sidebar"
-						className="group page-sidebar z-10 w-(--page-sidebar-width) shrink-0 space-y-4 overflow-x-hidden px-(--page-margin-x) pt-(--page-margin-y) text-(--page-background-color)"
+						className="group page-sidebar z-10 w-(--page-sidebar-width) shrink-0 space-y-4 overflow-x-hidden px-(--page-margin-x) pt-(--page-margin-y) text-(--page-on-fill-color)"
 					>
 						{sidebar.map((section) => {
 							const Component = getSectionComponent(section, { sectionClassName });

@@ -3,7 +3,7 @@
  * Handles all database operations for resume comments, checklists, and evaluations
  */
 
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { DEFAULT_RESUME_USER_ORG_ID } from "@/integrations/auth/config";
 import { db } from "@/integrations/drizzle/client";
 import {
@@ -15,7 +15,14 @@ import {
 	resumeEvaluation,
 	resumeEvaluationItem,
 	resumeHistory,
+	reviewSnippet,
 } from "@/integrations/drizzle/schema";
+import {
+	type CommentAnchor,
+	type CommentSeverity,
+	REVIEW_VERDICTS,
+	STARTER_SNIPPETS,
+} from "@/schema/resume/comment-anchor";
 
 /**
  * CREATE: Add a comment to a resume
@@ -28,6 +35,9 @@ export async function createComment({
 	content,
 	scope = "INDIVIDUAL",
 	parentId,
+	anchor,
+	severity,
+	suggestion,
 }: {
 	resumeId: string;
 	studentId: string;
@@ -36,7 +46,26 @@ export async function createComment({
 	content: string;
 	scope?: "INDIVIDUAL" | "SECTION";
 	parentId?: string;
+	anchor?: CommentAnchor;
+	severity?: CommentSeverity;
+	suggestion?: string;
 }) {
+	// A review round's first comment keeps the resume as the reviewer saw it; the Changes tab and each
+	// comment's before/after compare against it. Skipped while the resume is unchanged since the last copy.
+	let snapshot: typeof resume.$inferSelect.data | undefined;
+	if (!parentId) {
+		const [[current], [last]] = await Promise.all([
+			db.select({ data: resume.data, updatedAt: resume.updatedAt }).from(resume).where(eq(resume.id, resumeId)),
+			db
+				.select({ createdAt: resumeComment.createdAt })
+				.from(resumeComment)
+				.where(and(eq(resumeComment.resumeId, resumeId), isNotNull(resumeComment.snapshot)))
+				.orderBy(desc(resumeComment.createdAt))
+				.limit(1),
+		]);
+		if (current && (!last || last.createdAt < current.updatedAt)) snapshot = current.data;
+	}
+
 	const result = await db
 		.insert(resumeComment)
 		.values({
@@ -49,6 +78,10 @@ export async function createComment({
 			content,
 			scope,
 			parentId,
+			anchor,
+			severity,
+			suggestion,
+			snapshot,
 			status: "OPEN",
 			createdAt: new Date(),
 			updatedAt: new Date(),
@@ -61,7 +94,7 @@ export async function createComment({
 		await db
 			.update(resumeComment)
 			.set({ status: "OPEN", resolvedAt: null, updatedAt: new Date() })
-			.where(eq(resumeComment.id, parentId));
+			.where(and(eq(resumeComment.id, parentId), eq(resumeComment.resumeId, resumeId)));
 	}
 
 	return result[0];
@@ -80,6 +113,41 @@ export async function updateCommentStatus(id: string, status: "OPEN" | "ADDRESSE
 		.returning();
 
 	return result[0];
+}
+
+/**
+ * Comment bank: reusable review comments shared by a tenant's reviewers, most used first.
+ * A tenant's first visit seeds the starter set; the unique (tenant, content) index keeps it single.
+ */
+export async function listSnippets(tenantId: string) {
+	const rows = await db.select().from(reviewSnippet).where(eq(reviewSnippet.tenantId, tenantId));
+	if (rows.length > 0) return rows.sort((a, b) => b.usageCount - a.usageCount || a.content.localeCompare(b.content));
+
+	await db
+		.insert(reviewSnippet)
+		.values(STARTER_SNIPPETS.map((content) => ({ tenantId, authorId: "system", content })))
+		.onConflictDoNothing();
+	return db.select().from(reviewSnippet).where(eq(reviewSnippet.tenantId, tenantId));
+}
+
+export async function createSnippet(tenantId: string, authorId: string, content: string) {
+	await db.insert(reviewSnippet).values({ tenantId, authorId, content }).onConflictDoNothing();
+}
+
+export async function deleteSnippet(tenantId: string, id: string) {
+	await db.delete(reviewSnippet).where(and(eq(reviewSnippet.id, id), eq(reviewSnippet.tenantId, tenantId)));
+}
+
+export async function useSnippet(tenantId: string, id: string) {
+	await db
+		.update(reviewSnippet)
+		.set({ usageCount: sql`${reviewSnippet.usageCount} + 1` })
+		.where(and(eq(reviewSnippet.id, id), eq(reviewSnippet.tenantId, tenantId)));
+}
+
+export async function getCommentById(id: string) {
+	const [comment] = await db.select().from(resumeComment).where(eq(resumeComment.id, id)).limit(1);
+	return comment;
 }
 
 /**
@@ -575,6 +643,8 @@ export async function updateResumeStatus({
 			action: actionMap[status] as any,
 			changedBy,
 			actorType,
+			// A verdict keeps a copy of the resume as reviewed, so the next review can show what changed.
+			currentData: status in REVIEW_VERDICTS ? result[0]?.data : undefined,
 		});
 	}
 

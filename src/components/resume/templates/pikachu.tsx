@@ -72,15 +72,15 @@ function Header() {
 	const basics = useResumeStore((state) => state.resume.data.basics);
 
 	return (
-		<div className="page-header w-full space-y-(--page-gap-y) rounded-(--picture-border-radius) bg-(--page-primary-color) px-(--page-margin-x) py-(--page-margin-y) text-(--page-background-color)">
-			<div className="border-(--page-background-color)/50 border-b pb-2">
+		<div className="page-header w-full space-y-(--page-gap-y) rounded-(--picture-border-radius) bg-(--page-fill-color) px-(--page-margin-x) py-(--page-margin-y) text-(--page-on-fill-color)">
+			<div className="border-(--page-on-fill-color)/50 border-b pb-2">
 				<h2 className="basics-name">{basics.name}</h2>
 				<p className="basics-headline">{basics.headline}</p>
 			</div>
 
 			<div
 				className="basics-items flex flex-wrap gap-x-3 gap-y-0.5 *:flex *:items-center *:gap-x-1.5"
-				style={{ "--page-primary-color": "var(--page-background-color)" } as React.CSSProperties}
+				style={{ "--page-primary-color": "var(--page-on-fill-color)" } as React.CSSProperties}
 			>
 				{basics.email && (
 					<div className="basics-item-email">

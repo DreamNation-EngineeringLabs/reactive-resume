@@ -51,7 +51,7 @@ import {
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { VisuallyHidden } from "radix-ui";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { match } from "ts-pattern";
 import z from "zod";
@@ -137,6 +137,13 @@ export function RichInput({ value, onChange, style, className, editorClassName, 
 			onChange(editor.getHTML());
 		},
 	});
+
+	// `value` only seeds the editor, so follow changes made elsewhere (undo/redo, an applied reviewer
+	// suggestion) — otherwise the next keystroke writes the stale text back. Skipped while typing.
+	useEffect(() => {
+		if (!editor || editor.isFocused || value === editor.getHTML()) return;
+		editor.commands.setContent(value, { emitUpdate: false });
+	}, [editor, value]);
 
 	const providerValue = useMemo(() => ({ editor }), [editor]);
 

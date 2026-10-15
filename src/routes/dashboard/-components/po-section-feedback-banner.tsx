@@ -35,11 +35,11 @@ export function POSectionFeedbackBanner({ sectionId, tenantId }: Props) {
 			<button
 				type="button"
 				onClick={() => setOpen(true)}
-				className="mt-2 flex w-full items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-left text-xs transition-colors hover:bg-indigo-100"
+				className="mt-2 flex w-full items-center gap-2 rounded-xl border border-primary/10 bg-primary/5 px-3 py-2 text-left text-xs transition-colors hover:bg-primary/10"
 			>
-				<ChatTeardropTextIcon weight="duotone" className="size-4 shrink-0 text-indigo-500" />
-				<span className="flex-1 truncate font-semibold text-indigo-700">{t`Placement Officer Feedback`}</span>
-				<span className="shrink-0 text-indigo-400">{formattedDate}</span>
+				<ChatTeardropTextIcon weight="duotone" className="size-4 shrink-0 text-primary" />
+				<span className="flex-1 truncate font-semibold text-primary">{t`Placement Officer Feedback`}</span>
+				<span className="shrink-0 text-primary">{formattedDate}</span>
 			</button>
 
 			{/* Full feedback in a dialog */}
@@ -47,7 +47,7 @@ export function POSectionFeedbackBanner({ sectionId, tenantId }: Props) {
 				<DialogContent className="max-w-md">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2 text-base">
-							<ChatTeardropTextIcon weight="duotone" className="size-5 text-indigo-500" />
+							<ChatTeardropTextIcon weight="duotone" className="size-5 text-primary" />
 							{t`Placement Officer Feedback`}
 						</DialogTitle>
 					</DialogHeader>
@@ -56,10 +56,10 @@ export function POSectionFeedbackBanner({ sectionId, tenantId }: Props) {
 						{reviews?.map((review, i) => (
 							<div
 								key={review.id}
-								className={`rounded-xl border p-4 text-sm ${i === 0 ? "border-indigo-100 bg-indigo-50" : "border-slate-100 bg-slate-50"}`}
+								className={`rounded-xl border p-4 text-sm ${i === 0 ? "border-primary/10 bg-primary/5" : "border-border bg-muted/50"}`}
 							>
-								<div className="mb-2 flex items-center gap-2 text-slate-400 text-xs">
-									<span className="font-semibold text-slate-600">{i === 0 ? t`Latest` : `#${reviews.length - i}`}</span>
+								<div className="mb-2 flex items-center gap-2 text-muted-foreground text-xs">
+									<span className="font-semibold text-muted-foreground">{i === 0 ? t`Latest` : `#${reviews.length - i}`}</span>
 									<span className="ml-auto">
 										{new Date(review.createdAt).toLocaleDateString(undefined, {
 											month: "short",
@@ -69,10 +69,10 @@ export function POSectionFeedbackBanner({ sectionId, tenantId }: Props) {
 										})}
 									</span>
 								</div>
-								<p className="whitespace-pre-wrap text-slate-700 leading-relaxed">{review.reviewNotes}</p>
+								<p className="whitespace-pre-wrap text-foreground leading-relaxed">{review.reviewNotes}</p>
 								{review.voiceNoteUrl && (
-									<div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2">
-										<MicrophoneIcon weight="duotone" className="size-4 shrink-0 text-indigo-400" />
+									<div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-card p-2">
+										<MicrophoneIcon weight="duotone" className="size-4 shrink-0 text-primary" />
 										<audio src={review.voiceNoteUrl} controls className="h-8 flex-1" />
 									</div>
 								)}

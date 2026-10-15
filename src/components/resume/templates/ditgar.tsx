@@ -37,7 +37,7 @@ export function DitgarTemplate({ pageIndex, pageLayout }: TemplateProps) {
 		<div className="template-ditgar page-content">
 			{/* Sidebar Background */}
 			{(!fullWidth || isFirstPage) && (
-				<div className="page-sidebar-background pointer-events-none absolute inset-y-0 z-0 w-(--page-sidebar-width) shrink-0 bg-(--page-primary-color)/20 ltr:start-0 rtl:end-0" />
+				<div className="page-sidebar-background pointer-events-none absolute inset-y-0 z-0 w-(--page-sidebar-width) shrink-0 bg-(--page-tint-color)/20 ltr:start-0 rtl:end-0" />
 			)}
 
 			<div className="flex">
@@ -75,7 +75,7 @@ function Header() {
 	const basics = useResumeStore((state) => state.resume.data.basics);
 
 	return (
-		<div className="page-header space-y-4 bg-(--page-primary-color) px-(--page-margin-x) py-(--page-margin-y) text-(--page-background-color)">
+		<div className="page-header space-y-4 bg-(--page-fill-color) px-(--page-margin-x) py-(--page-margin-y) text-(--page-on-fill-color)">
 			<PagePicture />
 
 			<div>
@@ -83,7 +83,7 @@ function Header() {
 				<p>{basics.headline}</p>
 			</div>
 
-			<div className="flex flex-col items-start gap-y-2 text-sm [&>div>i]:text-(--page-background-color)!">
+			<div className="flex flex-col items-start gap-y-2 text-sm [&>div>i]:text-(--page-on-fill-color)!">
 				{basics.location && (
 					<div className="flex items-center gap-x-1.5">
 						<PageIcon icon="map-pin" className="ph-bold" />

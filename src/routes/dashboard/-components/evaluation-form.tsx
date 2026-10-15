@@ -84,13 +84,13 @@ export function EvaluationForm({ resumeId, studentId, tenantId, open, onOpenChan
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="rounded-3xl sm:max-w-[700px]">
 				<DialogHeader>
-					<DialogTitle className="font-semibold text-lg text-slate-900">{t`Evaluate Resume`}</DialogTitle>
+					<DialogTitle className="font-semibold text-foreground text-lg">{t`Evaluate Resume`}</DialogTitle>
 				</DialogHeader>
 
 				{/* Checklist Selector */}
 				<div className="space-y-4">
 					<div>
-						<p className="mb-2 font-semibold text-slate-400 text-xs uppercase tracking-widest">Select Checklist</p>
+						<p className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-widest">Select Checklist</p>
 						<div className="flex flex-wrap gap-2">
 							{checklists?.map((cl) => (
 								<button
@@ -100,15 +100,15 @@ export function EvaluationForm({ resumeId, studentId, tenantId, open, onOpenChan
 									className={cn(
 										"rounded-xl px-4 py-2 font-semibold text-sm transition-all active:scale-[0.97]",
 										selectedChecklistId === cl.id
-											? "bg-indigo-600 text-white"
-											: "bg-slate-100 text-slate-600 hover:bg-slate-200",
+											? "bg-primary text-white"
+											: "bg-muted text-muted-foreground hover:bg-border",
 									)}
 								>
 									{cl.title}
 								</button>
 							))}
 							{!checklists?.length && (
-								<p className="text-slate-400 text-sm">No checklists available. Create one first.</p>
+								<p className="text-muted-foreground text-sm">No checklists available. Create one first.</p>
 							)}
 						</div>
 					</div>
@@ -116,12 +116,12 @@ export function EvaluationForm({ resumeId, studentId, tenantId, open, onOpenChan
 					{/* Scoring Area */}
 					{selectedChecklistId && (
 						<div className="space-y-3">
-							<p className="font-semibold text-slate-400 text-xs uppercase tracking-widest">Score each item (0-5)</p>
+							<p className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">Score each item (0-5)</p>
 
 							{/* Since we only have id+title from the list endpoint, we render a simple scoring interface */}
 							{/* In a full implementation, we'd fetch checklist items by ID */}
-							<div className="rounded-2xl bg-slate-50 p-4">
-								<p className="mb-3 text-slate-600 text-sm">
+							<div className="rounded-2xl bg-muted/50 p-4">
+								<p className="mb-3 text-muted-foreground text-sm">
 									Enter scores for each evaluation criterion. Use the add button to add items.
 								</p>
 
@@ -132,7 +132,7 @@ export function EvaluationForm({ resumeId, studentId, tenantId, open, onOpenChan
 											value={score.notes}
 											onChange={(e) => updateItemScore(itemId, { notes: e.target.value })}
 											placeholder="Item description..."
-											className="flex-1 rounded-xl border-0 bg-white px-3 py-2 text-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500"
+											className="flex-1 rounded-xl border-0 bg-card px-3 py-2 text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
 										/>
 										<div className="flex items-center gap-2">
 											<button
@@ -156,7 +156,7 @@ export function EvaluationForm({ resumeId, studentId, tenantId, open, onOpenChan
 														score: Math.min(5, Math.max(0, Number.parseFloat(e.target.value) || 0)),
 													})
 												}
-												className="w-16 rounded-xl border-0 bg-white px-2 py-2 text-center text-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500"
+												className="w-16 rounded-xl border-0 bg-card px-2 py-2 text-center text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
 											/>
 										</div>
 									</div>
@@ -168,7 +168,7 @@ export function EvaluationForm({ resumeId, studentId, tenantId, open, onOpenChan
 										const id = crypto.randomUUID();
 										updateItemScore(id, { checklistItemId: id, passed: false, score: 0, notes: "" });
 									}}
-									className="mt-2 rounded-xl bg-white px-4 py-2 font-semibold text-slate-600 text-xs ring-1 ring-slate-200 transition-all hover:bg-slate-50 active:scale-[0.97]"
+									className="mt-2 rounded-xl bg-card px-4 py-2 font-semibold text-muted-foreground text-xs ring-1 ring-border transition-all hover:bg-muted/50 active:scale-[0.97]"
 								>
 									+ Add Item
 								</button>
@@ -178,8 +178,8 @@ export function EvaluationForm({ resumeId, studentId, tenantId, open, onOpenChan
 
 					{/* Overall Score Preview */}
 					{overallScore !== null && (
-						<div className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
-							<span className="font-semibold text-slate-900 text-sm">Overall Score</span>
+						<div className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-sm">
+							<span className="font-semibold text-foreground text-sm">Overall Score</span>
 							<span className={cn("font-bold text-2xl", getScoreColor(overallScore))}>{overallScore.toFixed(1)}/5</span>
 						</div>
 					)}
