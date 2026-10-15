@@ -520,9 +520,15 @@ export const resumeRouter = {
 			)
 			.output(commentOutputSchema)
 			.handler(async ({ context, input }) => {
-				const { createComment } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { createComment, getCommentById } = await import(
+					"@/integrations/drizzle/services/resume-feedback.service"
+				);
 
 				await assertReviewStaff(context.user, input.resumeId);
+				// A reply belongs to a thread on this same resume.
+				if (input.parentId && (await getCommentById(input.parentId))?.resumeId !== input.resumeId) {
+					throw new ORPCError("NOT_FOUND", { message: "Comment not found." });
+				}
 				const { id: authorId, tenantId } = await resolveEngLabsActor(context.user.email);
 
 				// The student is emailed once per review (when the reviewer requests changes or verifies),
@@ -580,8 +586,8 @@ export const resumeRouter = {
 
 				// Students can only flag their own feedback as addressed (or undo that); reviewers decide RESOLVED.
 				const access = await getReviewAccess(context.user, comment.resumeId);
-				if (access === "owner" && input.status === "RESOLVED") {
-					throw new ORPCError("FORBIDDEN", { message: "Only reviewers can resolve feedback." });
+				if (access === "owner" && (input.status === "RESOLVED" || comment.status === "RESOLVED")) {
+					throw new ORPCError("FORBIDDEN", { message: "Only reviewers can resolve or reopen feedback." });
 				}
 
 				return await updateCommentStatus(input.id, input.status);

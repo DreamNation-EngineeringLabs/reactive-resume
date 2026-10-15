@@ -5,7 +5,7 @@ import { db } from "@/integrations/drizzle/client";
 
 const CROSS_TENANT_TYPES = new Set(["PLATFORM_ADMIN", "SUPER_ADMIN"]);
 
-const forbidden = () => new ORPCError("FORBIDDEN", { message: "Only reviewers can do this." });
+export const forbidden = () => new ORPCError("FORBIDDEN", { message: "Only reviewers can do this." });
 
 /**
  * Who may read or act on a resume's review feedback: its owner, or eng-labs staff (any non-LEARNER)

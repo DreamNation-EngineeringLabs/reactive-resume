@@ -38,7 +38,7 @@ import { REVIEW_VERDICTS, reviewSummaryEmail } from "@/schema/resume/comment-anc
 import { derror, dlog } from "@/utils/debug";
 import { env } from "@/utils/env";
 import { protectedProcedure } from "../context";
-import { assertReviewStaff, requireReviewer } from "../helpers/review-access";
+import { assertReviewStaff, forbidden, requireReviewer } from "../helpers/review-access";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -93,8 +93,11 @@ async function getMyCommentStatsByResumeIds(resumeIds: string[], authorId: strin
 		);
 
 	for (const c of comments) {
+		// Comments from before review rounds existed are PUBLISHED or DRAFT: open, as the student's feedback list shows them.
+		const status = c.status === "PUBLISHED" || c.status === "DRAFT" ? "OPEN" : c.status;
+		if (status !== "OPEN" && status !== "ADDRESSED" && status !== "RESOLVED") continue;
 		const s = stats.get(c.resumeId) ?? { OPEN: 0, ADDRESSED: 0, RESOLVED: 0 };
-		if (c.status in s) s[c.status as keyof typeof s]++;
+		s[status]++;
 		stats.set(c.resumeId, s);
 	}
 	return stats;
@@ -365,6 +368,8 @@ export const sectionsDashboard = protectedProcedure
 			// The eng-labs user's tenantId is authoritative — client-supplied input.tenantId can drift
 			// (e.g., stale SSO localStorage, cross-tenant testing) and would mis-scope every query below.
 			const engLabsUser = await getEngLabsUserByEmail(context.user.email);
+			// Staff only: students and accounts missing from eng-labs get no roster and cannot pick a tenant.
+			if (!engLabsUser || (engLabsUser.userType ?? "LEARNER") === "LEARNER") throw forbidden();
 			let tenantId = engLabsUser?.tenantId ?? input.tenantId;
 
 			dlog("handler", "sections:auth:resolved", {
@@ -1034,6 +1039,14 @@ export const submitResume = protectedProcedure
 
 		// Fetch current status to decide if it's an initial submission or a re-submission to PO
 		const [currentResume] = await db.select().from(schema.resume).where(eq(schema.resume.id, input.resumeId)).limit(1);
+		if (!currentResume) throw new ORPCError("NOT_FOUND", { message: "Resume not found." });
+		if (currentResume.userId !== context.user.id) {
+			throw new ORPCError("FORBIDDEN", { message: "You can only submit your own resume." });
+		}
+		// Only from a draft or a revision request: a submission must not undo a reviewer's verdict.
+		if (!["DRAFT", "FACULTY_REVISION_REQUESTED", "PO_REVISION_REQUESTED"].includes(currentResume.reviewStatus)) {
+			throw new ORPCError("FORBIDDEN", { message: "This resume is already with a reviewer." });
+		}
 
 		let nextStatus: any = "SUBMITTED_TO_FACULTY";
 		if (currentResume?.reviewStatus === "PO_REVISION_REQUESTED") {

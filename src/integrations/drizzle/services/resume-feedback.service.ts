@@ -94,7 +94,7 @@ export async function createComment({
 		await db
 			.update(resumeComment)
 			.set({ status: "OPEN", resolvedAt: null, updatedAt: new Date() })
-			.where(eq(resumeComment.id, parentId));
+			.where(and(eq(resumeComment.id, parentId), eq(resumeComment.resumeId, resumeId)));
 	}
 
 	return result[0];
