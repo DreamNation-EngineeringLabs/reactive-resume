@@ -218,7 +218,7 @@ export function CommentComposer({
 						value={suggestion}
 						onChange={(e) => setSuggestion(e.target.value)}
 						rows={2}
-						className="w-full resize-none rounded-lg border-0 bg-emerald-50/50 px-3 py-2 text-foreground text-xs outline-none ring-1 ring-emerald-100 focus:ring-2 focus:ring-emerald-500"
+						className="w-full resize-none rounded-lg border-0 bg-emerald-500/10 px-3 py-2 text-foreground text-xs outline-none ring-1 ring-emerald-500/30 focus:ring-2 focus:ring-emerald-500"
 					/>
 					<p className="mt-1 text-[10px] text-muted-foreground">{t`The student can apply this with one click.`}</p>
 				</div>

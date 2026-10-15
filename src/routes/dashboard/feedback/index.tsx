@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Stat, StatStrip } from "@/components/ui/stat";
 import { orpc } from "@/integrations/orpc/client";
@@ -255,6 +256,7 @@ function ResumeCard({
 
 	const submitMutation = useMutation({
 		...orpc.resume.dashboard.submitResume.mutationOptions(),
+		onError: (error) => toast.error(error.message),
 		onSuccess: () => {
 			queryClient.invalidateQueries(orpc.resume.dashboard.student.queryOptions({ input: { userId: "" } }));
 		},
