@@ -164,7 +164,9 @@ const ITEM_NAME_KEYS = ["company", "school", "institution", "name", "title", "ne
 
 /** "Experience › Cascade Studios", "Basics › Headline", "Skills". */
 export function anchorLabel(anchor: CommentAnchor, data: ResumeData) {
-	const builtIn = data.sections[anchor.section as keyof ResumeData["sections"]];
+	const builtIn = Object.hasOwn(data.sections, anchor.section)
+		? data.sections[anchor.section as keyof ResumeData["sections"]]
+		: undefined;
 	const custom = data.customSections.find((s) => s.id === anchor.section);
 
 	if (anchor.section === "basics") {
@@ -174,10 +176,12 @@ export function anchorLabel(anchor: CommentAnchor, data: ResumeData) {
 			.join(" › ");
 	}
 
+	// getSectionTitle throws on ids it does not know, such as a custom section the student has since deleted.
+	const kind = custom?.type ?? (builtIn ? anchor.section : null);
 	const title =
 		anchor.section === "summary"
 			? data.summary.title || getSectionTitle("summary")
-			: builtIn?.title || custom?.title || getSectionTitle(anchor.section as LeftSidebarSection);
+			: builtIn?.title || custom?.title || (kind ? getSectionTitle(kind as LeftSidebarSection) : t`Section`);
 	const items: Record<string, unknown>[] = (builtIn ?? custom)?.items ?? [];
 	const item = items.find((i) => i.id === anchor.itemId);
 	const itemName = item && ITEM_NAME_KEYS.map((k) => item[k]).find((v) => typeof v === "string" && v.trim());
