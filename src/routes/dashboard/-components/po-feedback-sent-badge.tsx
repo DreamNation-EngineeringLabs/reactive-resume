@@ -35,7 +35,7 @@ export function POFeedbackSentBadge({ sectionId, sectionName, tenantId, resumes,
 
 	return (
 		<>
-			<div className="rounded-xl border border-slate-200 bg-slate-50 text-xs">
+			<div className="rounded-xl border border-border bg-muted/50 text-xs">
 				{/* Header row */}
 				<div className="flex w-full items-center gap-2 px-3 py-2">
 					<button
@@ -44,18 +44,18 @@ export function POFeedbackSentBadge({ sectionId, sectionName, tenantId, resumes,
 						className="flex flex-1 items-center gap-2 text-left"
 					>
 						<ArrowCounterClockwiseIcon weight="bold" className="size-3.5 shrink-0 text-amber-500" />
-						<span className="font-semibold text-slate-700">{t`Feedback sent — awaiting resubmission`}</span>
-						<span className="ml-auto text-slate-400">{formattedDate}</span>
+						<span className="font-semibold text-foreground">{t`Feedback sent — awaiting resubmission`}</span>
+						<span className="ml-auto text-muted-foreground">{formattedDate}</span>
 						<ChatTeardropTextIcon
 							weight="duotone"
-							className={`size-3.5 shrink-0 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+							className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
 						/>
 					</button>
 					{/* Edit button */}
 					<button
 						type="button"
 						onClick={() => setEditOpen(true)}
-						className="ml-1 flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 font-medium text-slate-600 text-xs transition-colors hover:border-indigo-200 hover:text-indigo-600"
+						className="ml-1 flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:border-primary/20 hover:text-primary"
 					>
 						<PencilSimpleIcon className="size-3" />
 						{t`Edit`}
@@ -64,11 +64,11 @@ export function POFeedbackSentBadge({ sectionId, sectionName, tenantId, resumes,
 
 				{/* Expandable preview */}
 				{expanded && (
-					<div className="space-y-2 border-slate-200 border-t px-3 py-2">
-						<p className="line-clamp-4 whitespace-pre-wrap text-slate-600 leading-relaxed">{latest.reviewNotes}</p>
+					<div className="space-y-2 border-border border-t px-3 py-2">
+						<p className="line-clamp-4 whitespace-pre-wrap text-muted-foreground leading-relaxed">{latest.reviewNotes}</p>
 						{latest.voiceNoteUrl && <audio src={latest.voiceNoteUrl} controls className="h-7 w-full" />}
 						{reviews && reviews.length > 1 && (
-							<p className="text-slate-400 italic">{t`+${reviews.length - 1} earlier round(s)`}</p>
+							<p className="text-muted-foreground italic">{t`+${reviews.length - 1} earlier round(s)`}</p>
 						)}
 					</div>
 				)}

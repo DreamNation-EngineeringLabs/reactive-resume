@@ -4,7 +4,6 @@ import {
 	BookOpenIcon,
 	CaretDownIcon,
 	ChartLineIcon,
-	CheckCircleIcon,
 	FileTextIcon,
 	ListChecksIcon,
 	PaperPlaneTiltIcon,
@@ -12,14 +11,15 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Stat, StatStrip } from "@/components/ui/stat";
 import { orpc } from "@/integrations/orpc/client";
 import { getEngLabsUserId, getTenantId } from "@/utils/sso-context";
 import { cn } from "@/utils/style";
 import { ChecklistsTab } from "../-components/checklists-tab";
 import { DashboardHeader } from "../-components/header";
 import { getEvaluationBadgeClass } from "../-components/score-helpers";
-import { ScoreCard, StatCard } from "../-components/stat-card";
 
 export const Route = createFileRoute("/dashboard/feedback/")({
 	component: RouteComponent,
@@ -81,7 +81,7 @@ function RouteComponent() {
 				<DashboardHeader icon={ChartLineIcon} title={t`Feedback Summary`} />
 				<div className="grid gap-4 md:grid-cols-3">
 					{[...Array(3)].map((_, i) => (
-						<div key={i} className="rounded-2xl bg-white p-6 shadow-sm">
+						<div key={i} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
 							<Skeleton className="mb-2 h-8 w-16" />
 							<Skeleton className="h-4 w-24" />
 						</div>
@@ -100,10 +100,14 @@ function RouteComponent() {
 
 	return (
 		<div className="space-y-8">
-			<DashboardHeader icon={ChartLineIcon} title={t`Feedback Summary`} />
+			<DashboardHeader
+				icon={ChartLineIcon}
+				title={t`Feedback Summary`}
+				description={t`What your reviewers said about your resumes, in one place.`}
+			/>
 
 			{/* Tab bar */}
-			<div className="flex gap-1 border-slate-100 border-b">
+			<div className="flex gap-1 border-border border-b">
 				{tabs.map((tab) => (
 					<button
 						key={tab.id}
@@ -112,8 +116,8 @@ function RouteComponent() {
 						className={cn(
 							"flex items-center gap-2 border-b-2 px-4 py-3 font-semibold text-sm transition-all",
 							activeTab === tab.id
-								? "border-indigo-600 text-indigo-600"
-								: "border-transparent text-slate-500 hover:text-slate-700",
+								? "border-primary text-primary"
+								: "border-transparent text-muted-foreground hover:text-foreground",
 						)}
 					>
 						{tab.icon}
@@ -128,17 +132,17 @@ function RouteComponent() {
 				<div className="space-y-8">
 					{/* Enrollment context banner */}
 					{enrollment && (
-						<div className="flex flex-wrap items-center gap-3 rounded-2xl bg-indigo-50 px-5 py-3">
-							<BookOpenIcon weight="duotone" className="size-5 shrink-0 text-indigo-500" />
+						<div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card px-5 py-3 shadow-sm">
+							<BookOpenIcon weight="duotone" className="size-5 shrink-0 text-primary" />
 							<div className="flex flex-wrap gap-2">
 								{enrollment.parentName && (
-									<span className="flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 font-semibold text-indigo-800 text-xs">
-										<span className="text-[10px] text-indigo-400 uppercase tracking-widest">Package</span>
+									<span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 font-medium text-foreground text-xs">
+										<span className="text-muted-foreground">Package</span>
 										{enrollment.parentName}
 									</span>
 								)}
-								<span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1 font-semibold text-indigo-700 text-xs shadow-sm">
-									<span className="text-[10px] text-indigo-400 uppercase tracking-widest">
+								<span className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 font-medium text-foreground text-xs">
+									<span className="text-muted-foreground">
 										{enrollment.unitType.charAt(0) + enrollment.unitType.slice(1).toLowerCase()}
 									</span>
 									{enrollment.unitName}
@@ -148,33 +152,26 @@ function RouteComponent() {
 					)}
 
 					{/* Stats Cards */}
-					<div className="grid gap-4 md:grid-cols-3">
-						<StatCard
-							label={t`My Resumes`}
-							value={stats.totalResumes}
-							iconBg="bg-indigo-50"
-							iconColor="text-indigo-600"
-							icon={<FileTextIcon weight="duotone" className="size-5" />}
+					<StatStrip>
+						<Stat label={t`My resumes`} value={stats.totalResumes} />
+						<Stat label={t`Feedback received`} value={stats.totalComments} />
+						<Stat
+							label={t`Average score`}
+							value={
+								stats.averageScore === null ? null : (
+									<>
+										{stats.averageScore.toFixed(1)}
+										<span className="ml-0.5 font-medium text-base text-muted-foreground">/5</span>
+									</>
+								)
+							}
+							hint={stats.averageScore === null ? t`Nothing evaluated yet` : undefined}
 						/>
-						<StatCard
-							label={t`Feedback Received`}
-							value={stats.totalComments}
-							iconBg="bg-sky-50"
-							iconColor="text-sky-600"
-							icon={<ChartLineIcon weight="duotone" className="size-5" />}
-						/>
-						<ScoreCard
-							label={t`Average Score`}
-							value={stats.averageScore}
-							iconBg="bg-emerald-50"
-							iconColor="text-emerald-600"
-							icon={<CheckCircleIcon weight="duotone" className="size-5" />}
-						/>
-					</div>
+					</StatStrip>
 
 					{/* Resumes */}
 					<div className="space-y-4">
-						<h3 className="font-semibold text-lg text-slate-900">Your Resumes</h3>
+						<h3 className="font-semibold text-foreground text-lg">Your resumes</h3>
 						{dashboard?.resumes && dashboard.resumes.length > 0 ? (
 							<div className="space-y-3">
 								{dashboard.resumes.map((resume) => (
@@ -189,11 +186,14 @@ function RouteComponent() {
 								))}
 							</div>
 						) : (
-							<div className="rounded-2xl bg-white p-10 text-center shadow-sm">
-								<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+							<div className="rounded-2xl border border-border bg-card p-10 text-center shadow-sm">
+								<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted text-primary">
 									<FileTextIcon weight="duotone" className="size-7" />
 								</div>
-								<p className="font-medium text-slate-500">No resumes created yet</p>
+								<p className="font-semibold text-foreground">No resumes yet</p>
+								<p className="mx-auto mt-1 max-w-xs text-muted-foreground text-sm">
+									Create a resume and submit it for review. Your reviewers' comments will show up here.
+								</p>
 							</div>
 						)}
 					</div>
@@ -233,16 +233,16 @@ function ResumeCard({
 	const isSubmitted = resume.feedback.isSubmitted;
 
 	let statusLabel = "Not Reviewed";
-	let statusBg = "bg-slate-100";
-	let statusText = "text-slate-500";
+	let statusBg = "bg-muted";
+	let statusText = "text-muted-foreground";
 	if (hasEvaluation) {
 		statusLabel = "Evaluated";
 		statusBg = "bg-emerald-50";
 		statusText = "text-emerald-700";
 	} else if (isSubmitted) {
 		statusLabel = "Submitted for Review";
-		statusBg = "bg-indigo-50";
-		statusText = "text-indigo-700";
+		statusBg = "bg-primary/10";
+		statusText = "text-primary";
 	} else if (hasComments) {
 		statusLabel = "Has Comments";
 		statusBg = "bg-amber-50";
@@ -256,6 +256,7 @@ function ResumeCard({
 
 	const submitMutation = useMutation({
 		...orpc.resume.dashboard.submitResume.mutationOptions(),
+		onError: (error) => toast.error(error.message),
 		onSuccess: () => {
 			queryClient.invalidateQueries(orpc.resume.dashboard.student.queryOptions({ input: { userId: "" } }));
 		},
@@ -264,21 +265,21 @@ function ResumeCard({
 	const canSubmit = !isSubmitted && !hasEvaluation && !!engLabsUserId;
 
 	return (
-		<div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+		<div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
 			{/* biome-ignore lint: click to expand */}
 			<div
-				className="flex cursor-pointer items-start justify-between p-5 transition-colors hover:bg-slate-50/60"
+				className="flex cursor-pointer items-start justify-between p-5 transition-colors hover:bg-muted/40"
 				onClick={onToggle}
 			>
 				<div className="min-w-0 flex-1">
-					<p className="truncate font-semibold text-slate-900">{resume.name}</p>
-					<p className="mt-0.5 text-slate-400 text-xs">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
+					<p className="truncate font-semibold text-foreground">{resume.name}</p>
+					<p className="mt-0.5 text-muted-foreground text-xs">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
 					<div className="mt-3 flex flex-wrap gap-2">
 						<span className={cn("rounded-full px-2.5 py-0.5 font-medium text-xs", statusBg, statusText)}>
 							{statusLabel}
 						</span>
 						{hasComments && (
-							<span className="rounded-full bg-sky-50 px-2.5 py-0.5 font-medium text-sky-700 text-xs">
+							<span className="rounded-full bg-muted px-2.5 py-0.5 font-medium text-foreground text-xs">
 								{resume.feedback.totalComments} comment{resume.feedback.totalComments !== 1 ? "s" : ""}
 							</span>
 						)}
@@ -303,25 +304,25 @@ function ResumeCard({
 						rel="noreferrer"
 						title="Open resume builder"
 						onClick={(e) => e.stopPropagation()}
-						className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+						className="flex size-8 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
 					>
 						<ArrowSquareOutIcon weight="duotone" className="size-4" />
 					</Link>
 					<CaretDownIcon
 						weight="bold"
-						className={cn("size-4 text-slate-400 transition-transform", isExpanded && "rotate-180")}
+						className={cn("size-4 text-muted-foreground transition-transform", isExpanded && "rotate-180")}
 					/>
 				</div>
 			</div>
 
 			{/* Expanded: Submit + Comments */}
 			{isExpanded && (
-				<div className="border-slate-100 border-t bg-slate-50/60 px-5 pt-4 pb-5">
+				<div className="border-border border-t bg-muted/50 px-5 pt-4 pb-5">
 					{canSubmit && (
-						<div className="mb-4 flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3">
+						<div className="mb-4 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
 							<div>
-								<p className="font-semibold text-indigo-900 text-sm">Ready for faculty review?</p>
-								<p className="text-indigo-600 text-xs">Submit this resume so your faculty can review and comment.</p>
+								<p className="font-semibold text-foreground text-sm">Ready for faculty review?</p>
+								<p className="text-muted-foreground text-xs">Submit this resume so your faculty can review and comment.</p>
 							</div>
 							<button
 								type="button"
@@ -330,7 +331,7 @@ function ResumeCard({
 									if (!engLabsUserId) return;
 									submitMutation.mutate({ resumeId: resume.id, studentId: engLabsUserId, tenantId });
 								}}
-								className="ml-4 flex shrink-0 items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 font-semibold text-sm text-white transition-all hover:bg-indigo-700 disabled:opacity-60"
+								className="ml-4 flex shrink-0 items-center gap-2 rounded-xl bg-primary px-4 py-2 font-semibold text-primary-foreground text-sm transition-colors hover:bg-primary/90 disabled:opacity-60"
 							>
 								<PaperPlaneTiltIcon weight="duotone" className="size-4" />
 								{submitMutation.isPending ? "Submitting…" : "Submit for Review"}
@@ -338,13 +339,13 @@ function ResumeCard({
 						</div>
 					)}
 					{isSubmitted && !hasEvaluation && (
-						<div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
-							<p className="font-semibold text-indigo-800 text-sm">Submitted for Review</p>
-							<p className="text-indigo-600 text-xs">Your resume is pending faculty review.</p>
+						<div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+							<p className="font-semibold text-foreground text-sm">Submitted for review</p>
+							<p className="text-muted-foreground text-xs">Your resume is waiting for your faculty.</p>
 						</div>
 					)}
 
-					<p className="mb-3 font-semibold text-slate-500 text-xs uppercase tracking-widest">Faculty Comments</p>
+					<p className="mb-3 font-semibold text-foreground text-sm">Faculty comments</p>
 					{commentsLoading ? (
 						<div className="space-y-2">
 							{[...Array(2)].map((_, i) => (
@@ -352,15 +353,31 @@ function ResumeCard({
 							))}
 						</div>
 					) : !commentsData || commentsData.length === 0 ? (
-						<p className="rounded-xl bg-white px-4 py-3 text-center text-slate-400 text-sm shadow-sm">
+						<p className="rounded-xl border border-border bg-card px-4 py-3 text-center text-muted-foreground text-sm">
 							No comments yet from your faculty
 						</p>
 					) : (
 						<div className="space-y-2">
 							{commentsData.map((comment) => (
-								<div key={comment.id} className="rounded-xl bg-white p-3 shadow-sm">
-									<p className="text-slate-700 text-sm">{comment.content}</p>
-									<p className="mt-1.5 text-slate-400 text-xs">
+								<div key={comment.id} className="rounded-xl border border-border bg-card p-3">
+									{comment.anchor && (
+										<Link
+											to="/builder/$resumeId"
+											params={{ resumeId: resume.id }}
+											search={{ comment: comment.id }}
+											className="mb-2 block rounded-lg border-amber-400 border-l-4 bg-amber-500/10 px-3 py-1.5 text-xs hover:bg-amber-500/20"
+										>
+											<span className="line-clamp-2 text-foreground">
+												{comment.anchor.quote ? `“${comment.anchor.quote.exact}”` : "Whole section"}
+											</span>
+											<span className="font-semibold text-primary">Show in resume</span>
+										</Link>
+									)}
+									<p className="text-foreground text-sm">{comment.content}</p>
+									{comment.suggestion && (
+										<p className="mt-1 text-emerald-700 text-xs">Suggested rewrite: “{comment.suggestion}”</p>
+									)}
+									<p className="mt-1.5 text-muted-foreground text-xs">
 										{new Date(comment.createdAt).toLocaleDateString()} ·{" "}
 										{comment.status === "RESOLVED" ? (
 											<span className="text-emerald-600">Resolved</span>

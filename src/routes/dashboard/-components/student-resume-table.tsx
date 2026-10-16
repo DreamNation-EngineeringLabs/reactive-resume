@@ -10,6 +10,8 @@ type ResumeEntry = {
 	updatedAt: Date;
 	evaluationScore: number | null;
 	commentCount: number;
+	/** The viewing reviewer's own top-level comments, by status (Overview → My reviews). */
+	myComments?: { OPEN: number; ADDRESSED: number; RESOLVED: number } | null;
 	isSubmitted: boolean;
 	status: "not_reviewed" | "submitted" | "evaluated" | "has_comments";
 	reviewStatus: string | null;
@@ -62,13 +64,13 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 			{/* Search & Filter Bar */}
 			<div className="space-y-3">
 				<div className="relative">
-					<MagnifyingGlassIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+					<MagnifyingGlassIcon className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
 					<input
 						type="text"
 						placeholder={t`Search by name or roll number...`}
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
-						className="h-10 w-full rounded-xl border-0 bg-slate-50 pr-4 pl-9 text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
+						className="h-10 w-full rounded-xl border-0 bg-muted/50 pr-4 pl-9 text-foreground text-sm outline-none ring-1 ring-border transition-all placeholder:text-muted-foreground focus:bg-card focus:ring-2 focus:ring-primary"
 					/>
 				</div>
 				<div className="flex flex-wrap gap-1.5">
@@ -87,8 +89,8 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 								className={cn(
 									"rounded-xl px-3 py-2 font-semibold text-xs transition-all active:scale-[0.97]",
 									statusFilter === status
-										? "bg-indigo-600 text-white shadow-sm"
-										: "bg-slate-100 text-slate-600 hover:bg-slate-200",
+										? "bg-primary text-white shadow-sm"
+										: "bg-muted text-muted-foreground hover:bg-border",
 								)}
 							>
 								{labels[status]}
@@ -100,31 +102,31 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 
 			{/* Student Cards */}
 			{filteredStudents.length === 0 ? (
-				<div className="rounded-2xl bg-slate-50 py-12 text-center">
-					<p className="font-semibold text-slate-400 text-sm">{t`No students or resumes found`}</p>
+				<div className="rounded-2xl bg-muted/50 py-12 text-center">
+					<p className="font-semibold text-muted-foreground text-sm">{t`No students or resumes found`}</p>
 				</div>
 			) : (
 				<div className="space-y-3">
 					{filteredStudents.map((student) => (
 						<div
 							key={student.engLabsId}
-							className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm"
+							className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
 						>
 							{/* Student Header */}
-							<div className="flex items-center gap-3 border-slate-50 border-b bg-slate-50/50 px-4 py-3">
-								<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 font-bold text-indigo-600 text-sm">
+							<div className="flex items-center gap-3 border-border border-b bg-muted/50 px-4 py-3">
+								<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-bold text-primary text-sm">
 									{student.name.charAt(0).toUpperCase()}
 								</div>
 								<div className="min-w-0 flex-1">
-									<p className="truncate font-semibold text-slate-900 text-sm leading-tight">{student.name}</p>
-									<p className="mt-0.5 text-slate-400 text-xs">
+									<p className="truncate font-semibold text-foreground text-sm leading-tight">{student.name}</p>
+									<p className="mt-0.5 text-muted-foreground text-xs">
 										{student.rollNumber ?? student.email}
-										{student.sectionName && <span className="ml-1 text-slate-300">·</span>}
-										{student.sectionName && <span className="ml-1 text-slate-500">{student.sectionName}</span>}
+										{student.sectionName && <span className="ml-1 text-muted-foreground">·</span>}
+										{student.sectionName && <span className="ml-1 text-muted-foreground">{student.sectionName}</span>}
 									</p>
 								</div>
 								<div className="flex shrink-0 items-center gap-2">
-									<span className="rounded-full bg-white px-2.5 py-0.5 font-medium text-slate-500 text-xs ring-1 ring-slate-200">
+									<span className="rounded-full bg-card px-2.5 py-0.5 font-medium text-muted-foreground text-xs ring-1 ring-border">
 										{student.resumes.length} resume{student.resumes.length !== 1 ? "s" : ""}
 									</span>
 									{onStudentClick && (
@@ -132,7 +134,7 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 											type="button"
 											onClick={() => onStudentClick(student)}
 											title={t`View student details`}
-											className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-slate-400 ring-1 ring-slate-200 transition-all hover:bg-indigo-50 hover:text-indigo-600 hover:ring-indigo-200 active:scale-[0.95]"
+											className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-card text-muted-foreground ring-1 ring-border transition-all hover:bg-primary/5 hover:text-primary hover:ring-primary/20 active:scale-[0.95]"
 										>
 											<UserIcon weight="duotone" className="size-3.5" />
 										</button>
@@ -142,15 +144,15 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 
 							{/* Resume Entries */}
 							{student.resumes.length > 0 ? (
-								<div className="divide-y divide-slate-50">
+								<div className="divide-y divide-border">
 									{student.resumes.map((resume) => {
 										const statusInfo = getStatusBadgeClass(resume.reviewStatus || resume.status);
 										return (
-											<div key={resume.id} className="px-4 py-3 transition-colors hover:bg-slate-50/50">
+											<div key={resume.id} className="px-4 py-3 transition-colors hover:bg-muted/50">
 												{/* Resume name + date row */}
 												<div className="mb-2.5 flex items-start justify-between gap-3">
-													<p className="truncate font-semibold text-slate-800 text-sm leading-tight">{resume.name}</p>
-													<span className="flex shrink-0 items-center gap-1 text-[11px] text-slate-400">
+													<p className="truncate font-semibold text-foreground text-sm leading-tight">{resume.name}</p>
+													<span className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
 														<CalendarBlankIcon className="size-3" />
 														{new Date(resume.updatedAt).toLocaleDateString()}
 													</span>
@@ -183,7 +185,7 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 
 													{/* Comment count */}
 													{resume.commentCount > 0 && (
-														<span className="flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-0.5 font-semibold text-[11px] text-sky-700">
+														<span className="flex items-center gap-1 rounded-full bg-primary/5 px-2.5 py-0.5 font-semibold text-[11px] text-primary">
 															<ChatDotsIcon className="size-3" />
 															{resume.commentCount} comment{resume.commentCount !== 1 ? "s" : ""}
 														</span>
@@ -197,7 +199,7 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 														<button
 															type="button"
 															onClick={() => onReview(resume.id, student.engLabsId)}
-															className="rounded-xl bg-indigo-600 px-3.5 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-indigo-700 active:scale-[0.97]"
+															className="rounded-xl bg-primary px-3.5 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-primary/90 active:scale-[0.97]"
 														>
 															{t`Review`}
 														</button>
@@ -209,7 +211,7 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 								</div>
 							) : (
 								<div className="px-4 py-4">
-									<p className="rounded-xl bg-slate-50 px-4 py-3 text-center text-slate-400 text-xs">
+									<p className="rounded-xl bg-muted/50 px-4 py-3 text-center text-muted-foreground text-xs">
 										{t`No resumes created yet`}
 									</p>
 								</div>

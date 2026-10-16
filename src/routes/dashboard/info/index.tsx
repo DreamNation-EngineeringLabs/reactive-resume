@@ -34,6 +34,7 @@ import { orpc } from "@/integrations/orpc/client";
 import { defaultUserInfoData, type UserInfoData, userInfoDataSchema } from "@/schema/resume/user-info";
 import { generateId } from "@/utils/string";
 import { cn } from "@/utils/style";
+import { DashboardHeader } from "../-components/header";
 
 export const Route = createFileRoute("/dashboard/info/")({
 	component: RouteComponent,
@@ -82,11 +83,11 @@ function RouteComponent() {
 
 	if (isLoading) {
 		return (
-			<div className="-m-10 min-h-full bg-slate-50 p-10 md:-m-12 md:p-12">
+			<div className="-m-10 min-h-full bg-muted/50 p-10 md:-m-12 md:p-12">
 				<div className="space-y-6">
 					<MasterProfileHeader isPending={false} onSave={() => undefined} />
 					<div className="flex items-center justify-center py-12">
-						<p className="text-slate-400 text-sm">Loading...</p>
+						<p className="text-muted-foreground text-sm">Loading...</p>
 					</div>
 				</div>
 			</div>
@@ -94,7 +95,7 @@ function RouteComponent() {
 	}
 
 	return (
-		<div className="-m-10 min-h-full bg-slate-50 p-10 md:-m-12 md:p-12">
+		<div className="-m-10 min-h-full bg-muted/50 p-10 md:-m-12 md:p-12">
 			<div className="space-y-6">
 				<MasterProfileHeader isPending={isPending} onSave={form.handleSubmit(onSubmit)} />
 
@@ -128,20 +129,16 @@ function RouteComponent() {
 
 function MasterProfileHeader({ isPending, onSave }: { isPending: boolean; onSave: () => void }) {
 	return (
-		<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-			<div className="max-w-xl">
-				<h1 className="font-black text-3xl text-slate-900 tracking-tight">
-					<Trans>Master Profile</Trans>
-				</h1>
-				<p className="mt-1 font-medium text-slate-500 text-sm">
-					<Trans>Manage your core professional data to pre-fill future resumes and applications securely.</Trans>
-				</p>
-			</div>
+		<DashboardHeader
+			icon={UserCircleIcon}
+			title={t`Master Profile`}
+			description={t`Your core details, saved once, so new resumes start filled in.`}
+		>
 			<Button onClick={onSave} disabled={isPending} size="lg" className="shrink-0">
 				<FloppyDiskIcon weight="duotone" className="size-4" />
 				<Trans>Save Changes</Trans>
 			</Button>
-		</div>
+		</DashboardHeader>
 	);
 }
 
@@ -157,30 +154,30 @@ type SectionWrapperProps = {
 
 const FIELD_OVERRIDES = [
 	// Tiny uppercase labels with tight spacing to input
-	"[&_label]:mb-0 [&_label]:font-semibold [&_label]:text-[10.5px] [&_label]:text-slate-500 [&_label]:uppercase [&_label]:tracking-widest",
+	"[&_label]:mb-0 [&_label]:font-semibold [&_label]:text-[10.5px] [&_label]:text-muted-foreground [&_label]:uppercase [&_label]:tracking-widest",
 	// Standalone Input (data-slot="input") — filled grey, no border
-	"**:data-[slot=input]:h-11 **:data-[slot=input]:rounded-lg **:data-[slot=input]:border-transparent **:data-[slot=input]:bg-slate-100 **:data-[slot=input]:font-medium **:data-[slot=input]:text-slate-900 **:data-[slot=input]:shadow-none",
-	"**:data-[slot=input]:hover:bg-slate-100/80",
-	"**:data-[slot=input]:focus-visible:bg-white **:data-[slot=input]:focus-visible:ring-2 **:data-[slot=input]:focus-visible:ring-primary/20",
+	"**:data-[slot=input]:h-11 **:data-[slot=input]:rounded-lg **:data-[slot=input]:border-transparent **:data-[slot=input]:bg-muted **:data-[slot=input]:font-medium **:data-[slot=input]:text-foreground **:data-[slot=input]:shadow-none",
+	"**:data-[slot=input]:hover:bg-muted",
+	"**:data-[slot=input]:focus-visible:bg-card **:data-[slot=input]:focus-visible:ring-2 **:data-[slot=input]:focus-visible:ring-primary/20",
 	// Standalone Textarea
-	"[&_textarea]:rounded-lg [&_textarea]:border-transparent [&_textarea]:bg-slate-100 [&_textarea]:font-medium [&_textarea]:text-slate-900 [&_textarea]:shadow-none",
-	"[&_textarea:hover]:bg-slate-100/80",
-	"[&_textarea:focus-visible]:bg-white [&_textarea:focus-visible]:ring-2 [&_textarea:focus-visible]:ring-primary/20",
+	"[&_textarea]:rounded-lg [&_textarea]:border-transparent [&_textarea]:bg-muted [&_textarea]:font-medium [&_textarea]:text-foreground [&_textarea]:shadow-none",
+	"[&_textarea:hover]:bg-muted",
+	"[&_textarea:focus-visible]:bg-card [&_textarea:focus-visible]:ring-2 [&_textarea:focus-visible]:ring-primary/20",
 	// URLInput wrapper (InputGroup) — becomes the filled container; its inner input stays transparent (default)
-	"**:data-[slot=input-group]:h-11 **:data-[slot=input-group]:rounded-lg **:data-[slot=input-group]:border-transparent **:data-[slot=input-group]:bg-slate-100 **:data-[slot=input-group]:shadow-none",
-	"**:data-[slot=input-group]:focus-within:bg-white **:data-[slot=input-group]:focus-within:ring-2 **:data-[slot=input-group]:focus-within:ring-primary/20",
+	"**:data-[slot=input-group]:h-11 **:data-[slot=input-group]:rounded-lg **:data-[slot=input-group]:border-transparent **:data-[slot=input-group]:bg-muted **:data-[slot=input-group]:shadow-none",
+	"**:data-[slot=input-group]:focus-within:bg-card **:data-[slot=input-group]:focus-within:ring-2 **:data-[slot=input-group]:focus-within:ring-primary/20",
 ].join(" ");
 
 function SectionWrapper({ value, icon, title, count, children }: SectionWrapperProps) {
 	return (
 		<AccordionItem
 			value={value}
-			className="rounded-2xl border border-slate-200/60 bg-white px-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_1px_3px_rgba(15,23,42,0.03)] transition-shadow hover:shadow-[0_4px_12px_rgba(15,23,42,0.06)]"
+			className="rounded-2xl border border-border bg-card px-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_1px_3px_rgba(15,23,42,0.03)] transition-shadow hover:shadow-[0_4px_12px_rgba(15,23,42,0.06)]"
 		>
 			<AccordionTrigger className="py-5 hover:no-underline">
 				<div className="flex items-center gap-x-3">
 					<div className="flex size-7 shrink-0 items-center justify-center text-primary">{icon}</div>
-					<span className="font-bold text-base text-slate-900">{title}</span>
+					<span className="font-bold text-base text-foreground">{title}</span>
 					{count !== undefined && count > 0 && (
 						<span className="rounded-full bg-primary/10 px-2 py-0.5 font-bold text-[10px] text-primary uppercase tracking-wider">
 							{count}
@@ -314,7 +311,7 @@ function SummarySection() {
 							<RichInput value={field.value} onChange={field.onChange} />
 						</FormControl>
 						<div className="flex justify-end pt-1">
-							<span className="text-[11px] text-slate-400 tabular-nums">
+							<span className="text-[11px] text-muted-foreground tabular-nums">
 								{charCount} <Trans>characters</Trans>
 							</span>
 						</div>
@@ -338,7 +335,7 @@ function ProfilesSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -348,7 +345,7 @@ function ProfilesSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -441,7 +438,7 @@ function ExperienceSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -451,7 +448,7 @@ function ExperienceSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -588,7 +585,7 @@ function EducationSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -598,7 +595,7 @@ function EducationSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -760,7 +757,7 @@ function ProjectsSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -770,7 +767,7 @@ function ProjectsSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -872,7 +869,7 @@ function SkillsSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -882,7 +879,7 @@ function SkillsSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -962,7 +959,7 @@ function LanguagesSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -972,7 +969,7 @@ function LanguagesSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1050,7 +1047,7 @@ function InterestsSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -1060,7 +1057,7 @@ function InterestsSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1122,7 +1119,7 @@ function AwardsSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -1132,7 +1129,7 @@ function AwardsSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1254,7 +1251,7 @@ function CertificationsSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -1264,7 +1261,7 @@ function CertificationsSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1386,7 +1383,7 @@ function PublicationsSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -1396,7 +1393,7 @@ function PublicationsSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1518,7 +1515,7 @@ function VolunteerSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -1528,7 +1525,7 @@ function VolunteerSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />
@@ -1650,7 +1647,7 @@ function ReferencesSection() {
 				{fields.map((field, index) => (
 					<div
 						key={field.id}
-						className="group relative space-y-3 border-slate-100 border-b pb-5 last:border-0 last:pb-0"
+						className="group relative space-y-3 border-border border-b pb-5 last:border-0 last:pb-0"
 					>
 						<Button
 							type="button"
@@ -1660,7 +1657,7 @@ function ReferencesSection() {
 							// touch device, so `opacity-0` left every delete button permanently invisible on a
 							// phone — items could be added but never removed. size-11 also meets the 44px tap
 							// target; size-7 (28px) was well under it.
-							className="absolute -top-1 right-0 z-10 size-11 bg-white text-slate-400 opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
+							className="absolute -top-1 right-0 z-10 size-11 bg-card text-muted-foreground opacity-100 shadow-sm transition-opacity hover:bg-rose-50 hover:text-rose-500 focus-visible:opacity-100 md:size-7 md:opacity-0 md:group-hover:opacity-100"
 							onClick={() => remove(index)}
 						>
 							<TrashIcon className="size-4" />

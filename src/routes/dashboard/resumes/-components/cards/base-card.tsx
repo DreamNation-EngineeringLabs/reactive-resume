@@ -19,7 +19,7 @@ export function BaseCard({
 	headerColor = "bg-primary",
 	accentColor = "text-primary",
 	aspectRatio = "aspect-[4/5]",
-	customBg = "bg-slate-50/50",
+	customBg = "bg-muted/50",
 	className,
 	children,
 	...props
@@ -49,13 +49,13 @@ export function BaseCard({
 
 			{/* Footer with Name and Description */}
 			<div className="mt-auto border-border border-t p-6">
-				<h4 className="mb-1 line-clamp-1 font-black text-lg text-slate-900 tracking-tight">{title}</h4>
-				<p className="line-clamp-2 font-medium text-slate-500 text-sm leading-relaxed">{description}</p>
+				<h4 className="mb-1 line-clamp-1 font-black text-foreground text-lg tracking-tight">{title}</h4>
+				<p className="line-clamp-2 font-medium text-muted-foreground text-sm leading-relaxed">{description}</p>
 			</div>
 
 			{/* Tags (if any) */}
 			{tags && tags.length > 0 && (
-				<div className="flex flex-wrap gap-1.5 border-border border-t bg-slate-50/50 px-6 py-4">
+				<div className="flex flex-wrap gap-1.5 border-border border-t bg-muted/50 px-6 py-4">
 					{tags.map((tag) => (
 						<span
 							key={tag}

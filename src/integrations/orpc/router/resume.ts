@@ -1,10 +1,12 @@
 import { ORPCError } from "@orpc/client";
 import z from "zod";
+import { commentAnchorSchema, commentSeveritySchema } from "@/schema/resume/comment-anchor";
 import { sampleResumeData } from "@/schema/resume/sample";
 import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
 import { resumeDto } from "../dto/resume";
 import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
+import { assertReviewStaff, getReviewAccess, requireReviewer } from "../helpers/review-access";
 import { resumeService } from "../services/resume";
 import { aiService as resumeAiService } from "../services/resume-ai";
 import { userInfoService } from "../services/user-info";
@@ -15,20 +17,37 @@ import { dashboardRouter } from "./dashboard";
 // Resolve both id and tenantId server-side — the client-supplied tenantId comes from
 // localStorage (sso_context) and can drift from the user's real tenant.
 async function resolveEngLabsActor(email: string): Promise<{ id: string; tenantId: string }> {
-	const { getEngLabsUserByEmail } = await import("@/integrations/eng-labs");
+	const { getEngLabsUserByEmail, getStaffTenantIds } = await import("@/integrations/eng-labs");
 	const engUser = await getEngLabsUserByEmail(email);
 	if (!engUser) {
 		throw new ORPCError("FORBIDDEN", {
 			message: "Authenticated user is not provisioned in the institutional directory.",
 		});
 	}
-	if (!engUser.tenantId) {
+	// Mapped staff can have no tenant on their own users row; their mapping / unit assignment gives it.
+	const tenantId = engUser.tenantId ?? (await getStaffTenantIds(engUser.id))[0];
+	if (!tenantId) {
 		throw new ORPCError("FORBIDDEN", {
 			message: "Authenticated user has no tenant assignment.",
 		});
 	}
-	return { id: engUser.id, tenantId: engUser.tenantId };
+	return { id: engUser.id, tenantId };
 }
+
+const commentOutputSchema = z.object({
+	id: z.string(),
+	resumeId: z.string(),
+	parentId: z.string().uuid().nullable(),
+	content: z.string(),
+	scope: z.string(),
+	status: z.string(),
+	authorId: z.string(),
+	anchor: commentAnchorSchema.nullable(),
+	severity: z.string().nullable(),
+	suggestion: z.string().nullable(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+});
 
 const tagsRouter = {
 	list: protectedProcedure
@@ -494,29 +513,27 @@ export const resumeRouter = {
 					parentId: z.string().uuid().optional().describe("Parent comment ID for replies"),
 					content: z.string().min(1).max(5000).describe("Comment content"),
 					scope: z.enum(["INDIVIDUAL", "SECTION"]).default("INDIVIDUAL").describe("Comment visibility scope"),
+					anchor: commentAnchorSchema.optional().describe("Where on the resume the comment points"),
+					severity: commentSeveritySchema.optional(),
+					suggestion: z.string().min(1).max(2000).optional().describe("Replacement for the anchored quote"),
 				}),
 			)
-			.output(
-				z.object({
-					id: z.string(),
-					resumeId: z.string(),
-					parentId: z.string().uuid().nullable(),
-					content: z.string(),
-					scope: z.string(),
-					status: z.string(),
-					authorId: z.string(),
-					createdAt: z.date(),
-					updatedAt: z.date(),
-				}),
-			)
+			.output(commentOutputSchema)
 			.handler(async ({ context, input }) => {
-				const { createComment } = await import("@/integrations/drizzle/services/resume-feedback.service");
-				const { getStudentById } = await import("@/integrations/eng-labs");
-				const { sendEmail } = await import("@/integrations/email/service");
+				const { createComment, getCommentById } = await import(
+					"@/integrations/drizzle/services/resume-feedback.service"
+				);
 
+				await assertReviewStaff(context.user, input.resumeId);
+				// A reply belongs to a thread on this same resume.
+				if (input.parentId && (await getCommentById(input.parentId))?.resumeId !== input.resumeId) {
+					throw new ORPCError("NOT_FOUND", { message: "Comment not found." });
+				}
 				const { id: authorId, tenantId } = await resolveEngLabsActor(context.user.email);
 
-				const comment = await createComment({
+				// The student is emailed once per review (when the reviewer requests changes or verifies),
+				// with every open comment listed — see dashboard.updateStatus — not once per comment.
+				return await createComment({
 					resumeId: input.resumeId,
 					studentId: input.studentId,
 					tenantId,
@@ -524,28 +541,10 @@ export const resumeRouter = {
 					parentId: input.parentId,
 					content: input.content,
 					scope: input.scope,
+					anchor: input.anchor,
+					severity: input.severity,
+					suggestion: input.anchor?.quote ? input.suggestion : undefined,
 				});
-
-				// Trigger email notification to student (Phase 8)
-				try {
-					const [student, resume] = await Promise.all([
-						getStudentById(input.studentId),
-						resumeService.getById({ id: input.resumeId, userId: context.user.id }),
-					]);
-
-					if (student?.email) {
-						const authorName = context.user.name || "A faculty member";
-						await sendEmail({
-							to: student.email,
-							subject: `New Feedback on your Resume: ${resume.name}`,
-							text: `Hello ${student.name},\n\nYou have received new feedback on your resume "${resume.name}" from ${authorName}.\n\nFeedback Content:\n"${input.content}"\n\nLogin to the dashboard to view more details.`,
-						});
-					}
-				} catch (error) {
-					console.error("[COMMENTS] Failed to send student notification email:", error);
-				}
-
-				return comment;
 			}),
 
 		list: protectedProcedure
@@ -557,23 +556,10 @@ export const resumeRouter = {
 				summary: "List comments on a resume",
 			})
 			.input(z.object({ resumeId: z.string() }))
-			.output(
-				z.array(
-					z.object({
-						id: z.string(),
-						resumeId: z.string(),
-						parentId: z.string().uuid().nullable(),
-						content: z.string(),
-						scope: z.string(),
-						status: z.string(),
-						authorId: z.string(),
-						createdAt: z.date(),
-						updatedAt: z.date(),
-					}),
-				),
-			)
-			.handler(async ({ input }) => {
+			.output(z.array(commentOutputSchema))
+			.handler(async ({ context, input }) => {
 				const { getCommentsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				await getReviewAccess(context.user, input.resumeId);
 				return await getCommentsByResumeId(input.resumeId);
 			}),
 
@@ -591,9 +577,64 @@ export const resumeRouter = {
 					status: z.enum(["OPEN", "ADDRESSED", "RESOLVED"]),
 				}),
 			)
-			.handler(async ({ input }) => {
-				const { updateCommentStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
+			.handler(async ({ context, input }) => {
+				const { getCommentById, updateCommentStatus } = await import(
+					"@/integrations/drizzle/services/resume-feedback.service"
+				);
+				const comment = await getCommentById(input.id);
+				if (!comment) throw new ORPCError("NOT_FOUND", { message: "Comment not found." });
+
+				// Students can only flag their own feedback as addressed (or undo that); reviewers decide RESOLVED.
+				const access = await getReviewAccess(context.user, comment.resumeId);
+				if (access === "owner" && (input.status === "RESOLVED" || comment.status === "RESOLVED")) {
+					throw new ORPCError("FORBIDDEN", { message: "Only reviewers can resolve or reopen feedback." });
+				}
+
 				return await updateCommentStatus(input.id, input.status);
+			}),
+	},
+
+	// Comment bank shared by a tenant's reviewers. Reviewer-only; tenant comes from eng-labs, not the client.
+	reviewSnippets: {
+		list: protectedProcedure
+			.route({ method: "GET", path: "/review-snippets", tags: ["Resume Feedback"], summary: "List the comment bank" })
+			.output(z.array(z.object({ id: z.string(), content: z.string(), usageCount: z.number() })))
+			.handler(async ({ context }) => {
+				const { listSnippets } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { tenantId } = await requireReviewer(context.user.email);
+				return await listSnippets(tenantId);
+			}),
+
+		create: protectedProcedure
+			.route({ method: "POST", path: "/review-snippets", tags: ["Resume Feedback"], summary: "Save to comment bank" })
+			.input(z.object({ content: z.string().trim().min(1).max(500) }))
+			.handler(async ({ context, input }) => {
+				const { createSnippet } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { id, tenantId } = await requireReviewer(context.user.email);
+				await createSnippet(tenantId, id, input.content);
+			}),
+
+		delete: protectedProcedure
+			.route({
+				method: "DELETE",
+				path: "/review-snippets/{id}",
+				tags: ["Resume Feedback"],
+				summary: "Remove from bank",
+			})
+			.input(z.object({ id: z.string() }))
+			.handler(async ({ context, input }) => {
+				const { deleteSnippet } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { tenantId } = await requireReviewer(context.user.email);
+				await deleteSnippet(tenantId, input.id);
+			}),
+
+		use: protectedProcedure
+			.route({ method: "POST", path: "/review-snippets/{id}/use", tags: ["Resume Feedback"], summary: "Count a use" })
+			.input(z.object({ id: z.string() }))
+			.handler(async ({ context, input }) => {
+				const { useSnippet } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				const { tenantId } = await requireReviewer(context.user.email);
+				await useSnippet(tenantId, input.id);
 			}),
 	},
 
@@ -641,7 +682,8 @@ export const resumeRouter = {
 			.handler(async ({ context, input }) => {
 				const { createChecklist } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
-				const { id: facultyId, tenantId } = await resolveEngLabsActor(context.user.email);
+				// Reviewers only: a student's checklist could be used to score their own resume.
+				const { id: facultyId, tenantId } = await requireReviewer(context.user.email);
 
 				const checklist = await createChecklist({
 					facultyId,
@@ -757,6 +799,8 @@ export const resumeRouter = {
 			.handler(async ({ context, input }) => {
 				const { createEvaluation } = await import("@/integrations/drizzle/services/resume-feedback.service");
 
+				// Staff of the student's tenant only, never the owner: the score shows on staff dashboards.
+				await assertReviewStaff(context.user, input.resumeId);
 				const { id: evaluatedBy, tenantId } = await resolveEngLabsActor(context.user.email);
 
 				const evaluation = await createEvaluation({
@@ -792,8 +836,10 @@ export const resumeRouter = {
 					}),
 				),
 			)
-			.handler(async ({ input }) => {
+			.handler(async ({ context, input }) => {
 				const { getEvaluationsByResumeId } = await import("@/integrations/drizzle/services/resume-feedback.service");
+				// Each evaluation keeps a full copy of the resume: owner or reviewers only.
+				await getReviewAccess(context.user, input.resumeId);
 				return await getEvaluationsByResumeId(input.resumeId);
 			}),
 	},

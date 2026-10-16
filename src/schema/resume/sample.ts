@@ -532,7 +532,7 @@ export const sampleResumeData: ResumeData = {
 				type: "circle",
 			},
 			colors: {
-				primary: "rgba(0, 132, 209, 1)",
+				primary: "rgba(0, 0, 0, 1)", // new resumes start black and white; students pick colours in Design
 				text: "rgba(0, 0, 0, 1)",
 				background: "rgba(255, 255, 255, 1)",
 			},

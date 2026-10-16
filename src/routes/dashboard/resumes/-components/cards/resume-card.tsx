@@ -41,7 +41,7 @@ const STATUS_STYLES: Record<Status["tone"], { className: string; icon: React.Rea
 		icon: <RefreshCw strokeWidth={2.5} className="size-3" />,
 	},
 	locked: {
-		className: "border-slate-200 bg-slate-100 text-slate-600",
+		className: "border-border bg-muted text-muted-foreground",
 		icon: <Lock strokeWidth={2.5} className="size-3" />,
 	},
 };
@@ -100,7 +100,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 				<Link
 					to="/builder/$resumeId"
 					params={{ resumeId: resume.id }}
-					className="tap-active relative aspect-[3/4] w-full cursor-pointer overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100/60 p-4"
+					className="tap-active relative aspect-[3/4] w-full cursor-pointer overflow-hidden bg-gradient-to-br from-border to-border p-4"
 				>
 					{/* Master Ribbon */}
 					{resume.isPrimary && (
@@ -122,7 +122,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 					</div>
 
 					{/* Paper */}
-					<div className="pointer-events-none relative size-full overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-md shadow-slate-900/5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-lg">
+					<div className="pointer-events-none relative size-full overflow-hidden rounded-lg border border-border bg-card shadow-md shadow-muted-foreground/40 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:shadow-lg">
 						<MiniResumePreview resume={resume} />
 					</div>
 				</Link>
@@ -130,21 +130,21 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 				{/* Footer — plain text, NOT clickable. Only the action buttons respond. */}
 				<div className="flex flex-col gap-2.5 border-border border-t p-4">
 					<div className="min-w-0">
-						<h4 className="line-clamp-1 select-text font-bold text-base text-slate-900 leading-tight tracking-tight">
+						<h4 className="line-clamp-1 select-text font-bold text-base text-foreground leading-tight tracking-tight">
 							{resume.name}
 						</h4>
 						{target ? (
-							<p className="mt-0.5 line-clamp-1 select-text text-slate-500 text-xs">
-								<span className="font-semibold text-slate-400">{t`Target:`}</span> {target}
+							<p className="mt-0.5 line-clamp-1 select-text text-muted-foreground text-xs">
+								<span className="font-semibold text-muted-foreground">{t`Target:`}</span> {target}
 							</p>
 						) : (
-							<p className="mt-0.5 select-text text-slate-400 text-xs">{t`No target role`}</p>
+							<p className="mt-0.5 select-text text-muted-foreground text-xs">{t`No target role`}</p>
 						)}
 					</div>
 
 					<div className="flex items-center justify-between gap-2">
-						<p className="select-text text-[11px] text-slate-400">
-							{t`Updated`} <span className="font-semibold text-slate-600">{updatedAt}</span>
+						<p className="select-text text-[11px] text-muted-foreground">
+							{t`Updated`} <span className="font-semibold text-muted-foreground">{updatedAt}</span>
 						</p>
 
 						<div className="flex items-center gap-1">
@@ -153,7 +153,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 								title={t`Download PDF`}
 								disabled={isPrinting}
 								onClick={handleDownload}
-								className="tap-active flex size-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+								className="tap-active flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/5 hover:text-primary disabled:opacity-50"
 							>
 								<Download strokeWidth={2} className="size-4" />
 							</button>
@@ -161,7 +161,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 								type="button"
 								title={t`Copy share link`}
 								onClick={handleShare}
-								className="tap-active flex size-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-primary/5 hover:text-primary"
+								className="tap-active flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/5 hover:text-primary"
 							>
 								<Share2 strokeWidth={2} className="size-4" />
 							</button>
@@ -169,7 +169,7 @@ export function ResumeCard({ resume }: ResumeCardProps) {
 								<button
 									type="button"
 									title={t`More actions`}
-									className="tap-active flex size-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-primary/5 hover:text-primary"
+									className="tap-active flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/5 hover:text-primary"
 								>
 									<MoreVertical strokeWidth={2} className="size-4" />
 								</button>

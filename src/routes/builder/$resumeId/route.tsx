@@ -24,6 +24,8 @@ import { useBuilderSidebar, useBuilderSidebarStore } from "./-store/sidebar";
 
 const builderSearchSchema = z.object({
 	openAts: z.boolean().optional().default(false),
+	/** Reviewer comment to highlight in the preview (deep-linkable). */
+	comment: z.string().optional(),
 });
 
 export const Route = createFileRoute("/builder/$resumeId")({

@@ -70,7 +70,7 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="rounded-3xl sm:max-w-[700px]">
 				<DialogHeader>
-					<DialogTitle className="font-semibold text-lg text-slate-900">{t`Create Checklist`}</DialogTitle>
+					<DialogTitle className="font-semibold text-foreground text-lg">{t`Create Checklist`}</DialogTitle>
 				</DialogHeader>
 
 				<div className="max-h-[70vh] space-y-4 overflow-y-auto">
@@ -81,23 +81,23 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							placeholder="Checklist title..."
-							className="w-full rounded-xl border-0 bg-slate-50 px-4 py-3 font-semibold text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
+							className="w-full rounded-xl border-0 bg-muted/50 px-4 py-3 font-semibold text-foreground text-sm outline-none ring-1 ring-border transition-all placeholder:text-muted-foreground focus:bg-card focus:ring-2 focus:ring-primary"
 						/>
 						<textarea
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder="Description (optional)..."
 							rows={2}
-							className="w-full resize-none rounded-xl border-0 bg-slate-50 px-4 py-3 text-slate-900 text-sm outline-none ring-1 ring-slate-200 transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500"
+							className="w-full resize-none rounded-xl border-0 bg-muted/50 px-4 py-3 text-foreground text-sm outline-none ring-1 ring-border transition-all placeholder:text-muted-foreground focus:bg-card focus:ring-2 focus:ring-primary"
 						/>
 					</div>
 
 					{/* Items */}
 					<div className="space-y-3">
-						<p className="font-semibold text-slate-400 text-xs uppercase tracking-widest">Checklist Items</p>
+						<p className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">Checklist Items</p>
 						{items.map((item, idx) => (
-							<div key={item.id} className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
-								<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-indigo-50 font-bold text-indigo-600 text-xs">
+							<div key={item.id} className="flex items-start gap-3 rounded-2xl bg-muted/50 p-4">
+								<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary/5 font-bold text-primary text-xs">
 									{idx + 1}
 								</span>
 								<div className="min-w-0 flex-1 space-y-2">
@@ -106,7 +106,7 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 										value={item.title}
 										onChange={(e) => updateItem(item.id, { title: e.target.value })}
 										placeholder="Criterion title..."
-										className="w-full rounded-xl border-0 bg-white px-3 py-2 text-slate-900 text-sm outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500"
+										className="w-full rounded-xl border-0 bg-card px-3 py-2 text-foreground text-sm outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
 									/>
 									<div className="flex items-center gap-2">
 										<input
@@ -114,10 +114,10 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 											value={item.description}
 											onChange={(e) => updateItem(item.id, { description: e.target.value })}
 											placeholder="Description (optional)..."
-											className="flex-1 rounded-xl border-0 bg-white px-3 py-2 text-slate-700 text-xs outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500"
+											className="flex-1 rounded-xl border-0 bg-card px-3 py-2 text-foreground text-xs outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
 										/>
 										<div className="flex items-center gap-1">
-											<span className="text-slate-400 text-xs">Weight:</span>
+											<span className="text-muted-foreground text-xs">Weight:</span>
 											<input
 												type="number"
 												min={0.1}
@@ -125,7 +125,7 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 												step={0.1}
 												value={item.weight}
 												onChange={(e) => updateItem(item.id, { weight: Number.parseFloat(e.target.value) || 1 })}
-												className="w-16 rounded-xl border-0 bg-white px-2 py-2 text-center text-xs outline-none ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500"
+												className="w-16 rounded-xl border-0 bg-card px-2 py-2 text-center text-xs outline-none ring-1 ring-border focus:ring-2 focus:ring-primary"
 											/>
 										</div>
 									</div>
@@ -133,7 +133,7 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 								<button
 									type="button"
 									onClick={() => removeItem(item.id)}
-									className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-all hover:bg-rose-50 hover:text-rose-600 active:scale-[0.95]"
+									className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-rose-50 hover:text-rose-600 active:scale-[0.95]"
 								>
 									<TrashIcon className="size-4" />
 								</button>
@@ -143,7 +143,7 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 						<button
 							type="button"
 							onClick={addItem}
-							className="w-full rounded-xl border-2 border-slate-200 border-dashed py-3 font-semibold text-slate-400 text-sm transition-all hover:border-indigo-300 hover:text-indigo-600 active:scale-[0.99]"
+							className="w-full rounded-xl border-2 border-border border-dashed py-3 font-semibold text-muted-foreground text-sm transition-all hover:border-primary/30 hover:text-primary active:scale-[0.99]"
 						>
 							+ Add Item
 						</button>
@@ -155,7 +155,7 @@ export function ChecklistCreator({ tenantId, open, onOpenChange }: ChecklistCrea
 					type="button"
 					onClick={handleSubmit}
 					disabled={!title.trim() || items.some((i) => !i.title.trim()) || createMutation.isPending}
-					className="w-full rounded-xl bg-indigo-600 py-2.5 font-semibold text-sm text-white transition-all hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50"
+					className="w-full rounded-xl bg-primary py-2.5 font-semibold text-sm text-white transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
 				>
 					{createMutation.isPending ? "Creating..." : "Create Checklist"}
 				</button>

@@ -58,8 +58,6 @@ type SidebarItem = {
 	label: MessageDescriptor;
 	href: React.ComponentProps<typeof Link>["to"];
 	search?: Record<string, string>;
-	iconBg: string;
-	iconColor: string;
 	roles?: string[];
 };
 
@@ -68,22 +66,16 @@ const appSidebarItems: SidebarItem[] = [
 		icon: <FileText strokeWidth={2} />,
 		label: msg`Resumes`,
 		href: "/dashboard/resumes",
-		iconBg: "bg-indigo-50",
-		iconColor: "text-indigo-600",
 	},
 	{
 		icon: <User strokeWidth={2} />,
 		label: msg`My Info`,
 		href: "/dashboard/info",
-		iconBg: "bg-violet-50",
-		iconColor: "text-violet-600",
 	},
 	{
 		icon: <Target strokeWidth={2} />,
 		label: msg`ATS Analysis`,
 		href: "/dashboard/ats-score",
-		iconBg: "bg-emerald-50",
-		iconColor: "text-emerald-600",
 	},
 ];
 
@@ -92,8 +84,6 @@ const learnerSidebarItems: SidebarItem[] = [
 		icon: <LineChart strokeWidth={2} />,
 		label: msg`Feedback Summary`,
 		href: "/dashboard/feedback",
-		iconBg: "bg-sky-50",
-		iconColor: "text-sky-600",
 	},
 ];
 
@@ -111,8 +101,6 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			label: msg`Overview`,
 			href: baseHref,
 			search: { tab: "overview" },
-			iconBg: "bg-indigo-50",
-			iconColor: "text-indigo-600",
 		},
 	];
 
@@ -123,8 +111,6 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			label: msg`Inbox`,
 			href: baseHref,
 			search: { tab: "inbox" },
-			iconBg: "bg-rose-50",
-			iconColor: "text-rose-600",
 		});
 	}
 
@@ -134,24 +120,18 @@ function staffDashboardItems(role: string): SidebarItem[] {
 			label: msg`Sections`,
 			href: baseHref,
 			search: { tab: "sections" },
-			iconBg: "bg-blue-50",
-			iconColor: "text-blue-600",
 		},
 		{
 			icon: <Users strokeWidth={2} />,
 			label: msg`Students`,
 			href: baseHref,
 			search: { tab: "students" },
-			iconBg: "bg-violet-50",
-			iconColor: "text-violet-600",
 		},
 		{
 			icon: <ListChecks strokeWidth={2} />,
 			label: msg`Checklists`,
 			href: baseHref,
 			search: { tab: "checklists" },
-			iconBg: "bg-amber-50",
-			iconColor: "text-amber-600",
 		},
 	);
 
@@ -205,8 +185,8 @@ function SidebarItemRow({ item }: { item: SidebarItem }) {
 							"flex shrink-0 items-center justify-center transition-all duration-300",
 							"group-active/navitem:scale-90",
 							!isCollapsed &&
-								cn("h-9 w-9 rounded-xl", item.iconBg, item.iconColor, isActive && "bg-white/20 text-white"),
-							isCollapsed && cn("size-4", isActive ? item.iconColor : "text-slate-400"),
+								cn("size-9 rounded-xl bg-card text-primary shadow-sm", isActive && "bg-white/20 text-white shadow-none"),
+							isCollapsed && cn("size-4", isActive ? "text-white" : "text-muted-foreground"),
 						)}
 					>
 						<div className={cn(isCollapsed ? "size-full" : "size-5", "[&_svg]:size-full")}>{item.icon}</div>
@@ -216,7 +196,7 @@ function SidebarItemRow({ item }: { item: SidebarItem }) {
 						className={cn(
 							"shrink-0 font-medium text-sm transition-[margin,opacity] duration-300 ease-in-out",
 							isCollapsed && "sr-only",
-							isActive ? "font-bold text-white" : "text-slate-600",
+							isActive ? "font-bold text-white" : "text-sidebar-foreground",
 						)}
 					>
 						{i18n.t(item.label)}
