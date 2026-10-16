@@ -627,7 +627,9 @@ function ResumeIframe({ url }: { url: string }) {
 
 	// Height of the iframe content at native scale, then shrunk via transform.
 	// We use a tall fixed height (2x viewport) so the user can scroll the resume.
-	const nativeHeight = Math.round(window.innerHeight * 2);
+	// Read after mount: `window` doesn't exist during server rendering.
+	const [nativeHeight, setNativeHeight] = useState(1800);
+	useEffect(() => setNativeHeight(Math.round(window.innerHeight * 2)), []);
 
 	return (
 		<div

@@ -71,3 +71,12 @@ export async function requireReviewer(email: string): Promise<{ id: string; tena
 	if (!tenantId) throw forbidden();
 	return { id: reviewer.id, tenantId };
 }
+
+/** requireReviewer plus the organisation of the reviewer's tenant, for rows that store both. */
+export async function requireReviewerInOrg(email: string) {
+	const { getTenantOrganisationId } = await import("@/integrations/eng-labs");
+	const reviewer = await requireReviewer(email);
+	const organisationId = await getTenantOrganisationId(reviewer.tenantId);
+	if (!organisationId) throw forbidden();
+	return { ...reviewer, organisationId };
+}

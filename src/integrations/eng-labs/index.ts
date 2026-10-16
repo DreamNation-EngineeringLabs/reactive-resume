@@ -26,6 +26,7 @@ export {
 	getStudentsBySection,
 	getStudentsBySections,
 	getTenantIdForOrgUnits,
+	getTenantOrganisationId,
 	getUnitAncestors,
 	getUnitSchemaTypes,
 } from "./service";

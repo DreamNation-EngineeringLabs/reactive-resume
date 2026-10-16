@@ -1,5 +1,5 @@
 import { ORPCError } from "@orpc/client";
-import { and, arrayContains, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, arrayContains, asc, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { get } from "es-toolkit/compat";
 import type { Operation } from "fast-json-patch";
 import { match } from "ts-pattern";
@@ -42,6 +42,9 @@ const statistics = {
 			.from(schema.resumeStatistics)
 			.rightJoin(schema.resume, eq(schema.resumeStatistics.resumeId, schema.resume.id))
 			.where(and(eq(schema.resume.id, input.id), eq(schema.resume.userId, input.userId)));
+
+		// Deleted, missing or someone else's resume: 404, not a 500 from reading `undefined`.
+		if (!statistics) throw new ORPCError("NOT_FOUND");
 
 		return {
 			isPublic: statistics.isPublic,
@@ -208,7 +211,9 @@ export const resumeService = {
 				and(
 					eq(schema.resume.slug, input.slug),
 					eq(schema.user.username, input.username),
-					input.currentUserId ? eq(schema.resume.userId, input.currentUserId) : eq(schema.resume.isPublic, true),
+					input.currentUserId
+						? or(eq(schema.resume.isPublic, true), eq(schema.resume.userId, input.currentUserId))
+						: eq(schema.resume.isPublic, true),
 				),
 			);
 

@@ -6,7 +6,7 @@ import { generateRandomName, slugify } from "@/utils/string";
 import { protectedProcedure, publicProcedure, serverOnlyProcedure } from "../context";
 import { resumeDto } from "../dto/resume";
 import { checkPlacementCredit, consumePlacementCredit } from "../helpers/placement-access";
-import { assertReviewStaff, getReviewAccess, requireReviewer } from "../helpers/review-access";
+import { assertReviewStaff, getReviewAccess, requireReviewer, requireReviewerInOrg } from "../helpers/review-access";
 import { resumeService } from "../services/resume";
 import { aiService as resumeAiService } from "../services/resume-ai";
 import { userInfoService } from "../services/user-info";
@@ -601,8 +601,8 @@ export const resumeRouter = {
 			.output(z.array(z.object({ id: z.string(), content: z.string(), usageCount: z.number() })))
 			.handler(async ({ context }) => {
 				const { listSnippets } = await import("@/integrations/drizzle/services/resume-feedback.service");
-				const { tenantId } = await requireReviewer(context.user.email);
-				return await listSnippets(tenantId);
+				const { tenantId, organisationId } = await requireReviewerInOrg(context.user.email);
+				return await listSnippets(tenantId, organisationId);
 			}),
 
 		create: protectedProcedure
@@ -610,8 +610,8 @@ export const resumeRouter = {
 			.input(z.object({ content: z.string().trim().min(1).max(500) }))
 			.handler(async ({ context, input }) => {
 				const { createSnippet } = await import("@/integrations/drizzle/services/resume-feedback.service");
-				const { id, tenantId } = await requireReviewer(context.user.email);
-				await createSnippet(tenantId, id, input.content);
+				const { id, tenantId, organisationId } = await requireReviewerInOrg(context.user.email);
+				await createSnippet(tenantId, organisationId, id, input.content);
 			}),
 
 		delete: protectedProcedure

@@ -53,9 +53,12 @@ export function BuilderToolbar() {
 	}, [session?.user.username, resume?.slug]);
 
 	const onCopyUrl = useCallback(async () => {
+		// A private resume's link only opens for its owner, so don't hand it out as shareable.
+		if (!resume?.isPublic)
+			return toast.error(t`Turn on "Allow Public Access" under Sharing to get a link others can open.`);
 		await copyToClipboard(publicUrl);
 		toast.success(t`A link to your resume has been copied to clipboard.`);
-	}, [publicUrl, copyToClipboard]);
+	}, [resume?.isPublic, publicUrl, copyToClipboard]);
 
 	const onDownloadPDF = useCallback(async () => {
 		if (!resume?.id) return;

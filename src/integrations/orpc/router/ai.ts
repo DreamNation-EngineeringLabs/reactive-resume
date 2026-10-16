@@ -25,7 +25,10 @@ function getAICredentialsWithDefaults(
 	const baseURL = input?.baseURL || env.OPENAI_BASE_URL;
 
 	if (!apiKey) {
-		throw new Error("OpenAI API key is not configured. Please set OPENAI_API_KEY in your .env file.");
+		// A plain Error reached users as "Internal server error"; say what is missing instead.
+		throw new ORPCError("SERVICE_UNAVAILABLE", {
+			message: "AI features aren't set up on this server yet (no OPENAI_API_KEY). Ask your administrator.",
+		});
 	}
 
 	return { provider, model, apiKey, baseURL };
