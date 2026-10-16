@@ -55,6 +55,11 @@ async function resolveServerTenantId(email: string, fallback?: string): Promise<
 	return u?.tenantId ?? fallback;
 }
 
+/** History rows reference eng-labs users on the platform database; the resume-app id is the fallback for anyone else. */
+async function actorId(user: { id: string; email: string }): Promise<string> {
+	return (await getEngLabsUserByEmail(user.email))?.id ?? user.id;
+}
+
 async function getResumesForUsers(userIds: string[]) {
 	if (userIds.length === 0) return [];
 	return db
@@ -1060,7 +1065,7 @@ export const submitResume = protectedProcedure
 			studentId: input.studentId ?? currentResume?.userId ?? "unknown",
 			tenantId,
 			status: nextStatus,
-			changedBy: context.user.id,
+			changedBy: await actorId(context.user),
 			actorType: "LEARNER",
 		});
 
@@ -1096,7 +1101,7 @@ export const approveResume = protectedProcedure
 			studentId: input.studentId,
 			tenantId,
 			status: "PO_VERIFIED",
-			changedBy: context.user.id,
+			changedBy: await actorId(context.user),
 			actorType: "PLACEMENT_OFFICER",
 		});
 
@@ -1175,7 +1180,7 @@ export const updateStatus = protectedProcedure
 			studentId: input.studentId,
 			tenantId,
 			status: input.status as any,
-			changedBy: context.user.id,
+			changedBy: await actorId(context.user),
 			actorType,
 		});
 
@@ -1251,7 +1256,7 @@ export const bulkUpdateResumes = protectedProcedure
 			resumes: input.resumes,
 			tenantId,
 			toStatus: input.status as any,
-			changedBy: context.user.id,
+			changedBy: await actorId(context.user),
 			actorType,
 		});
 
@@ -1288,7 +1293,7 @@ export const forwardResume = protectedProcedure
 			studentId: input.studentId,
 			tenantId,
 			action: "FORWARDED",
-			changedBy: context.user.id,
+			changedBy: await actorId(context.user),
 			actorType: "INSTRUCTOR",
 		});
 
@@ -1470,7 +1475,7 @@ export const poReviewSection = protectedProcedure
 			resumes: input.resumes,
 			tenantId,
 			toStatus: "FINALIZED_BY_FACULTY",
-			changedBy: context.user.id,
+			changedBy: await actorId(context.user),
 			actorType: "PLACEMENT_OFFICER",
 		});
 

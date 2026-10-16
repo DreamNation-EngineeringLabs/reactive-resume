@@ -16,6 +16,7 @@ import {
 	resumeEvaluationItem,
 	resumeHistory,
 	reviewSnippet,
+	user,
 } from "@/integrations/drizzle/schema";
 import {
 	type CommentAnchor,
@@ -553,13 +554,24 @@ export async function addToHistory({
 	previousData?: unknown;
 	currentData?: unknown;
 }) {
+	// On the platform database the tenant, organisation and student are foreign keys to eng-labs rows: take them from
+	// the resume and its owner. The caller's values are only a fallback when the owner is not an eng-labs user.
+	const { getEngLabsUserByEmail } = await import("@/integrations/eng-labs");
+	const [owner] = await db
+		.select({ tenantId: resume.tenantId, organisationId: resume.organisationId, email: user.email })
+		.from(resume)
+		.innerJoin(user, eq(user.id, resume.userId))
+		.where(eq(resume.id, resumeId))
+		.limit(1);
+	const student = owner && (await getEngLabsUserByEmail(owner.email));
+
 	const result = await db
 		.insert(resumeHistory)
 		.values({
 			resumeId,
-			studentId: studentId ?? "unknown",
-			tenantId: tenantId ?? "default",
-			organisationId: DEFAULT_RESUME_USER_ORG_ID,
+			studentId: student?.id ?? studentId ?? "unknown",
+			tenantId: owner?.tenantId ?? tenantId ?? "default",
+			organisationId: owner?.organisationId ?? DEFAULT_RESUME_USER_ORG_ID,
 			action,
 			changedBy,
 			actorType,
