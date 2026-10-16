@@ -347,12 +347,17 @@ export const reviewSnippet = pg.pgTable(
 			.primaryKey()
 			.$defaultFn(() => generateId()),
 		tenantId: pg.text("tenant_id").notNull(),
-		authorId: pg.text("author_id").notNull(), // eng-labs user ID, or "system" for the starter set
+		organisationId: pg.text("organisation_id").notNull(),
+		authorId: pg.text("author_id"), // eng-labs user ID; null for the starter set
 		content: pg.text("content").notNull(),
 		usageCount: pg.integer("usage_count").notNull().default(0),
 		createdAt: pg.timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
-	(t) => [pg.unique().on(t.tenantId, t.content)],
+	(t) => [
+		pg.unique().on(t.tenantId, t.content),
+		pg.index("review_snippet_organisation_id_idx").on(t.organisationId),
+		pg.index("review_snippet_author_id_idx").on(t.authorId),
+	],
 );
 
 export const resumeChecklist = pg.pgTable(

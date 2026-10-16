@@ -119,19 +119,19 @@ export async function updateCommentStatus(id: string, status: "OPEN" | "ADDRESSE
  * Comment bank: reusable review comments shared by a tenant's reviewers, most used first.
  * A tenant's first visit seeds the starter set; the unique (tenant, content) index keeps it single.
  */
-export async function listSnippets(tenantId: string) {
+export async function listSnippets(tenantId: string, organisationId: string) {
 	const rows = await db.select().from(reviewSnippet).where(eq(reviewSnippet.tenantId, tenantId));
 	if (rows.length > 0) return rows.sort((a, b) => b.usageCount - a.usageCount || a.content.localeCompare(b.content));
 
 	await db
 		.insert(reviewSnippet)
-		.values(STARTER_SNIPPETS.map((content) => ({ tenantId, authorId: "system", content })))
+		.values(STARTER_SNIPPETS.map((content) => ({ tenantId, organisationId, content })))
 		.onConflictDoNothing();
 	return db.select().from(reviewSnippet).where(eq(reviewSnippet.tenantId, tenantId));
 }
 
-export async function createSnippet(tenantId: string, authorId: string, content: string) {
-	await db.insert(reviewSnippet).values({ tenantId, authorId, content }).onConflictDoNothing();
+export async function createSnippet(tenantId: string, organisationId: string, authorId: string, content: string) {
+	await db.insert(reviewSnippet).values({ tenantId, organisationId, authorId, content }).onConflictDoNothing();
 }
 
 export async function deleteSnippet(tenantId: string, id: string) {

@@ -673,6 +673,17 @@ export async function getEngLabsUserByEmail(
 	};
 }
 
+/** The organisation a tenant belongs to. */
+export async function getTenantOrganisationId(tenantId: string): Promise<string | undefined> {
+	const pool = getEngLabsPool();
+	if (!pool) return undefined;
+	const { rows } = await pool.query<{ organisation_id: string }>(
+		"SELECT organisation_id FROM organisation_entities WHERE id = $1",
+		[tenantId],
+	);
+	return rows[0]?.organisation_id;
+}
+
 /**
  * Tenants a staff member works in through user_mappings or unit assignments. Their own users row may have
  * no tenant (switched-org / mapped staff), which the dashboards already allow for.
