@@ -37,6 +37,7 @@ import type { EngLabsLearnerProfile, OrgUnitRow, PlacementPackage, Section } fro
 import { REVIEW_VERDICTS, reviewSummaryEmail } from "@/schema/resume/comment-anchor";
 import { derror, dlog } from "@/utils/debug";
 import { env } from "@/utils/env";
+import { ActorType, canChangeReviewStatus, PO_STAGE_BLOCKED_MESSAGE } from "@/utils/roles";
 import { protectedProcedure } from "../context";
 import { assertReviewStaff, forbidden, requireReviewer } from "../helpers/review-access";
 
@@ -50,6 +51,21 @@ import { assertReviewStaff, forbidden, requireReviewer } from "../helpers/review
  * not trustworthy for tenant scoping or persistence. Always prefer the eng-labs user's tenant;
  * fall back to the client value only when the user has no eng-labs row at all (legacy accounts).
  */
+/**
+ * Map an eng-labs user type onto the actor recorded against a review action.
+ *
+ * Eng-labs has more user types than the review workflow cares about; anything with authority over a
+ * whole tenant acts as a Placement Officer, and every other staff member acts as faculty. Defaulting
+ * to INSTRUCTOR is the safe direction: an unrecognised type gets the narrower permissions.
+ */
+function toActorType(engLabsUserType: string): ActorType {
+	if (engLabsUserType === "PLACEMENT_OFFICER") return ActorType.PLACEMENT_OFFICER;
+	if (engLabsUserType === "ADMIN" || engLabsUserType === "PLATFORM_ADMIN" || engLabsUserType === "SUPER_ADMIN") {
+		return ActorType.ADMIN;
+	}
+	return ActorType.INSTRUCTOR;
+}
+
 async function resolveServerTenantId(email: string, fallback?: string): Promise<string | undefined> {
 	const u = await getEngLabsUserByEmail(email);
 	return u?.tenantId ?? fallback;
@@ -1164,14 +1180,41 @@ export const updateStatus = protectedProcedure
 				"PO_VERIFIED",
 				"APPROVED",
 			]),
+			expectedStatus: z
+				.string()
+				.optional()
+				.describe("Review status the reviewer was looking at; rejects the write if it has moved on since."),
 		}),
 	)
 	.handler(async ({ context, input }) => {
 		const { updateResumeStatus } = await import("@/integrations/drizzle/services/resume-feedback.service");
-		await assertReviewStaff(context.user, input.resumeId);
+		const reviewerType = await assertReviewStaff(context.user, input.resumeId);
 
-		const actorType =
-			input.status.startsWith("PO_") || input.status === "APPROVED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
+		// The actor is the signed-in reviewer, not a guess from the status being set. Deriving it from
+		// the target meant faculty setting PO_VERIFIED were recorded as a Placement Officer, which both
+		// falsified the audit trail and made the stage rule below unenforceable.
+		const actorType = toActorType(reviewerType);
+
+		const [current] = await db
+			.select({ reviewStatus: schema.resume.reviewStatus })
+			.from(schema.resume)
+			.where(eq(schema.resume.id, input.resumeId))
+			.limit(1);
+		const currentStatus = current?.reviewStatus ?? "DRAFT";
+
+		// Faculty cannot move a resume the Placement Officer has taken on; the PO can move any of them.
+		if (!canChangeReviewStatus(actorType, currentStatus)) {
+			throw new ORPCError("CONFLICT", { message: PO_STAGE_BLOCKED_MESSAGE });
+		}
+
+		// Someone else reviewed it while this reviewer had the page open. Refuse rather than overwrite:
+		// both verdicts email the student, and the loser's message would contradict the stored status.
+		if (input.expectedStatus && input.expectedStatus !== currentStatus) {
+			throw new ORPCError("CONFLICT", {
+				message: `This resume moved to ${currentStatus} while you were reviewing it. Reload to see the latest.`,
+				data: { currentStatus },
+			});
+		}
 
 		const tenantId = await resolveServerTenantId(context.user.email, input.tenantId);
 
