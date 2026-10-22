@@ -543,9 +543,12 @@ function ReviewPage() {
 									</>
 								)}
 
-								{/* PO Actions — PO scope only; faculty sees the status badge but no action buttons */}
+								{/* PO Actions — PO scope only; faculty sees the status badge but no action buttons.
+								    SUBMITTED_TO_FACULTY is included because the PO now sees student submissions
+								    in their own inbox: without it they could open one and find nothing to do. */}
 								{scope === "po" &&
-									(resume.reviewStatus === "SUBMITTED_TO_PO" ||
+									(resume.reviewStatus === "SUBMITTED_TO_FACULTY" ||
+										resume.reviewStatus === "SUBMITTED_TO_PO" ||
 										resume.reviewStatus === "FINALIZED_BY_FACULTY" ||
 										resume.reviewStatus === "RESUBMITTED_TO_PO" ||
 										resume.reviewStatus === "PO_REVISION_REQUESTED" ||

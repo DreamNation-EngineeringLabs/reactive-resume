@@ -35,33 +35,6 @@ type InboxViewProps = {
 	onReview?: (resumeId: string, engLabsStudentId: string) => void;
 };
 
-/**
- * How long a student submission may sit untouched before the Placement Officer sees it too.
- *
- * Faculty keep first refusal for this long. Past it the submission is not being worked on by
- * anyone, so the PO picks it up rather than the student waiting indefinitely.
- */
-const FACULTY_GRACE_DAYS = 5;
-const FACULTY_GRACE_MS = FACULTY_GRACE_DAYS * 86_400_000;
-
-/**
- * A submission the Placement Officer should step in on: submitted, past the grace period, and with
- * no comment on it.
- *
- * The comment check is what keeps this from pulling work out from under a reviewer — a faculty
- * member who has started commenting has engaged, so the resume stays theirs however long it takes.
- * Only genuinely untouched submissions escalate.
- *
- * `updatedAt` is the only timestamp available for "waiting since": resume_history would be the
- * precise source but is not yet populated. A student editing after submitting resets the clock,
- * which reads correctly — an edited resume is a fresh submission.
- */
-function hasStalled(item: InboxItem): boolean {
-	if (item.reviewStatus !== "SUBMITTED_TO_FACULTY") return false;
-	if (item.commentCount > 0) return false;
-	return Date.now() - new Date(item.updatedAt).getTime() >= FACULTY_GRACE_MS;
-}
-
 export function timeAgo(date: Date): string {
 	const now = Date.now();
 	const diff = now - new Date(date).getTime();
@@ -114,14 +87,17 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 				]
 			: [
 					{
-						id: "awaiting_faculty",
-						label: t`Waiting on faculty`,
-						description: t`Student submissions no faculty has picked up yet`,
+						id: "student_submissions",
+						label: t`Student Submissions`,
+						description: t`Resumes submitted by students, also waiting on their faculty`,
 						iconBg: "bg-rose-50",
 						iconColor: "text-rose-600",
 						icon: <ClockIcon weight="duotone" className="size-5" />,
-						// Oldest first: these are already late, so the longest wait is the most urgent.
-						items: sorted.filter(hasStalled).reverse(),
+						// The same queue the student's faculty sees. Either may act; whoever does first
+						// takes it out of the other's queue, and the status guards in updateStatus settle
+						// the case where both act at once.
+						// Oldest first — a submission nobody has picked up is the most urgent thing here.
+						items: sorted.filter((i) => i.reviewStatus === "SUBMITTED_TO_FACULTY").reverse(),
 					},
 					{
 						id: "submitted_to_po",
