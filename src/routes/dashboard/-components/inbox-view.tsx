@@ -87,6 +87,19 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 				]
 			: [
 					{
+						id: "student_submissions",
+						label: t`Student Submissions`,
+						description: t`Resumes submitted by students, also waiting on their faculty`,
+						iconBg: "bg-rose-50",
+						iconColor: "text-rose-600",
+						icon: <ClockIcon weight="duotone" className="size-5" />,
+						// The same queue the student's faculty sees. Either may act; whoever does first
+						// takes it out of the other's queue, and the status guards in updateStatus settle
+						// the case where both act at once.
+						// Oldest first — a submission nobody has picked up is the most urgent thing here.
+						items: sorted.filter((i) => i.reviewStatus === "SUBMITTED_TO_FACULTY").reverse(),
+					},
+					{
 						id: "submitted_to_po",
 						label: t`Submitted to PO`,
 						description: t`Sections submitted by faculty awaiting your review`,

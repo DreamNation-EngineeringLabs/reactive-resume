@@ -20,6 +20,7 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import jsonpatch from "fast-json-patch";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
 import { useResizeObserver } from "usehooks-ts";
 import { z } from "zod";
 import { ResumePreview } from "@/components/resume/preview";
@@ -188,6 +189,15 @@ function ReviewPage() {
 	const updateResumeStatusMutation = useMutation({
 		...orpc.resume.dashboard.updateStatus.mutationOptions(),
 		onSuccess: () => {
+			queryClient.invalidateQueries(reviewQueryKey);
+		},
+		// The server refuses a verdict when the Placement Officer has taken the resume on, or when
+		// someone else reviewed it while this page was open. Both arrive as CONFLICT and carry a
+		// message worth reading, so show it and refetch — silently discarding it would leave the
+		// reviewer believing a verdict was recorded.
+		onError: (error) => {
+			const message = error instanceof Error ? error.message : t`Could not save that verdict.`;
+			toast.error(message);
 			queryClient.invalidateQueries(reviewQueryKey);
 		},
 	});
@@ -504,6 +514,7 @@ function ReviewPage() {
 											onClick={() =>
 												updateResumeStatusMutation.mutate({
 													resumeId,
+													expectedStatus: resume.reviewStatus ?? undefined,
 													studentId: engLabsStudentId,
 													tenantId: tenantId!,
 													status: "FACULTY_REVISION_REQUESTED",
@@ -518,6 +529,7 @@ function ReviewPage() {
 											onClick={() =>
 												updateResumeStatusMutation.mutate({
 													resumeId,
+													expectedStatus: resume.reviewStatus ?? undefined,
 													studentId: engLabsStudentId,
 													tenantId: tenantId!,
 													status: "FACULTY_VERIFIED",
@@ -531,9 +543,12 @@ function ReviewPage() {
 									</>
 								)}
 
-								{/* PO Actions — PO scope only; faculty sees the status badge but no action buttons */}
+								{/* PO Actions — PO scope only; faculty sees the status badge but no action buttons.
+								    SUBMITTED_TO_FACULTY is included because the PO now sees student submissions
+								    in their own inbox: without it they could open one and find nothing to do. */}
 								{scope === "po" &&
-									(resume.reviewStatus === "SUBMITTED_TO_PO" ||
+									(resume.reviewStatus === "SUBMITTED_TO_FACULTY" ||
+										resume.reviewStatus === "SUBMITTED_TO_PO" ||
 										resume.reviewStatus === "FINALIZED_BY_FACULTY" ||
 										resume.reviewStatus === "RESUBMITTED_TO_PO" ||
 										resume.reviewStatus === "PO_REVISION_REQUESTED" ||
@@ -543,6 +558,7 @@ function ReviewPage() {
 												onClick={() =>
 													updateResumeStatusMutation.mutate({
 														resumeId,
+														expectedStatus: resume.reviewStatus ?? undefined,
 														studentId: engLabsStudentId,
 														tenantId: tenantId!,
 														status: "PO_REVISION_REQUESTED",
@@ -558,6 +574,7 @@ function ReviewPage() {
 													onClick={() =>
 														updateResumeStatusMutation.mutate({
 															resumeId,
+															expectedStatus: resume.reviewStatus ?? undefined,
 															studentId: engLabsStudentId,
 															tenantId: tenantId!,
 															status: "APPROVED",

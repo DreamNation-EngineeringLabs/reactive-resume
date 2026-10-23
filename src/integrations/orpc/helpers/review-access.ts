@@ -33,8 +33,15 @@ export async function getReviewAccess(
  * Staff of every listed resume's student tenant (one check for a whole bulk action). A staff member belongs
  * to a tenant through their own users row, or through user_mappings / unit assignments when that row has
  * no tenant — the same staff the faculty, PO and admin dashboards already let in.
+ *
+ * Returns the reviewer's eng-labs user type so callers can apply role rules — who outranks whom at a
+ * given review stage — without a second lookup. It is the authoritative role: the SSO claim the client
+ * sends can drift, and the stage rules must not depend on it.
  */
-export async function assertReviewStaff(user: { id: string; email: string }, resumeIds: string | string[]) {
+export async function assertReviewStaff(
+	user: { id: string; email: string },
+	resumeIds: string | string[],
+): Promise<string> {
 	const ids = [...new Set([resumeIds].flat())];
 	const rows = await db
 		.select({ userId: schema.resume.userId, ownerEmail: schema.user.email, ownerTenantId: schema.user.tenantId })
@@ -51,14 +58,14 @@ export async function assertReviewStaff(user: { id: string; email: string }, res
 	const reviewer = await getEngLabsUserByEmail(user.email);
 	const reviewerType = reviewer?.userType ?? "LEARNER";
 	if (!reviewer || reviewerType === "LEARNER") throw forbidden();
-	if (CROSS_TENANT_TYPES.has(reviewerType)) return;
+	if (CROSS_TENANT_TYPES.has(reviewerType)) return reviewerType;
 
 	const ownerTenants = await getEngLabsTenantsByEmails(rows.map((r) => r.ownerEmail));
 	const studentTenants = rows.map((r) => ownerTenants.get(r.ownerEmail.trim().toLowerCase()) ?? r.ownerTenantId);
 	const inTenant = (tenants: (string | undefined)[]) => studentTenants.every((t) => !!t && tenants.includes(t));
 
-	if (inTenant([reviewer.tenantId])) return;
-	if (inTenant([reviewer.tenantId, ...(await getStaffTenantIds(reviewer.id))])) return;
+	if (inTenant([reviewer.tenantId])) return reviewerType;
+	if (inTenant([reviewer.tenantId, ...(await getStaffTenantIds(reviewer.id))])) return reviewerType;
 	throw forbidden();
 }
 

@@ -44,3 +44,50 @@ export function isStaffRole(role: string | null | undefined): boolean {
 export function isLearnerRole(role: string | null | undefined): boolean {
 	return role === Role.LEARNER;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Review stage ownership
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Review stages a Placement Officer owns.
+ *
+ * Once a resume reaches one of these the PO has taken it on, and faculty must not move it: with
+ * both roles able to see the same resume, the later write silently overwrote the earlier verdict
+ * and the student received two contradictory emails. PO outranks faculty, so these stages are
+ * closed to faculty and open to the PO.
+ *
+ * This does not strand faculty work. A PO section review resets resumes to FINALIZED_BY_FACULTY —
+ * a faculty stage — and an individual PO_REVISION_REQUESTED is cleared by the *student*
+ * resubmitting, which `submitResume` turns into RESUBMITTED_TO_PO. Neither asks faculty to change
+ * a stage listed here.
+ */
+export const PO_OWNED_REVIEW_STATUSES = [
+	"SUBMITTED_TO_PO",
+	"RESUBMITTED_TO_PO",
+	"PO_REVISION_REQUESTED",
+	"PO_VERIFIED",
+	"APPROVED",
+] as const;
+
+export type PoOwnedReviewStatus = (typeof PO_OWNED_REVIEW_STATUSES)[number];
+
+/** True when `status` belongs to the Placement Officer's half of the workflow. */
+export function isPoOwnedStatus(status: string | null | undefined): status is PoOwnedReviewStatus {
+	return !!status && (PO_OWNED_REVIEW_STATUSES as readonly string[]).includes(status);
+}
+
+/**
+ * Whether `actorType` may move a resume that is currently at `currentStatus`.
+ *
+ * A Placement Officer (and an admin acting as one) may change any stage. Faculty may change only
+ * the stages the PO has not taken over.
+ */
+export function canChangeReviewStatus(actorType: ActorType, currentStatus: string | null | undefined): boolean {
+	if (actorType === ActorType.PLACEMENT_OFFICER || actorType === ActorType.ADMIN) return true;
+	return !isPoOwnedStatus(currentStatus);
+}
+
+/** Message shown to faculty when the Placement Officer has taken the resume over. */
+export const PO_STAGE_BLOCKED_MESSAGE =
+	"This resume is at the Placement Officer stage, so it can no longer be changed here.";
