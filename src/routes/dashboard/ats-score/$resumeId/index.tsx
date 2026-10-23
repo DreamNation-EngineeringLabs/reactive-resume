@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import z from "zod";
 import { AtsScoreHistoryChart } from "@/components/ats/score-history-chart";
-import { AtsSuggestionDescription } from "@/components/ats/suggestion-description";
+import { AtsBranchNote, AtsSuggestionDescription } from "@/components/ats/suggestion-description";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -327,6 +327,7 @@ function ATSResultPage() {
 								{result.metadata.jdProvided ? <Trans>vs. job description</Trans> : <Trans>general ATS</Trans>}
 							</p>
 						)}
+						{result && <AtsBranchNote metadata={result.metadata} />}
 					</div>
 
 					{/* Score history */}

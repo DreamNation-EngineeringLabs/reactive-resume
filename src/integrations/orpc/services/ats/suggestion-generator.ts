@@ -3,6 +3,7 @@ import { generateText, Output } from "ai";
 import z from "zod";
 import type { ResumeData } from "@/schema/resume/data";
 import { env } from "@/utils/env";
+import { type AtsProfile, BRANCHES, branchPromptLine, namesSkill } from "./branches";
 import type { AtsScoringContext, JDAnalysis, Suggestion, SuggestionBodySection } from "./index";
 import { estimatePageCount, getAllBullets, getResumeSkills, SCORING_LLM_CONFIG, stripHtml } from "./index";
 import { countResumeWords, RECOMMENDED_BULLET_RANGE, RECOMMENDED_WORD_RANGE } from "./rules/brevity";
@@ -96,7 +97,10 @@ export async function generateSuggestions(
 	const bullets = getAllBullets(data);
 	const resumeSkills = getResumeSkills(data).map((s: string) => s.toLowerCase());
 	const kwCategoryScore = scoringContext?.categories.keywordMatch;
-	const taxonomyCount = getIndustryTaxonomyMatchCount(data);
+	const profile: AtsProfile = scoringContext?.profile ?? { home: "general", focus: "general", skills: [] };
+	const taxonomyCount = getIndustryTaxonomyMatchCount(data, profile.focus);
+	const branch = profile.focus;
+	const b = BRANCHES[branch];
 
 	const cqSuggestionCategory = jdAnalysis ? "impactMetrics" : "tailoring";
 
@@ -138,30 +142,25 @@ export async function generateSuggestions(
 			});
 		}
 	} else if (!jdAnalysis) {
-		// NO JD — align with taxonomy-based keyword score, not only skills row count
-		const popularFoundations = [
-			{ name: "Programming Languages", examples: "Python, JavaScript, Java, C++" },
-			{ name: "Frameworks / Libraries", examples: "React, Node.js, Spring Boot, Django" },
-			{ name: "Database Systems", examples: "PostgreSQL, MySQL, MongoDB" },
-			{ name: "Cloud & DevOps", examples: "AWS, Docker, Kubernetes, Git" },
-		];
-
+		// NO JD — align with the keyword score (skill terms of the student's branch), examples from the student's branch
 		const hasLanguage = resumeSkills.some((s: string) =>
 			["python", "javascript", "java", "cpp", "c++", "golang", "ruby", "typescript"].includes(s),
 		);
 		const hasFramework = resumeSkills.some((s: string) =>
 			["react", "angular", "vue", "node", "spring", "django", "flask", "express", "next.js"].includes(s),
 		);
+		// Outside software, the basics are any named skill or tool, not a programming language plus a framework
+		const hasBasics =
+			branch === "software" ? hasLanguage && hasFramework : resumeSkills.some((s) => namesSkill(s, branch));
 
 		const scoreRatio = kwCategoryScore && kwCategoryScore.max > 0 ? kwCategoryScore.score / kwCategoryScore.max : 1;
-		const needsDensityHelp =
-			taxonomyCount < 12 || scoreRatio < 0.55 || !hasLanguage || !hasFramework || resumeSkills.length < 10;
+		const needsDensityHelp = taxonomyCount < 12 || scoreRatio < 0.55 || !hasBasics || resumeSkills.length < 10;
 
 		if (needsDensityHelp) {
 			const skillsSectionHidden = data.sections.skills.hidden;
 			const skillsRows = resumeSkills.length;
 			const skillsExplainer = skillsSectionHidden
-				? "Your Skills section is hidden. Turn it on in the editor and list your main languages, frameworks, and tools — that helps scanners and recruiters."
+				? `Your Skills section is hidden. Turn it on in the editor and list your main ${b.hint} — that helps scanners and recruiters.`
 				: skillsRows === 0
 					? `Your Skills section is empty, but we still see about ${taxonomyCount} technical term${taxonomyCount !== 1 ? "s" : ""} elsewhere (e.g. bullets or summary). Filling the Skills section with those same tools makes them easier for ATS to find.`
 					: `Your Skills section has ${skillsRows} entr${skillsRows !== 1 ? "ies" : "y"}. We also see about ${taxonomyCount} familiar terms resume-wide — aim for more total coverage (15–25 is a good target) and repeat key tools in your bullets.`;
@@ -170,14 +169,14 @@ export async function generateSuggestions(
 				{
 					title: "What this score means",
 					items: [
-						"Without a pasted job description, we count how many standard tech terms (languages, frameworks, databases, cloud tools, etc.) appear anywhere on your resume.",
+						`Without a pasted job description, we count how many standard ${b.counted} appear anywhere on your resume.`,
 						skillsExplainer,
 						"Next step: add each important tool as its own line under Skills, and mention the same tools when you describe what you built or shipped.",
 					],
 				},
 				{
 					title: "Examples of what to list",
-					items: popularFoundations.map((f) => `${f.name}: ${f.examples}`),
+					items: b.examples.map(([group, examples]) => `${group}: ${examples}`),
 				},
 			];
 			suggestions.push({
@@ -197,8 +196,7 @@ export async function generateSuggestions(
 					fieldPath: "/sections/skills/items/-",
 					hunks: [
 						{
-							context:
-								"Add skills one per row (e.g. Python, React, PostgreSQL). The examples above are inspiration — use what you truly know.",
+							context: `Add skills one per row (e.g. ${b.tools}). The examples above are inspiration — use what you truly know.`,
 						},
 					],
 				},
@@ -403,10 +401,7 @@ export async function generateSuggestions(
 		const rawDesc = "description" in project ? (project as { description: string }).description : "";
 		const desc = stripHtml(rawDesc).trim();
 		const descWords = desc.split(/\s+/).filter(Boolean).length;
-		const hasTechStack =
-			/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify)\b/i.test(
-				desc,
-			);
+		const hasTechStack = namesSkill(desc, branch);
 		const hasOutcome =
 			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
 				desc,
@@ -445,6 +440,7 @@ export async function generateSuggestions(
 			needsTailoredSummary,
 			projectsToRewrite,
 			keywordsNotInBullets,
+			profile,
 		);
 
 		if (!llmResult) {
@@ -505,8 +501,7 @@ export async function generateSuggestions(
 						fieldPath: "/summary/content",
 						hunks: [
 							{
-								added:
-									"e.g. 'Final-year CS student with experience building full-stack apps using React and Node.js. Looking for backend or full-stack roles.'",
+								added: `e.g. '${b.summary}'`,
 							},
 						],
 					},
@@ -551,7 +546,7 @@ export async function generateSuggestions(
 					category: cqSuggestionCategory,
 					severity: "warning",
 					title: `Strengthen project: "${project.name}"`,
-					description: `"${project.name}" needs a stronger description. Expand it to cover: (1) what the project does, (2) the full tech stack (e.g. React, Node.js, PostgreSQL), (3) your specific contribution, and (4) an outcome or metric (users, performance, deployment).`,
+					description: `"${project.name}" needs a stronger description. Expand it to cover: (1) what the project does, (2) the full ${b.stack} (e.g. ${b.tools}), (3) your specific contribution, and (4) an outcome or metric (users, performance, deployment).`,
 					autoApplicable: false,
 					estimatedScoreGain: 2,
 					diff: {
@@ -1359,10 +1354,7 @@ export async function generateSuggestions(
 		const desc = stripHtml(rawDesc).trim();
 		const descWords = desc.split(/\s+/).filter(Boolean).length;
 
-		const hasTechStack =
-			/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|kubernetes|sql|api|mongodb|postgresql|git|flutter|kotlin|swift|django|flask|express|firebase|tailwind|next\.?js|fastapi|spring|redis|graphql|pytorch|tensorflow|sklearn|pandas|numpy|supabase|prisma|vercel|netlify)\b/i.test(
-				desc,
-			);
+		const hasTechStack = namesSkill(desc, branch);
 		const hasOutcome =
 			/\b(\d+\s*(users|customers|downloads|stars|requests|records|entries)|improved|reduced|increased|deployed|launched|live|production|active|published)\b/i.test(
 				desc,
@@ -1381,7 +1373,7 @@ export async function generateSuggestions(
 		const issues: string[] = [];
 		if (descWords === 0) issues.push("no description");
 		else if (descWords < 20) issues.push(`only ${descWords} word${descWords !== 1 ? "s" : ""}`);
-		if (!hasTechStack) issues.push("no tech stack");
+		if (!hasTechStack) issues.push(`no ${b.stack}`);
 		if (!hasOutcome) issues.push("no outcomes or impact");
 		if (isVague) issues.push("contains filler words");
 
@@ -1389,22 +1381,22 @@ export async function generateSuggestions(
 			{
 				title: `Issues: ${issues.join(", ")}`,
 				items: [
-					"What does it do? Example: A web app that helps students track internship applications.",
-					"What tech did you use? Example: React, Node.js, PostgreSQL.",
-					"What was the impact? Example: Used by 200+ students; deployed on Vercel.",
+					`What does it do? Example: ${b.project}`,
+					`What ${b.stack} did you use? Example: ${b.tools}.`,
+					`What was the impact? Example: ${b.impact}`,
 				],
 			},
 		];
 		if (!hasTechStack) {
 			bodySections.push({
-				title: "Add technologies",
-				items: ["Name frameworks, databases, cloud services, and languages you used."],
+				title: `Add ${b.stack}`,
+				items: [`Name the ${b.hint} you used.`],
 			});
 		}
 		if (!hasOutcome) {
 			bodySections.push({
 				title: "Add a measurable result",
-				items: ["Users, uptime, accuracy, latency, GitHub stars, or class size — estimates are better than none."],
+				items: [`${b.measures} — estimates are better than none.`],
 			});
 		}
 		if (isVague && desc) {
@@ -1420,7 +1412,7 @@ export async function generateSuggestions(
 			category: cqSuggestionCategory,
 			severity: descWords < 5 || !hasTechStack ? "critical" : "warning",
 			title: `Strengthen project: "${projectName}"`,
-			description: `"${projectName}" needs a stronger description (${issues.join(", ")}). Expand with tech stack, your role, and outcomes — or use Accept Change if an AI rewrite is available after re-scoring.`,
+			description: `"${projectName}" needs a stronger description (${issues.join(", ")}). Expand with ${b.stack}, your role, and outcomes — or use Accept Change if an AI rewrite is available after re-scoring.`,
 			bodySections,
 			autoApplicable: false,
 			estimatedScoreGain: 2,
@@ -1468,7 +1460,7 @@ export async function generateSuggestions(
 			category: "impactMetrics",
 			severity: "warning",
 			title: `${bulletsLackingMetric.length} bullet${bulletsLackingMetric.length !== 1 ? "s" : ""} have no measurable outcome`,
-			description: `Quantified bullets are 40% more likely to pass ATS filters and get recruiter attention. Add specific numbers to show the scale and impact of your work.\n\nAsk yourself for each bullet:\n• How many users/customers/records were affected?\n• What percentage did something improve, reduce, or increase?\n• How long did it save? How much faster?\n• What was the scale — requests/sec, GB of data, number of endpoints?\n\nExamples:\n• "Built a REST API" → "Built a REST API serving 500+ daily requests across 3 microservices"\n• "Improved performance" → "Reduced page load time by 40% through lazy loading and caching"\n• "Managed a database" → "Managed a PostgreSQL database with 10,000+ student records"\n• "Trained a model" → "Trained a classification model achieving 92% accuracy on 5,000 samples"\n\nFor student projects, even estimates are better than nothing — if your app was used in class, mention how many students.`,
+			description: `Quantified bullets are 40% more likely to pass ATS filters and get recruiter attention. Add specific numbers to show the scale and impact of your work.\n\nAsk yourself for each bullet:\n• How many users/customers/records were affected?\n• What percentage did something improve, reduce, or increase?\n• How long did it save? How much faster?\n• What was the scale — ${b.scale}?\n\nExamples:\n${b.metrics.map((e) => `• ${e}`).join("\n")}\n\nFor student projects, even estimates are better than nothing — ${b.estimate}.`,
 			autoApplicable: false,
 			estimatedScoreGain: 4,
 			diff: {
@@ -1491,7 +1483,7 @@ export async function generateSuggestions(
 				category: "impactMetrics",
 				severity: "info",
 				title: "Apply the XYZ formula to your bullets",
-				description: `${nonXYZBullets.length} of your ${bullets.length} bullets don't follow the XYZ formula — the gold standard for resume bullets used by Google's hiring guidelines.\n\nXYZ Formula: "Accomplished [X] as measured by [Y], by doing [Z]"\n\n• X = what you achieved (the result/outcome)\n• Y = how you measured it (the metric)\n• Z = how you did it (the method/tool/approach)\n\nExamples:\n• "Reduced API response time [X] by 35% [Y] by implementing Redis caching [Z]"\n• "Built an internship tracker [X] used by 200 students [Y] using React and Supabase [Z]"\n• "Increased test coverage [X] from 45% to 87% [Y] by writing 120 unit tests with Jest [Z]"\n\nNot every bullet needs all three, but aim for at least X + Y or X + Z. Bullets with only X ("Developed a feature") are the weakest.`,
+				description: `${nonXYZBullets.length} of your ${bullets.length} bullets don't follow the XYZ formula — the gold standard for resume bullets used by Google's hiring guidelines.\n\nXYZ Formula: "Accomplished [X] as measured by [Y], by doing [Z]"\n\n• X = what you achieved (the result/outcome)\n• Y = how you measured it (the metric)\n• Z = how you did it (the method/tool/approach)\n\nExamples:\n${b.xyz.map((e) => `• ${e}`).join("\n")}\n\nNot every bullet needs all three, but aim for at least X + Y or X + Z. Bullets with only X ("Developed a feature") are the weakest.`,
 				autoApplicable: false,
 				estimatedScoreGain: 2,
 				diff: {
@@ -1523,17 +1515,15 @@ export async function generateSuggestions(
 		];
 		const summaryLower = summaryPlain.toLowerCase();
 		const boilerplateCount = boilerplateTerms.filter((t) => summaryLower.includes(t)).length;
-		const summaryHasTech =
-			/\b(react|vue|angular|node|python|java|typescript|javascript|aws|docker|sql|machine learning|deep learning|spring|django|flask|express|mongodb|postgresql|kubernetes|graphql)\b/i.test(
-				summaryPlain,
-			);
+		const summaryHasTech = namesSkill(summaryPlain, branch);
 		const summaryHasMetric = /\d+[%+]|\d+\s*(years?|months?|projects?|apps?|systems?)/i.test(summaryPlain);
 
 		if (boilerplateCount >= 2 || (!summaryHasTech && !summaryHasMetric && summaryPlain.length > 20)) {
 			const problems: string[] = [];
 			if (boilerplateCount >= 2)
 				problems.push(`${boilerplateCount} generic buzzword${boilerplateCount !== 1 ? "s" : ""}`);
-			if (!summaryHasTech) problems.push("no specific technologies mentioned");
+			if (!summaryHasTech)
+				problems.push(`no specific ${branch === "software" ? "technologies" : "tools or skills"} mentioned`);
 			if (!summaryHasMetric) problems.push("no quantified experience");
 
 			suggestions.push({
@@ -1542,7 +1532,7 @@ export async function generateSuggestions(
 				category: "structure",
 				severity: "warning",
 				title: `Summary is too generic (${problems.join(", ")})`,
-				description: `Your summary reads as boilerplate — recruiters see hundreds of "results-driven team players" and skip them. A strong summary is specific to YOU.\n\nRewrite it to answer:\n1. Who are you? — your field, level, and specialization (e.g., "Final-year Computer Science student specializing in full-stack development")\n2. What have you built/done? — name 1-2 specific projects or achievements with tech/metrics (e.g., "Built a React + Node.js internship tracker used by 200+ students")\n3. What are you targeting? — the role or domain you're applying for\n\nExample: "Final-year B.Tech student with hands-on experience building full-stack web apps using React, Node.js, and PostgreSQL. Developed an internship management platform used by 200+ students at our college. Looking for backend/full-stack engineer roles where I can work on scalable systems."\n\nRemove: "${boilerplateTerms
+				description: `Your summary reads as boilerplate — recruiters see hundreds of "results-driven team players" and skip them. A strong summary is specific to YOU.\n\nRewrite it to answer:\n1. Who are you? — your field, level, and specialization (e.g., "${b.coach.who}")\n2. What have you built/done? — name 1-2 specific projects or achievements with tech/metrics (e.g., "${b.coach.built}")\n3. What are you targeting? — the role or domain you're applying for\n\nExample: "${b.coach.example}"\n\nRemove: "${boilerplateTerms
 					.filter((t) => summaryLower.includes(t))
 					.slice(0, 3)
 					.join('", "')}"`,
@@ -1816,6 +1806,7 @@ async function getComprehensiveSuggestions(
 	needsTailoredSummary: boolean,
 	projectsToRewrite: Array<{ itemIndex: number; name: string; plain: string; rawHtml: string }>,
 	keywordsNotInBullets: string[] = [],
+	profile: AtsProfile,
 ): Promise<z.infer<typeof comprehensiveSchema> | null> {
 	try {
 		const apiKey = env.OPENAI_API_KEY;
@@ -2037,7 +2028,7 @@ ${contextItems.map((c) => `[${c.sectionKey}][${c.itemIndex}] ${c.label}${c.bulle
 			messages: [
 				{
 					role: "system",
-					content: `You are an expert resume writer. Return ALL requested fixes in ONE structured response: bullet rewrites, date corrections, brevity edits, optional summaries, optional project description HTML — only for sections provided below.
+					content: `You are an expert resume writer. Return ALL requested fixes in ONE structured response: bullet rewrites, date corrections, brevity edits, optional summaries, optional project description HTML — only for sections provided below.${jdAnalysis ? "" : branchPromptLine(profile)}
 
 ${promptParts.join("\n\n")}`,
 				},
