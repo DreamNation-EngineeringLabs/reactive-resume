@@ -54,10 +54,17 @@ export const atsRouter = {
 				userId: context.user.id,
 			});
 
+			// The student's department (eng-labs units) tailors no-JD suggestions; without it the resume decides.
+			const { getLearnerUnitNames } = await import("@/integrations/eng-labs");
+			const units = await getLearnerUnitNames(context.user.email).catch((error) => {
+				console.error("[ATS] Department lookup failed, using the resume's field of study:", error);
+				return [];
+			});
+
 			try {
 				const dataForScoring = structuredClone(resume.data) as ResumeData;
 				await resumeService.normalizePictureForPreview(dataForScoring);
-				const result = await scoreResume(dataForScoring, input.jobDescription, input.includeAiSuggestions);
+				const result = await scoreResume(dataForScoring, input.jobDescription, input.includeAiSuggestions, units);
 
 				// Consume credit after successful scoring
 				await consumePlacementCredit(context.user.email, "ATS_SCORE");
