@@ -150,6 +150,16 @@ export function suggestionsForSection(section: string | null | undefined): reado
 	return REVIEW_SUGGESTIONS.filter((s) => s.section === base);
 }
 
+/**
+ * The picker key for the section an anchor points at, or null when that section has no standard
+ * feedback. Same fallback as `suggestionsForSection`, so the picker and the list always agree.
+ */
+export function suggestionSectionKey(section: string): string | null {
+	if (SUGGESTION_SECTIONS.some((s) => s.key === section)) return section;
+	const base = section.split(".")[0];
+	return SUGGESTION_SECTIONS.some((s) => s.key === base) ? base : null;
+}
+
 /** Label for a section key, for the picker shown on a comment with no anchor. */
 export function suggestionSectionLabel(section: string): string {
 	return SUGGESTION_SECTIONS.find((s) => s.key === section)?.label ?? section;

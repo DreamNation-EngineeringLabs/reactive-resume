@@ -10,6 +10,7 @@ import {
 	ExamIcon,
 	GitDiffIcon,
 	ListChecksIcon,
+	PencilSimpleIcon,
 	PlusMinusIcon,
 	ShootingStarIcon,
 	TrashIcon,
@@ -49,6 +50,7 @@ import { getStatusBadgeClass } from "../../-components/score-helpers";
 import { StudentTimeline } from "../../-components/student-timeline";
 import { useResumeDownload } from "../../-components/use-resume-download";
 import { CommentComposer } from "./-comment-composer";
+import { type CommentEdit, CommentEditor } from "./-comment-editor";
 
 const searchSchema = z.object({
 	engLabsStudentId: z.string().catch(""),
@@ -84,6 +86,7 @@ function ReviewPage() {
 	const [anchor, setAnchor] = useState<CommentAnchor | null>(null);
 	const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 	const [compareId, setCompareId] = useState<string | null>(null);
+	const [editingId, setEditingId] = useState<string | null>(null);
 	// Prev/Next keep this page mounted, so what was aimed at one student's resume is dropped when the resume changes.
 	const [shownResumeId, setShownResumeId] = useState(resumeId);
 	if (shownResumeId !== resumeId) {
@@ -92,6 +95,7 @@ function ReviewPage() {
 		setAnchor(null);
 		setActiveCommentId(null);
 		setCompareId(null);
+		setEditingId(null);
 	}
 	const commentInputRef = useRef<HTMLTextAreaElement>(null);
 	const queryClient = useQueryClient();
@@ -214,6 +218,19 @@ function ReviewPage() {
 			toast.error(error instanceof Error ? error.message : t`Could not delete that comment.`);
 		},
 	});
+
+	const updateCommentMutation = useMutation({
+		...orpc.resume.comments.update.mutationOptions(),
+		onSuccess: () => {
+			setEditingId(null);
+			queryClient.invalidateQueries(reviewQueryKey);
+		},
+		onError: (error) => {
+			toast.error(error instanceof Error ? error.message : t`Could not save that comment.`);
+		},
+	});
+
+	const saveEdit = (id: string, edit: CommentEdit) => updateCommentMutation.mutate({ id, ...edit });
 
 	const confirm = useConfirm();
 	const { download, isPending: isDownloading } = useResumeDownload();
@@ -763,15 +780,25 @@ function ReviewPage() {
 																	{t`${severityLabel(c.severity)} severity`}
 																</span>
 															)}
-															<p
-																className={cn(
-																	"text-foreground text-sm leading-relaxed",
-																	c.status === "RESOLVED" && "text-muted-foreground line-through",
-																)}
-															>
-																{c.content}
-															</p>
-															{c.suggestion && c.anchor?.quote && (
+															{editingId === c.id ? (
+																<CommentEditor
+																	comment={c}
+																	sentContents={sentContents}
+																	isPending={updateCommentMutation.isPending}
+																	onSave={(edit) => saveEdit(c.id, edit)}
+																	onCancel={() => setEditingId(null)}
+																/>
+															) : (
+																<p
+																	className={cn(
+																		"text-foreground text-sm leading-relaxed",
+																		c.status === "RESOLVED" && "text-muted-foreground line-through",
+																	)}
+																>
+																	{c.content}
+																</p>
+															)}
+															{c.suggestion && c.anchor?.quote && editingId !== c.id && (
 																<p className="mt-2 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs">
 																	<span className="font-semibold text-emerald-700">{t`Suggested rewrite`} </span>
 																	<del className="text-muted-foreground">{c.anchor.quote.exact}</del>{" "}
@@ -814,6 +841,16 @@ function ReviewPage() {
 																	)}
 																	{/* Only on your own feedback: a Placement Officer outranks a faculty member on a
 																	    verdict, not on whether their written feedback ever happened. */}
+																	{isMine(c.authorId) && editingId !== c.id && (
+																		<button
+																			type="button"
+																			onClick={() => setEditingId(c.id)}
+																			className="flex items-center gap-1 font-bold text-[10px] text-muted-foreground hover:text-primary hover:underline"
+																		>
+																			<PencilSimpleIcon className="size-3" />
+																			{t`Edit`}
+																		</button>
+																	)}
 																	{isMine(c.authorId) && (
 																		<button
 																			type="button"
@@ -936,6 +973,16 @@ function ReviewPage() {
 																				>
 																					{reply.status === "PUBLISHED" ? "OPEN" : reply.status}
 																				</div>
+																				{isMine(reply.authorId) && editingId !== reply.id && (
+																					<button
+																						type="button"
+																						aria-label={t`Edit this reply`}
+																						onClick={() => setEditingId(reply.id)}
+																						className="rounded-md p-0.5 text-muted-foreground hover:bg-primary/5 hover:text-primary"
+																					>
+																						<PencilSimpleIcon className="size-3" />
+																					</button>
+																				)}
 																				{isMine(reply.authorId) && (
 																					<button
 																						type="button"
@@ -949,14 +996,24 @@ function ReviewPage() {
 																				)}
 																			</div>
 																		</div>
-																		<p
-																			className={cn(
-																				"text-foreground leading-relaxed",
-																				reply.status === "RESOLVED" && "text-muted-foreground line-through",
-																			)}
-																		>
-																			{reply.content}
-																		</p>
+																		{editingId === reply.id ? (
+																			<CommentEditor
+																				comment={reply}
+																				sentContents={sentContents}
+																				isPending={updateCommentMutation.isPending}
+																				onSave={(edit) => saveEdit(reply.id, edit)}
+																				onCancel={() => setEditingId(null)}
+																			/>
+																		) : (
+																			<p
+																				className={cn(
+																					"text-foreground leading-relaxed",
+																					reply.status === "RESOLVED" && "text-muted-foreground line-through",
+																				)}
+																			>
+																				{reply.content}
+																			</p>
+																		)}
 																	</div>
 																))}
 															</div>

@@ -628,6 +628,62 @@ export const resumeRouter = {
 				await deleteComment(input.id);
 			}),
 
+		update: protectedProcedure
+			.route({
+				method: "PATCH",
+				path: "/resumes/comments/{id}",
+				tags: ["Resume Feedback"],
+				operationId: "updateResumeComment",
+				summary: "Edit a comment",
+				description:
+					"Changes a comment's text and severity, or moves it to another section. Only the reviewer who wrote it can edit it.",
+			})
+			.input(
+				z.object({
+					id: z.string(),
+					content: z.string().trim().min(1).max(5000).describe("The new comment text"),
+					severity: commentSeveritySchema.nullable().optional().describe("New severity; null removes it"),
+					section: z
+						.string()
+						.min(1)
+						.max(100)
+						.optional()
+						.describe("Move the comment to this whole section, dropping the selected text it pointed at"),
+				}),
+			)
+			.output(commentOutputSchema)
+			.handler(async ({ context, input }) => {
+				const { getCommentById, updateComment } = await import(
+					"@/integrations/drizzle/services/resume-feedback.service"
+				);
+
+				const comment = await getCommentById(input.id);
+				if (!comment) throw new ORPCError("NOT_FOUND", { message: "Comment not found." });
+
+				// The same two checks as delete, in the same order: staff of the student's tenant, then the author.
+				await assertReviewStaff(context.user, comment.resumeId);
+				const { id: actorId } = await resolveEngLabsActor(context.user.email);
+				if (comment.authorId !== actorId) {
+					throw new ORPCError("FORBIDDEN", { message: "Only the reviewer who wrote a comment can edit it." });
+				}
+
+				// A reply is text on a thread: it has no severity and points at nothing of its own.
+				if (comment.parentId && (input.severity !== undefined || input.section !== undefined)) {
+					throw new ORPCError("BAD_REQUEST", { message: "A reply can only have its text edited." });
+				}
+
+				// Moving to another section leaves the selected text behind, and the rewrite was for that text.
+				const moved = input.section !== undefined && input.section !== comment.anchor?.section;
+
+				const updated = await updateComment(input.id, {
+					content: input.content,
+					...(input.severity !== undefined && { severity: input.severity }),
+					...(moved && { anchor: { section: input.section as string }, suggestion: null }),
+				});
+				if (!updated) throw new ORPCError("NOT_FOUND", { message: "Comment not found." });
+				return updated;
+			}),
+
 		list: protectedProcedure
 			.route({
 				method: "GET",
