@@ -47,6 +47,11 @@ import { SectionValidationSheet, SummaryValidationSheet } from "./validation-rep
 
 export type DashboardTab = "overview" | "inbox" | "sections" | "students" | "checklists";
 
+/** The Sections tab opens on this package when the college has it; the placement team asked for it. */
+const DEFAULT_SECTIONS_PACKAGE = "Placement Batch 2028";
+/** `packageId` when the reviewer chose "All packages", so the default is not applied over it. */
+const ALL_PACKAGES = "all";
+
 type SectionMetricsViewProps = {
 	scope: "faculty" | "po" | "admin";
 	sectionIds: string[];
@@ -175,6 +180,8 @@ export function SectionMetricsView({
 				unitType: filter.unitType,
 				unitId: filter.unitId,
 				scope: (scope === "admin" ? "po" : scope) as "faculty" | "po",
+				// The review page's back arrow returns here — the Inbox, the Students tab, wherever.
+				from: activeTab,
 			},
 		});
 	};
@@ -197,20 +204,27 @@ export function SectionMetricsView({
 		return [...byId.entries()].map(([value, label]) => ({ value, label }));
 	}, [filterPackages, dashboard?.sections]);
 
+	// The Sections tab opens on the batch the Resume Builder is running for. "All packages" is an
+	// explicit choice, kept in the URL as ALL_PACKAGES so it is not replaced by the default again.
+	const defaultPackageId = filterPackages.find((p) => p.name === DEFAULT_SECTIONS_PACKAGE)?.id;
+	const sectionsPackageId = filter.packageId === ALL_PACKAGES ? undefined : (filter.packageId ?? defaultPackageId);
+
 	const sectionsTabFilteredRows = useMemo(() => {
 		const rows = dashboard?.sections ?? [];
 		return rows.filter((s) => {
 			// Match on packageIds (real placement packages, resolved from enrolments), never on
 			// packageId — that holds the parent org unit for most callers, so comparing it against a
 			// package id from the dropdown never matched and emptied the list. A class whose learners
-			// span two packages legitimately appears under both.
-			if (filter.packageId && !((s as { packageIds?: string[] }).packageIds ?? []).includes(filter.packageId))
-				return false;
+			// span two packages legitimately appears under both. The server keeps only Resume Builder
+			// packages here, so a class with none is outside the Resume Builder and is left out.
+			const packageIds = (s as { packageIds?: string[] }).packageIds ?? [];
+			if (packageIds.length === 0) return false;
+			if (sectionsPackageId && !packageIds.includes(sectionsPackageId)) return false;
 			const level = viewLevel || (filterUnitTypes.includes("CLASS") ? "CLASS" : filterUnitTypes[0]);
 			if (filterUnitTypes.length === 0) return true;
 			return s.unitType === level;
 		});
-	}, [dashboard?.sections, filter.packageId, filterUnitTypes, viewLevel]);
+	}, [dashboard?.sections, sectionsPackageId, filterUnitTypes, viewLevel]);
 
 	const sectionsTabDisplayRows = useMemo(() => {
 		const q = sectionsTabSearch.trim().toLowerCase();
@@ -509,13 +523,13 @@ export function SectionMetricsView({
 										<span className="font-medium text-muted-foreground text-xs">{t`Package`}</span>
 										<Combobox
 											options={sectionsTabPackageOptions}
-											value={filter.packageId ?? null}
+											value={sectionsPackageId ?? null}
 											placeholder={t`All packages`}
 											clearable={true}
 											buttonProps={{ className: uiControl.comboboxTrigger }}
 											onValueChange={(v) => {
 												const updatedFilter: OrgUnitFilterValue = {
-													packageId: v ?? undefined,
+													packageId: v ?? ALL_PACKAGES,
 													unitType: undefined,
 													unitId: undefined,
 												};
@@ -826,7 +840,7 @@ export function SectionMetricsView({
 						scope === "faculty" ? "faculty" : "po",
 					);
 					const packageName =
-						sectionsTabPackageOptions.find((o) => o.value === filter.packageId)?.label ?? t`All packages`;
+						sectionsTabPackageOptions.find((o) => o.value === sectionsPackageId)?.label ?? t`All packages`;
 					return (
 						<SummaryValidationSheet
 							title={
