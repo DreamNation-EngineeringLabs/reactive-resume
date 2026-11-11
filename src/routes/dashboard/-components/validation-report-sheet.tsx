@@ -192,7 +192,7 @@ function RosterTable({ rows, fontPt }: { rows: StudentReportRow[]; fontPt: numbe
 					<th className={cn(cell, "text-left")}>Name of the Student</th>
 					<th className={cn(cell, "w-[20%]")}>H. T. No.</th>
 					<th className={cn(cell, "w-[18%]")}>CV submitted</th>
-					<th className={cn(cell, "w-[15%]")}>Validation</th>
+					<th className={cn(cell, "w-[15%]")}>Status</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -202,7 +202,7 @@ function RosterTable({ rows, fontPt }: { rows: StudentReportRow[]; fontPt: numbe
 						<td className={cn(cell, "text-left")}>{row.name}</td>
 						<td className={cn(cell, "text-center")}>{row.rollNumber}</td>
 						<td className={cn(cell, "text-center")}>{row.submittedOn}</td>
-						<td className={cn(cell, "text-center")}>{row.validated ? "Done" : ""}</td>
+						<td className={cn(cell, "text-center")}>{row.status}</td>
 					</tr>
 				))}
 			</tbody>
