@@ -1,7 +1,9 @@
 import { t } from "@lingui/core/macro";
-import { PaperPlaneTiltIcon, PencilSimpleLineIcon, XIcon } from "@phosphor-icons/react";
+import { BookmarkSimpleIcon, PaperPlaneTiltIcon, PencilSimpleLineIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type RefObject, useMemo, useState } from "react";
 import { anchorLabel, severityLabel } from "@/components/resume/review-anchors";
+import { orpc } from "@/integrations/orpc/client";
 import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
 import type { ResumeData } from "@/schema/resume/data";
 import {
@@ -39,7 +41,8 @@ type Props = {
 
 /**
  * The reviewer's comment box: what the comment points at, severity, an optional rewrite for the quoted
- * text, and the standard feedback for a section, ticked rather than typed.
+ * text, the standard feedback for a section (ticked rather than typed), and the tenant's saved
+ * comments (save for reuse, manage with usage counts).
  */
 export function CommentComposer({
 	resumeData,
@@ -53,13 +56,21 @@ export function CommentComposer({
 	onSubmit,
 	onSubmitMany,
 }: Props) {
+	const queryClient = useQueryClient();
 	const [content, setContent] = useState("");
 	const [severity, setSeverity] = useState<CommentSeverity | null>(null);
 	const [suggestion, setSuggestion] = useState<string | null>(null);
+	const [managing, setManaging] = useState(false);
 	const [pickedSection, setPickedSection] = useState(() => (anchor ? suggestionSectionKey(anchor.section) : null));
 	// Standard feedback is ticked, not typed: a reviewer almost always sends two or three lines on a
 	// section, and each has to arrive as its own comment so the student can address them one by one.
 	const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+
+	const listQuery = orpc.resume.reviewSnippets.list.queryOptions();
+	const { data: snippets = [] } = useQuery(listQuery);
+	const refreshBank = () => queryClient.invalidateQueries({ queryKey: listQuery.queryKey });
+	const saveSnippet = useMutation({ ...orpc.resume.reviewSnippets.create.mutationOptions(), onSuccess: refreshBank });
+	const deleteSnippet = useMutation({ ...orpc.resume.reviewSnippets.delete.mutationOptions(), onSuccess: refreshBank });
 
 	const quote = anchor?.quote?.exact;
 	const isReply = !!replyTo;
@@ -266,7 +277,7 @@ export function CommentComposer({
 
 			{/* Standard feedback for the section being commented on. Stacked rather than chipped:
 			    these are whole sentences, and a pill row truncates them into uselessness. */}
-			{!isReply && (
+			{!isReply && !managing && (
 				<div className="mb-3">
 					<div className="mb-1.5 flex items-center gap-2">
 						<span className="font-semibold text-[11px] text-muted-foreground">
@@ -348,6 +359,30 @@ export function CommentComposer({
 				</div>
 			)}
 
+			{!isReply && managing && (
+				<div className="mb-3 rounded-xl bg-card p-2 ring-1 ring-border">
+					<p className="px-1 pb-1.5 text-[11px] text-muted-foreground">
+						{t`Saved comments for your whole team, most used first. Frequent ones are good workshop topics.`}
+					</p>
+					<ul className="max-h-56 divide-y divide-border overflow-y-auto">
+						{snippets.map((snippet) => (
+							<li key={snippet.id} className="flex items-center gap-2 px-1 py-1.5">
+								<span className="min-w-0 flex-1 text-foreground text-xs">{snippet.content}</span>
+								<span className="shrink-0 text-[10px] text-muted-foreground">{t`Used ${snippet.usageCount}×`}</span>
+								<button
+									type="button"
+									aria-label={t`Delete saved comment: ${snippet.content}`}
+									onClick={() => deleteSnippet.mutate({ id: snippet.id })}
+									className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-rose-50 hover:text-rose-600"
+								>
+									<TrashIcon className="size-3.5" />
+								</button>
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+
 			<div className="flex flex-wrap items-center gap-2">
 				<button
 					type="button"
@@ -358,6 +393,27 @@ export function CommentComposer({
 					<PaperPlaneTiltIcon weight="duotone" className="size-4" />
 					{isPending ? t`Posting…` : isReply ? t`Post Reply` : total > 1 ? t`Post ${total} Comments` : t`Post Comment`}
 				</button>
+				{!isReply && (
+					<>
+						<button
+							type="button"
+							disabled={!typed || saveSnippet.isPending}
+							onClick={() => saveSnippet.mutate({ content: content.trim() })}
+							className="flex items-center gap-1 rounded-lg px-2 py-1.5 font-semibold text-muted-foreground text-xs hover:bg-muted disabled:opacity-40"
+						>
+							<BookmarkSimpleIcon className="size-3.5" />
+							{t`Save for reuse`}
+						</button>
+						<button
+							type="button"
+							aria-pressed={managing}
+							onClick={() => setManaging((m) => !m)}
+							className="rounded-lg px-2 py-1.5 font-semibold text-muted-foreground text-xs hover:bg-muted"
+						>
+							{managing ? t`Done` : t`Manage saved`}
+						</button>
+					</>
+				)}
 			</div>
 			<p className="mt-2 text-[10px] text-muted-foreground">{t`Ctrl+Enter posts. Esc clears the selection.`}</p>
 		</div>
