@@ -647,8 +647,11 @@ export const resumeRouter = {
 						.string()
 						.min(1)
 						.max(100)
+						.nullable()
 						.optional()
-						.describe("Move the comment to this whole section, dropping the selected text it pointed at"),
+						.describe(
+							"Move the comment to this whole section, dropping the selected text it pointed at; null makes it a comment on the whole resume",
+						),
 				}),
 			)
 			.output(commentOutputSchema)
@@ -673,12 +676,13 @@ export const resumeRouter = {
 				}
 
 				// Moving to another section leaves the selected text behind, and the rewrite was for that text.
-				const moved = input.section !== undefined && input.section !== comment.anchor?.section;
+				const moved =
+					input.section !== undefined && (input.section !== comment.anchor?.section || !!comment.anchor?.quote);
 
 				const updated = await updateComment(input.id, {
 					content: input.content,
 					...(input.severity !== undefined && { severity: input.severity }),
-					...(moved && { anchor: { section: input.section as string }, suggestion: null }),
+					...(moved && { anchor: input.section ? { section: input.section } : null, suggestion: null }),
 				});
 				if (!updated) throw new ORPCError("NOT_FOUND", { message: "Comment not found." });
 				return updated;

@@ -782,6 +782,7 @@ function ReviewPage() {
 															)}
 															{editingId === c.id ? (
 																<CommentEditor
+																	resumeData={resume.data as ResumeData}
 																	comment={c}
 																	sentContents={sentContents}
 																	isPending={updateCommentMutation.isPending}
@@ -998,6 +999,7 @@ function ReviewPage() {
 																		</div>
 																		{editingId === reply.id ? (
 																			<CommentEditor
+																				resumeData={resume.data as ResumeData}
 																				comment={reply}
 																				sentContents={sentContents}
 																				isPending={updateCommentMutation.isPending}
