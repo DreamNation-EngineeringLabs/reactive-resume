@@ -53,7 +53,10 @@ export type StudentReportRow = {
 	status: ReportStatus;
 };
 
-export type ReportStatus = "Draft" | "Submitted" | "Reviewed" | "Verified" | "Validated";
+/** In workflow order, the order the sheet's header counts them in. */
+export const REPORT_STATUSES = ["Draft", "Submitted", "Reviewed", "Verified", "Validated"] as const;
+
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 /**
  * The placement team reads the workflow as five steps, not ten stages: not handed in, waiting for

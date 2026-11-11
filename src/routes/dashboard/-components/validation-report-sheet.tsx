@@ -5,6 +5,7 @@ import { cn } from "@/utils/style";
 import {
 	formatReportDate,
 	printLayout,
+	REPORT_STATUSES,
 	type ReportScope,
 	type SectionSummaryRow,
 	type StudentReportRow,
@@ -223,7 +224,11 @@ export function SectionValidationSheet({ sectionName, branch, rows, scope, onClo
 	const [sheetRef, scale] = useFitToPage<HTMLDivElement>([rows.length, sectionName]);
 	const { left, fontPt: baseFontPt } = printLayout(rows);
 	const fontPt = baseFontPt * scale;
-	const submitted = rows.filter((r) => r.submittedOn).length;
+	// One count per status, in workflow order, so the header adds up to Total.
+	const statusCounts = REPORT_STATUSES.map((status) => ({
+		status,
+		count: rows.filter((r) => r.status === status).length,
+	}));
 	// "Section" on the sheet is the letter the college uses, e.g. "AE - A 2024" → "A".
 	const sectionLetter = sectionName.split("-")[1]?.trim().split(" ")[0] ?? sectionName;
 
@@ -269,9 +274,19 @@ export function SectionValidationSheet({ sectionName, branch, rows, scope, onClo
 					</tr>
 					<tr>
 						<td className={cell}>Branch: {branch}</td>
-						<td className={cell}>Section: {sectionLetter}</td>
-						<td className={cell}>
-							Total: {rows.length} &nbsp;&nbsp; Submitted: {submitted}
+						<td className={cell} colSpan={2}>
+							Section: {sectionLetter}
+						</td>
+					</tr>
+					{/* Its own full-width row: six numbers in the old narrow cell wrapped onto three lines. */}
+					<tr>
+						<td className={cell} colSpan={3}>
+							Total: {rows.length}
+							{statusCounts.map(({ status, count }) => (
+								<span key={status}>
+									&nbsp;&nbsp; {status}: {count}
+								</span>
+							))}
 						</td>
 					</tr>
 				</tbody>
