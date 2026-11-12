@@ -1,166 +1,124 @@
-import type { CommentSeverity } from "./comment-anchor";
+import type { CommentAnchor, CommentSeverity } from "./comment-anchor";
+import type { ResumeData } from "./data";
+import { REVIEW_SUGGESTION_BANK } from "./review-suggestion-bank";
 
 /**
  * The standard feedback a reviewer can send on each resume section, one click each.
  *
  * These are curated by the placement team and ship with the app rather than living in
  * `review_snippet`: that table is per-tenant, has no section of its own, and lets any reviewer
- * delete a row for everybody. It stays as it is — for the snippets reviewers write themselves.
+ * delete a row for everybody. The list itself is in `review-suggestion-bank.ts`.
  *
- * `severity` is taken from the weight of the checklist item each line enforces, so the common
- * case needs no second click: weight 3 is HIGH, weight 2 MEDIUM, weight 1 LOW. The reviewer can
- * still override it before sending.
+ * `severity` decides the highlight colour: HIGH must be fixed before the resume is verified, MEDIUM
+ * weakens it noticeably, LOW is polish. The reviewer can still override it before sending.
  */
 export type ReviewSuggestion = {
-	/** Stable id. Used to tell apart two suggestions with the same opening words. */
+	/** Stable id from the approved comment bank, e.g. "PRJ-13". Faculty refer to lines by it. */
 	id: string;
-	/** Resume section key this belongs to, matching `CommentAnchor["section"]`. */
+	/** A key from `SUGGESTION_SECTIONS`. */
 	section: string;
+	/** Sub-heading inside a long section, e.g. "Links" under Projects. */
+	group?: string;
 	content: string;
 	severity: CommentSeverity;
-	/** The checklist item this enforces, shown to the reviewer as provenance. */
-	checklistItem: number;
 };
 
-export const REVIEW_SUGGESTIONS: readonly ReviewSuggestion[] = [
-	// ── Career Objective ────────────────────────────────────────────────────────
-	{
-		id: "summary-heading",
-		section: "summary",
-		content:
-			"Rename this section to “Career Objective” — invented headings like “Professional Summary” are not recognised by resume parsers.",
-		severity: "LOW",
-		checklistItem: 7,
-	},
-	{
-		id: "summary-generic-three-lines",
-		section: "summary",
-		content:
-			"Keep it generic so it suits every company you apply to. Mention your main strengths and complete it within 3 lines.",
-		severity: "MEDIUM",
-		checklistItem: 9,
-	},
+export const REVIEW_SUGGESTIONS: readonly ReviewSuggestion[] = REVIEW_SUGGESTION_BANK;
 
-	// ── Education ───────────────────────────────────────────────────────────────
-	{
-		id: "education-cgpa",
-		section: "education",
-		content: "Add your CGPA on its stated scale (e.g. 8.6/10) and the duration (2024–2028) for B.Tech.",
-		severity: "MEDIUM",
-		checklistItem: 2,
-	},
-	{
-		id: "education-inter-ssc",
-		section: "education",
-		content: "Add your Intermediate and SSC details also — percentage and year of passing.",
-		severity: "MEDIUM",
-		checklistItem: 2,
-	},
-
-	// ── Projects ────────────────────────────────────────────────────────────────
-	{
-		id: "projects-at-least-four",
-		section: "projects",
-		content:
-			"List at least 4 projects. Each needs a title, tech stack, duration and 2–3 bullets, with a GitHub or live link on at least two.",
-		severity: "HIGH",
-		checklistItem: 4,
-	},
-	{
-		id: "projects-result-first",
-		section: "projects",
-		content:
-			"Open each description with the result — the accuracy or outcome, where there is one — then the process you followed.",
-		severity: "HIGH",
-		checklistItem: 5,
-	},
-
-	// ── Internships (the resume's `experience` section) ─────────────────────────
-	{
-		id: "experience-rename-internships",
-		section: "experience",
-		content: "Rename the “Experience” section to “Internships” — that is where your internships belong.",
-		severity: "LOW",
-		checklistItem: 7,
-	},
-	{
-		id: "experience-company-role-dates",
-		section: "experience",
-		content: "List each internship with company, role and dates.",
-		severity: "HIGH",
-		checklistItem: 4,
-	},
-
-	// ── Certifications ──────────────────────────────────────────────────────────
-	{
-		id: "certifications-mention-all",
-		section: "certifications",
-		content: "Mention all the certifications you have done so far in college.",
-		severity: "MEDIUM",
-		checklistItem: 10,
-	},
-	{
-		id: "certifications-body-and-year",
-		section: "certifications",
-		content: "Give the awarding body and the year, plus the score or percentile where there is one.",
-		severity: "MEDIUM",
-		checklistItem: 10,
-	},
-
-	// ── Skills ──────────────────────────────────────────────────────────────────
-	{
-		id: "skills-hands-on",
-		section: "skills",
-		content:
-			"List the technologies and tools you have worked on hands-on — only what you can be questioned on in an interview.",
-		severity: "HIGH",
-		checklistItem: 3,
-	},
-	{
-		id: "skills-grouped",
-		section: "skills",
-		content:
-			"Group them under headings — Languages, Frameworks, Databases, Tools. Remove star ratings and progress bars.",
-		severity: "HIGH",
-		checklistItem: 3,
-	},
-];
-
-/** Sections that have standard feedback, in the order a resume is read. */
-export const SUGGESTION_SECTIONS: readonly { key: string; label: string }[] = [
-	{ key: "summary", label: "Career Objective" },
-	{ key: "education", label: "Education" },
-	{ key: "projects", label: "Projects" },
-	{ key: "experience", label: "Internships" },
-	{ key: "certifications", label: "Certifications" },
-	{ key: "skills", label: "Skills" },
-];
+/** Picker key for comments on the resume as a whole: they point at no section. */
+export const WHOLE_RESUME = "general";
 
 /**
- * The standard feedback for one section.
+ * Sections that have standard feedback, in the order a resume is read.
  *
- * A custom section follows a built-in type and carries its own id, so an anchor can name something
- * like `custom.abc123`; falling back to the part before the dot keeps those working.
+ * Most keys are the builder's own sections. Strengths, Personal Details and Declaration are not:
+ * students add them as custom sections, so `title` is how one is recognised (see `customSectionKey`).
+ * Built-in sections a student renamed are found by their key, whatever the heading says.
  */
+export const SUGGESTION_SECTIONS: readonly { key: string; label: string; builtIn: boolean; title?: RegExp }[] = [
+	{ key: WHOLE_RESUME, label: "Whole resume", builtIn: false },
+	{ key: "basics", label: "Header", builtIn: true },
+	{ key: "summary", label: "Career Objective", builtIn: true, title: /objective|summary|profile|about/i },
+	{ key: "education", label: "Educational Details", builtIn: true, title: /educat|academ|qualif/i },
+	{ key: "skills", label: "Technical Skills", builtIn: true, title: /skill|technolog|tools/i },
+	{ key: "experience", label: "Internships", builtIn: true, title: /intern|experience|employ/i },
+	{ key: "projects", label: "Projects", builtIn: true, title: /project/i },
+	{
+		key: "awards",
+		label: "Achievements",
+		builtIn: true,
+		title: /achiev|award|honou?r|accomplish|curricular|activit/i,
+	},
+	{ key: "certifications", label: "Certifications", builtIn: true, title: /certif|course/i },
+	{ key: "strengths", label: "Strengths", builtIn: false, title: /strength/i },
+	{ key: "interests", label: "Hobbies", builtIn: true, title: /hobb|interest/i },
+	{ key: "personal", label: "Personal Details", builtIn: false, title: /personal/i },
+	{ key: "declaration", label: "Declaration", builtIn: false, title: /declar/i },
+];
+
+// Specific headings first: "Personal Projects" is projects, "Technical Skills" is not "Technical…" anything else.
+const TITLE_ORDER = [
+	"strengths",
+	"declaration",
+	"projects",
+	"personal",
+	"interests",
+	"certifications",
+	"awards",
+	"experience",
+	"skills",
+	"education",
+	"summary",
+];
+
+/** The picker key a custom section's heading names, e.g. "My Strengths" → "strengths". */
+function customSectionKey(title: string): string | null {
+	for (const key of TITLE_ORDER) {
+		if (SUGGESTION_SECTIONS.find((s) => s.key === key)?.title?.test(title)) return key;
+	}
+	return null;
+}
+
+/** The standard feedback for one picker key. */
 export function suggestionsForSection(section: string | null | undefined): readonly ReviewSuggestion[] {
 	if (!section) return [];
-	const exact = REVIEW_SUGGESTIONS.filter((s) => s.section === section);
-	if (exact.length > 0) return exact;
-	const base = section.split(".")[0];
-	return REVIEW_SUGGESTIONS.filter((s) => s.section === base);
+	return REVIEW_SUGGESTIONS.filter((s) => s.section === section);
 }
 
 /**
- * The picker key for the section an anchor points at, or null when that section has no standard
- * feedback. Same fallback as `suggestionsForSection`, so the picker and the list always agree.
+ * The picker key for the section an anchor points at, or null when it has no standard feedback.
+ *
+ * A built-in section is its own key. A custom section is an id, so it is looked up in the resume and
+ * recognised by its heading; a dotted id falls back to the part before the dot.
  */
-export function suggestionSectionKey(section: string): string | null {
-	if (SUGGESTION_SECTIONS.some((s) => s.key === section)) return section;
+export function suggestionSectionKey(section: string, data?: ResumeData): string | null {
+	if (SUGGESTION_SECTIONS.some((s) => s.builtIn && s.key === section)) return section;
+	const custom = data?.customSections.find((s) => s.id === section);
+	if (custom) return customSectionKey(custom.title) ?? suggestionSectionKey(custom.type);
 	const base = section.split(".")[0];
-	return SUGGESTION_SECTIONS.some((s) => s.key === base) ? base : null;
+	return base !== section ? suggestionSectionKey(base, data) : null;
 }
 
-/** Label for a section key, for the picker shown on a comment with no anchor. */
+/**
+ * What a comment posted from the picker points at: the section on this resume that matches the key,
+ * or nothing — a comment on the resume as a whole — when the key is "Whole resume" or the student has
+ * no such section (the usual case for "Add a Strengths section").
+ *
+ * A built-in section is used unless it is empty while a custom section with a matching heading has
+ * entries: students often keep achievements in a custom "Achievements" section and leave Awards empty.
+ */
+export function anchorForSection(key: string, data: ResumeData): CommentAnchor | undefined {
+	if (key === WHOLE_RESUME) return undefined;
+	const custom = data.customSections.find((s) => customSectionKey(s.title) === key);
+	const entry = SUGGESTION_SECTIONS.find((s) => s.key === key);
+	if (!entry?.builtIn) return custom ? { section: custom.id } : undefined;
+	if (key === "basics" || key === "summary") return { section: key };
+	const builtIn = data.sections[key as keyof ResumeData["sections"]];
+	if (custom && custom.items.length > 0 && (!builtIn || builtIn.items.length === 0)) return { section: custom.id };
+	return { section: key };
+}
+
+/** Label for a picker key. */
 export function suggestionSectionLabel(section: string): string {
 	return SUGGESTION_SECTIONS.find((s) => s.key === section)?.label ?? section;
 }

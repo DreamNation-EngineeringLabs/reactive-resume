@@ -18,6 +18,7 @@ export {
 	getPlacementPackages,
 	getPlacementScopedSections,
 	getPlacementSubtreeOrgUnitIds,
+	getResumeBuilderPackages,
 	getSectionPackageIds,
 	getSectionsByIds,
 	getStaffTenantIds,

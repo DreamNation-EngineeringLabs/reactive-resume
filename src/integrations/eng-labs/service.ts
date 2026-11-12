@@ -321,10 +321,7 @@ export async function getTenantPlacementSections(tenantId: string): Promise<Sect
  * Scoped to the tenant through both the learner mapping and the package itself. Enrolments pointing
  * at a combo package are excluded: the filter UI lists placement_packages only.
  */
-export async function getSectionPackageIds(
-	sectionIds: string[],
-	tenantId: string,
-): Promise<Record<string, string[]>> {
+export async function getSectionPackageIds(sectionIds: string[], tenantId: string): Promise<Record<string, string[]>> {
 	const pool = getEngLabsPool();
 	if (!pool || sectionIds.length === 0 || !tenantId || tenantId === "default") return {};
 
@@ -897,6 +894,27 @@ export async function getPlacementPackages(tenantId: string, organisationId: str
 		`SELECT id, name, organisation_id
 		 FROM placement_packages
 		 WHERE tenant_id = $1 AND organisation_id = $2
+		 ORDER BY name`,
+		[tenantId, organisationId],
+	);
+
+	return rows.map((r) => ({ id: r.id, name: r.name, organisationId: r.organisation_id }));
+}
+
+/**
+ * The org's packages that include the Resume Builder service — the only packages the reviewer
+ * dashboards list. A package without it (a mock-test-only batch, say) has no resumes to review, and
+ * listing it filled the Sections tab with classes the Resume Builder does not cover.
+ */
+export async function getResumeBuilderPackages(tenantId: string, organisationId: string): Promise<PlacementPackage[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
+	const { rows } = await pool.query<{ id: string; name: string; organisation_id: string }>(
+		`SELECT id, name, organisation_id
+		 FROM placement_packages
+		 WHERE tenant_id = $1 AND organisation_id = $2
+		   AND COALESCE((services->>'resume_builder')::BOOLEAN, false)
 		 ORDER BY name`,
 		[tenantId, organisationId],
 	);

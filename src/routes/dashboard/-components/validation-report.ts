@@ -49,7 +49,37 @@ export type StudentReportRow = {
 	submittedOn: string;
 	/** "Done" once the reviewer for this scope has acted on it. */
 	validated: boolean;
+	/** Where the resume is, in the five words the placement team uses — printed in the Status column. */
+	status: ReportStatus;
 };
+
+/** In workflow order, the order the sheet's header counts them in. */
+export const REPORT_STATUSES = ["Draft", "Submitted", "Reviewed", "Verified", "Validated"] as const;
+
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
+
+/**
+ * The placement team reads the workflow as five steps, not ten stages: not handed in, waiting for
+ * faculty, sent back for changes, approved by faculty, approved by the Placement Officer. The same
+ * word prints whoever runs the report, so a filed sheet means one thing.
+ */
+const STATUS_BY_STAGE: Record<string, ReportStatus> = {
+	DRAFT: "Draft",
+	SUBMITTED_TO_FACULTY: "Submitted",
+	FACULTY_REVISION_REQUESTED: "Reviewed",
+	PO_REVISION_REQUESTED: "Reviewed",
+	FACULTY_VERIFIED: "Verified",
+	FINALIZED_BY_FACULTY: "Verified",
+	SUBMITTED_TO_PO: "Verified",
+	RESUBMITTED_TO_PO: "Verified",
+	PO_VERIFIED: "Validated",
+	APPROVED: "Validated",
+};
+
+/** A student with no resume has not handed anything in, which is what Draft says. */
+export function reportStatus(resume: ReportResume | undefined): ReportStatus {
+	return STATUS_BY_STAGE[resume?.reviewStatus ?? "DRAFT"] ?? "Draft";
+}
 
 const validatedStatuses = (scope: ReportScope) => (scope === "po" ? PO_VALIDATED : FACULTY_VALIDATED);
 
@@ -99,6 +129,7 @@ export function sectionReportRows(students: ReportStudent[], scope: ReportScope)
 				rollNumber: student.rollNumber ?? "",
 				submittedOn: submittedOn(resume),
 				validated: isValidated(resume, scope),
+				status: reportStatus(resume),
 			};
 		});
 }

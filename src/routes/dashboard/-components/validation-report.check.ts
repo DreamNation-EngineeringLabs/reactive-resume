@@ -2,7 +2,14 @@
 // node --import tsx --test <this file>
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { branchLabel, formatReportDate, printLayout, sectionReportRows, summaryRows } from "./validation-report";
+import {
+	branchLabel,
+	formatReportDate,
+	printLayout,
+	reportStatus,
+	sectionReportRows,
+	summaryRows,
+} from "./validation-report";
 
 const student = (name: string, roll: string, reviewStatus: string | null, extra = {}) => ({
 	engLabsId: roll,
@@ -37,6 +44,44 @@ test("validation follows the reviewer whose report it is", () => {
 		["004", "005"],
 		"a resume still sitting with faculty is not PO-validated",
 	);
+});
+
+test("every student gets one of the five status words, the same for faculty and PO", () => {
+	const students = [
+		student("Never Submitted", "001", "DRAFT"),
+		student("No Resume At All", "002", null),
+		student("Waiting On Faculty", "003", "SUBMITTED_TO_FACULTY"),
+		student("Sent Back By Faculty", "004", "FACULTY_REVISION_REQUESTED"),
+		student("Sent Back By Po", "005", "PO_REVISION_REQUESTED"),
+		student("Verified By Faculty", "006", "FACULTY_VERIFIED"),
+		student("Finalized By Faculty", "007", "FINALIZED_BY_FACULTY"),
+		student("Sent To Po", "008", "SUBMITTED_TO_PO"),
+		student("Resent To Po", "009", "RESUBMITTED_TO_PO"),
+		student("Verified By Po", "010", "PO_VERIFIED"),
+		student("Approved", "011", "APPROVED"),
+	];
+	const expected = [
+		"Draft",
+		"Draft",
+		"Submitted",
+		"Reviewed",
+		"Reviewed",
+		"Verified",
+		"Verified",
+		"Verified",
+		"Verified",
+		"Validated",
+		"Validated",
+	];
+
+	for (const scope of ["faculty", "po"] as const) {
+		assert.deepEqual(
+			sectionReportRows(students, scope).map((r) => r.status),
+			expected,
+			`${scope} report`,
+		);
+	}
+	assert.equal(reportStatus({ reviewStatus: "SOMETHING_NEW" }), "Draft", "an unknown stage never prints blank");
 });
 
 test("every student is listed, in roll order, submitted or not", () => {
