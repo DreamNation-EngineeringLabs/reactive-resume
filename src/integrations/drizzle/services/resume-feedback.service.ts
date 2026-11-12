@@ -191,12 +191,16 @@ export async function getCommentsByResumeId(resumeId: string) {
 }
 
 /**
- * UPDATE: Update a comment (status, content)
+ * UPDATE: Update a comment — its text, severity and what it points at when a reviewer edits it, or
+ * its status. `snapshot` is never touched: it is the resume as reviewed, not part of the feedback.
  */
 export async function updateComment(
 	commentId: string,
 	updates: {
 		content?: string;
+		severity?: CommentSeverity | null;
+		anchor?: CommentAnchor | null;
+		suggestion?: string | null;
 		status?: "OPEN" | "ADDRESSED" | "RESOLVED";
 		resolvedAt?: Date | null;
 	},

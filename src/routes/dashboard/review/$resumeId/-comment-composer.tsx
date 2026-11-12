@@ -6,16 +6,21 @@ import { anchorLabel, severityLabel } from "@/components/resume/review-anchors";
 import { orpc } from "@/integrations/orpc/client";
 import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
 import type { ResumeData } from "@/schema/resume/data";
-import { SUGGESTION_SECTIONS, suggestionSectionLabel, suggestionsForSection } from "@/schema/resume/review-suggestions";
+import {
+	SUGGESTION_SECTIONS,
+	suggestionSectionKey,
+	suggestionSectionLabel,
+	suggestionsForSection,
+} from "@/schema/resume/review-suggestions";
 import { cn } from "@/utils/style";
 
 // Same colours as the highlighter on the resume.
-const SEVERITY_ON = {
+export const SEVERITY_ON = {
 	LOW: "bg-emerald-50 text-emerald-800 ring-emerald-500",
 	MEDIUM: "bg-amber-50 text-amber-800 ring-amber-500",
 	HIGH: "bg-rose-50 text-rose-800 ring-rose-500",
 };
-const SEVERITY_DOT = { LOW: "bg-emerald-500", MEDIUM: "bg-amber-400", HIGH: "bg-rose-500" };
+export const SEVERITY_DOT = { LOW: "bg-emerald-500", MEDIUM: "bg-amber-400", HIGH: "bg-rose-500" };
 
 type Props = {
 	resumeData: ResumeData;
@@ -34,11 +39,10 @@ type Props = {
 	) => Promise<unknown>;
 };
 
-const CHIP_LIMIT = 8;
-
 /**
  * The reviewer's comment box: what the comment points at, severity, an optional rewrite for the quoted
- * text, and the tenant's shared comment bank (chips, `#` search, save, manage with usage counts).
+ * text, the standard feedback for a section (ticked rather than typed), and the tenant's saved
+ * comments (save for reuse, manage with usage counts).
  */
 export function CommentComposer({
 	resumeData,
@@ -54,14 +58,10 @@ export function CommentComposer({
 }: Props) {
 	const queryClient = useQueryClient();
 	const [content, setContent] = useState("");
-	const [caret, setCaret] = useState(0);
 	const [severity, setSeverity] = useState<CommentSeverity | null>(null);
 	const [suggestion, setSuggestion] = useState<string | null>(null);
 	const [managing, setManaging] = useState(false);
-	const [pick, setPick] = useState(0);
-	const [hashClosed, setHashClosed] = useState(false);
-	// Only used for a general comment: with an anchor the section comes from what was clicked.
-	const [pickedSection, setPickedSection] = useState<string | null>(null);
+	const [pickedSection, setPickedSection] = useState(() => (anchor ? suggestionSectionKey(anchor.section) : null));
 	// Standard feedback is ticked, not typed: a reviewer almost always sends two or three lines on a
 	// section, and each has to arrive as its own comment so the student can address them one by one.
 	const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
@@ -69,15 +69,21 @@ export function CommentComposer({
 	const listQuery = orpc.resume.reviewSnippets.list.queryOptions();
 	const { data: snippets = [] } = useQuery(listQuery);
 	const refreshBank = () => queryClient.invalidateQueries({ queryKey: listQuery.queryKey });
-	const countUse = useMutation({ ...orpc.resume.reviewSnippets.use.mutationOptions(), onSuccess: refreshBank });
 	const saveSnippet = useMutation({ ...orpc.resume.reviewSnippets.create.mutationOptions(), onSuccess: refreshBank });
 	const deleteSnippet = useMutation({ ...orpc.resume.reviewSnippets.delete.mutationOptions(), onSuccess: refreshBank });
 
 	const quote = anchor?.quote?.exact;
 	const isReply = !!replyTo;
 
-	// The reviewer is already pointing at a section; that is the only sensible shortlist to show.
-	const shownSection = anchor?.section ?? pickedSection;
+	// The picker is always on screen. Selecting text moves it to that text's section, but the reviewer
+	// can switch to any other, and it keeps its value after posting: the next comment often goes on the
+	// same section, and a picker that vanished after one post forced the reviewer to start over.
+	const [pickedFor, setPickedFor] = useState(anchor?.section);
+	if (pickedFor !== anchor?.section) {
+		setPickedFor(anchor?.section);
+		if (anchor) setPickedSection(suggestionSectionKey(anchor.section));
+	}
+	const shownSection = pickedSection;
 	const sectionSuggestions = useMemo(() => suggestionsForSection(shownSection), [shownSection]);
 
 	// A rewrite belongs to the text it was written for: selecting other text starts without one.
@@ -87,30 +93,6 @@ export function CommentComposer({
 		setSuggestion(null);
 	}
 
-	// `#word` right before the caret searches the comment bank.
-	const hashQuery = useMemo(() => /(?:^|\s)#([^\s#]*)$/.exec(content.slice(0, caret))?.[1] ?? null, [content, caret]);
-	const matches = useMemo(() => {
-		if (hashQuery === null || hashClosed) return [];
-		const q = hashQuery.toLowerCase();
-		return snippets.filter((s) => s.content.toLowerCase().includes(q)).slice(0, 6);
-	}, [hashQuery, hashClosed, snippets]);
-
-	const placeCaret = (position: number) =>
-		requestAnimationFrame(() => {
-			inputRef.current?.focus();
-			inputRef.current?.setSelectionRange(position, position);
-			setCaret(position);
-		});
-
-	const insertSnippet = (snippet: { id: string; content: string }, replaceHash: boolean) => {
-		const before = replaceHash ? content.slice(0, caret).replace(/#[^\s#]*$/, "") : content.trimEnd();
-		const joined = before && !before.endsWith(" ") ? `${before} ${snippet.content}` : `${before}${snippet.content}`;
-		const after = replaceHash ? content.slice(caret) : "";
-		setContent(joined + after);
-		placeCaret(joined.length);
-		countUse.mutate({ id: snippet.id });
-	};
-
 	/** The suggestions ticked right now, in the order the catalogue lists them. */
 	const chosen = useMemo(
 		() => sectionSuggestions.filter((s) => picked.has(s.id) && !sentContents.has(s.content)),
@@ -119,9 +101,9 @@ export function CommentComposer({
 
 	// Moving to another section leaves ticks behind that are no longer on screen, and they would post
 	// invisibly. Clearing on the section change keeps what is ticked and what is shown the same thing.
-	const [pickedFor, setPickedFor] = useState(shownSection);
-	if (pickedFor !== shownSection) {
-		setPickedFor(shownSection);
+	const [tickedFor, setTickedFor] = useState(shownSection);
+	if (tickedFor !== shownSection) {
+		setTickedFor(shownSection);
 		setPicked(new Set());
 	}
 
@@ -147,8 +129,8 @@ export function CommentComposer({
 	 * One comment per ticked suggestion, plus whatever was typed.
 	 *
 	 * Each is a separate thread rather than one merged comment, so the student can mark them
-	 * addressed one at a time and each keeps the severity its checklist item carries. A ticked line
-	 * with no selected text is anchored to the section, which is what the reviewer pointed at.
+	 * addressed one at a time and each keeps the severity its checklist item carries. They go on the
+	 * selected text when it is in the picked section, otherwise on the picked section as a whole.
 	 */
 	const submit = async () => {
 		if (total === 0 || isPending) return;
@@ -166,7 +148,12 @@ export function CommentComposer({
 			if (!typedComment) return;
 			await onSubmit(typedComment);
 		} else {
-			const sectionAnchor: CommentAnchor | undefined = anchor ?? (shownSection ? { section: shownSection } : undefined);
+			const onSelection = !!anchor && suggestionSectionKey(anchor.section) === shownSection;
+			const sectionAnchor: CommentAnchor | undefined = onSelection
+				? anchor
+				: shownSection
+					? { section: shownSection }
+					: undefined;
 			await onSubmitMany([
 				...chosen.map((s) => ({ content: s.content, severity: s.severity, anchor: sectionAnchor })),
 				...(typedComment ? [{ ...typedComment, anchor: sectionAnchor }] : []),
@@ -176,23 +163,6 @@ export function CommentComposer({
 	};
 
 	const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if (matches.length > 0) {
-			if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-				event.preventDefault();
-				setPick((p) => (p + (event.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length);
-				return;
-			}
-			if (event.key === "Enter" || event.key === "Tab") {
-				event.preventDefault();
-				insertSnippet(matches[Math.min(pick, matches.length - 1)], true);
-				return;
-			}
-			if (event.key === "Escape") {
-				event.preventDefault();
-				setHashClosed(true);
-				return;
-			}
-		}
 		if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
 			event.preventDefault();
 			void submit();
@@ -295,55 +265,15 @@ export function CommentComposer({
 				</div>
 			)}
 
-			<div className="relative">
-				<textarea
-					ref={inputRef}
-					value={content}
-					onChange={(e) => {
-						setContent(e.target.value);
-						setCaret(e.target.selectionStart);
-						setHashClosed(false);
-						setPick(0);
-					}}
-					onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
-					onKeyDown={onKeyDown}
-					placeholder={
-						isReply
-							? t`Write your reply...`
-							: t`Write specific, actionable feedback for the student. Type # to use a saved comment.`
-					}
-					rows={4}
-					aria-autocomplete="list"
-					aria-expanded={matches.length > 0}
-					className="mb-3 w-full resize-none rounded-xl border-0 bg-card px-4 py-3 text-foreground text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:ring-primary"
-				/>
-				{matches.length > 0 && (
-					<div
-						role="listbox"
-						aria-label={t`Saved comments`}
-						className="absolute inset-x-0 top-full z-20 -mt-2 overflow-hidden rounded-xl bg-card shadow-lg ring-1 ring-border"
-					>
-						{matches.map((snippet, i) => (
-							<button
-								key={snippet.id}
-								type="button"
-								role="option"
-								aria-selected={i === pick}
-								onMouseDown={(e) => {
-									e.preventDefault();
-									insertSnippet(snippet, true);
-								}}
-								className={cn(
-									"block w-full px-3 py-2 text-start text-foreground text-xs",
-									i === pick ? "bg-primary/5 text-primary" : "hover:bg-muted/50",
-								)}
-							>
-								{snippet.content}
-							</button>
-						))}
-					</div>
-				)}
-			</div>
+			<textarea
+				ref={inputRef}
+				value={content}
+				onChange={(e) => setContent(e.target.value)}
+				onKeyDown={onKeyDown}
+				placeholder={isReply ? t`Write your reply...` : t`Write specific, actionable feedback for the student.`}
+				rows={4}
+				className="mb-3 w-full resize-none rounded-xl border-0 bg-card px-4 py-3 text-foreground text-sm outline-none ring-1 ring-border placeholder:text-muted-foreground focus:ring-2 focus:ring-primary"
+			/>
 
 			{/* Standard feedback for the section being commented on. Stacked rather than chipped:
 			    these are whole sentences, and a pill row truncates them into uselessness. */}
@@ -353,21 +283,19 @@ export function CommentComposer({
 						<span className="font-semibold text-[11px] text-muted-foreground">
 							{shownSection ? t`Suggested for ${suggestionSectionLabel(shownSection)}` : t`Standard feedback`}
 						</span>
-						{!anchor && (
-							<select
-								value={pickedSection ?? ""}
-								onChange={(e) => setPickedSection(e.target.value || null)}
-								aria-label={t`Choose a section`}
-								className="rounded-lg bg-card px-1.5 py-0.5 text-[11px] text-muted-foreground ring-1 ring-border"
-							>
-								<option value="">{t`Choose a section…`}</option>
-								{SUGGESTION_SECTIONS.map((section) => (
-									<option key={section.key} value={section.key}>
-										{section.label}
-									</option>
-								))}
-							</select>
-						)}
+						<select
+							value={pickedSection ?? ""}
+							onChange={(e) => setPickedSection(e.target.value || null)}
+							aria-label={t`Choose a section`}
+							className="rounded-lg bg-card px-1.5 py-0.5 text-[11px] text-muted-foreground ring-1 ring-border"
+						>
+							<option value="">{t`Choose a section…`}</option>
+							{SUGGESTION_SECTIONS.map((section) => (
+								<option key={section.key} value={section.key}>
+									{section.label}
+								</option>
+							))}
+						</select>
 						{selectable.length > 0 && (
 							<button
 								type="button"
@@ -427,23 +355,6 @@ export function CommentComposer({
 						<p className="mt-1.5 text-[10px] text-muted-foreground">
 							{t`${chosen.length} selected — each is posted as its own comment, with the severity shown.`}
 						</p>
-					)}
-
-					{/* The reviewer's own snippets stay, below the standard set. */}
-					{snippets.length > 0 && (
-						<div className="mt-2 flex flex-wrap items-center gap-1.5">
-							<span className="text-[11px] text-muted-foreground">{t`My snippets`}</span>
-							{snippets.slice(0, CHIP_LIMIT).map((snippet) => (
-								<button
-									key={snippet.id}
-									type="button"
-									onClick={() => insertSnippet(snippet, false)}
-									className="rounded-full bg-card px-2.5 py-1 text-[11px] text-muted-foreground ring-1 ring-border transition-all hover:bg-primary/5 hover:text-primary hover:ring-primary/20"
-								>
-									{snippet.content}
-								</button>
-							))}
-						</div>
 					)}
 				</div>
 			)}
