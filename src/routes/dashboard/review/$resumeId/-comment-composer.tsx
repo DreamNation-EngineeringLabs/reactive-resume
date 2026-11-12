@@ -1,12 +1,13 @@
 import { t } from "@lingui/core/macro";
 import { BookmarkSimpleIcon, PaperPlaneTiltIcon, PencilSimpleLineIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { type RefObject, useMemo, useState } from "react";
+import { Fragment, type RefObject, useMemo, useState } from "react";
 import { anchorLabel, severityLabel } from "@/components/resume/review-anchors";
 import { orpc } from "@/integrations/orpc/client";
 import type { CommentAnchor, CommentSeverity } from "@/schema/resume/comment-anchor";
 import type { ResumeData } from "@/schema/resume/data";
 import {
+	anchorForSection,
 	SUGGESTION_SECTIONS,
 	suggestionSectionKey,
 	suggestionSectionLabel,
@@ -61,7 +62,9 @@ export function CommentComposer({
 	const [severity, setSeverity] = useState<CommentSeverity | null>(null);
 	const [suggestion, setSuggestion] = useState<string | null>(null);
 	const [managing, setManaging] = useState(false);
-	const [pickedSection, setPickedSection] = useState(() => (anchor ? suggestionSectionKey(anchor.section) : null));
+	const [pickedSection, setPickedSection] = useState(() =>
+		anchor ? suggestionSectionKey(anchor.section, resumeData) : null,
+	);
 	// Standard feedback is ticked, not typed: a reviewer almost always sends two or three lines on a
 	// section, and each has to arrive as its own comment so the student can address them one by one.
 	const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
@@ -81,7 +84,7 @@ export function CommentComposer({
 	const [pickedFor, setPickedFor] = useState(anchor?.section);
 	if (pickedFor !== anchor?.section) {
 		setPickedFor(anchor?.section);
-		if (anchor) setPickedSection(suggestionSectionKey(anchor.section));
+		if (anchor) setPickedSection(suggestionSectionKey(anchor.section, resumeData));
 	}
 	const shownSection = pickedSection;
 	const sectionSuggestions = useMemo(() => suggestionsForSection(shownSection), [shownSection]);
@@ -148,11 +151,11 @@ export function CommentComposer({
 			if (!typedComment) return;
 			await onSubmit(typedComment);
 		} else {
-			const onSelection = !!anchor && suggestionSectionKey(anchor.section) === shownSection;
+			const onSelection = !!anchor && suggestionSectionKey(anchor.section, resumeData) === shownSection;
 			const sectionAnchor: CommentAnchor | undefined = onSelection
 				? anchor
 				: shownSection
-					? { section: shownSection }
+					? anchorForSection(shownSection, resumeData)
 					: undefined;
 			await onSubmitMany([
 				...chosen.map((s) => ({ content: s.content, severity: s.severity, anchor: sectionAnchor })),
@@ -310,42 +313,49 @@ export function CommentComposer({
 					</div>
 
 					{sectionSuggestions.length > 0 && (
-						<ul className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
-							{sectionSuggestions.map((suggestion) => {
+						<ul className="max-h-80 overflow-y-auto rounded-xl bg-card ring-1 ring-border">
+							{sectionSuggestions.map((suggestion, i) => {
 								const alreadySent = sentContents.has(suggestion.content);
 								const checked = alreadySent || picked.has(suggestion.id);
 								return (
-									<li key={suggestion.id} className="border-border border-b last:border-b-0">
-										{/* Tick as many as apply: each posts as its own comment, so the student can mark
+									<Fragment key={suggestion.id}>
+										{suggestion.group && suggestion.group !== sectionSuggestions[i - 1]?.group && (
+											<li className="sticky top-0 border-border border-b bg-muted px-3 py-1 font-semibold text-[10px] text-muted-foreground uppercase tracking-wide">
+												{suggestion.group}
+											</li>
+										)}
+										<li className="border-border border-b last:border-b-0">
+											{/* Tick as many as apply: each posts as its own comment, so the student can mark
 										    them addressed one at a time. */}
-										<label
-											className={cn(
-												"flex w-full items-start gap-2.5 px-3 py-2 transition-colors",
-												alreadySent ? "opacity-55" : "cursor-pointer hover:bg-primary/5",
-												!alreadySent && checked && "bg-primary/5",
-											)}
-										>
-											<input
-												type="checkbox"
-												checked={checked}
-												disabled={alreadySent}
-												onChange={() => toggle(suggestion.id)}
-												className="mt-0.5 size-3.5 shrink-0 accent-primary"
-											/>
-											<span
-												aria-hidden
-												className={cn("mt-1 size-1.5 shrink-0 rounded-full", SEVERITY_DOT[suggestion.severity])}
-											/>
-											<span className="min-w-0 flex-1">
-												<span className="block text-foreground text-xs leading-snug">{suggestion.content}</span>
-												{alreadySent && (
-													<span className="mt-0.5 block text-[10px] text-muted-foreground">
-														{t`Already sent on this resume`}
-													</span>
+											<label
+												className={cn(
+													"flex w-full items-start gap-2.5 px-3 py-2 transition-colors",
+													alreadySent ? "opacity-55" : "cursor-pointer hover:bg-primary/5",
+													!alreadySent && checked && "bg-primary/5",
 												)}
-											</span>
-										</label>
-									</li>
+											>
+												<input
+													type="checkbox"
+													checked={checked}
+													disabled={alreadySent}
+													onChange={() => toggle(suggestion.id)}
+													className="mt-0.5 size-3.5 shrink-0 accent-primary"
+												/>
+												<span
+													aria-hidden
+													className={cn("mt-1 size-1.5 shrink-0 rounded-full", SEVERITY_DOT[suggestion.severity])}
+												/>
+												<span className="min-w-0 flex-1">
+													<span className="block text-foreground text-xs leading-snug">{suggestion.content}</span>
+													{alreadySent && (
+														<span className="mt-0.5 block text-[10px] text-muted-foreground">
+															{t`Already sent on this resume`}
+														</span>
+													)}
+												</span>
+											</label>
+										</li>
+									</Fragment>
 								);
 							})}
 						</ul>

@@ -60,6 +60,8 @@ const searchSchema = z.object({
 	unitId: z.string().optional(),
 	sectionId: z.string().optional(),
 	scope: z.enum(["faculty", "po", "admin"]).optional().default("faculty"),
+	/** The dashboard tab the review was opened from, so the back arrow returns to it. */
+	from: z.enum(["overview", "inbox", "sections", "students", "checklists"]).optional().catch(undefined),
 });
 
 export const Route = createFileRoute("/dashboard/review/$resumeId/")({
@@ -77,7 +79,7 @@ const PENDING_ANCHOR = "pending";
 
 function ReviewPage() {
 	const { resumeId } = Route.useParams();
-	const { engLabsStudentId, tenantId, packageId, unitType, unitId, sectionId, scope } = Route.useSearch();
+	const { engLabsStudentId, tenantId, packageId, unitType, unitId, sectionId, scope, from } = Route.useSearch();
 
 	const [activeTab, setActiveTab] = useState<ReviewTab>("comments");
 	const [showHighlights, setShowHighlights] = useState(true);
@@ -145,6 +147,7 @@ function ReviewPage() {
 				unitId,
 				sectionId,
 				scope,
+				from,
 			},
 		});
 	};
@@ -388,12 +391,14 @@ function ReviewPage() {
 		<div className="relative flex h-full flex-col overflow-hidden">
 			{/* ── Top bar ── */}
 			<div className="flex shrink-0 items-center gap-4 border-border border-b bg-card px-6 py-3">
+				{/* Back to where the review was opened: the section it came from, else the tab (Inbox,
+				    Students…). A link without `from`, such as an old bookmark, falls back to Students. */}
 				<Link
 					to={scope === "po" || scope === "admin" ? "/dashboard/placement-officer" : "/dashboard/faculty"}
 					search={
 						sectionId
 							? { tab: "sections", sectionId, packageId, unitType, unitId }
-							: { tab: "students", packageId, unitType, unitId }
+							: { tab: from ?? "students", packageId, unitType, unitId }
 					}
 					className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground transition-all hover:bg-border"
 				>
@@ -782,6 +787,7 @@ function ReviewPage() {
 															)}
 															{editingId === c.id ? (
 																<CommentEditor
+																	resumeData={resume.data as ResumeData}
 																	comment={c}
 																	sentContents={sentContents}
 																	isPending={updateCommentMutation.isPending}
@@ -998,6 +1004,7 @@ function ReviewPage() {
 																		</div>
 																		{editingId === reply.id ? (
 																			<CommentEditor
+																				resumeData={resume.data as ResumeData}
 																				comment={reply}
 																				sentContents={sentContents}
 																				isPending={updateCommentMutation.isPending}

@@ -26,6 +26,7 @@ import {
 	getOfficerSections,
 	getPlacementPackages,
 	getPlacementScopedSections,
+	getResumeBuilderPackages,
 	getSectionPackageIds,
 	getSectionsByIds,
 	getStudentEnrollmentInfo,
@@ -509,6 +510,18 @@ export const sectionsDashboard = protectedProcedure
 				resolvedOrganisationId = filterPackages[0].organisationId;
 			}
 
+			// 3b. Only packages that include the Resume Builder belong on this dashboard: a package
+			// without it has no resumes to review. Faculty keep their own assigned ones among those,
+			// and see all of them when they have none assigned — the usual case.
+			const resumeBuilderPackages =
+				resolvedOrganisationId && tenantId && tenantId !== "default"
+					? await getResumeBuilderPackages(tenantId, resolvedOrganisationId)
+					: [];
+			const resumeBuilderPackageIds = new Set(resumeBuilderPackages.map((p) => p.id));
+			const assignedResumeBuilderPackages =
+				scope === "faculty" ? filterPackages.filter((p) => resumeBuilderPackageIds.has(p.id)) : [];
+			filterPackages = assignedResumeBuilderPackages.length > 0 ? assignedResumeBuilderPackages : resumeBuilderPackages;
+
 			// 4. Get unit schema types + all org units for the filter UI
 			const [unitTypes, allOrgUnits] = await Promise.all([
 				resolvedOrganisationId && tenantId && tenantId !== "default"
@@ -776,9 +789,15 @@ export const sectionsDashboard = protectedProcedure
 			// 11. Calculate stats for ALL org units (hierarchical aggregation).
 			// Package membership is resolved from enrolments, once for every section in scope, because
 			// a section's own packageId is a parent-org-unit id and cannot be filtered against.
-			const packageIdsBySection = await getSectionPackageIds(
-				sections.map((s) => s.id),
-				tenantId ?? "",
+			// Only Resume Builder packages count: a class whose learners are all in other packages ends
+			// up with none, and the Sections tab leaves it out.
+			const packageIdsBySection = Object.fromEntries(
+				Object.entries(
+					await getSectionPackageIds(
+						sections.map((s) => s.id),
+						tenantId ?? "",
+					),
+				).map(([id, ids]) => [id, ids.filter((packageId) => resumeBuilderPackageIds.has(packageId))]),
 			);
 			// Department/stream name per unit, for the card subtitle. Taken from the org-unit tree
 			// rather than Section.packageName, which holds a package name for unit-assigned faculty
