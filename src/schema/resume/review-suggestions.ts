@@ -36,12 +36,13 @@ export const WHOLE_RESUME = "general";
  * Built-in sections a student renamed are found by their key, whatever the heading says.
  */
 export const SUGGESTION_SECTIONS: readonly { key: string; label: string; builtIn: boolean; title?: RegExp }[] = [
-	{ key: WHOLE_RESUME, label: "Whole resume", builtIn: false },
+	// A "Relevant Coursework" section is feedback on the resume as a whole: remove it (GEN-07).
+	{ key: WHOLE_RESUME, label: "Whole resume", builtIn: false, title: /course ?work/i },
 	{ key: "basics", label: "Header", builtIn: true },
 	{ key: "summary", label: "Career Objective", builtIn: true, title: /objective|summary|profile|about/i },
 	{ key: "education", label: "Educational Details", builtIn: true, title: /educat|academ|qualif/i },
 	{ key: "skills", label: "Technical Skills", builtIn: true, title: /skill|technolog|tools/i },
-	{ key: "experience", label: "Internships", builtIn: true, title: /intern|experience|employ/i },
+	{ key: "experience", label: "Internships", builtIn: true, title: /intern|experience|employ|research/i },
 	{ key: "projects", label: "Projects", builtIn: true, title: /project/i },
 	{
 		key: "awards",
@@ -56,8 +57,10 @@ export const SUGGESTION_SECTIONS: readonly { key: string; label: string; builtIn
 	{ key: "declaration", label: "Declaration", builtIn: false, title: /declar/i },
 ];
 
-// Specific headings first: "Personal Projects" is projects, "Technical Skills" is not "Technical…" anything else.
+// Specific headings first: "Personal Projects" is projects, "Technical Skills" is not "Technical…" anything else,
+// and "Relevant Coursework" is not Certifications.
 const TITLE_ORDER = [
+	WHOLE_RESUME,
 	"strengths",
 	"declaration",
 	"projects",

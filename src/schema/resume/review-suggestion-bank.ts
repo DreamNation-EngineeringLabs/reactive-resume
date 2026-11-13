@@ -48,7 +48,7 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "GEN-07",
 		section: "general",
 		content:
-			'Remove the "Relevant Coursework" section completely. It suggests you only want to work in those subjects, while freshers are expected to be open to any role.',
+			'Remove the "Relevant Coursework" section completely. Recruiters may assume you are interested only in those specific subjects, whereas entry-level engineers are expected to be open to working across different functions and technologies.',
 		severity: "HIGH",
 	},
 	{
@@ -121,6 +121,13 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		section: "general",
 		content: "Save and share the resume as a PDF named FirstName_LastName_Resume.pdf.",
 		severity: "LOW",
+	},
+	{
+		id: "GEN-19",
+		section: "general",
+		content:
+			"Use space efficiently: avoid empty gaps, wide margins and half-filled lines, and do not stretch content just to fill the page.",
+		severity: "MEDIUM",
 	},
 	// ── basics ──
 	{
@@ -214,6 +221,12 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		section: "basics",
 		content:
 			'Remove the job title under your name (e.g. "Full Stack Developer"). As a fresher it can mislead; your Career Objective covers this.',
+		severity: "LOW",
+	},
+	{
+		id: "HDR-16",
+		section: "basics",
+		content: "Use space efficiently: keep the header compact, with your name and contact details in 3–4 lines.",
 		severity: "LOW",
 	},
 	// ── summary ──
@@ -424,6 +437,13 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		section: "education",
 		content: "Move your Educational Details above Projects, right after the Career Objective.",
 		severity: "MEDIUM",
+	},
+	{
+		id: "EDU-19",
+		section: "education",
+		content:
+			"Use space efficiently: write each qualification in one or two lines (course, institution, year and score).",
+		severity: "LOW",
 	},
 	// ── projects ──
 	{
@@ -679,6 +699,13 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		content: "Give the design result, e.g. which code checks it passed and how much material or cost was saved.",
 		severity: "HIGH",
 	},
+	{
+		id: "PRJ-35",
+		section: "projects",
+		content:
+			"Use space efficiently: keep each project to 3–4 lines, with only what shows your contribution and the result.",
+		severity: "MEDIUM",
+	},
 	// ── experience ──
 	{
 		id: "INT-01",
@@ -689,15 +716,14 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 	{
 		id: "INT-02",
 		section: "experience",
-		content:
-			"List each internship with the company name, your role, the mode (on-site / remote) and the dates (month and year).",
+		content: "Write the organisation's name, followed by the project title and the duration.",
 		severity: "HIGH",
 	},
 	{
 		id: "INT-03",
 		section: "experience",
 		content:
-			"Describe each internship in 3–4 lines, like your projects: the result first, then what you built or did, the tools used and the problem it addressed.",
+			"Describe the work in a single paragraph of 3–4 lines, starting with the outcome achieved. List the software, technologies, tools or instruments you used hands-on as a separate line, and add the soft skills you developed alongside the technical skills.",
 		severity: "HIGH",
 	},
 	{
@@ -750,6 +776,40 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "INT-12",
 		section: "experience",
 		content: 'Remove this section if you have no internships. Do not keep an empty heading or write "Fresher".',
+		severity: "MEDIUM",
+	},
+	{
+		id: "INT-13",
+		section: "experience",
+		content:
+			'Remove "Research Experience" / "Research Work" as a heading; use INTERNSHIP for job interviews. Recruiters may not consider your candidature, as they think you are interested in research only. Keep "Research Experience" only if you are applying for research positions or higher studies.',
+		severity: "HIGH",
+	},
+	{
+		id: "INT-14",
+		section: "experience",
+		content:
+			'Place this section above Projects and use the heading INTERNSHIP, not "Research Experience", for job applications.',
+		severity: "MEDIUM",
+	},
+	{
+		id: "INT-15",
+		section: "experience",
+		content:
+			"Do not write Founder, Co-founder, Freelancer, Part-time Job, Tuitions or Faculty anywhere in the resume; recruiters may assume you will continue those activities after joining. Present it as an internship or project work done with that organisation, under INTERNSHIP, above Projects.",
+		severity: "HIGH",
+	},
+	{
+		id: "INT-16",
+		section: "experience",
+		content:
+			"Describe this start-up or freelance work exactly like a project, in 3–4 lines: start with the result, then the activity, the problem addressed, the tools used on a separate line, and the soft skills gained.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "INT-17",
+		section: "experience",
+		content: "Use space efficiently: keep each internship to 3–4 lines, with no routine duties or repeated points.",
 		severity: "MEDIUM",
 	},
 	// ── awards ──
@@ -947,6 +1007,19 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		content: "Move this item: it is a project, internship or skill, not an achievement.",
 		severity: "LOW",
 	},
+	{
+		id: "ACH-27",
+		section: "awards",
+		content:
+			'Write your paper as "Publication", not "Research Paper": "Publication completed" if published, or "Publication (in pipeline)" if it is in process.',
+		severity: "MEDIUM",
+	},
+	{
+		id: "ACH-28",
+		section: "awards",
+		content: "Use space efficiently: write each achievement on a single line and combine similar items into one.",
+		severity: "LOW",
+	},
 	// ── strengths ──
 	{
 		id: "STR-01",
@@ -1121,6 +1194,13 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		content: "Remove spoken languages from here. If you want to include them, put them in Personal Details.",
 		severity: "LOW",
 	},
+	{
+		id: "SKL-16",
+		section: "skills",
+		content:
+			"Use space efficiently: write one line per category with the skills separated by commas, instead of a long vertical list.",
+		severity: "MEDIUM",
+	},
 	// ── certifications ──
 	{
 		id: "CER-01",
@@ -1179,6 +1259,12 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "CER-09",
 		section: "certifications",
 		content: "Make sure each certification is relevant to the jobs you are applying for; remove unrelated ones.",
+		severity: "LOW",
+	},
+	{
+		id: "CER-10",
+		section: "certifications",
+		content: "Use space efficiently: write each certification on one line (name, issuing body and year).",
 		severity: "LOW",
 	},
 	// ── interests ──
@@ -1292,6 +1378,12 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "PER-09",
 		section: "personal",
 		content: 'Write languages known with the ability, e.g. "English, Telugu, Hindi (read, write, speak)", on one line.',
+		severity: "LOW",
+	},
+	{
+		id: "PER-10",
+		section: "personal",
+		content: "Use space efficiently: keep only the details that are needed, in 2–3 lines.",
 		severity: "LOW",
 	},
 	// ── declaration ──
