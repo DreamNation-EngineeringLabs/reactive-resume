@@ -25,10 +25,10 @@ function withCustom(...sections: { id: string; title: string; type?: CustomSecti
 	} as unknown as ResumeData;
 }
 
-test("the approved bank is all there: 201 comments over 13 sections, ids unique", () => {
-	assert.equal(REVIEW_SUGGESTIONS.length, 201);
+test("the approved bank is all there: 215 comments over 13 sections, ids unique", () => {
+	assert.equal(REVIEW_SUGGESTIONS.length, 215);
 	assert.equal(SUGGESTION_SECTIONS.length, 13);
-	assert.equal(new Set(REVIEW_SUGGESTIONS.map((s) => s.id)).size, 201);
+	assert.equal(new Set(REVIEW_SUGGESTIONS.map((s) => s.id)).size, 215);
 });
 
 test("every suggestion belongs to a section in the picker, and every section has suggestions", () => {
@@ -60,6 +60,37 @@ test("a custom section is recognised by its heading", () => {
 	assert.equal(suggestionSectionKey("c5", data), "interests");
 	assert.equal(suggestionSectionKey("c6", data), "projects", "a heading that names projects is projects");
 	assert.equal(suggestionSectionKey("c7", data), "awards");
+});
+
+test("research headings get the Internships comments, coursework gets Whole resume", () => {
+	const data = withCustom(
+		{ id: "r1", title: "Research Experience" },
+		{ id: "r2", title: "Research Publication" },
+		{ id: "r3", title: "Research Work" },
+		{ id: "k1", title: "Relevant Coursework" },
+		{ id: "k2", title: "Course Work" },
+		{ id: "k3", title: "Online Courses" },
+	);
+	for (const id of ["r1", "r2", "r3"]) assert.equal(suggestionSectionKey(id, data), "experience", id);
+	// "Remove the Relevant Coursework section" is a Whole resume comment, not a Certifications one.
+	assert.equal(suggestionSectionKey("k1", data), WHOLE_RESUME);
+	assert.equal(suggestionSectionKey("k2", data), WHOLE_RESUME);
+	assert.equal(suggestionSectionKey("k3", data), "certifications", "courses taken are still certifications");
+	assert.ok(suggestionsForSection(WHOLE_RESUME).some((s) => s.id === "GEN-07"));
+	// Comments from the coursework picker are on the resume as a whole.
+	assert.equal(anchorForSection(WHOLE_RESUME, data), undefined);
+});
+
+test("PO feedback is in the bank, without worked examples", () => {
+	const ids = ["INT-13", "INT-14", "INT-15", "INT-16", "ACH-27"];
+	for (const id of ids) assert.ok(REVIEW_SUGGESTIONS.some((s) => s.id === id), id);
+	const space = REVIEW_SUGGESTIONS.filter((s) => s.content.startsWith("Use space efficiently"));
+	assert.deepEqual(
+		space.map((s) => s.section).sort(),
+		["awards", "basics", "certifications", "education", "experience", "general", "personal", "projects", "skills"],
+		"one space comment in each of the 9 sections agreed",
+	);
+	assert.ok(!REVIEW_SUGGESTIONS.some((s) => /\bexample:/i.test(s.content)), "no comment carries an example");
 });
 
 test("a custom section with an unknown heading falls back to its type, then to nothing", () => {
