@@ -313,7 +313,10 @@ function ReviewPage() {
 		() => (baseline && data ? changedAnchors(baseline.data, data.resume.data as ResumeData) : []),
 		[baseline, data],
 	);
-	useChangeHighlights(activeTab === "changes" && showHighlights ? changes : []);
+	// A resubmission is the student answering a review, so what they changed is marked on the resume
+	// straight away, without opening the Changes tab: the reviewer checks those parts, not the whole page.
+	const resubmitted = data?.resume.reviewStatus === "RESUBMITTED_TO_PO";
+	useChangeHighlights((activeTab === "changes" || resubmitted) && showHighlights ? changes : []);
 
 	// Selecting text on the resume attaches it to the comment box.
 	const captureSelection = () => {
@@ -598,53 +601,12 @@ function ReviewPage() {
 
 								<div className="mx-1 h-4 w-px bg-border" />
 
-								{/* Faculty Actions */}
-								{(resume.reviewStatus === "SUBMITTED_TO_FACULTY" ||
-									resume.reviewStatus === "FACULTY_REVISION_REQUESTED") && (
-									<>
-										<button
-											onClick={() =>
-												updateResumeStatusMutation.mutate({
-													resumeId,
-													expectedStatus: resume.reviewStatus ?? undefined,
-													studentId: engLabsStudentId,
-													tenantId: tenantId!,
-													status: "FACULTY_REVISION_REQUESTED",
-												})
-											}
-											disabled={updateResumeStatusMutation.isPending}
-											className="rounded-xl border border-border bg-card px-3 py-1.5 font-bold text-muted-foreground text-xs transition-all hover:bg-muted/50 disabled:opacity-50"
-										>
-											{t`Request Revision`}
-										</button>
-										<button
-											onClick={() =>
-												updateResumeStatusMutation.mutate({
-													resumeId,
-													expectedStatus: resume.reviewStatus ?? undefined,
-													studentId: engLabsStudentId,
-													tenantId: tenantId!,
-													status: "FACULTY_VERIFIED",
-												})
-											}
-											disabled={updateResumeStatusMutation.isPending}
-											className="rounded-xl bg-emerald-600 px-3 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
-										>
-											{t`Verify Individual`}
-										</button>
-									</>
-								)}
-
-								{/* PO Actions — PO scope only; faculty sees the status badge but no action buttons.
-								    SUBMITTED_TO_FACULTY is included because the PO now sees student submissions
-								    in their own inbox: without it they could open one and find nothing to do. */}
-								{scope === "po" &&
+								{/* Faculty Actions — not for the PO, whose own buttons follow. A PO pressing these set
+								    faculty stages: "Verify Individual" read as faculty approval, and a faculty revision
+								    request sent the student's resubmission to faculty instead of back to the PO. */}
+								{scope !== "po" &&
 									(resume.reviewStatus === "SUBMITTED_TO_FACULTY" ||
-										resume.reviewStatus === "SUBMITTED_TO_PO" ||
-										resume.reviewStatus === "FINALIZED_BY_FACULTY" ||
-										resume.reviewStatus === "RESUBMITTED_TO_PO" ||
-										resume.reviewStatus === "PO_REVISION_REQUESTED" ||
-										resume.reviewStatus === "APPROVED") && (
+										resume.reviewStatus === "FACULTY_REVISION_REQUESTED") && (
 										<>
 											<button
 												onClick={() =>
@@ -653,33 +615,80 @@ function ReviewPage() {
 														expectedStatus: resume.reviewStatus ?? undefined,
 														studentId: engLabsStudentId,
 														tenantId: tenantId!,
-														status: "PO_REVISION_REQUESTED",
+														status: "FACULTY_REVISION_REQUESTED",
 													})
 												}
 												disabled={updateResumeStatusMutation.isPending}
-												className="rounded-xl border border-rose-200 bg-card px-3 py-1.5 font-bold text-rose-600 text-xs transition-all hover:bg-rose-50 disabled:opacity-50"
+												className="rounded-xl border border-border bg-card px-3 py-1.5 font-bold text-muted-foreground text-xs transition-all hover:bg-muted/50 disabled:opacity-50"
 											>
-												{t`PO: Request Revision`}
+												{t`Request Revision`}
 											</button>
-											{resume.reviewStatus !== "APPROVED" && (
-												<button
-													onClick={() =>
-														updateResumeStatusMutation.mutate({
-															resumeId,
-															expectedStatus: resume.reviewStatus ?? undefined,
-															studentId: engLabsStudentId,
-															tenantId: tenantId!,
-															status: "APPROVED",
-														})
-													}
-													disabled={updateResumeStatusMutation.isPending}
-													className="rounded-xl bg-teal-600 px-3 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-teal-700 disabled:opacity-50"
-												>
-													{t`Final Approve`}
-												</button>
-											)}
+											<button
+												onClick={() =>
+													updateResumeStatusMutation.mutate({
+														resumeId,
+														expectedStatus: resume.reviewStatus ?? undefined,
+														studentId: engLabsStudentId,
+														tenantId: tenantId!,
+														status: "FACULTY_VERIFIED",
+													})
+												}
+												disabled={updateResumeStatusMutation.isPending}
+												className="rounded-xl bg-emerald-600 px-3 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50"
+											>
+												{t`Verify Individual`}
+											</button>
 										</>
 									)}
+
+								{/* PO Actions — PO scope only; faculty sees the status badge but no action buttons.
+								    Both are always there, whatever the stage: listing stages left the PO with nothing to
+								    press on Faculty Verified and PO Verified resumes. A button is disabled only when it
+								    cannot apply — nothing submitted yet, or the resume is already at that stage. */}
+								{scope === "po" && (
+									<>
+										<button
+											onClick={() =>
+												updateResumeStatusMutation.mutate({
+													resumeId,
+													expectedStatus: resume.reviewStatus ?? undefined,
+													studentId: engLabsStudentId,
+													tenantId: tenantId!,
+													status: "PO_REVISION_REQUESTED",
+												})
+											}
+											disabled={
+												updateResumeStatusMutation.isPending ||
+												!resume.reviewStatus ||
+												resume.reviewStatus === "DRAFT" ||
+												resume.reviewStatus === "PO_REVISION_REQUESTED"
+											}
+											className="rounded-xl border border-rose-200 bg-card px-3 py-1.5 font-bold text-rose-600 text-xs transition-all hover:bg-rose-50 disabled:opacity-50"
+										>
+											{t`PO: Request Revision`}
+										</button>
+										<button
+											onClick={() =>
+												updateResumeStatusMutation.mutate({
+													resumeId,
+													expectedStatus: resume.reviewStatus ?? undefined,
+													studentId: engLabsStudentId,
+													tenantId: tenantId!,
+													status: "APPROVED",
+												})
+											}
+											disabled={
+												updateResumeStatusMutation.isPending ||
+												!resume.reviewStatus ||
+												resume.reviewStatus === "DRAFT" ||
+												resume.reviewStatus === "APPROVED"
+											}
+											className="rounded-xl bg-teal-600 px-3 py-1.5 font-bold text-white text-xs shadow-sm transition-all hover:bg-teal-700 disabled:opacity-50"
+										>
+											{t`Final Approve`}
+										</button>
+									</>
+								)}
 							</div>
 						</div>
 					</div>

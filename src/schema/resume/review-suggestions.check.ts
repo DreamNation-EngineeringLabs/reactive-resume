@@ -25,10 +25,10 @@ function withCustom(...sections: { id: string; title: string; type?: CustomSecti
 	} as unknown as ResumeData;
 }
 
-test("the approved bank is all there: 215 comments over 13 sections, ids unique", () => {
-	assert.equal(REVIEW_SUGGESTIONS.length, 215);
+test("the approved bank is all there: 219 comments over 13 sections, ids unique", () => {
+	assert.equal(REVIEW_SUGGESTIONS.length, 219);
 	assert.equal(SUGGESTION_SECTIONS.length, 13);
-	assert.equal(new Set(REVIEW_SUGGESTIONS.map((s) => s.id)).size, 215);
+	assert.equal(new Set(REVIEW_SUGGESTIONS.map((s) => s.id)).size, 219);
 });
 
 test("every suggestion belongs to a section in the picker, and every section has suggestions", () => {
@@ -83,7 +83,11 @@ test("research headings get the Internships comments, coursework gets Whole resu
 
 test("PO feedback is in the bank, without worked examples", () => {
 	const ids = ["INT-13", "INT-14", "INT-15", "INT-16", "ACH-27"];
-	for (const id of ids) assert.ok(REVIEW_SUGGESTIONS.some((s) => s.id === id), id);
+	for (const id of ids)
+		assert.ok(
+			REVIEW_SUGGESTIONS.some((s) => s.id === id),
+			id,
+		);
 	const space = REVIEW_SUGGESTIONS.filter((s) => s.content.startsWith("Use space efficiently"));
 	assert.deepEqual(
 		space.map((s) => s.section).sort(),
@@ -118,4 +122,12 @@ test("a built-in section is used unless it is empty and a matching custom one is
 		section: "awards",
 	});
 	assert.deepEqual(anchorForSection("basics", defaultResumeData), { section: "basics" });
+});
+
+test("second round of PO feedback: whole-resume comments, Diploma, publications order", () => {
+	const byId = (id: string) => REVIEW_SUGGESTIONS.find((s) => s.id === id);
+	for (const id of ["GEN-20", "GEN-21", "GEN-22", "GEN-23"]) assert.equal(byId(id)?.section, "general", id);
+	assert.match(byId("EDU-03")?.content ?? "", /Intermediate \/ Diploma/);
+	assert.doesNotMatch(byId("EDU-11")?.content ?? "", /e\.g\./);
+	assert.match(byId("GEN-09")?.content ?? "", /Educational Details, Publications \/ Patents,/);
 });

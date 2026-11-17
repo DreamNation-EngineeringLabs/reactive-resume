@@ -214,7 +214,9 @@
 	text-decoration: underline 2px rgb(15 23 42);
 }
 
-/* Entries changed since the last review (Changes tab → Show in Resume) */
+/* Entries changed since the last review (Changes tab → Show in Resume; always on for a resubmission).
+   Red text, so the reviewer can spot what the student changed without re-reading the page. */
 ::highlight(review-change) {
-	background-color: rgb(125 211 252 / 0.45);
+	color: rgb(220 38 38);
+	background-color: rgb(254 226 226 / 0.6);
 }

@@ -52,9 +52,8 @@ export async function assertReviewStaff(
 	if (rows.length !== ids.length) throw new ORPCError("NOT_FOUND", { message: "Resume not found." });
 	if (rows.some((r) => r.userId === user.id)) throw forbidden();
 
-	const { getEngLabsTenantsByEmails, getEngLabsUserByEmail, getStaffTenantIds } = await import(
-		"@/integrations/eng-labs"
-	);
+	const { getEngLabsTenantsByEmails, getEngLabsUserByEmail, getPlacementOfficerTenantIds, getStaffTenantIds } =
+		await import("@/integrations/eng-labs");
 	const reviewer = await getEngLabsUserByEmail(user.email);
 	const reviewerType = reviewer?.userType ?? "LEARNER";
 	if (!reviewer || reviewerType === "LEARNER") throw forbidden();
@@ -64,9 +63,14 @@ export async function assertReviewStaff(
 	const studentTenants = rows.map((r) => ownerTenants.get(r.ownerEmail.trim().toLowerCase()) ?? r.ownerTenantId);
 	const inTenant = (tenants: (string | undefined)[]) => studentTenants.every((t) => !!t && tenants.includes(t));
 
-	if (inTenant([reviewer.tenantId])) return reviewerType;
-	if (inTenant([reviewer.tenantId, ...(await getStaffTenantIds(reviewer.id))])) return reviewerType;
-	throw forbidden();
+	if (!inTenant([reviewer.tenantId]) && !inTenant([reviewer.tenantId, ...(await getStaffTenantIds(reviewer.id))])) {
+		throw forbidden();
+	}
+	// An officer's user type is INSTRUCTOR; their officer rights are per tenant (see getPlacementOfficerTenantIds).
+	if (reviewerType !== "ADMIN" && inTenant(await getPlacementOfficerTenantIds(reviewer.id))) {
+		return "PLACEMENT_OFFICER";
+	}
+	return reviewerType;
 }
 
 /** The signed-in reviewer's eng-labs id and tenant; FORBIDDEN for students and unprovisioned users. */

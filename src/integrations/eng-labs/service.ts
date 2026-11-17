@@ -701,6 +701,47 @@ export async function getStaffTenantIds(userId: string): Promise<string[]> {
 	return rows.map((r) => r.tenant_id);
 }
 
+/**
+ * Tenants where this user is a Placement Officer.
+ *
+ * eng-labs has no PLACEMENT_OFFICER user type: officers are INSTRUCTOR accounts given admin rights over
+ * placements on a tenant's user_mappings row. The resume token is issued with the officer role from the
+ * same four flags (apps/api generate-resume-token.ts), so this mirrors that rule: reading the user type
+ * alone made every officer look like faculty to the server, which then refused their PO-stage actions.
+ */
+export async function getPlacementOfficerTenantIds(userId: string): Promise<string[]> {
+	const pool = getEngLabsPool();
+	if (!pool) return [];
+
+	const { rows } = await pool.query<{ tenant_id: string }>(
+		`SELECT DISTINCT tenant_id::text AS tenant_id FROM user_mappings
+		 WHERE user_id = $1
+		   AND (permissions->'placements'->>'admin' = 'true'
+		     OR permissions->'placements'->>'manage_packages' = 'true'
+		     OR permissions->'placements'->>'manage_courses' = 'true'
+		     OR permissions->'placements'->>'manage_officers' = 'true')`,
+		[userId],
+	);
+	return rows.map((r) => r.tenant_id);
+}
+
+/** The tenant's Placement Officers (same rule as getPlacementOfficerTenantIds), as eng-labs user ids. */
+export async function getPlacementOfficerUserIds(tenantId: string): Promise<string[]> {
+	const pool = getEngLabsPool();
+	if (!pool || !tenantId || tenantId === "default") return [];
+
+	const { rows } = await pool.query<{ user_id: string }>(
+		`SELECT DISTINCT user_id::text AS user_id FROM user_mappings
+		 WHERE tenant_id = $1
+		   AND (permissions->'placements'->>'admin' = 'true'
+		     OR permissions->'placements'->>'manage_packages' = 'true'
+		     OR permissions->'placements'->>'manage_courses' = 'true'
+		     OR permissions->'placements'->>'manage_officers' = 'true')`,
+		[tenantId],
+	);
+	return rows.map((r) => r.user_id);
+}
+
 /** Tenant per email (lower-cased), picking the same row per email as getEngLabsUserByEmail. One query for many users. */
 export async function getEngLabsTenantsByEmails(emails: string[]): Promise<Map<string, string>> {
 	const pool = getEngLabsPool();

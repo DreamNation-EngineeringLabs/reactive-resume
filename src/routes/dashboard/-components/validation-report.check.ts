@@ -46,7 +46,7 @@ test("validation follows the reviewer whose report it is", () => {
 	);
 });
 
-test("every student gets one of the five status words, the same for faculty and PO", () => {
+test("every student gets one of the six status words, the same for faculty and PO", () => {
 	const students = [
 		student("Never Submitted", "001", "DRAFT"),
 		student("No Resume At All", "002", null),
@@ -65,11 +65,11 @@ test("every student gets one of the five status words, the same for faculty and 
 		"Draft",
 		"Submitted",
 		"Reviewed",
-		"Reviewed",
+		"PO Reviewed",
 		"Verified",
 		"Verified",
 		"Verified",
-		"Verified",
+		"PO Reviewed",
 		"Validated",
 		"Validated",
 	];
@@ -192,4 +192,29 @@ test("dates print in the college's day-month-year form", () => {
 	assert.equal(formatReportDate(new Date("2026-02-26T00:00:00")), "26-02-2026");
 	assert.equal(formatReportDate(null), "");
 	assert.equal(formatReportDate("not a date"), "");
+});
+
+test("a resume the PO commented on reads PO Reviewed until the PO approves it", () => {
+	assert.equal(reportStatus({ reviewStatus: "FACULTY_VERIFIED", poReviewed: true }), "PO Reviewed");
+	assert.equal(reportStatus({ reviewStatus: "SUBMITTED_TO_FACULTY", poReviewed: true }), "PO Reviewed");
+	assert.equal(reportStatus({ reviewStatus: "APPROVED", poReviewed: true }), "Validated", "approval wins");
+	assert.equal(reportStatus({ reviewStatus: "FACULTY_VERIFIED", poReviewed: false }), "Verified");
+	assert.equal(
+		reportStatus({ reviewStatus: "DRAFT", poReviewed: true }),
+		"Draft",
+		"not handed in, whatever the PO did",
+	);
+
+	const rows = sectionReportRows(
+		[
+			student("Commented By Po", "001", "FACULTY_VERIFIED", { poReviewed: true }),
+			student("Untouched", "002", "FACULTY_VERIFIED"),
+		],
+		"po",
+	);
+	assert.deepEqual(
+		rows.map((r) => r.validated),
+		[true, false],
+		"the PO's review counts as done on the PO report",
+	);
 });

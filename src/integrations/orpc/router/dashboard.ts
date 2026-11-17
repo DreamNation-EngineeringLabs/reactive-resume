@@ -9,7 +9,7 @@
  */
 
 import { ORPCError } from "@orpc/client";
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { schema } from "@/integrations/drizzle";
 import { db } from "@/integrations/drizzle/client";
@@ -24,6 +24,7 @@ import {
 	getMenteeStudents,
 	getOfficerOrgUnitIds,
 	getOfficerSections,
+	getPlacementOfficerUserIds,
 	getPlacementPackages,
 	getPlacementScopedSections,
 	getResumeBuilderPackages,
@@ -123,6 +124,41 @@ async function getMyCommentStatsByResumeIds(resumeIds: string[], authorId: strin
 		stats.set(c.resumeId, s);
 	}
 	return stats;
+}
+
+/**
+ * Resumes a Placement Officer has reviewed: a PO wrote a comment (or reply) on it, or a PO acted on it.
+ * PO_REVISION_REQUESTED counts whoever recorded it — before officers were recognised server-side, the PO's
+ * own revision requests were logged as INSTRUCTOR, and only the PO's button sets that stage.
+ */
+async function getPoReviewedResumeIds(resumeIds: string[], poUserIds: string[]) {
+	const reviewed = new Set<string>();
+	if (resumeIds.length === 0) return reviewed;
+
+	const [comments, actions] = await Promise.all([
+		poUserIds.length === 0
+			? Promise.resolve([])
+			: db
+					.selectDistinct({ resumeId: schema.resumeComment.resumeId })
+					.from(schema.resumeComment)
+					.where(
+						and(inArray(schema.resumeComment.resumeId, resumeIds), inArray(schema.resumeComment.authorId, poUserIds)),
+					),
+		db
+			.selectDistinct({ resumeId: schema.resumeHistory.resumeId })
+			.from(schema.resumeHistory)
+			.where(
+				and(
+					inArray(schema.resumeHistory.resumeId, resumeIds),
+					or(
+						eq(schema.resumeHistory.action, "PO_REVISION_REQUESTED"),
+						poUserIds.length > 0 ? inArray(schema.resumeHistory.changedBy, poUserIds) : sql`false`,
+					),
+				),
+			),
+	]);
+	for (const row of [...comments, ...actions]) reviewed.add(row.resumeId);
+	return reviewed;
 }
 
 async function getLatestEvaluationsByResumeIds(resumeIds: string[]) {
@@ -726,11 +762,13 @@ export const sectionsDashboard = protectedProcedure
 			const resumeIds = resumes.map((r) => r.id);
 
 			// 9. Get feedback data + submission status
-			const [commentCounts, latestScores, submissionDates, myComments] = await Promise.all([
+			const poUserIds = tenantId ? await getPlacementOfficerUserIds(tenantId) : [];
+			const [commentCounts, latestScores, submissionDates, myComments, poReviewed] = await Promise.all([
 				getCommentCountsByResumeIds(resumeIds),
 				getLatestEvaluationsByResumeIds(resumeIds),
 				getSubmissionDatesByResumeIds(resumeIds),
 				getMyCommentStatsByResumeIds(resumeIds, engLabsUser?.id),
+				getPoReviewedResumeIds(resumeIds, poUserIds),
 			]);
 
 			// 10. Build per-user resume data
@@ -774,6 +812,8 @@ export const sectionsDashboard = protectedProcedure
 							evaluationScore: score,
 							commentCount: comments,
 							myComments: myComments.get(r.id) ?? null,
+							// A Placement Officer commented on or acted on it (the report's "PO Reviewed").
+							poReviewed: poReviewed.has(r.id),
 							isSubmitted,
 							// When the student first handed it over, for the validation report's date column.
 							submittedAt,
@@ -1318,13 +1358,13 @@ export const bulkUpdateResumes = protectedProcedure
 	)
 	.handler(async ({ context, input }) => {
 		const { bulkUpdateSectionResumes } = await import("@/integrations/drizzle/services/resume-feedback.service");
-		await assertReviewStaff(
+		const reviewerType = await assertReviewStaff(
 			context.user,
 			input.resumes.map((r) => r.id),
 		);
-
-		const actorType =
-			input.status === "APPROVED" || input.status === "PO_VERIFIED" ? "PLACEMENT_OFFICER" : "INSTRUCTOR";
+		// The signed-in reviewer's role, not a guess from the target status (same rule as updateStatus).
+		// assertReviewStaff has already turned learners away, so this is never LEARNER.
+		const actorType = toActorType(reviewerType) as Exclude<ActorType, "LEARNER">;
 
 		const tenantId = (await resolveServerTenantId(context.user.email, input.tenantId)) ?? input.tenantId;
 

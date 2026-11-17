@@ -30,6 +30,8 @@ type ReportResume = {
 	submittedAt?: Date | string | null;
 	updatedAt?: Date | string | null;
 	isSubmitted?: boolean;
+	/** A Placement Officer has commented on or acted on it (set by the dashboard). */
+	poReviewed?: boolean;
 };
 
 type ReportStudent = {
@@ -54,31 +56,38 @@ export type StudentReportRow = {
 };
 
 /** In workflow order, the order the sheet's header counts them in. */
-export const REPORT_STATUSES = ["Draft", "Submitted", "Reviewed", "Verified", "Validated"] as const;
+export const REPORT_STATUSES = ["Draft", "Submitted", "Reviewed", "Verified", "PO Reviewed", "Validated"] as const;
 
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 /**
- * The placement team reads the workflow as five steps, not ten stages: not handed in, waiting for
- * faculty, sent back for changes, approved by faculty, approved by the Placement Officer. The same
- * word prints whoever runs the report, so a filed sheet means one thing.
+ * The placement team reads the workflow as six steps, not ten stages: not handed in, waiting for
+ * faculty, sent back by faculty, approved by faculty, reviewed by the Placement Officer, approved by
+ * the Placement Officer. The same word prints whoever runs the report, so a filed sheet means one thing.
  */
 const STATUS_BY_STAGE: Record<string, ReportStatus> = {
 	DRAFT: "Draft",
 	SUBMITTED_TO_FACULTY: "Submitted",
 	FACULTY_REVISION_REQUESTED: "Reviewed",
-	PO_REVISION_REQUESTED: "Reviewed",
+	PO_REVISION_REQUESTED: "PO Reviewed",
 	FACULTY_VERIFIED: "Verified",
 	FINALIZED_BY_FACULTY: "Verified",
 	SUBMITTED_TO_PO: "Verified",
-	RESUBMITTED_TO_PO: "Verified",
+	// Only reachable after a PO revision request: the student answered the PO's review.
+	RESUBMITTED_TO_PO: "PO Reviewed",
 	PO_VERIFIED: "Validated",
 	APPROVED: "Validated",
 };
 
-/** A student with no resume has not handed anything in, which is what Draft says. */
+/**
+ * A student with no resume has not handed anything in, which is what Draft says. Once a PO has commented
+ * on or acted on a resume it reads "PO Reviewed" until the PO approves it: the later step wins. A draft
+ * stays Draft even if the PO commented on it, because the student has not handed it in.
+ */
 export function reportStatus(resume: ReportResume | undefined): ReportStatus {
-	return STATUS_BY_STAGE[resume?.reviewStatus ?? "DRAFT"] ?? "Draft";
+	const status = STATUS_BY_STAGE[resume?.reviewStatus ?? "DRAFT"] ?? "Draft";
+	if (resume?.poReviewed && status !== "Validated" && status !== "Draft") return "PO Reviewed";
+	return status;
 }
 
 const validatedStatuses = (scope: ReportScope) => (scope === "po" ? PO_VALIDATED : FACULTY_VALIDATED);
@@ -90,6 +99,7 @@ function reportResume(student: ReportStudent): ReportResume | undefined {
 
 export function isValidated(resume: ReportResume | undefined, scope: ReportScope): boolean {
 	if (!resume) return false;
+	if (scope === "po" && resume.poReviewed && reportStatus(resume) !== "Draft") return true;
 	return validatedStatuses(scope).includes(resume.reviewStatus ?? "DRAFT");
 }
 

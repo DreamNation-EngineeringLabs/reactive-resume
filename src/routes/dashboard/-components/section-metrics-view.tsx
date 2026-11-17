@@ -42,7 +42,7 @@ import { SectionIntelligence } from "./section-intelligence";
 import { StudentDetailPanel } from "./student-detail-panel";
 import type { StudentWithResumes } from "./student-resume-table";
 import { StudentResumeTable } from "./student-resume-table";
-import { sectionReportRows, summaryRows } from "./validation-report";
+import { reportStatus, sectionReportRows, summaryRows } from "./validation-report";
 import { SectionValidationSheet, SummaryValidationSheet } from "./validation-report-sheet";
 
 export type DashboardTab = "overview" | "inbox" | "sections" | "students" | "checklists";
@@ -316,6 +316,11 @@ export function SectionMetricsView({
 	const hasStudents = dashboard.students.length > 0;
 	const review = reviewRate(filteredStudents, scope);
 	const waiting = review.total - review.reviewed;
+	// The PO's own progress, in the printed report's words: reviewed = PO Reviewed + Validated;
+	// balance = Verified, i.e. approved by faculty and not yet looked at by the PO even once.
+	const poStatuses = filteredStudents.map((s) => reportStatus(s.resumes[0]));
+	const poReviewedTotal = poStatuses.filter((s) => s === "PO Reviewed" || s === "Validated").length;
+	const poBalance = poStatuses.filter((s) => s === "Verified").length;
 	const evaluationRate =
 		detailedStats.withResumes > 0 ? (detailedStats.evaluated / detailedStats.withResumes) * 100 : 0;
 	const overviewNote =
@@ -391,6 +396,14 @@ export function SectionMetricsView({
 							hint={review.total > 0 ? t`${review.reviewed} of ${review.total} reviewed` : t`Nothing sent to you yet`}
 							tooltip={t`Resumes sent to you for review that already have your decision: sent back, verified or approved. Counts resumes, from their review status.`}
 						/>
+						{scope !== "faculty" && (
+							<Stat
+								label={t`Reviewed by PO`}
+								value={poReviewedTotal}
+								hint={t`Balance: ${poBalance} not yet reviewed`}
+								tooltip={t`Reviewed = the PO commented on it, asked for changes or approved it. Balance = verified by faculty and not yet reviewed by the PO.`}
+							/>
+						)}
 						<Stat
 							label={t`Average score`}
 							value={
@@ -685,6 +698,22 @@ export function SectionMetricsView({
 												</span>
 											)}
 										</div>
+										{scope !== "faculty" &&
+											(() => {
+												const statuses = sectionStudents.map((s) => reportStatus(s.resumes[0]));
+												const reviewed = statuses.filter((s) => s === "PO Reviewed" || s === "Validated").length;
+												const balance = statuses.filter((s) => s === "Verified").length;
+												return (
+													<div className="flex justify-between font-semibold text-[11px] text-foreground">
+														<span>
+															{t`PO reviewed`}: {reviewed}
+														</span>
+														<span>
+															{t`Balance`}: {balance}
+														</span>
+													</div>
+												);
+											})()}
 									</div>
 
 									{/* Review button */}
