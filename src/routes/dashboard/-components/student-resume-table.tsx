@@ -20,6 +20,8 @@ type ResumeEntry = {
 	commentCount: number;
 	/** The viewing reviewer's own top-level comments, by status (Overview → My reviews). */
 	myComments?: { OPEN: number; ADDRESSED: number; RESOLVED: number } | null;
+	/** A Placement Officer commented on or acted on it. */
+	poReviewed?: boolean;
 	isSubmitted: boolean;
 	status: "not_reviewed" | "submitted" | "evaluated" | "has_comments";
 	reviewStatus: string | null;
@@ -49,9 +51,11 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 
 	// Only offer stages that are actually present, so the chips describe this cohort rather than the
 	// whole workflow, and every chip is guaranteed to return something.
+	// Resubmitted is the exception and always shows, even at 0: it is where the PO checks for students
+	// who answered their review, so it must not come and go.
 	const availableStages = useMemo(() => {
 		const present = new Set(students.flatMap((s) => s.resumes.map(stageOf)));
-		return REVIEW_STAGES.filter((stage) => present.has(stage));
+		return REVIEW_STAGES.filter((stage) => present.has(stage) || stage === "RESUBMITTED_TO_PO");
 	}, [students]);
 
 	const filteredStudents = useMemo(() => {

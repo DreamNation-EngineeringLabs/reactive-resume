@@ -62,7 +62,7 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "GEN-09",
 		section: "general",
 		content:
-			"Arrange the sections in this order: Career Objective, Educational Details, Technical Skills, Internships, Projects, Achievements, Strengths, Hobbies, Personal Details, Declaration.",
+			"Arrange the sections in this order: Career Objective, Educational Details, Publications / Patents, Technical Skills, Internships, Projects, Achievements, Strengths, Hobbies, Personal Details, Declaration.",
 		severity: "MEDIUM",
 	},
 	{
@@ -127,6 +127,30 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		section: "general",
 		content:
 			"Use space efficiently: avoid empty gaps, wide margins and half-filled lines, and do not stretch content just to fill the page.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "GEN-20",
+		section: "general",
+		content: "Your profile is strong. Extend the resume to 2 full pages so it is presented fully.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "GEN-21",
+		section: "general",
+		content: "Add your hackathons and achievements; they show initiative and problem-solving.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "GEN-22",
+		section: "general",
+		content: "Add a Publications / Patents section and place it directly below Educational Details.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "GEN-23",
+		section: "general",
+		content: 'Do not use "Research" as a section heading.',
 		severity: "MEDIUM",
 	},
 	// ── basics ──
@@ -338,7 +362,7 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "EDU-03",
 		section: "education",
 		content:
-			"Add your Intermediate details: college, board, year of passing and percentage. They are checked during recruitment and background verification.",
+			"Add your Intermediate / Diploma details: college, board, year of passing and percentage. They are checked during recruitment and background verification.",
 		severity: "HIGH",
 	},
 	{
@@ -391,8 +415,7 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 	{
 		id: "EDU-11",
 		section: "education",
-		content:
-			"Mention the board for school and Intermediate: State Board (e.g. BIEAP / BIETS / BSEAP / BSE Telangana), CBSE or ICSE.",
+		content: "Mention the board for school and Intermediate: State Board, CBSE or ICSE.",
 		severity: "MEDIUM",
 	},
 	{

@@ -15,6 +15,8 @@ export {
 	getMenteeStudents,
 	getOfficerOrgUnitIds,
 	getOfficerSections,
+	getPlacementOfficerTenantIds,
+	getPlacementOfficerUserIds,
 	getPlacementPackages,
 	getPlacementScopedSections,
 	getPlacementSubtreeOrgUnitIds,

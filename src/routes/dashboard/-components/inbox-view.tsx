@@ -262,7 +262,8 @@ function InboxCard({
 	const badge = statusConfig[item.reviewStatus] ?? {
 		bg: "bg-muted",
 		text: "text-muted-foreground",
-		label: item.reviewStatus,
+		// Every other stage reads as its chip does, never as the raw value (PO_REVISION_REQUESTED…).
+		label: reviewStageLabel(item.reviewStatus),
 	};
 
 	return (
