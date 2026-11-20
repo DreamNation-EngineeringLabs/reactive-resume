@@ -90,6 +90,48 @@ export function reportStatus(resume: ReportResume | undefined): ReportStatus {
 	return status;
 }
 
+/**
+ * The Placement Officer's view of their progress, in three groups that always add up to the class:
+ * not submitted, waiting for the PO, reviewed by the PO.
+ *
+ * Display only. Nothing here changes a resume's review status: a resume the PO commented on keeps its
+ * stage (Faculty Verified, Submitted to PO…) and is merely counted, and listed, as reviewed by the PO.
+ */
+export type PoGroup = "not_submitted" | "pending" | "reviewed";
+
+/** Which group a student falls in, from their master resume (the one the college validates). */
+export function poGroup(student: { resumes: ReportResume[] }): PoGroup {
+	const status = reportStatus(student.resumes[0]);
+	if (status === "Draft") return "not_submitted";
+	if (status === "PO Reviewed" || status === "Validated") return "reviewed";
+	return "pending";
+}
+
+export type PoCounts = {
+	total: number;
+	/** Handed in: everything but a draft or no resume. */
+	submitted: number;
+	/** Reviewed by the PO: commented on, modification advised, or approved. */
+	reviewed: number;
+	/** Handed in and not yet reviewed by the PO, whatever stage it is at. */
+	balance: number;
+	notSubmitted: number;
+};
+
+export function poCounts(students: { resumes: ReportResume[] }[]): PoCounts {
+	const counts = { total: students.length, submitted: 0, reviewed: 0, balance: 0, notSubmitted: 0 };
+	for (const student of students) {
+		const group = poGroup(student);
+		if (group === "not_submitted") counts.notSubmitted++;
+		else {
+			counts.submitted++;
+			if (group === "reviewed") counts.reviewed++;
+			else counts.balance++;
+		}
+	}
+	return counts;
+}
+
 const validatedStatuses = (scope: ReportScope) => (scope === "po" ? PO_VALIDATED : FACULTY_VALIDATED);
 
 /** The resume a report speaks for: a student's master resume is the one the college validates. */
@@ -155,6 +197,8 @@ export type SectionSummaryRow = {
 	validatedPct: string;
 	modified: number | null;
 	modifiedPct: string;
+	/** For the Placement Officer's sheet: submitted, reviewed by the PO, balance, not submitted. */
+	po: PoCounts;
 };
 
 export type SummaryTotals = {
@@ -163,6 +207,7 @@ export type SummaryTotals = {
 	validatedPct: string;
 	modified: number | null;
 	modifiedPct: string;
+	po: PoCounts;
 };
 
 const pct = (part: number, whole: number) => (whole > 0 ? `${((part / whole) * 100).toFixed(2)}%` : "");
@@ -225,6 +270,7 @@ export function summaryRows(
 			validatedPct: pct(validated, inSection.length),
 			modified,
 			modifiedPct: modified === null ? "" : pct(modified, validated),
+			po: poCounts(inSection),
 		};
 		seenBranch = branch;
 		return row;
@@ -243,6 +289,16 @@ export function summaryRows(
 			validatedPct: pct(validated, total),
 			modified,
 			modifiedPct: modified === null ? "" : pct(modified, validated),
+			po: rows.reduce(
+				(sum, r) => ({
+					total: sum.total + r.po.total,
+					submitted: sum.submitted + r.po.submitted,
+					reviewed: sum.reviewed + r.po.reviewed,
+					balance: sum.balance + r.po.balance,
+					notSubmitted: sum.notSubmitted + r.po.notSubmitted,
+				}),
+				{ total: 0, submitted: 0, reviewed: 0, balance: 0, notSubmitted: 0 },
+			),
 		},
 	};
 }

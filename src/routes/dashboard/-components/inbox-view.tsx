@@ -55,7 +55,7 @@ function stageDescription(stage: string, scope: "faculty" | "po"): string {
 		case "RESUBMITTED_TO_PO":
 			return t`Resubmitted after Placement Officer feedback`;
 		case "PO_REVISION_REQUESTED":
-			return t`The Placement Officer asked for changes; waiting on the student`;
+			return t`The Placement Officer advised modifications; waiting on the student`;
 		case "PO_VERIFIED":
 			return t`Verified by the Placement Officer`;
 		case "APPROVED":

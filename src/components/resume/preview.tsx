@@ -56,9 +56,17 @@ function getTemplateComponent(template: Template) {
 type Props = React.ComponentProps<"div"> & {
 	pageClassName?: string;
 	showPageNumbers?: boolean;
+	/** Mark where the downloaded PDF starts a new page (review page): a page that overflows on screen is one tall page. */
+	showPdfPageBreaks?: boolean;
 };
 
-export const ResumePreview = ({ showPageNumbers = false, pageClassName, className, ...props }: Props) => {
+export const ResumePreview = ({
+	showPageNumbers = false,
+	showPdfPageBreaks = false,
+	pageClassName,
+	className,
+	...props
+}: Props) => {
 	const resume = useResumeStore((state) => state.resume);
 
 	if (!resume || !resume.data) {
@@ -69,6 +77,7 @@ export const ResumePreview = ({ showPageNumbers = false, pageClassName, classNam
 		<ResumePreviewContent
 			resume={resume}
 			showPageNumbers={showPageNumbers}
+			showPdfPageBreaks={showPdfPageBreaks}
 			pageClassName={pageClassName}
 			className={className}
 			{...props}
@@ -79,6 +88,7 @@ export const ResumePreview = ({ showPageNumbers = false, pageClassName, classNam
 const ResumePreviewContent = ({
 	resume,
 	showPageNumbers,
+	showPdfPageBreaks,
 	pageClassName,
 	className,
 	...props
@@ -134,6 +144,7 @@ const ResumePreviewContent = ({
 						pageLayout={pageLayout}
 						pageClassName={pageClassName}
 						showPageNumbers={showPageNumbers}
+						showPdfPageBreaks={showPdfPageBreaks}
 					/>
 				))}
 			</div>
@@ -146,9 +157,16 @@ type PageContainerProps = {
 	pageLayout: z.infer<typeof pageLayoutSchema>;
 	pageClassName?: string;
 	showPageNumbers?: boolean;
+	showPdfPageBreaks?: boolean;
 };
 
-function PageContainer({ pageIndex, pageLayout, pageClassName, showPageNumbers = false }: PageContainerProps) {
+function PageContainer({
+	pageIndex,
+	pageLayout,
+	pageClassName,
+	showPageNumbers = false,
+	showPdfPageBreaks = false,
+}: PageContainerProps) {
 	const resume = useResumeStore((state) => state.resume);
 
 	if (!resume || !resume.data) {
@@ -162,6 +180,7 @@ function PageContainer({ pageIndex, pageLayout, pageClassName, showPageNumbers =
 			pageLayout={pageLayout}
 			pageClassName={pageClassName}
 			showPageNumbers={showPageNumbers}
+			showPdfPageBreaks={showPdfPageBreaks}
 		/>
 	);
 }
@@ -172,6 +191,7 @@ function PageContainerContent({
 	pageLayout,
 	pageClassName,
 	showPageNumbers = false,
+	showPdfPageBreaks = false,
 }: PageContainerProps & { resume: Resume }) {
 	const pageRef = useRef<HTMLDivElement>(null);
 	const [pageHeight, setPageHeight] = useState<number>(0);
@@ -184,6 +204,17 @@ function PageContainerContent({
 		return pageDimensionsAsPixels[format].height;
 	}, [metadata.page.format]);
 	const totalNumberOfPages = useMemo(() => metadata.layout.pages.length, [metadata.layout.pages]);
+	// Where the PDF printer cuts this page: it prints each layout page from a new sheet, with the top
+	// margin taken off every sheet and no bottom margin (services/printer.ts), so a sheet holds the page
+	// height less that margin. Free-form pages are printed as one sheet and never break.
+	const pdfBreaks = useMemo(() => {
+		if (!showPdfPageBreaks || metadata.page.format === "free-form") return [];
+		const perSheet = maxPageHeight - Math.round(metadata.page.marginY / 0.75);
+		if (perSheet <= 0) return [];
+		const breaks: number[] = [];
+		for (let at = perSheet; at < pageHeight - 1; at += perSheet) breaks.push(at);
+		return breaks;
+	}, [showPdfPageBreaks, metadata.page.format, metadata.page.marginY, maxPageHeight, pageHeight]);
 	const TemplateComponent = useMemo(() => getTemplateComponent(metadata.template), [metadata.template]);
 
 	useResizeObserver({
@@ -209,6 +240,18 @@ function PageContainerContent({
 			<div ref={pageRef} className={cn(`page page-${pageIndex}`, styles.page, pageClassName)}>
 				<TemplateComponent pageIndex={pageIndex} pageLayout={pageLayout} />
 			</div>
+
+			{pdfBreaks.map((top) => (
+				<div
+					key={top}
+					style={{ top }}
+					className="pointer-events-none absolute inset-x-0 border-rose-500 border-t-2 border-dashed print:hidden"
+				>
+					<span className="absolute -top-3 right-2 rounded-full bg-rose-500 px-2 py-0.5 font-semibold text-[10px] text-white">
+						<Trans>Page break in PDF</Trans>
+					</span>
+				</div>
+			))}
 
 			{metadata.page.format !== "free-form" && pageHeight > maxPageHeight && (
 				<div className="absolute start-0 top-full mt-4 print:hidden">

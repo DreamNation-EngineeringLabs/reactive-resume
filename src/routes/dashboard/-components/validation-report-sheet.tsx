@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/utils/style";
 import {
 	formatReportDate,
+	type PoCounts,
 	printLayout,
 	REPORT_STATUSES,
 	type ReportScope,
@@ -312,9 +313,23 @@ export type SummarySheetProps = {
 	rows: SectionSummaryRow[];
 	totals: SummaryTotals;
 	onClose: () => void;
+	/**
+	 * The Placement Officer's sheet: one count per group instead of validation percentages, so every
+	 * branch's progress reads on one page. The faculty sheet keeps the college's original columns.
+	 */
+	poView?: boolean;
 };
 
-export function SummaryValidationSheet({ title, rows, totals, onClose }: SummarySheetProps) {
+/** The PO sheet's count columns, in the order the class is worked through. */
+const PO_SUMMARY_COLUMNS: { label: string; value: (c: PoCounts) => number }[] = [
+	{ label: "Total Students", value: (c) => c.total },
+	{ label: "Submitted", value: (c) => c.submitted },
+	{ label: "PO Reviewed", value: (c) => c.reviewed },
+	{ label: "Balance by PO", value: (c) => c.balance },
+	{ label: "Not Submitted", value: (c) => c.notSubmitted },
+];
+
+export function SummaryValidationSheet({ title, rows, totals, onClose, poView = false }: SummarySheetProps) {
 	// A summary of a single package is a short table on a tall page, so the type grows to fill it
 	// rather than sitting as a small block of text at the top of an otherwise empty sheet.
 	const [sheetRef, scale] = useFitToPage<HTMLDivElement>([rows.length, title]);
@@ -351,13 +366,23 @@ export function SummaryValidationSheet({ title, rows, totals, onClose }: Summary
 							CV validation status
 						</th>
 					</tr>
-					<tr className="bg-zinc-100 font-semibold">
-						<th className={cn(summaryCell, "w-[8%]")}>Total</th>
-						<th className={cn(summaryCell, "w-[10%]")}>Validated</th>
-						<th className={cn(summaryCell, "w-[10%]")}>Percentage</th>
-						<th className={cn(summaryCell, "w-[9%]")}>Modified</th>
-						<th className={cn(summaryCell, "w-[11%]")}>Percentage</th>
-					</tr>
+					{poView ? (
+						<tr className="bg-zinc-100 font-semibold">
+							{PO_SUMMARY_COLUMNS.map((column) => (
+								<th key={column.label} className={cn(summaryCell, "w-[10%]")}>
+									{column.label}
+								</th>
+							))}
+						</tr>
+					) : (
+						<tr className="bg-zinc-100 font-semibold">
+							<th className={cn(summaryCell, "w-[8%]")}>Total</th>
+							<th className={cn(summaryCell, "w-[10%]")}>Validated</th>
+							<th className={cn(summaryCell, "w-[10%]")}>Percentage</th>
+							<th className={cn(summaryCell, "w-[9%]")}>Modified</th>
+							<th className={cn(summaryCell, "w-[11%]")}>Percentage</th>
+						</tr>
+					)}
 				</thead>
 				<tbody>
 					{rows.map((row) => (
@@ -366,26 +391,46 @@ export function SummaryValidationSheet({ title, rows, totals, onClose }: Summary
 							{/* A branch is named once and reads down its sections, as on the department's sheet. */}
 							<td className={summaryBranchCell}>{row.branch ? `${row.branch}(${row.branchSectionCount})` : ""}</td>
 							<td className={cn(summaryCell, "text-left")}>{row.section}</td>
-							<td className={cn(summaryCell, numeric)}>{row.total}</td>
-							<td className={cn(summaryCell, numeric)}>{row.validated}</td>
-							<td className={cn(summaryCell, numeric)}>{row.validatedPct}</td>
-							<td className={cn(summaryCell, numeric)}>{row.modified ?? ""}</td>
-							<td className={cn(summaryCell, numeric)}>{row.modifiedPct}</td>
+							{poView ? (
+								PO_SUMMARY_COLUMNS.map((column) => (
+									<td key={column.label} className={cn(summaryCell, numeric)}>
+										{column.value(row.po)}
+									</td>
+								))
+							) : (
+								<>
+									<td className={cn(summaryCell, numeric)}>{row.total}</td>
+									<td className={cn(summaryCell, numeric)}>{row.validated}</td>
+									<td className={cn(summaryCell, numeric)}>{row.validatedPct}</td>
+									<td className={cn(summaryCell, numeric)}>{row.modified ?? ""}</td>
+									<td className={cn(summaryCell, numeric)}>{row.modifiedPct}</td>
+								</>
+							)}
 						</tr>
 					))}
 					<tr className="bg-zinc-100 font-bold">
 						<td className={summaryCell} colSpan={2} />
 						<td className={cn(summaryCell, "text-left")}>TOTAL</td>
-						<td className={cn(summaryCell, numeric)}>{totals.total}</td>
-						<td className={cn(summaryCell, numeric)}>{totals.validated}</td>
-						<td className={cn(summaryCell, numeric)}>{totals.validatedPct}</td>
-						<td className={cn(summaryCell, numeric)}>{totals.modified ?? ""}</td>
-						<td className={cn(summaryCell, numeric)}>{totals.modifiedPct}</td>
+						{poView ? (
+							PO_SUMMARY_COLUMNS.map((column) => (
+								<td key={column.label} className={cn(summaryCell, numeric)}>
+									{column.value(totals.po)}
+								</td>
+							))
+						) : (
+							<>
+								<td className={cn(summaryCell, numeric)}>{totals.total}</td>
+								<td className={cn(summaryCell, numeric)}>{totals.validated}</td>
+								<td className={cn(summaryCell, numeric)}>{totals.validatedPct}</td>
+								<td className={cn(summaryCell, numeric)}>{totals.modified ?? ""}</td>
+								<td className={cn(summaryCell, numeric)}>{totals.modifiedPct}</td>
+							</>
+						)}
 					</tr>
 				</tbody>
 			</table>
 
-			{totals.modified === null && (
+			{!poView && totals.modified === null && (
 				<p className="mt-2 text-[9px] text-zinc-600 italic">
 					Modified counts students who revised their resume after a reviewer asked for changes. It fills from the point
 					this is in use; earlier edits were not recorded.

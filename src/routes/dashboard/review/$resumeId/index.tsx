@@ -519,7 +519,11 @@ function ReviewPage() {
 								marginLeft: containerWidth > 0 ? (containerWidth - PAGE_NATURAL_WIDTH) / 2 : 0,
 							}}
 						>
-							<ResumePreview className="flex flex-col items-center space-y-4" pageClassName="shadow-xl rounded-sm" />
+							<ResumePreview
+								className="flex flex-col items-center space-y-4"
+								pageClassName="shadow-xl rounded-sm"
+								showPdfPageBreaks
+							/>
 						</div>
 					</div>
 				</div>
@@ -665,7 +669,7 @@ function ReviewPage() {
 											}
 											className="rounded-xl border border-rose-200 bg-card px-3 py-1.5 font-bold text-rose-600 text-xs transition-all hover:bg-rose-50 disabled:opacity-50"
 										>
-											{t`PO: Request Revision`}
+											{t`PO: Modification Advised`}
 										</button>
 										<button
 											onClick={() =>

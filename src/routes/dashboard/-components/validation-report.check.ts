@@ -218,3 +218,19 @@ test("a resume the PO commented on reads PO Reviewed until the PO approves it", 
 		"the PO's review counts as done on the PO report",
 	);
 });
+
+test("the PO summary counts each section and the totals add up", () => {
+	const sections = [
+		{ id: "sec-1", name: "CSE - A", parentName: "Computer Science", unitType: "CLASS" },
+		{ id: "sec-2", name: "CSE - B", parentName: "Computer Science", unitType: "CLASS" },
+	];
+	const students = [
+		{ ...student("A", "1", "FACULTY_VERIFIED", { poReviewed: true }), sectionId: "sec-1" },
+		{ ...student("B", "2", "SUBMITTED_TO_FACULTY"), sectionId: "sec-1" },
+		{ ...student("C", "3", null), sectionId: "sec-1" },
+		{ ...student("D", "4", "APPROVED"), sectionId: "sec-2" },
+	];
+	const { rows, totals } = summaryRows(sections, students, "po");
+	assert.deepEqual(rows[0].po, { total: 3, submitted: 2, reviewed: 1, balance: 1, notSubmitted: 1 });
+	assert.deepEqual(totals.po, { total: 4, submitted: 3, reviewed: 2, balance: 1, notSubmitted: 1 });
+});

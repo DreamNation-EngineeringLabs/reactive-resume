@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { cn } from "@/utils/style";
+import { type PoGroup, poGroup } from "./po-progress";
 import { REVIEW_STAGES, reviewStageLabel, stageOf } from "./review-status";
 import { getEvaluationBadgeClass, getStatusBadgeClass } from "./score-helpers";
 import { useResumeDownload } from "./use-resume-download";
@@ -33,6 +34,8 @@ export type StudentWithResumes = {
 	email: string;
 	rollNumber: string | null;
 	sectionId: string;
+	/** Every org unit the student is linked to; decides which section cards count them. */
+	engLabsUnitIds?: string[];
 	sectionName: string | null;
 	resumeAppUserId: string | null;
 	resumes: ResumeEntry[];
@@ -42,9 +45,22 @@ type StudentResumeTableProps = {
 	students: StudentWithResumes[];
 	onReview?: (resumeId: string, engLabsStudentId: string) => void;
 	onStudentClick?: (student: StudentWithResumes) => void;
+	/**
+	 * The Placement Officer's section view: four plain groups instead of every review stage, and a tag
+	 * on each resume saying whether the PO has reviewed it. Display only; no status changes.
+	 */
+	poView?: boolean;
 };
 
-export function StudentResumeTable({ students, onReview, onStudentClick }: StudentResumeTableProps) {
+/** The PO's chips, in the order a section is worked through. Each student is in exactly one but "All". */
+const PO_CHIPS: { id: "all" | PoGroup; label: () => string }[] = [
+	{ id: "all", label: () => t`All` },
+	{ id: "not_submitted", label: () => t`Not Submitted` },
+	{ id: "pending", label: () => t`Pending PO Review` },
+	{ id: "reviewed", label: () => t`Reviewed by PO` },
+];
+
+export function StudentResumeTable({ students, onReview, onStudentClick, poView = false }: StudentResumeTableProps) {
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<"all" | string>("all");
 	const { download, isPending: isDownloading } = useResumeDownload();
@@ -69,6 +85,10 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 
 				if (!matchesSearch) return null;
 
+				// The PO's groups are per student (from the master resume), and a student without a resume
+				// is "Not Submitted", so the three groups add up to All.
+				if (poView) return statusFilter === "all" || poGroup(student) === statusFilter ? student : null;
+
 				// Filter on the resume's review stage. This used to filter on a derived four-value
 				// status with no chip for "submitted", which made the stage most resumes sit in
 				// unreachable from every chip except All.
@@ -83,7 +103,7 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 				return { ...student, resumes: filteredResumes };
 			})
 			.filter(Boolean) as StudentWithResumes[];
-	}, [students, search, statusFilter]);
+	}, [students, search, statusFilter, poView]);
 
 	return (
 		<div className="space-y-4">
@@ -100,28 +120,48 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 					/>
 				</div>
 				<div className="flex flex-wrap gap-1.5">
-					{(["all", ...availableStages] as const).map((stage) => {
-						const count =
-							stage === "all"
-								? students.reduce((n, s) => n + s.resumes.length, 0)
-								: students.reduce((n, s) => n + s.resumes.filter((r) => stageOf(r) === stage).length, 0);
-						return (
+					{poView &&
+						PO_CHIPS.map((chip) => (
 							<button
-								key={stage}
+								key={chip.id}
 								type="button"
-								onClick={() => setStatusFilter(stage)}
+								onClick={() => setStatusFilter(chip.id)}
 								className={cn(
 									"rounded-xl px-3 py-2 font-semibold text-xs transition-all active:scale-[0.97]",
-									statusFilter === stage
+									statusFilter === chip.id
 										? "bg-primary text-white shadow-sm"
 										: "bg-muted text-muted-foreground hover:bg-border",
 								)}
 							>
-								{stage === "all" ? t`All` : reviewStageLabel(stage)}
-								<span className="ml-1.5 opacity-60">{count}</span>
+								{chip.label()}
+								<span className="ml-1.5 opacity-60">
+									{chip.id === "all" ? students.length : students.filter((s) => poGroup(s) === chip.id).length}
+								</span>
 							</button>
-						);
-					})}
+						))}
+					{!poView &&
+						(["all", ...availableStages] as const).map((stage) => {
+							const count =
+								stage === "all"
+									? students.reduce((n, s) => n + s.resumes.length, 0)
+									: students.reduce((n, s) => n + s.resumes.filter((r) => stageOf(r) === stage).length, 0);
+							return (
+								<button
+									key={stage}
+									type="button"
+									onClick={() => setStatusFilter(stage)}
+									className={cn(
+										"rounded-xl px-3 py-2 font-semibold text-xs transition-all active:scale-[0.97]",
+										statusFilter === stage
+											? "bg-primary text-white shadow-sm"
+											: "bg-muted text-muted-foreground hover:bg-border",
+									)}
+								>
+									{stage === "all" ? t`All` : reviewStageLabel(stage)}
+									<span className="ml-1.5 opacity-60">{count}</span>
+								</button>
+							);
+						})}
 				</div>
 			</div>
 
@@ -182,16 +222,30 @@ export function StudentResumeTable({ students, onReview, onStudentClick }: Stude
 
 												{/* Badges + action row */}
 												<div className="flex flex-wrap items-center gap-2">
-													{/* Status badge */}
-													<span
-														className={cn(
-															"rounded-full px-2.5 py-0.5 font-semibold text-[11px]",
-															statusInfo.bg,
-															statusInfo.text,
-														)}
-													>
-														{statusInfo.label}
-													</span>
+													{/* Status badge. The PO sees only the PO tag below, not the workflow stage. */}
+													{!poView && (
+														<span
+															className={cn(
+																"rounded-full px-2.5 py-0.5 font-semibold text-[11px]",
+																statusInfo.bg,
+																statusInfo.text,
+															)}
+														>
+															{statusInfo.label}
+														</span>
+													)}
+
+													{/* Whether the PO has reviewed it (PO view; drafts have nothing to review) */}
+													{poView && poGroup({ resumes: [resume] }) === "reviewed" && (
+														<span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-[11px] text-emerald-700">
+															{t`PO Reviewed`}
+														</span>
+													)}
+													{poView && poGroup({ resumes: [resume] }) === "pending" && (
+														<span className="rounded-full bg-muted px-2.5 py-0.5 font-semibold text-[11px] text-muted-foreground">
+															{t`Not reviewed by PO`}
+														</span>
+													)}
 
 													{/* Score badge */}
 													{resume.evaluationScore !== null && (

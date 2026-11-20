@@ -39,7 +39,7 @@ export function reviewStageLabel(stage: string): string {
 		case "SUBMITTED_TO_PO":
 			return t`Submitted to PO`;
 		case "PO_REVISION_REQUESTED":
-			return t`PO: Revision Requested`;
+			return t`PO: Modification Advised`;
 		case "RESUBMITTED_TO_PO":
 			return t`Resubmitted to PO`;
 		case "PO_VERIFIED":
