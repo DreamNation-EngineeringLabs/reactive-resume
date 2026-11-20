@@ -25,10 +25,33 @@ function withCustom(...sections: { id: string; title: string; type?: CustomSecti
 	} as unknown as ResumeData;
 }
 
-test("the approved bank is all there: 219 comments over 13 sections, ids unique", () => {
-	assert.equal(REVIEW_SUGGESTIONS.length, 219);
-	assert.equal(SUGGESTION_SECTIONS.length, 13);
-	assert.equal(new Set(REVIEW_SUGGESTIONS.map((s) => s.id)).size, 219);
+test("the approved bank is all there: 228 comments over 14 sections, ids unique", () => {
+	assert.equal(REVIEW_SUGGESTIONS.length, 228);
+	assert.equal(SUGGESTION_SECTIONS.length, 14);
+	assert.equal(new Set(REVIEW_SUGGESTIONS.map((s) => s.id)).size, 228);
+});
+
+test("third round of PO feedback: education short forms, languages, certifications", () => {
+	const byId = (id: string) => REVIEW_SUGGESTIONS.find((s) => s.id === id)?.content ?? "";
+	assert.match(byId("EDU-08"), /2025-26/);
+	assert.match(byId("EDU-10"), /short form/);
+	assert.match(byId("EDU-19"), /one line in short form/);
+	assert.match(byId("EDU-20"), /short form, e\.g\. ECE/);
+	assert.match(byId("ACH-16"), /own Certifications section/);
+	for (const id of ["GEN-24", "GEN-25", "GEN-26", "CER-11", "CER-12", "CER-13", "LAN-01", "LAN-02"]) {
+		assert.ok(byId(id), id);
+	}
+	assert.equal(suggestionsForSection("languages").length, 2);
+});
+
+test("a Languages heading gets the Languages comments, Programming Languages stays in skills", () => {
+	const data = withCustom(
+		{ id: "l", title: "Languages Known", type: "summary" },
+		{ id: "p", title: "Programming Languages", type: "skills" },
+	);
+	assert.equal(suggestionSectionKey("l", data), "languages");
+	assert.equal(suggestionSectionKey("p", data), "skills", "falls back to its type");
+	assert.equal(suggestionSectionKey("languages"), "languages", "the built-in section");
 });
 
 test("every suggestion belongs to a section in the picker, and every section has suggestions", () => {

@@ -52,6 +52,13 @@ export const SUGGESTION_SECTIONS: readonly { key: string; label: string; builtIn
 	},
 	{ key: "certifications", label: "Certifications", builtIn: true, title: /certif|course/i },
 	{ key: "strengths", label: "Strengths", builtIn: false, title: /strength/i },
+	// Spoken languages. "Programming Languages" and the like are Technical Skills, not this.
+	{
+		key: "languages",
+		label: "Languages",
+		builtIn: true,
+		title: /^(?!.*\b(programming|coding|computer|scripting)\b).*\blanguages?\b/i,
+	},
 	{ key: "interests", label: "Hobbies", builtIn: true, title: /hobb|interest/i },
 	{ key: "personal", label: "Personal Details", builtIn: false, title: /personal/i },
 	{ key: "declaration", label: "Declaration", builtIn: false, title: /declar/i },
@@ -70,6 +77,7 @@ const TITLE_ORDER = [
 	"awards",
 	"experience",
 	"skills",
+	"languages",
 	"education",
 	"summary",
 ];

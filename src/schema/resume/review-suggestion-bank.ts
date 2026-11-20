@@ -153,6 +153,24 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		content: 'Do not use "Research" as a section heading.',
 		severity: "MEDIUM",
 	},
+	{
+		id: "GEN-24",
+		section: "general",
+		content: "Reduce the line spacing to 1.0 and add more content.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "GEN-25",
+		section: "general",
+		content: "As your percentage is low/moderate, add more achievements and content.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "GEN-26",
+		section: "general",
+		content: "As your percentage is low/moderate, make the resume 2 full pages.",
+		severity: "MEDIUM",
+	},
 	// ── basics ──
 	{
 		id: "HDR-01",
@@ -396,7 +414,7 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 	{
 		id: "EDU-08",
 		section: "education",
-		content: "Add the duration of each course (e.g. 2024–2028), with the expected year for B.Tech.",
+		content: "Write the academic year concisely, e.g. 2025-26.",
 		severity: "MEDIUM",
 	},
 	{
@@ -409,7 +427,8 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 	{
 		id: "EDU-10",
 		section: "education",
-		content: "Write the full name of your college and its city.",
+		content:
+			"Write the college name in its short form, e.g. CBIT instead of Chaitanya Bharathi Institute of Technology.",
 		severity: "MEDIUM",
 	},
 	{
@@ -465,7 +484,13 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "EDU-19",
 		section: "education",
 		content:
-			"Use space efficiently: write each qualification in one or two lines (course, institution, year and score).",
+			"Use space efficiently: write each qualification on one line in short form, e.g. B.Tech (ECE), CBIT, 2022-26, CGPA 8.4/10.",
+		severity: "LOW",
+	},
+	{
+		id: "EDU-20",
+		section: "education",
+		content: "Write your branch name in short form, e.g. ECE.",
 		severity: "LOW",
 	},
 	// ── projects ──
@@ -952,7 +977,7 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "ACH-16",
 		section: "awards",
 		group: "Co-curricular (7–8 on 2 pages)",
-		content: "Move NPTEL, Coursera or other online course certificates to Certifications.",
+		content: "Keep certifications in their own Certifications section; do not mix them with Achievements.",
 		severity: "LOW",
 	},
 	{
@@ -1290,6 +1315,24 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		content: "Use space efficiently: write each certification on one line (name, issuing body and year).",
 		severity: "LOW",
 	},
+	{
+		id: "CER-11",
+		section: "certifications",
+		content: "Keep Certifications as a separate section; do not mix them with Achievements.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "CER-12",
+		section: "certifications",
+		content: "Place Certifications below Technical Skills.",
+		severity: "LOW",
+	},
+	{
+		id: "CER-13",
+		section: "certifications",
+		content: "Place Certifications below Projects.",
+		severity: "LOW",
+	},
 	// ── interests ──
 	{ id: "HOB-01", section: "interests", content: "Keep only 3 or 4 hobbies.", severity: "MEDIUM" },
 	{
@@ -1350,6 +1393,20 @@ export const REVIEW_SUGGESTION_BANK: readonly ReviewSuggestion[] = [
 		id: "HOB-10",
 		section: "interests",
 		content: "Write hobbies as short phrases on one line or as 3–4 bullets, not as sentences.",
+		severity: "LOW",
+	},
+	// ── languages ──
+	{
+		id: "LAN-01",
+		section: "languages",
+		content: "Remove the Languages section and use the space for more achievements or projects.",
+		severity: "MEDIUM",
+	},
+	{
+		id: "LAN-02",
+		section: "languages",
+		content:
+			"If you know a foreign language, keep it and write the languages side by side on one line so it stands out.",
 		severity: "LOW",
 	},
 	// ── personal ──

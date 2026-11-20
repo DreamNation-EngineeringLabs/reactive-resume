@@ -29,7 +29,7 @@ export function getStatusBadgeClass(status: string): { bg: string; text: string;
 		case "SUBMITTED_TO_PO":
 			return { bg: "bg-primary/10", text: "text-primary", label: "Submitted to PO" };
 		case "PO_REVISION_REQUESTED":
-			return { bg: "bg-amber-50", text: "text-amber-700", label: "PO: Revision Requested" };
+			return { bg: "bg-amber-50", text: "text-amber-700", label: "PO: Modification Advised" };
 		case "RESUBMITTED_TO_PO":
 			return { bg: "bg-primary/10", text: "text-primary", label: "Resubmitted to PO" };
 		case "PO_VERIFIED":

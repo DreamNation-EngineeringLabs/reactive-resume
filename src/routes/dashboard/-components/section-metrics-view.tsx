@@ -33,6 +33,7 @@ import { InboxView } from "./inbox-view";
 import type { OrgUnitFilterValue } from "./org-unit-filter";
 import { OrgUnitFilter } from "./org-unit-filter";
 import { ResumeStatusPanel, ScoreSpreadPanel } from "./overview-panels";
+import { byRollNumber, poCounts, unitStudents } from "./po-progress";
 import { POSectionCardActions } from "./po-section-card-actions";
 import { POSectionFeedbackBanner } from "./po-section-feedback-banner";
 import { POSectionReviewDialog } from "./po-section-review-dialog";
@@ -42,7 +43,7 @@ import { SectionIntelligence } from "./section-intelligence";
 import { StudentDetailPanel } from "./student-detail-panel";
 import type { StudentWithResumes } from "./student-resume-table";
 import { StudentResumeTable } from "./student-resume-table";
-import { reportStatus, sectionReportRows, summaryRows } from "./validation-report";
+import { sectionReportRows, summaryRows } from "./validation-report";
 import { SectionValidationSheet, SummaryValidationSheet } from "./validation-report-sheet";
 
 export type DashboardTab = "overview" | "inbox" | "sections" | "students" | "checklists";
@@ -316,11 +317,12 @@ export function SectionMetricsView({
 	const hasStudents = dashboard.students.length > 0;
 	const review = reviewRate(filteredStudents, scope);
 	const waiting = review.total - review.reviewed;
-	// The PO's own progress, in the printed report's words: reviewed = PO Reviewed + Validated;
-	// balance = Verified, i.e. approved by faculty and not yet looked at by the PO even once.
-	const poStatuses = filteredStudents.map((s) => reportStatus(s.resumes[0]));
-	const poReviewedTotal = poStatuses.filter((s) => s === "PO Reviewed" || s === "Validated").length;
-	const poBalance = poStatuses.filter((s) => s === "Verified").length;
+	// The PO's own progress: reviewed + balance = everything submitted (see po-progress.ts).
+	const po = poCounts(filteredStudents);
+	// An opened section: every student its card counts, in roll-number order.
+	const sectionStudentsInOrder = sectionId
+		? unitStudents(filteredStudents, sectionId, dashboard.allOrgUnits ?? []).sort(byRollNumber)
+		: [];
 	const evaluationRate =
 		detailedStats.withResumes > 0 ? (detailedStats.evaluated / detailedStats.withResumes) * 100 : 0;
 	const overviewNote =
@@ -399,9 +401,9 @@ export function SectionMetricsView({
 						{scope !== "faculty" && (
 							<Stat
 								label={t`Reviewed by PO`}
-								value={poReviewedTotal}
-								hint={t`Balance: ${poBalance} not yet reviewed`}
-								tooltip={t`Reviewed = the PO commented on it, asked for changes or approved it. Balance = verified by faculty and not yet reviewed by the PO.`}
+								value={po.reviewed}
+								hint={t`Balance: ${po.balance} of ${po.submitted} submitted`}
+								tooltip={t`Reviewed = submitted resumes the PO commented on, advised modification on, or approved. Balance = submitted resumes the PO has not reviewed yet, whatever stage they are at.`}
 							/>
 						)}
 						<Stat
@@ -484,7 +486,8 @@ export function SectionMetricsView({
 			{activeTab === "sections" && sectionId && (
 				<SectionStudentsPage
 					section={activeSection}
-					students={filteredStudents.filter((s) => s.sectionId === sectionId)}
+					students={sectionStudentsInOrder}
+					poView={scope !== "faculty"}
 					onBack={() => {
 						navigate({
 							search: (prev: any) => ({ ...prev, sectionId: undefined }),
@@ -645,7 +648,7 @@ export function SectionMetricsView({
 							const poHandsStatusLabel = (() => {
 								if (resumesInPOHands.every((r) => r.reviewStatus === "APPROVED")) return "Approved";
 								if (resumesInPOHands.some((r) => r.reviewStatus === "PO_REVISION_REQUESTED"))
-									return "PO: Revision Requested";
+									return "PO: Modification Advised";
 								if (resumesInPOHands.some((r) => r.reviewStatus === "SUBMITTED_TO_PO")) return "Awaiting PO Review";
 								return "With PO";
 							})();
@@ -700,16 +703,20 @@ export function SectionMetricsView({
 										</div>
 										{scope !== "faculty" &&
 											(() => {
-												const statuses = sectionStudents.map((s) => reportStatus(s.resumes[0]));
-												const reviewed = statuses.filter((s) => s === "PO Reviewed" || s === "Validated").length;
-												const balance = statuses.filter((s) => s === "Verified").length;
+												// The same students "Total Students" counts, so the three add up to it.
+												const counts = poCounts(
+													unitStudents(dashboard?.students ?? [], unit.id, dashboard?.allOrgUnits ?? []),
+												);
 												return (
 													<div className="flex justify-between font-semibold text-[11px] text-foreground">
 														<span>
-															{t`PO reviewed`}: {reviewed}
+															{t`PO reviewed`}: {counts.reviewed}
 														</span>
 														<span>
-															{t`Balance`}: {balance}
+															{t`Balance`}: {counts.balance}
+														</span>
+														<span>
+															{t`Not submitted`}: {counts.notSubmitted}
 														</span>
 													</div>
 												);
@@ -852,10 +859,7 @@ export function SectionMetricsView({
 				<SectionValidationSheet
 					sectionName={activeSection.name}
 					branch={(activeSection as { parentName?: string | null }).parentName ?? activeSection.name}
-					rows={sectionReportRows(
-						filteredStudents.filter((s) => s.sectionId === sectionId),
-						scope === "faculty" ? "faculty" : "po",
-					)}
+					rows={sectionReportRows(sectionStudentsInOrder, scope === "faculty" ? "faculty" : "po")}
 					scope={scope === "faculty" ? "faculty" : "po"}
 					onClose={() => setReportOpen(null)}
 				/>
@@ -879,6 +883,7 @@ export function SectionMetricsView({
 							}
 							rows={rows}
 							totals={totals}
+							poView={scope !== "faculty"}
 							onClose={() => setReportOpen(null)}
 						/>
 					);
@@ -963,6 +968,8 @@ type SectionStudentsPageProps = {
 	onStudentClick: (student: StudentWithResumes) => void;
 	/** Opens the printable CV Validation Status sheet for this section. */
 	onOpenReport?: () => void;
+	/** The Placement Officer's simpler grouping of the list (see StudentResumeTable). */
+	poView?: boolean;
 };
 
 function SectionStudentsPage({
@@ -972,6 +979,7 @@ function SectionStudentsPage({
 	onReview,
 	onStudentClick,
 	onOpenReport,
+	poView = false,
 }: SectionStudentsPageProps) {
 	if (!section) {
 		return (
@@ -1075,7 +1083,7 @@ function SectionStudentsPage({
 					<p className="font-semibold text-foreground">{t`No students in this section`}</p>
 				</div>
 			) : (
-				<StudentResumeTable students={students} onReview={onReview} onStudentClick={onStudentClick} />
+				<StudentResumeTable students={students} onReview={onReview} onStudentClick={onStudentClick} poView={poView} />
 			)}
 		</div>
 	);
