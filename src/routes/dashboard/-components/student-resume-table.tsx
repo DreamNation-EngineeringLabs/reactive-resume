@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { cn } from "@/utils/style";
-import { type PoGroup, poGroup } from "./po-progress";
+import { type PoChip, poChip } from "./po-progress";
 import { REVIEW_STAGES, reviewStageLabel, stageOf } from "./review-status";
 import { getEvaluationBadgeClass, getStatusBadgeClass } from "./score-helpers";
 import { useResumeDownload } from "./use-resume-download";
@@ -52,11 +52,15 @@ type StudentResumeTableProps = {
 	poView?: boolean;
 };
 
-/** The PO's chips, in the order a section is worked through. Each student is in exactly one but "All". */
-const PO_CHIPS: { id: "all" | PoGroup; label: () => string }[] = [
+/**
+ * The PO's chips, in the order a section is worked through. Each student is in exactly one but "All".
+ * Resubmitted always shows, even at 0: it is where the PO checks for students who answered their review.
+ */
+const PO_CHIPS: { id: "all" | PoChip; label: () => string }[] = [
 	{ id: "all", label: () => t`All` },
 	{ id: "not_submitted", label: () => t`Not Submitted` },
 	{ id: "pending", label: () => t`Pending PO Review` },
+	{ id: "resubmitted", label: () => t`Resubmitted` },
 	{ id: "reviewed", label: () => t`Reviewed by PO` },
 ];
 
@@ -87,7 +91,7 @@ export function StudentResumeTable({ students, onReview, onStudentClick, poView 
 
 				// The PO's groups are per student (from the master resume), and a student without a resume
 				// is "Not Submitted", so the three groups add up to All.
-				if (poView) return statusFilter === "all" || poGroup(student) === statusFilter ? student : null;
+				if (poView) return statusFilter === "all" || poChip(student) === statusFilter ? student : null;
 
 				// Filter on the resume's review stage. This used to filter on a derived four-value
 				// status with no chip for "submitted", which made the stage most resumes sit in
@@ -135,7 +139,7 @@ export function StudentResumeTable({ students, onReview, onStudentClick, poView 
 							>
 								{chip.label()}
 								<span className="ml-1.5 opacity-60">
-									{chip.id === "all" ? students.length : students.filter((s) => poGroup(s) === chip.id).length}
+									{chip.id === "all" ? students.length : students.filter((s) => poChip(s) === chip.id).length}
 								</span>
 							</button>
 						))}
@@ -236,12 +240,17 @@ export function StudentResumeTable({ students, onReview, onStudentClick, poView 
 													)}
 
 													{/* Whether the PO has reviewed it (PO view; drafts have nothing to review) */}
-													{poView && poGroup({ resumes: [resume] }) === "reviewed" && (
+													{poView && poChip({ resumes: [resume] }) === "resubmitted" && (
+														<span className="rounded-full bg-amber-50 px-2.5 py-0.5 font-semibold text-[11px] text-amber-700">
+															{t`Resubmitted`}
+														</span>
+													)}
+													{poView && poChip({ resumes: [resume] }) === "reviewed" && (
 														<span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-[11px] text-emerald-700">
 															{t`PO Reviewed`}
 														</span>
 													)}
-													{poView && poGroup({ resumes: [resume] }) === "pending" && (
+													{poView && poChip({ resumes: [resume] }) === "pending" && (
 														<span className="rounded-full bg-muted px-2.5 py-0.5 font-semibold text-[11px] text-muted-foreground">
 															{t`Not reviewed by PO`}
 														</span>

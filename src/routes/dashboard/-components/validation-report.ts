@@ -53,6 +53,8 @@ export type StudentReportRow = {
 	validated: boolean;
 	/** Where the resume is, in the five words the placement team uses — printed in the Status column. */
 	status: ReportStatus;
+	/** The same resume in the PO's three groups, printed instead of `status` on the PO's sheet. */
+	poStatus: string;
 };
 
 /** In workflow order, the order the sheet's header counts them in. */
@@ -106,6 +108,25 @@ export function poGroup(student: { resumes: ReportResume[] }): PoGroup {
 	if (status === "PO Reviewed" || status === "Validated") return "reviewed";
 	return "pending";
 }
+
+/**
+ * The PO's chips and tags split one group further: a resume the student resubmitted after the PO
+ * advised modifications sits under "Resubmitted", so the PO can find the ones waiting on a second look.
+ * The counts (cards, sheets) still read it as reviewed by the PO, so they use `poGroup`, not this.
+ */
+export type PoChip = PoGroup | "resubmitted";
+
+export function poChip(student: { resumes: ReportResume[] }): PoChip {
+	if (student.resumes[0]?.reviewStatus === "RESUBMITTED_TO_PO") return "resubmitted";
+	return poGroup(student);
+}
+
+/** The PO's three groups as the chips, tags and printed reports name them, in the order a class is worked through. */
+export const PO_GROUP_LABELS: Record<PoGroup, string> = {
+	not_submitted: "Not Submitted",
+	pending: "Pending PO Review",
+	reviewed: "Reviewed by PO",
+};
 
 export type PoCounts = {
 	total: number;
@@ -182,6 +203,7 @@ export function sectionReportRows(students: ReportStudent[], scope: ReportScope)
 				submittedOn: submittedOn(resume),
 				validated: isValidated(resume, scope),
 				status: reportStatus(resume),
+				poStatus: PO_GROUP_LABELS[poGroup(student)],
 			};
 		});
 }

@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { ArrowClockwiseIcon, ArrowRightIcon, ClockIcon, TrayIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { cn } from "@/utils/style";
+import { type PoChip, poChip } from "./po-progress";
 import { QUEUE_STAGES, reviewStageLabel, STAGES_FOR_SCOPE } from "./review-status";
 import type { StudentWithResumes } from "./student-resume-table";
 
@@ -22,6 +23,8 @@ type InboxItem = {
 	reviewStatus: string;
 	evaluationScore: number | null;
 	commentCount: number;
+	/** Where the PO sees it: the same groups as the chips inside a section. */
+	poGroup: PoChip;
 	student: {
 		engLabsId: string;
 		name: string;
@@ -36,6 +39,34 @@ type InboxViewProps = {
 	scope: "faculty" | "po";
 	onReview?: (resumeId: string, engLabsStudentId: string) => void;
 };
+
+/** The PO's inbox groups, in the same order and words as the chips inside a section. */
+const PO_INBOX_GROUPS: { id: PoChip; label: () => string; description: () => string; tone: string }[] = [
+	{
+		id: "not_submitted",
+		label: () => t`Not Submitted`,
+		description: () => t`Still a draft; waiting on the student to submit`,
+		tone: "DRAFT",
+	},
+	{
+		id: "pending",
+		label: () => t`Pending PO Review`,
+		description: () => t`Submitted, and the Placement Officer has not reviewed it yet`,
+		tone: "SUBMITTED_TO_FACULTY",
+	},
+	{
+		id: "resubmitted",
+		label: () => t`Resubmitted`,
+		description: () => t`Resubmitted by the student after the Placement Officer advised modifications`,
+		tone: "RESUBMITTED_TO_PO",
+	},
+	{
+		id: "reviewed",
+		label: () => t`Reviewed by PO`,
+		description: () => t`Commented on, modification advised, or approved by the Placement Officer`,
+		tone: "APPROVED",
+	},
+];
 
 /** One line telling the reviewer why a stage is in their queue and who it is waiting on. */
 function stageDescription(stage: string, scope: "faculty" | "po"): string {
@@ -102,6 +133,7 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 			reviewStatus: resume.reviewStatus ?? "DRAFT",
 			evaluationScore: resume.evaluationScore,
 			commentCount: resume.commentCount,
+			poGroup: poChip({ resumes: [resume] }),
 			student: {
 				engLabsId: student.engLabsId,
 				name: student.name,
@@ -125,14 +157,36 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 
 	const [stageFilter, setStageFilter] = useState<"all" | string>("all");
 
-	const visible =
-		stageFilter === "all"
+	// The Placement Officer's inbox uses the same three groups as inside a section, not every review stage.
+	// Display only: which group a resume is in never changes its status.
+	const poMode = scope === "po";
+
+	const visible = poMode
+		? sorted.filter((i) => stageFilter === "all" || i.poGroup === stageFilter)
+		: stageFilter === "all"
 			? // "All" means everything waiting on a person, which is why DRAFT is not in it: those are
 				// waiting on the student. It stays selectable as its own chip.
 				sorted.filter((i) => i.reviewStatus !== "DRAFT")
 			: sorted.filter((i) => i.reviewStatus === stageFilter);
 
-	const groups: InboxGroup[] = [...ownStages, ...otherStages, ...(draftCount > 0 ? (["DRAFT"] as const) : [])]
+	const poGroups: InboxGroup[] = PO_INBOX_GROUPS.map((group) => ({
+		id: group.id,
+		label: group.label(),
+		description: group.description(),
+		iconBg: stageTone(group.tone).bg,
+		iconColor: stageTone(group.tone).text,
+		icon:
+			group.id === "not_submitted" ? (
+				<ClockIcon weight="duotone" className="size-5" />
+			) : group.id === "resubmitted" ? (
+				<ArrowClockwiseIcon weight="duotone" className="size-5" />
+			) : (
+				<TrayIcon weight="duotone" className="size-5" />
+			),
+		items: visible.filter((i) => i.poGroup === group.id),
+	})).filter((g) => g.items.length > 0);
+
+	const stageGroups: InboxGroup[] = [...ownStages, ...otherStages, ...(draftCount > 0 ? (["DRAFT"] as const) : [])]
 		.map((stage) => ({
 			id: stage,
 			label: reviewStageLabel(stage),
@@ -151,9 +205,20 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 		}))
 		.filter((g) => g.items.length > 0);
 
+	const groups = poMode ? poGroups : stageGroups;
+
 	const totalCount = groups.reduce((sum, g) => sum + g.items.length, 0);
 
-	const chips: { id: string; label: string; count: number }[] = [
+	const poChips: { id: string; label: string; count: number }[] = [
+		{ id: "all", label: t`All`, count: sorted.length },
+		...PO_INBOX_GROUPS.map((group) => ({
+			id: group.id,
+			label: group.label(),
+			count: sorted.filter((i) => i.poGroup === group.id).length,
+		})),
+	];
+
+	const stageChips: { id: string; label: string; count: number }[] = [
 		{ id: "all", label: t`All`, count: sorted.filter((i) => i.reviewStatus !== "DRAFT").length },
 		...[...ownStages, ...otherStages].map((s) => ({
 			id: s,
@@ -162,6 +227,8 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 		})),
 		...(draftCount > 0 ? [{ id: "DRAFT", label: reviewStageLabel("DRAFT"), count: draftCount }] : []),
 	];
+
+	const chips = poMode ? poChips : stageChips;
 
 	const filterBar = (
 		<div className="flex flex-wrap gap-1.5">
@@ -237,7 +304,7 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 						{/* Items */}
 						<div className="space-y-2">
 							{group.items.map((item) => (
-								<InboxCard key={item.resumeId} item={item} onReview={onReview} />
+								<InboxCard key={item.resumeId} item={item} onReview={onReview} poMode={poMode} />
 							))}
 						</div>
 					</div>
@@ -249,9 +316,11 @@ export function InboxView({ students, scope, onReview }: InboxViewProps) {
 function InboxCard({
 	item,
 	onReview,
+	poMode,
 }: {
 	item: InboxItem;
 	onReview?: (resumeId: string, engLabsStudentId: string) => void;
+	poMode: boolean;
 }) {
 	const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
 		SUBMITTED_TO_FACULTY: { bg: "bg-blue-50", text: "text-blue-700", label: t`Submitted` },
@@ -307,10 +376,27 @@ function InboxCard({
 					</span>
 				)}
 
-				{/* Status badge */}
-				<span className={cn("rounded-full px-2.5 py-0.5 font-medium text-xs", badge.bg, badge.text)}>
-					{badge.label}
-				</span>
+				{/* Status badge. The PO sees whether they have reviewed it, not the workflow stage. */}
+				{!poMode && (
+					<span className={cn("rounded-full px-2.5 py-0.5 font-medium text-xs", badge.bg, badge.text)}>
+						{badge.label}
+					</span>
+				)}
+				{poMode && item.poGroup === "resubmitted" && (
+					<span className="rounded-full bg-amber-50 px-2.5 py-0.5 font-medium text-amber-700 text-xs">
+						{t`Resubmitted`}
+					</span>
+				)}
+				{poMode && item.poGroup === "reviewed" && (
+					<span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-medium text-emerald-700 text-xs">
+						{t`PO Reviewed`}
+					</span>
+				)}
+				{poMode && item.poGroup === "pending" && (
+					<span className="rounded-full bg-muted px-2.5 py-0.5 font-medium text-muted-foreground text-xs">
+						{t`Not reviewed by PO`}
+					</span>
+				)}
 
 				{/* Review CTA */}
 				{onReview && (

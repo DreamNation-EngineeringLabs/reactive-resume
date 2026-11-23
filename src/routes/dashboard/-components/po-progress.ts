@@ -2,7 +2,7 @@
  * The Placement Officer's progress groups and the section helpers the screens share. The groups
  * themselves live with the printed report (validation-report.ts) so the screen and the sheet agree.
  */
-export { type PoCounts, type PoGroup, poCounts, poGroup } from "./validation-report";
+export { type PoChip, type PoCounts, type PoGroup, poChip, poCounts, poGroup } from "./validation-report";
 
 type StudentLike = { sectionId: string; engLabsUnitIds?: string[] };
 

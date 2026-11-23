@@ -34,9 +34,7 @@ import type { OrgUnitFilterValue } from "./org-unit-filter";
 import { OrgUnitFilter } from "./org-unit-filter";
 import { ResumeStatusPanel, ScoreSpreadPanel } from "./overview-panels";
 import { byRollNumber, poCounts, unitStudents } from "./po-progress";
-import { POSectionCardActions } from "./po-section-card-actions";
 import { POSectionFeedbackBanner } from "./po-section-feedback-banner";
-import { POSectionReviewDialog } from "./po-section-review-dialog";
 import { RecentActivity } from "./recent-activity";
 import { ReviewTracker, reviewRate } from "./review-tracker";
 import { SectionIntelligence } from "./section-intelligence";
@@ -84,11 +82,6 @@ export function SectionMetricsView({
 	const [showChecklistCreator, setShowChecklistCreator] = useState(false);
 	const [viewLevel, setViewLevel] = useState<string | null>(null);
 	const [sectionsTabSearch, setSectionsTabSearch] = useState("");
-	const [poReviewDialog, setPoReviewDialog] = useState<{
-		sectionId: string;
-		sectionName: string;
-		resumes: Array<{ id: string; studentId: string }>;
-	} | null>(null);
 
 	const queryInput = {
 		sectionIds,
@@ -631,19 +624,6 @@ export function SectionMetricsView({
 							);
 							const isInPOHands = resumesInPOHands.length > 0;
 
-							// PO: everything a student has handed over and nobody has finished with. Restricting
-							// this to PO-managed stages left the Placement Officer with no section-level action
-							// at all here, because faculty verify but never forward — every card read
-							// "Waiting for Faculty" while hundreds of submissions sat in the section.
-							const poSubmittedResumes = sectionStudents.flatMap((s) =>
-								s.resumes
-									.filter((r) => {
-										const stage = r.reviewStatus ?? "DRAFT";
-										return stage !== "DRAFT" && stage !== "APPROVED";
-									})
-									.map((r) => ({ id: r.id, studentId: s.engLabsId })),
-							);
-
 							// Summary label for faculty when section is in PO hands
 							const poHandsStatusLabel = (() => {
 								if (resumesInPOHands.every((r) => r.reviewStatus === "APPROVED")) return "Approved";
@@ -771,24 +751,7 @@ export function SectionMetricsView({
 												</button>
 											)}
 										</>
-									) : (
-										<POSectionCardActions
-											sectionId={unit.id}
-											sectionName={unit.name}
-											tenantId={tenantId}
-											stats={stats as any}
-											poSubmittedResumes={poSubmittedResumes}
-											sectionStudents={sectionStudents}
-											onOpenReviewDialog={() =>
-												setPoReviewDialog({
-													sectionId: unit.id,
-													sectionName: unit.name,
-													resumes: poSubmittedResumes,
-												})
-											}
-											isPending={bulkUpdateMutation.isPending}
-										/>
-									)}
+									) : null}
 								</div>
 							);
 						})}
@@ -906,25 +869,6 @@ export function SectionMetricsView({
 				/>
 			)}
 			<ChecklistCreator tenantId={tenantId} open={showChecklistCreator} onOpenChange={setShowChecklistCreator} />
-
-			{/* ══════════════════ PO SECTION REVIEW DIALOG ══════════════════ */}
-			{poReviewDialog && (
-				<POSectionReviewDialog
-					open={!!poReviewDialog}
-					onClose={() => setPoReviewDialog(null)}
-					sectionId={poReviewDialog.sectionId}
-					sectionName={poReviewDialog.sectionName}
-					tenantId={tenantId}
-					resumes={poReviewDialog.resumes}
-					onSuccess={() => {
-						queryClient.invalidateQueries({
-							queryKey: orpc.resume.dashboard.sections.queryOptions({
-								input: { sectionIds, tenantId, scope: scope as any },
-							}).queryKey as any,
-						});
-					}}
-				/>
-			)}
 		</div>
 	);
 }

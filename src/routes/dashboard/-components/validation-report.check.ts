@@ -234,3 +234,20 @@ test("the PO summary counts each section and the totals add up", () => {
 	assert.deepEqual(rows[0].po, { total: 3, submitted: 2, reviewed: 1, balance: 1, notSubmitted: 1 });
 	assert.deepEqual(totals.po, { total: 4, submitted: 3, reviewed: 2, balance: 1, notSubmitted: 1 });
 });
+
+test("the PO's section report prints the three PO groups, the same as the chips", () => {
+	const rows = sectionReportRows(
+		[
+			student("A", "1", "FACULTY_VERIFIED", { poReviewed: true }),
+			student("B", "2", "SUBMITTED_TO_FACULTY"),
+			student("C", "3", "DRAFT", { poReviewed: true }),
+			student("D", "4", null),
+			student("E", "5", "APPROVED"),
+		],
+		"po",
+	);
+	assert.deepEqual(
+		rows.map((r) => r.poStatus),
+		["Reviewed by PO", "Pending PO Review", "Not Submitted", "Not Submitted", "Reviewed by PO"],
+	);
+});

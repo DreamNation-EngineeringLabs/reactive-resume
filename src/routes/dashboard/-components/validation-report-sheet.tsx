@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/utils/style";
 import {
 	formatReportDate,
+	PO_GROUP_LABELS,
 	type PoCounts,
 	printLayout,
 	REPORT_STATUSES,
@@ -109,10 +110,14 @@ function useFitToPage<T extends HTMLElement>(deps: unknown[]) {
 		const el = ref.current;
 		if (!el) return;
 		const height = el.scrollHeight;
+		// Too wide is as bad as too tall: cells that may not wrap push the table past the right edge,
+		// and the printed page cuts it off.
+		const widthRatio = el.scrollWidth > el.clientWidth + 1 ? el.clientWidth / el.scrollWidth : 1;
+		const heightRatio = height > A4_CONTENT_HEIGHT_PX ? A4_CONTENT_HEIGHT_PX / height : 1;
 		// 0.62 keeps the smallest type legible; past that the sheet is better off on two pages
 		// than unreadable on one.
-		if (height > A4_CONTENT_HEIGHT_PX && scale > 0.62) {
-			setScale((current) => Math.max(0.62, current * Math.min(0.97, A4_CONTENT_HEIGHT_PX / height)));
+		if ((widthRatio < 1 || heightRatio < 1) && scale > 0.62) {
+			setScale((current) => Math.max(0.62, current * Math.min(0.97, widthRatio, heightRatio)));
 		}
 	}, [scale]);
 
@@ -185,7 +190,8 @@ const cell = "border border-black px-1 py-0 leading-[1.15] align-middle";
 const summaryCell = "border border-black whitespace-nowrap px-1.5 py-[2px] leading-snug align-middle";
 const summaryBranchCell = "border border-black px-1.5 py-[2px] leading-snug align-middle text-left";
 
-function RosterTable({ rows, fontPt }: { rows: StudentReportRow[]; fontPt: number }) {
+/** `poView` prints the PO's three groups in the Status column instead of the six report statuses. */
+function RosterTable({ rows, fontPt, poView }: { rows: StudentReportRow[]; fontPt: number; poView: boolean }) {
 	return (
 		<table className="w-full border-collapse" style={{ fontSize: `${fontPt}pt` }}>
 			<thead>
@@ -204,7 +210,7 @@ function RosterTable({ rows, fontPt }: { rows: StudentReportRow[]; fontPt: numbe
 						<td className={cn(cell, "text-left")}>{row.name}</td>
 						<td className={cn(cell, "text-center")}>{row.rollNumber}</td>
 						<td className={cn(cell, "text-center")}>{row.submittedOn}</td>
-						<td className={cn(cell, "text-center")}>{row.status}</td>
+						<td className={cn(cell, "text-center")}>{poView ? row.poStatus : row.status}</td>
 					</tr>
 				))}
 			</tbody>
@@ -225,11 +231,18 @@ export function SectionValidationSheet({ sectionName, branch, rows, scope, onClo
 	const [sheetRef, scale] = useFitToPage<HTMLDivElement>([rows.length, sectionName]);
 	const { left, fontPt: baseFontPt } = printLayout(rows);
 	const fontPt = baseFontPt * scale;
-	// One count per status, in workflow order, so the header adds up to Total.
-	const statusCounts = REPORT_STATUSES.map((status) => ({
-		status,
-		count: rows.filter((r) => r.status === status).length,
-	}));
+	const poView = scope === "po";
+	// One count per status, in workflow order, so the header adds up to Total. The PO's sheet counts
+	// its three groups instead, matching the chips and the section cards.
+	const statusCounts = poView
+		? Object.values(PO_GROUP_LABELS).map((status) => ({
+				status,
+				count: rows.filter((r) => r.poStatus === status).length,
+			}))
+		: REPORT_STATUSES.map((status) => ({
+				status,
+				count: rows.filter((r) => r.status === status).length,
+			}));
 	// "Section" on the sheet is the letter the college uses, e.g. "AE - A 2024" → "A".
 	const sectionLetter = sectionName.split("-")[1]?.trim().split(" ")[0] ?? sectionName;
 
@@ -296,10 +309,10 @@ export function SectionValidationSheet({ sectionName, branch, rows, scope, onClo
 			{/* Two columns so a full class fits one page at a readable size. */}
 			<div className="flex items-start gap-2">
 				<div className="flex-1">
-					<RosterTable rows={rows.slice(0, left)} fontPt={fontPt} />
+					<RosterTable rows={rows.slice(0, left)} fontPt={fontPt} poView={poView} />
 				</div>
 				<div className="flex-1">
-					<RosterTable rows={rows.slice(left)} fontPt={fontPt} />
+					<RosterTable rows={rows.slice(left)} fontPt={fontPt} poView={poView} />
 				</div>
 			</div>
 
@@ -369,7 +382,8 @@ export function SummaryValidationSheet({ title, rows, totals, onClose, poView = 
 					{poView ? (
 						<tr className="bg-zinc-100 font-semibold">
 							{PO_SUMMARY_COLUMNS.map((column) => (
-								<th key={column.label} className={cn(summaryCell, "w-[10%]")}>
+								// Headings wrap ("Balance / by PO"): kept on one line, five of them ran off the page.
+								<th key={column.label} className={cn(summaryCell, "w-[10%] whitespace-normal")}>
 									{column.label}
 								</th>
 							))}

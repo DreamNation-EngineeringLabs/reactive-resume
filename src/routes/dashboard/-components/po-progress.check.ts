@@ -1,7 +1,7 @@
 // Run: pnpm exec tsx --test src/routes/dashboard/-components/po-progress.check.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { byRollNumber, poCounts, poGroup, unitStudents } from "./po-progress";
+import { byRollNumber, poChip, poCounts, poGroup, unitStudents } from "./po-progress";
 
 const student = (reviewStatus: string | null, poReviewed = false, extra: Record<string, unknown> = {}) => ({
 	sectionId: "class-a",
@@ -65,4 +65,14 @@ test("roll numbers sort the way the college lists them", () => {
 		["1", "9", "10"],
 		"9 before 10",
 	);
+});
+
+test("the PO's chips put resubmitted resumes under Resubmitted, the counts still call them reviewed", () => {
+	assert.equal(poChip(student("RESUBMITTED_TO_PO")), "resubmitted");
+	assert.equal(poChip(student("RESUBMITTED_TO_PO", true)), "resubmitted", "even with PO comments");
+	assert.equal(poChip(student("PO_REVISION_REQUESTED")), "reviewed", "back with the student");
+	assert.equal(poChip(student("FACULTY_VERIFIED", true)), "reviewed");
+	assert.equal(poChip(student("SUBMITTED_TO_FACULTY")), "pending");
+	assert.equal(poChip(student(null)), "not_submitted");
+	assert.equal(poCounts([student("RESUBMITTED_TO_PO")]).reviewed, 1, "cards and sheets are unchanged");
 });
