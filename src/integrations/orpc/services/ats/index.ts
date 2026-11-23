@@ -1,4 +1,5 @@
 import type { ResumeData } from "@/schema/resume/data";
+import { type AtsProfile, BRANCHES, understandProfile } from "./branches";
 import { extractKeywords } from "./keyword-extractor";
 import { scoreBrevity } from "./rules/brevity";
 import { scoreContentQuality } from "./rules/content-quality";
@@ -92,6 +93,10 @@ export interface ScoringResult {
 		 * Used to show the student their position on the scoring curve chart.
 		 */
 		taxonomyMatchCount?: number;
+		/** Set when suggestions were tailored to a non-software branch, e.g. "Civil Engineering". */
+		branch?: string;
+		/** "skills": the branch came from the skills on the resume, not the department / field of study. */
+		branchFrom?: "skills";
 	};
 }
 
@@ -100,6 +105,7 @@ export interface AtsScoringContext {
 	jdProvided: boolean;
 	requiredJdKeywords: string[];
 	categories: ScoringResult["categories"];
+	profile: AtsProfile;
 }
 
 export interface JDAnalysis {
@@ -193,6 +199,16 @@ export function getResumeSkills(data: ResumeData): string[] {
 	return skills;
 }
 
+/** Skills, bullets, summary and headline as one string: what keyword matching reads. */
+export function resumeText(data: ResumeData): string {
+	return [
+		...getResumeSkills(data),
+		...getAllBullets(data).map((b) => b.text),
+		stripHtml(data.summary.content),
+		data.basics.headline,
+	].join(" ");
+}
+
 /** Estimate page count based on content volume */
 export function estimatePageCount(data: ResumeData): number {
 	// Count total words across all visible resume content
@@ -242,12 +258,19 @@ function rescaleCategory(cat: CategoryScore, newMax: number): CategoryScore {
 	};
 }
 
+/** `units`: the student's eng-labs unit names, nearest first; they decide the branch before the resume does. */
 export async function scoreResume(
 	resumeData: ResumeData,
 	jobDescription?: string,
 	includeAiSuggestions = true,
+	units: string[] = [],
 ): Promise<ScoringResult> {
 	const jdProvided = !!jobDescription && jobDescription.trim().length > 0;
+	const profile = understandProfile(units, resumeData, resumeText(resumeData));
+	const branch = profile.focus;
+	const tailored = branch !== "general" && !(branch === "software" && profile.home === "software");
+	const branchLabel = tailored ? BRANCHES[branch].label : undefined;
+	const branchFrom = tailored && branch !== profile.home ? ("skills" as const) : undefined;
 
 	// Step 1: Extract keywords from JD (if provided)
 	let jdAnalysis: JDAnalysis | null = null;
@@ -355,6 +378,7 @@ export async function scoreResume(
 					jdProvided,
 					requiredJdKeywords: requiredKeywords,
 					categories: thinCategories,
+					profile,
 				})
 			: { suggestions: [] as Suggestion[], aiRewriteUnavailable: false };
 
@@ -371,18 +395,20 @@ export async function scoreResume(
 				estimatedPages: estimatePageCount(resumeData),
 				aiRewriteUnavailable: thinGen.aiRewriteUnavailable,
 				taxonomyMatchCount: jdProvided ? undefined : 0,
+				branch: branchLabel,
+				branchFrom,
 			},
 		};
 	}
 
 	let [keywordMatch, impactMetrics, structure, formatting, brevity, sixthCategory] = await Promise.all([
-		scoreKeywordMatch(resumeData, requiredKeywords, softKeywords),
+		scoreKeywordMatch(resumeData, requiredKeywords, softKeywords, branch),
 		scoreImpactMetrics(resumeData),
 		scoreStructure(resumeData),
 		scoreFormatting(resumeData),
 		scoreBrevity(resumeData),
 		// Always compute a 6th category worth 10 pts — keeps the total always out of 100
-		jdProvided ? scoreTailoring(resumeData, jdAnalysis!) : scoreContentQuality(resumeData),
+		jdProvided ? scoreTailoring(resumeData, jdAnalysis!) : scoreContentQuality(resumeData, profile),
 	]);
 
 	// Step 4: In JD mode, rebalance category weights so relevance signals dominate
@@ -427,6 +453,7 @@ export async function scoreResume(
 				jdProvided,
 				requiredJdKeywords: requiredKeywords,
 				categories: categoriesResult,
+				profile,
 			})
 		: { suggestions: [] as Suggestion[], aiRewriteUnavailable: false };
 
@@ -442,7 +469,9 @@ export async function scoreResume(
 			totalBullets: bullets.length,
 			estimatedPages: estimatePageCount(resumeData),
 			aiRewriteUnavailable: genResult.aiRewriteUnavailable,
-			taxonomyMatchCount: jdProvided ? undefined : getIndustryTaxonomyMatchCount(resumeData),
+			taxonomyMatchCount: jdProvided ? undefined : getIndustryTaxonomyMatchCount(resumeData, branch),
+			branch: branchLabel,
+			branchFrom,
 		},
 	};
 }
