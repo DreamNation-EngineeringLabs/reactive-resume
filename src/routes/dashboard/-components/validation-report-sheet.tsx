@@ -199,7 +199,8 @@ function RosterTable({ rows, fontPt, poView }: { rows: StudentReportRow[]; fontP
 					<th className={cn(cell, "w-[7%]")}>S. No.</th>
 					<th className={cn(cell, "text-left")}>Name of the Student</th>
 					<th className={cn(cell, "w-[20%]")}>H. T. No.</th>
-					<th className={cn(cell, "w-[18%]")}>CV submitted</th>
+					{/* The PO's sheet leaves the submission date out; the name takes the room. */}
+					{!poView && <th className={cn(cell, "w-[18%]")}>CV submitted</th>}
 					<th className={cn(cell, "w-[15%]")}>Status</th>
 				</tr>
 			</thead>
@@ -209,7 +210,7 @@ function RosterTable({ rows, fontPt, poView }: { rows: StudentReportRow[]; fontP
 						<td className={cn(cell, "text-center")}>{row.serial}</td>
 						<td className={cn(cell, "text-left")}>{row.name}</td>
 						<td className={cn(cell, "text-center")}>{row.rollNumber}</td>
-						<td className={cn(cell, "text-center")}>{row.submittedOn}</td>
+						{!poView && <td className={cn(cell, "text-center")}>{row.submittedOn}</td>}
 						<td className={cn(cell, "text-center")}>{poView ? row.poStatus : row.status}</td>
 					</tr>
 				))}
